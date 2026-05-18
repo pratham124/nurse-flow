@@ -1,56 +1,70 @@
-# Welcome to your Expo app 👋
+# NurseFlow
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+NurseFlow is a React Native mobile app built with Expo and TypeScript.
 
-## Get started
+The app helps hospital charge nurses manage floor setup, shift assignments, patient acuity, nurse workloads, and related shift workflow.
 
-1. Install dependencies
+## App Overview
 
-   ```bash
-   npm install
-   ```
+NurseFlow is designed for charge nurses who need a clearer way to organize a hospital floor before and during a shift.
 
-2. Start the app
+At a high level, the app will support:
 
-   ```bash
-   npx expo start
-   ```
+- Floor setup with rooms, beds, and doctor sides.
+- Shift setup from a reusable floor template.
+- Nurse profiles with license type, experience level, and max patient load.
+- Patient entry with bed location, initials, age, sex, diagnosis, and acuity.
+- Assignment logic that balances nurse teams, room coverage, and bed-level patient assignments.
+- A compact charge nurse floor board for reviewing census, acuity, nurse workload, unassigned beds, and imbalance flags.
 
-In the output, you'll find options to open the app in a
+## Project Docs
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+Useful project docs:
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- `AGENTS.md` - project rules and workflow.
+- `docs/product-spec.md` - full product specification.
 
-## Get a fresh project
+## Setup
 
-When you're ready, run:
+### Requirements
+
+- Node.js installed.
+- npm installed.
+- A phone with Expo Go, an Android emulator, an iOS simulator, or a web browser for local testing.
+
+### Install Dependencies
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Start The App
 
-### Other setup steps
+```bash
+npm start
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Expo will show options for opening the app on Android, iOS, web, or Expo Go.
 
-## Learn more
+### Useful Commands
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+npm run android
+npm run ios
+npm run web
+npm run lint
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Source Structure
 
-## Join the community
+- `src/app` - Expo Router app screens and layout.
+- `assets` - static app assets.
+- `docs` - product and planning docs.
 
-Join our community of developers creating universal apps.
+## Done Criteria
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+A task is done only when:
+
+- The app runs without errors.
+- The feature can be tested manually.
+- The code remains readable and beginner-friendly.
