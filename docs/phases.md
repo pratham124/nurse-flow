@@ -18,12 +18,13 @@ Prove the core charge nurse workflow on one device using local in-memory state o
 - Define doctor sides.
 - Assign rooms to doctor sides.
 - Start a shift from a floor template.
+- Override default nurse patient-load limits based on doctor side coverage.
 - Add nurses for the shift.
 - Add patients to beds.
 - Set bed-level acuity: green, yellow, or red.
-- Assign rooms to nurses.
 - Set max patient load per nurse.
-- Run deterministic local auto-assignment.
+- Run deterministic local assignment.
+- Use the admitting side to target lighter nurse loads than the non-admitting side.
 - Show a charge nurse floor board.
 - Show census totals.
 - Show imbalance flags.
@@ -42,7 +43,7 @@ Prove the core charge nurse workflow on one device using local in-memory state o
 - Regular nurse invite flow.
 - Regular nurse app experience.
 - Multi-device collaboration.
-- Drag-and-drop manual override.
+- Drag-and-drop assignment override.
 - Offline sync or write queue.
 - AI or external assignment services.
 - Break scheduling.
@@ -53,11 +54,13 @@ Prove the core charge nurse workflow on one device using local in-memory state o
 
 - A charge nurse can create a simple floor template.
 - A charge nurse can start a shift from that template.
+- A charge nurse can override default nurse patient-load limits for nurses based on whether they cover the admitting side or only the non-admitting side.
 - A charge nurse can add nurses and patients locally.
 - Beds can be marked with acuity.
-- Nurses can be given assigned rooms and max patient loads.
-- Auto-assignment runs deterministically without network access.
-- The floor board clearly shows doctor sides, nurses, rooms, beds, acuity, and patient info.
+- Nurses can be given max patient loads.
+- Local assignment runs deterministically from nurse profiles, patient info, acuity, side-based load limits, and max patient loads.
+- Nurses covering the admitting side use the admitting-side nurse load limit, which defaults lighter than the non-admitting-side nurse load limit.
+- The floor board clearly shows doctor sides, generated balanced nurse teams, rooms, beds, acuity, and patient info.
 - The app flags overloaded nurses and beds that could not be assigned.
 - The feature can be manually tested on one local device.
 - No Phase 1 excluded infrastructure is introduced.
@@ -195,7 +198,7 @@ Introduce real accounts and server-side data only after the local product flow i
 - Push notifications.
 - Deep links.
 - Offline write queue.
-- Drag-and-drop manual override.
+- Drag-and-drop assignment override.
 - AI.
 
 ### Success Criteria
@@ -228,7 +231,7 @@ Allow multiple devices to participate in the same active shift.
 
 - Push notifications.
 - Offline write queue and conflict resolution.
-- Drag-and-drop manual override.
+- Drag-and-drop assignment override.
 - AI.
 - Tablet layout.
 
@@ -260,7 +263,7 @@ Improve reliability and awareness when users are backgrounded or temporarily dis
 
 ### Excluded Features
 
-- Drag-and-drop manual override.
+- Drag-and-drop assignment override.
 - Share board snapshot.
 - Tablet layout.
 - AI.
@@ -273,7 +276,7 @@ Improve reliability and awareness when users are backgrounded or temporarily dis
 - Sync behavior is understandable and manually testable.
 - Conflicts do not silently corrupt shift data.
 
-## Phase 8: Manual Override, Sharing, and Polish
+## Phase 8: Drag-and-Drop, Sharing, and Polish
 
 ### Goal
 
@@ -281,7 +284,7 @@ Add advanced interaction and presentation improvements after the core system is 
 
 ### Included Features
 
-- Drag-and-drop manual assignment override.
+- Drag-and-drop assignment override.
 - Inline imbalance flags after manual moves.
 - Non-blocking acknowledgement of override warnings.
 - Share board snapshot.
@@ -301,8 +304,8 @@ Add advanced interaction and presentation improvements after the core system is 
 
 ### Success Criteria
 
-- A charge nurse can manually override assignments with drag-and-drop.
-- The app clearly flags risky or imbalanced manual overrides.
+- A charge nurse can adjust assignments with drag-and-drop.
+- The app clearly flags risky or imbalanced drag-and-drop assignment changes.
 - The charge nurse can share a readable board snapshot.
 - The app remains usable on phone screens and gains a better tablet experience.
 - The UI feels polished without changing the proven core workflow.

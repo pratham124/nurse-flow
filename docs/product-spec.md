@@ -55,12 +55,14 @@ Charge nurse can go back and edit before saving
 
 Relationships
 Doctor Side → Rooms → Beds → Patient
-Nurse → assigned Rooms → Beds
+Nurse → generated Balanced Team → generated Room Coverage → Beds
 
 Each room belongs to one doctor side
-Nurses are assigned rooms directly at shift start
-A nurse can cover rooms across different doctor sides if needed
-Bed eligibility check: bed's room must be in the nurse's assigned rooms
+Nurses receive room coverage during shift setup from a deterministic local room-assignment step
+A nurse is first placed into a generated balanced team, and teams can cover rooms on one or both doctor sides as needed
+More than one nurse can have generated coverage for the same room when needed
+Final patient responsibility is assigned at the bed level, not the room level
+Bed eligibility check: bed's room must be in the nurse's generated room coverage
 
 Floor Templates
 
@@ -108,7 +110,7 @@ Nurse Carry-Over
 App shows all nurses from the previous shift as suggestions
 Charge nurse accepts nurses who are working the current shift, dismisses those who are not
 Accepted nurse profiles carry over: name, license type (RN / LPN), experience level (new grad / mid / experienced)
-Room assignments and max load are reset — configured fresh each shift
+Generated balanced teams, generated room coverage, and max load are reset — configured fresh each shift
 New nurses can still be added manually at shift start
 
 Patient Carry-Over
@@ -125,13 +127,15 @@ Charge nurse taps Start Shift
 Selects a floor
 Makes any per-shift edits to rooms or doctor side mappings (does not affect base template)
 Designates which doctor side is the admitting side for this shift
+Reviews default side-based nurse load limits and can override them for the shift:
+Nurses covering the admitting side default to a 4-5 patient limit
+Nurses covering only the non-admitting side default to a 6-7 patient limit
 Reviews nurse suggestions from previous shift — accepts or dismisses each, adds any new nurses
 Reviews patient suggestions from previous shift — accepts or dismisses each, adds any new patients
 Inputs active bed count per room
 Confirms or updates acuity per bed (🟢 / 🟡 / 🔴) — carried-over acuity is pre-filled, bulk or individual edits allowed
-Assigns rooms to each nurse
 Sets max patient load per nurse
-Auto-assignment runs
+Local assignment runs to generate balanced teams, room coverage, and bed assignments
 Charge nurse shares a unique deep link per nurse via SMS, clipboard, or share sheet
 Nurse taps link → app opens → joins the active shift
 Invite links remain valid for the duration of the active shift and expire automatically when the shift ends. If a nurse loses their link, the charge nurse can regenerate and reshare it
@@ -139,41 +143,10 @@ Shift stays active until charge nurse ends it
 
 Auto-Assignment Algorithm
 Pure deterministic greedy algorithm — no AI or external API calls. Runs locally, works offline, no latency.
-Step 1 — Determine load targets per nurse
-Before distributing beds, calculate each nurse's target load:
 
-If any of a nurse's assigned rooms fall under the admitting side → target 3-4 patients
-If all of a nurse's assigned rooms are on the non-admitting side → target 5-6 patients
-Charge nurse manually set max load per nurse → hard cap regardless of side
+The charge nurse runs assignment as one action. Internally, the assignment process balances nurse teams, generates room coverage, assigns occupied beds, and raises local flags.
 
-Step 2 — Filter eligible nurses per bed
-For each bed, narrow down which nurses can take it:
-
-Bed's room must be in the nurse's assigned rooms
-LPNs excluded from 🔴 critical beds
-Nurse must not exceed their max load cap
-
-Step 3 — Sort beds by priority
-Assign hardest-to-fill beds first:
-
-🔴 Critical beds — fewest eligible nurses, highest stakes
-🟡 Moderate beds
-🟢 Stable beds
-
-Step 4 — Assign beds greedily
-For each bed in priority order:
-
-Find eligible nurses who are under their target load
-For 🔴 critical beds, prefer experienced RNs first, then mid-level RNs, then new grad RNs
-Among eligible nurses, pick the one with the lowest current acuity score
-Assign the bed and update that nurse's load count and acuity score (🔴=3, 🟡=2, 🟢=1)
-
-Step 5 — Re-run on census change
-When any admission, discharge, or new bed occurs mid-shift:
-
-New admission → runs steps 1-4 for that bed only
-Discharge → bed removed, affected nurse's load and acuity score recalculate
-Imbalance flags raised if any nurse is over or under target after rebalance
+Phase 1 implementation details live in `docs/phase-1/assignment-algorithm.md`.
 
 Assignment Edge Cases
 Not enough experienced RNs for all critical beds
@@ -188,7 +161,7 @@ Admitting side nurses at max load but admissions keep coming
 
 New admission assigned to least loaded admitting-side nurse even if it exceeds target
 Imbalance flag raised on that nurse's card
-Charge nurse notified to adjust max loads or reassign manually
+Charge nurse notified to adjust inputs and re-run assignment
 
 Short staffed — not enough nurses for census
 
@@ -209,16 +182,16 @@ Bed flagged unassigned, charge nurse alerted
 
 Nurse covering rooms across both doctor sides
 
-If a nurse has even one room on the admitting side → lighter load target applies (3-4)
-May cause slight under-utilization — charge nurse should be mindful when assigning rooms that straddle sides
+If a nurse has even one generated room on the admitting side → the admitting-side nurse load limit applies
+May cause slight under-utilization when generated room coverage straddles sides
 
 All nurses covering a shared room zone near break simultaneously
 
 Break scheduler prevents this by default
-If a manual override causes it, app flags immediately
+If a drag-and-drop assignment override causes it, app flags immediately
 At least 1 experienced nurse per zone must always be active
 
-Manual Override
+Drag-and-Drop Assignment Override
 
 Charge nurse can drag and drop beds/patients between nurses on the floor board
 After any move, app flags load imbalances inline on affected nurse cards
@@ -245,7 +218,7 @@ Charge nurse sees full schedule, each nurse sees only their own break time
 Nurse-Facing View
 Accessed after joining via deep link:
 
-Assigned rooms and beds with individual acuity colors per bed
+Generated balanced team, generated room coverage, and assigned beds with individual acuity colors per bed
 Patient info per bed — initials, age, sex, diagnosis
 Scheduled break time
 Flag Issue — short form describing a concern, sent to charge nurse as push notification
@@ -256,7 +229,7 @@ Charge nurse receives push notifications for all flags and swap requests with in
 Floor Board (Charge Nurse View)
 
 Scrollable visual board grouped by: Doctor Side → Nurse → Rooms → Beds (with acuity color and patient info per bed)
-Each nurse card shows license type (RN / LPN), experience level, assigned rooms, current load, and max load
+Each nurse card shows license type (RN / LPN), experience level, generated balanced team, generated room coverage, current load, and max load
 Admitting side highlighted on the board
 Census counter visible at the top of the board (e.g. 36/38 occupied)
 A room with mixed acuity shows individual bed colors side by side (e.g. 🟢🔴)
@@ -273,7 +246,7 @@ Mobile-Specific Considerations
 Offline resilience — floor board remains viewable if connectivity drops; writes queue and sync on reconnect
 Deep link handling — invite links work whether the app is installed or not via Expo universal links / app links
 Screen size — floor board uses compact card layout optimized for phone; horizontal scroll within doctor sides if needed
-Drag and drop — react-native-reanimated + react-native-gesture-handler for manual override
+Drag and drop — react-native-reanimated + react-native-gesture-handler for drag-and-drop assignment override
 Share sheet — react-native-view-shot to snapshot board, then React Native Share API
 Tablet layout (v1 nice-to-have) — larger floor board for better at-a-glance visibility plus side-by-side panels (e.g. floor board on the left, nurse detail on the right). Implemented via responsive breakpoints — phone layout ships first, tablet layered on top
 
