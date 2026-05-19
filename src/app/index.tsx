@@ -1,62 +1,71 @@
-import { StyleSheet, Text, View } from "react-native";
+import { router } from "expo-router";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { APP_SCREEN_NAMES } from "../constants/screenNames";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
 
 export default function Index() {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.screen}>
       <View style={styles.header}>
         <Text style={styles.title}>NurseFlow</Text>
-        <Text style={styles.subtitle}>Phase 1 setup scaffold</Text>
+        <Text style={styles.subtitle}>Local charge nurse prototype</Text>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Local-only scope</Text>
-        <Text style={styles.bodyText}>
-          No auth, backend, realtime, invites, notifications, deep links,
-          drag-and-drop, offline sync, AI, breaks, sharing, or tablet layout.
-        </Text>
-      </View>
+      <View style={styles.content}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Floor templates</Text>
+          <Text style={styles.sectionCount}>0</Text>
+        </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Phase 1 screens</Text>
-        {APP_SCREEN_NAMES.map((screenName) => (
-          <Text key={screenName} style={styles.screenName}>
-            {screenName}
+        <View style={styles.emptyState}>
+          <View style={styles.emptyIcon}>
+            <Text style={styles.emptyIconText}>NF</Text>
+          </View>
+          <Text style={styles.emptyTitle}>No local floor yet.</Text>
+          <Text style={styles.emptyText}>
+            Create a floor template on this device to start the local charge
+            nurse workflow.
           </Text>
-        ))}
+        </View>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Visual tokens</Text>
-        <View style={styles.swatchRow}>
-          <View style={[styles.swatch, { backgroundColor: colors.brand.burgundy }]} />
-          <View style={[styles.swatch, { backgroundColor: colors.brand.softGreen }]} />
-          <View style={[styles.swatch, { backgroundColor: colors.brand.warmGold }]} />
-          <View style={[styles.swatch, { backgroundColor: colors.brand.lavender }]} />
-          <View style={[styles.swatch, { backgroundColor: colors.brand.lightBlue }]} />
-        </View>
-        <View style={styles.swatchRow}>
-          <View style={[styles.acuityDot, { backgroundColor: colors.acuity.green }]} />
-          <View style={[styles.acuityDot, { backgroundColor: colors.acuity.yellow }]} />
-          <View style={[styles.acuityDot, { backgroundColor: colors.acuity.red }]} />
-        </View>
+      <View style={styles.actionBar}>
+        <Pressable
+          accessibilityHint="Opens the static floor template setup path."
+          accessibilityRole="button"
+          onPress={() => router.push("/floor-details")}
+          style={styles.primaryButton}
+        >
+          <Text style={styles.primaryButtonText}>Create floor</Text>
+        </Pressable>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: colors.neutral.background,
-    padding: spacing.xl,
-    paddingTop: 72,
-    gap: spacing.lg,
   },
   header: {
+    backgroundColor: colors.neutral.surface,
+    borderBottomColor: colors.neutral.border,
+    borderBottomWidth: 1,
     gap: spacing.xs,
+    padding: spacing.xl,
+    paddingBottom: spacing.lg,
+  },
+  content: {
+    flex: 1,
+    gap: spacing.lg,
+    padding: spacing.xl,
+  },
+  sectionHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   title: {
     color: colors.brand.burgundy,
@@ -67,40 +76,74 @@ const styles = StyleSheet.create({
     color: colors.neutral.mutedText,
     fontSize: textSize.md,
   },
-  section: {
-    backgroundColor: colors.neutral.surface,
-    borderColor: colors.neutral.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    gap: spacing.sm,
-    padding: spacing.lg,
-  },
   sectionTitle: {
     color: colors.neutral.text,
     fontSize: textSize.lg,
     fontWeight: "700",
   },
-  bodyText: {
+  sectionCount: {
+    backgroundColor: colors.brand.lightBlue,
+    borderRadius: radius.md,
+    color: colors.neutral.text,
+    fontSize: textSize.sm,
+    fontWeight: "700",
+    minWidth: 32,
+    overflow: "hidden",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    textAlign: "center",
+  },
+  emptyState: {
+    alignItems: "center",
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.border,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    gap: spacing.sm,
+    padding: spacing.xl,
+  },
+  emptyIcon: {
+    alignItems: "center",
+    backgroundColor: colors.brand.lightBlue,
+    borderRadius: radius.md,
+    height: 48,
+    justifyContent: "center",
+    width: 48,
+  },
+  emptyIconText: {
+    color: colors.brand.burgundy,
+    fontSize: textSize.md,
+    fontWeight: "700",
+  },
+  emptyTitle: {
+    color: colors.neutral.text,
+    fontSize: textSize.lg,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  emptyText: {
     color: colors.neutral.mutedText,
     fontSize: textSize.md,
     lineHeight: 22,
+    textAlign: "center",
   },
-  screenName: {
-    color: colors.neutral.text,
+  actionBar: {
+    backgroundColor: colors.neutral.surface,
+    borderTopColor: colors.neutral.border,
+    borderTopWidth: 1,
+    padding: spacing.xl,
+  },
+  primaryButton: {
+    alignItems: "center",
+    backgroundColor: colors.brand.burgundy,
+    borderRadius: radius.md,
+    minHeight: 52,
+    justifyContent: "center",
+    paddingHorizontal: spacing.lg,
+  },
+  primaryButtonText: {
+    color: colors.neutral.surface,
     fontSize: textSize.md,
-  },
-  swatchRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  swatch: {
-    borderRadius: radius.sm,
-    height: 32,
-    width: 32,
-  },
-  acuityDot: {
-    borderRadius: 10,
-    height: 20,
-    width: 20,
+    fontWeight: "700",
   },
 });

@@ -28,6 +28,10 @@ Help me build this project while learning. Do not over-automate or generate the 
 - Prefer simple local-first solutions before adding infrastructure.
 - Never add code I cannot reasonably understand and explain.
 
+## Repository Expectations
+
+- Use modern conventions (e.g., fetch latest docs via MCP server).
+
 ## Workflow
 
 Use this order:
