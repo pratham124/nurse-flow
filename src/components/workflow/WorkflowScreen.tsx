@@ -2,8 +2,8 @@ import { ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { floorTemplateFlow } from "../../constants/workflowFlows";
-import type { WorkflowFlowStep } from "../../constants/workflowFlows";
+import { floorTemplateFlow } from "../../utils/workflowFlows";
+import type { WorkflowFlowStep } from "../../utils/workflowFlows";
 import { colors, radius, spacing, textSize } from "../../theme/tokens";
 import { StepIndicator } from "./StepIndicator";
 import type { WorkflowStep } from "./types";

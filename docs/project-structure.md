@@ -2,30 +2,59 @@
 
 This structure is for the actual NurseFlow app described in `docs/product-spec.md`. Phase folders in `docs/` describe planning and scope, but app code in `src/` should use stable folders that can grow across phases.
 
+The app now follows the React Native folder responsibilities from the referenced DEV guide: assets, components, screens, navigation, store, hooks, services, helpers, and utils. Because this is an Expo Router app, `src/app/` stays as the route registry and points to screen files.
+
 NurseFlow starts as a local charge nurse prototype, then grows toward the full product: charge nurse workflows, regular nurse views, break scheduling, auth, backend persistence, realtime collaboration, invite links, push notifications, offline resilience, drag-and-drop overrides, sharing, and tablet polish.
 
 ## Current Folders
 
+- `assets/`
+  - App images, icons, and other static files.
+
 - `src/app/`
   - Expo Router screens and layouts.
   - Keep route files here, such as `index.tsx` and future screen routes.
-  - Routes should stay thin. Put most logic in feature, state, or utility files once a screen grows.
+  - Route files should stay thin and export the matching screen from `src/screens/`.
 
-- `src/constants/`
-  - Shared app constants that are not styling.
-  - Examples: screen names, app labels, simple option lists.
+- `src/components/`
+  - Reusable UI pieces shared across screens.
+  - Examples: buttons, section headers, status chips, form rows.
+
+- `src/screens/`
+  - Full route-level UI screens.
+  - Screens compose reusable components and own screen-specific styles.
+
+- `src/navigation/`
+  - Navigation-specific configuration when a task needs it.
+  - Expo Router handles the current route setup, so this folder is intentionally light.
+
+- `src/store/`
+  - Shared app state containers when local screen state is no longer enough.
+  - Phase 1 should use simple React state or a beginner-friendly reducer before adding libraries.
+
+- `src/hooks/`
+  - Reusable custom React hooks.
+  - Add hooks here after logic becomes shared or repeated.
+
+- `src/services/`
+  - External or platform service wrappers.
+  - Do not add backend, auth, realtime, push notifications, or deep links in Phase 1.
+
+- `src/helpers/`
+  - Helper functions that may involve side effects.
+  - Future examples: storage helpers or platform helpers.
+
+- `src/utils/`
+  - Pure constants and deterministic helper functions.
+  - Examples: workflow route definitions, screen names, validation helpers, assignment helpers, date/time formatters.
 
 - `src/theme/`
   - Shared visual tokens.
   - Examples: colors, spacing, radius, and text sizes.
 
-## Planned Folders
+## Planned Product Folders
 
-Add these only when a task needs them:
-
-- `src/components/`
-  - Reusable UI pieces shared across screens.
-  - Examples: buttons, section headers, status chips, form rows.
+Add feature folders only when a task needs them:
 
 - `src/features/`
   - Product workflow code when a workflow grows beyond one screen.
@@ -48,23 +77,9 @@ Add these only when a task needs them:
   - Shared TypeScript types for local app data.
   - Examples: floor templates, rooms, beds, shifts, nurses, patients, assignments, flags, nurse views, break schedules.
 
-- `src/state/`
-  - Shared app state containers.
-  - Phase 1 should use simple React state or a beginner-friendly reducer.
-  - Zustand or Redux Toolkit can be considered later if the app state becomes too hard to pass through screens.
-
 - `src/storage/`
   - Local persistence code.
   - Add in Phase 2 when floor templates, active shifts, and previous-shift carry-over need to survive app restarts.
-
-- `src/services/`
-  - External or platform service wrappers.
-  - Future examples: backend API, realtime client, push notifications, deep link handling, native sharing.
-  - Do not add service wrappers in Phase 1.
-
-- `src/utils/`
-  - Small helper functions with no React UI.
-  - Examples: local ID helper, validation helpers, census calculations, deterministic assignment helpers, date/time helpers.
 
 ## Product Domain Map
 

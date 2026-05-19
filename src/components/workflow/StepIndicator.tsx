@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import type { WorkflowFlowStep } from "../../constants/workflowFlows";
+import type { WorkflowFlowStep } from "../../utils/workflowFlows";
 import { colors, radius, spacing, textSize } from "../../theme/tokens";
 import type { WorkflowStep } from "./types";
 
