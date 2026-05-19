@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, type DimensionValue } from "react-native";
 
 import {
   CheckCircleIcon,
@@ -20,6 +20,21 @@ const checklistItems = [
 ];
 
 const redBeds = ["102-1"];
+
+const nurseCapacityRows = [
+  {
+    assigned: 0,
+    detail: "RN, experienced",
+    max: 5,
+    name: "Taylor",
+  },
+  {
+    assigned: 0,
+    detail: "LPN, mid",
+    max: 6,
+    name: "Sam",
+  },
+];
 
 export default function AssignmentReviewScreen() {
   return (
@@ -64,12 +79,16 @@ export default function AssignmentReviewScreen() {
 
       <WorkflowSection title="Nurse capacity">
         <ScrollableList maxHeight={260}>
-          <PreviewRow label="Taylor" detail="RN, experienced - 0/5 assigned" />
-          <PreviewRow
-            divided
-            label="Sam"
-            detail="LPN, mid - 0/6 assigned"
-          />
+          {nurseCapacityRows.map((nurse, index) => (
+            <CapacityRow
+              key={nurse.name}
+              assigned={nurse.assigned}
+              detail={nurse.detail}
+              divided={index > 0}
+              max={nurse.max}
+              name={nurse.name}
+            />
+          ))}
         </ScrollableList>
       </WorkflowSection>
 
@@ -88,19 +107,45 @@ export default function AssignmentReviewScreen() {
   );
 }
 
-function PreviewRow({
-  label,
+function CapacityRow({
+  assigned,
   detail,
   divided = false,
+  max,
+  name,
 }: {
-  label: string;
+  assigned: number;
   detail: string;
   divided?: boolean;
+  max: number;
+  name: string;
 }) {
+  const fillPercent: DimensionValue =
+    max > 0 ? `${Math.min((assigned / max) * 100, 100)}%` : "0%";
+
   return (
-    <View style={[styles.previewRow, divided ? styles.dividedRow : null]}>
-      <Text style={styles.previewLabel}>{label}</Text>
-      <Text style={styles.previewDetail}>{detail}</Text>
+    <View style={[styles.capacityRow, divided ? styles.dividedRow : null]}>
+      <View style={styles.capacityHeader}>
+        <View style={styles.nurseAvatar}>
+          <Text style={styles.nurseAvatarText}>{name.charAt(0)}</Text>
+        </View>
+        <View style={styles.capacityInfo}>
+          <Text style={styles.capacityName}>{name}</Text>
+          <Text style={styles.capacityDetail}>{detail}</Text>
+        </View>
+        <View style={styles.loadPill}>
+          <Text style={styles.loadPillText}>
+            {assigned}/{max}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.capacityTrack}>
+        <View style={[styles.capacityFill, { width: fillPercent }]} />
+      </View>
+      <Text style={styles.capacityHint}>
+        {max - assigned} open {max - assigned === 1 ? "slot" : "slots"}
+      </Text>
     </View>
   );
 }
@@ -126,16 +171,67 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: textSize.md,
   },
-  previewRow: {
-    gap: spacing.sm,
+  capacityRow: {
+    gap: spacing.md,
     paddingVertical: spacing.lg,
   },
-  previewLabel: {
+  capacityHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.md,
+  },
+  nurseAvatar: {
+    alignItems: "center",
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: 18,
+    borderWidth: 0.5,
+    height: 36,
+    justifyContent: "center",
+    width: 36,
+  },
+  nurseAvatarText: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.md,
     fontWeight: "500",
   },
-  previewDetail: {
+  capacityInfo: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  capacityName: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.md,
+    fontWeight: "500",
+  },
+  capacityDetail: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+  },
+  loadPill: {
+    backgroundColor: colors.status.gray100,
+    borderRadius: radius.sm,
+    paddingHorizontal: 10,
+    paddingVertical: spacing.xs,
+  },
+  loadPillText: {
+    color: colors.status.gray800,
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  capacityTrack: {
+    backgroundColor: colors.neutral.surface,
+    borderRadius: radius.pill,
+    height: 6,
+    overflow: "hidden",
+  },
+  capacityFill: {
+    backgroundColor: colors.brand.burgundy,
+    borderRadius: radius.pill,
+    height: "100%",
+    minWidth: 0,
+  },
+  capacityHint: {
     color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
   },

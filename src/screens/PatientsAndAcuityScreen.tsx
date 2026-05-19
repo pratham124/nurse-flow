@@ -70,13 +70,13 @@ export default function PatientsAndAcuityScreen() {
         </FilterChipRow>
       </WorkflowSection>
 
-      {previewBeds.map((room) => (
-        <WorkflowSection
-          key={room.room}
-          note={room.side}
-          title={`Room ${room.room}`}
-        >
-          <ScrollableList maxHeight={420}>
+      <ScrollableList maxHeight={560}>
+        {previewBeds.map((room) => (
+          <WorkflowSection
+            key={room.room}
+            note={room.side}
+            title={`Room ${room.room}`}
+          >
             {room.beds.map((bed) => (
               <View key={bed.label} style={styles.bedRow}>
                 <View style={styles.bedHeader}>
@@ -133,9 +133,9 @@ export default function PatientsAndAcuityScreen() {
                 )}
               </View>
             ))}
-          </ScrollableList>
-        </WorkflowSection>
-      ))}
+          </WorkflowSection>
+        ))}
+      </ScrollableList>
     </WorkflowScreen>
   );
 }

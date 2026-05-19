@@ -12,7 +12,7 @@ import {
   WorkflowScreen,
 } from "../components/workflow";
 import { assignmentFlow } from "../utils/workflowFlows";
-import { colors, spacing, textSize } from "../theme/tokens";
+import { colors, radius, spacing, textSize } from "../theme/tokens";
 
 const flags = [
   {
@@ -26,6 +26,8 @@ const flags = [
     message: "Sam has room coverage but no assigned beds in this preview.",
   },
 ];
+
+type FlagSeverity = (typeof flags)[number]["severity"];
 
 export default function FlagsScreen() {
   return (
@@ -62,13 +64,12 @@ export default function FlagsScreen() {
       >
         <ScrollableList maxHeight={280}>
           {flags.map((flag) => (
-            <View key={`${flag.severity}-${flag.target}`} style={styles.flagRow}>
-              <View style={styles.flagTopRow}>
-                <FlagSeverityBadge severity={flag.severity} />
-                <Text style={styles.target}>{flag.target}</Text>
-              </View>
-              <Text style={styles.message}>{flag.message}</Text>
-            </View>
+            <FlagRow
+              key={`${flag.severity}-${flag.target}`}
+              message={flag.message}
+              severity={flag.severity}
+              target={flag.target}
+            />
           ))}
         </ScrollableList>
       </WorkflowSection>
@@ -76,7 +77,33 @@ export default function FlagsScreen() {
   );
 }
 
-function FlagSeverityBadge({ severity }: { severity: string }) {
+function FlagRow({
+  message,
+  severity,
+  target,
+}: {
+  message: string;
+  severity: FlagSeverity;
+  target: string;
+}) {
+  const tone = getSeverityTone(severity);
+
+  return (
+    <View style={[styles.flagRow, severityAccentStyles[tone]]}>
+      <View style={styles.flagTopRow}>
+        <FlagSeverityBadge severity={severity} />
+        <Text style={styles.target}>{target}</Text>
+      </View>
+      <Text style={styles.message}>{message}</Text>
+    </View>
+  );
+}
+
+function FlagSeverityBadge({ severity }: { severity: FlagSeverity }) {
+  return <SeverityPill label={severity} tone={getSeverityTone(severity)} />;
+}
+
+function getSeverityTone(severity: FlagSeverity) {
   const tone =
     severity === "Critical"
       ? "critical"
@@ -84,13 +111,19 @@ function FlagSeverityBadge({ severity }: { severity: string }) {
         ? "warning"
         : "info";
 
-  return <SeverityPill label={severity} tone={tone} />;
+  return tone;
 }
 
 const styles = StyleSheet.create({
   flagRow: {
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderLeftWidth: 3,
+    borderRadius: radius.md,
+    borderWidth: 0.5,
     gap: spacing.sm,
-    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
   },
   flagTopRow: {
     alignItems: "center",
@@ -106,5 +139,17 @@ const styles = StyleSheet.create({
     color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
     lineHeight: 18,
+  },
+});
+
+const severityAccentStyles = StyleSheet.create({
+  critical: {
+    borderLeftColor: colors.status.red800,
+  },
+  info: {
+    borderLeftColor: colors.status.blue800,
+  },
+  warning: {
+    borderLeftColor: colors.status.amber800,
   },
 });
