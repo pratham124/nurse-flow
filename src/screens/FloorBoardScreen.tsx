@@ -3,9 +3,14 @@ import { StyleSheet, Text, View } from "react-native";
 
 import {
   BedChip,
+  FilterChip,
+  FilterChipRow,
+  ScrollableList,
+  StatusPill,
+  SummaryTile,
+  SummaryTileGrid,
   WorkflowSection,
   WorkflowScreen,
-  SummaryChip,
 } from "../components/workflow";
 import { assignmentFlow } from "../utils/workflowFlows";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
@@ -71,40 +76,52 @@ export default function FloorBoardScreen() {
       title="Floor board"
     >
       <WorkflowSection title="Board summary">
-        <View style={styles.summaryRow}>
-          <SummaryChip label="2/3 occupied" />
-          <SummaryChip label="AB admitting" />
-          <SummaryChip label="Assigned" />
-          <SummaryChip label="2 flags" />
-        </View>
+        <SummaryTileGrid>
+          <SummaryTile value="2/3" label="Occupied" />
+          <SummaryTile value="AB" label="Admitting" />
+          <SummaryTile value="Assigned" label="Status" />
+          <SummaryTile value="2" label="Flags" />
+        </SummaryTileGrid>
       </WorkflowSection>
 
       <WorkflowSection title="Filters">
-        <View style={styles.summaryRow}>
+        <FilterChipRow>
           {["All", "Flags", "Unassigned", "Red", "RN coverage"].map(
-            (filter) => (
-              <SummaryChip key={filter} label={filter} />
+            (filter, index) => (
+              <FilterChip key={filter} label={filter} selected={index === 0} />
             ),
           )}
-        </View>
+        </FilterChipRow>
       </WorkflowSection>
 
       <WorkflowSection
         note="Every nurse stays visible, even when a nurse has no assigned beds."
         title="Nurse workload"
       >
-        {nurses.map((nurse) => (
-          <View key={nurse.name} style={styles.nurseRow}>
-            <View style={styles.nurseTopRow}>
-              <Text style={styles.nurseName}>{nurse.name}</Text>
-              <SummaryChip label={nurse.load} />
+        <ScrollableList maxHeight={280}>
+          {nurses.map((nurse, index) => (
+            <View
+              key={nurse.name}
+              style={[styles.nurseRow, index > 0 ? styles.dividedRow : null]}
+            >
+              <View style={styles.nurseAvatar}>
+                <Text style={styles.nurseAvatarText}>
+                  {nurse.name.charAt(0)}
+                </Text>
+              </View>
+              <View style={styles.nurseInfo}>
+                <View style={styles.nurseTopRow}>
+                  <Text style={styles.nurseName}>{nurse.name}</Text>
+                  <LoadChip value={nurse.load} />
+                </View>
+                <Text style={styles.nurseMeta}>{nurse.detail}</Text>
+                <Text style={styles.nurseMeta}>
+                  {nurse.team} - rooms {nurse.rooms}
+                </Text>
+              </View>
             </View>
-            <Text style={styles.nurseMeta}>{nurse.detail}</Text>
-            <Text style={styles.nurseMeta}>
-              {nurse.team} - rooms {nurse.rooms}
-            </Text>
-          </View>
-        ))}
+          ))}
+        </ScrollableList>
       </WorkflowSection>
 
       {boardSides.map((side) => (
@@ -116,15 +133,17 @@ export default function FloorBoardScreen() {
           {side.rooms.map((room) => (
             <View key={room.label} style={styles.roomSection}>
               <View style={styles.roomHeader}>
-                <Text style={styles.roomTitle}>Room {room.label}</Text>
-                <SummaryChip label={`Coverage: ${room.coverage}`} />
+                <View>
+                  <Text style={styles.roomTitle}>Room {room.label}</Text>
+                  <Text style={styles.roomMeta}>Coverage: {room.coverage}</Text>
+                </View>
               </View>
 
-              <View style={styles.bedList}>
+              <ScrollableList maxHeight={320}>
                 {room.beds.map((bed) => (
                   <BoardBed key={bed.label} {...bed} />
                 ))}
-              </View>
+              </ScrollableList>
             </View>
           ))}
         </WorkflowSection>
@@ -151,85 +170,143 @@ function BoardBed({
     <View style={[styles.boardBed, isEmpty ? styles.emptyBoardBed : null]}>
       <View style={styles.bedIdentity}>
         <View style={[styles.acuityRail, { backgroundColor: acuityColor }]} />
-        <View>
-          <BedChip label={label} />
-          <Text style={styles.patientText}>{patient}</Text>
+        <View style={styles.bedCopy}>
+          <View style={styles.bedTopLine}>
+            <BedChip label={label} />
+            {acuity !== "Empty" ? (
+              <Text style={styles.acuityText}>{acuity}</Text>
+            ) : null}
+          </View>
+          <Text style={[styles.patientText, isEmpty ? styles.emptyPatientText : null]}>
+            {patient}
+          </Text>
         </View>
       </View>
-      <Text style={styles.assignedText}>{isEmpty ? "Not assigned" : nurse}</Text>
+      {isEmpty || nurse === "Open" ? (
+        <StatusPill label="Not assigned" tone="empty" />
+      ) : (
+        <Text style={styles.assignedText}>{nurse}</Text>
+      )}
+    </View>
+  );
+}
+
+function LoadChip({ value }: { value: string }) {
+  const [assignedText, capacityText] = value.split("/");
+  const assigned = Number(assignedText);
+  const capacity = Number(capacityText);
+  const isEmpty = assigned === 0;
+  const isNearCapacity = capacity > 0 && assigned / capacity >= 0.8;
+
+  return (
+    <View
+      style={[
+        styles.loadChip,
+        isEmpty ? styles.emptyLoadChip : null,
+        isNearCapacity ? styles.warningLoadChip : null,
+      ]}
+    >
+      <Text
+        style={[
+          styles.loadChipText,
+          isEmpty ? styles.emptyLoadChipText : null,
+          isNearCapacity ? styles.warningLoadChipText : null,
+        ]}
+      >
+        {value}
+      </Text>
     </View>
   );
 }
 
 function getAcuityColor(acuity: string) {
   if (acuity === "Red") {
-    return colors.acuity.red;
+    return colors.status.red700;
   }
 
   if (acuity === "Yellow") {
-    return colors.acuity.yellow;
+    return colors.status.yellow700;
   }
 
   if (acuity === "Green") {
-    return colors.acuity.green;
+    return colors.status.green700;
   }
 
-  return colors.neutral.border;
+  return colors.neutral.borderTertiary;
 }
 
 const styles = StyleSheet.create({
-  summaryRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
   nurseRow: {
-    borderTopColor: colors.neutral.border,
-    borderTopWidth: 1,
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.md,
+    paddingVertical: spacing.lg,
+  },
+  nurseInfo: {
+    flex: 1,
     gap: spacing.xs,
-    paddingVertical: spacing.md,
   },
   nurseTopRow: {
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
   },
+  nurseAvatar: {
+    alignItems: "center",
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: 18,
+    borderWidth: 0.5,
+    height: 36,
+    justifyContent: "center",
+    width: 36,
+  },
+  nurseAvatarText: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.action,
+    fontWeight: "500",
+  },
   nurseName: {
-    color: colors.neutral.text,
+    color: colors.neutral.textPrimary,
     fontSize: textSize.md,
-    fontWeight: "700",
+    fontWeight: "500",
   },
   nurseMeta: {
-    color: colors.neutral.mutedText,
+    color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
   },
   roomSection: {
-    borderTopColor: colors.neutral.border,
-    borderTopWidth: 1,
-    gap: spacing.md,
-    paddingVertical: spacing.md,
+    gap: spacing.lg,
+    paddingVertical: spacing.lg,
   },
   roomHeader: {
+    alignItems: "flex-start",
+    flexDirection: "row",
     gap: spacing.sm,
+    justifyContent: "space-between",
   },
   roomTitle: {
-    color: colors.neutral.text,
+    color: colors.neutral.textPrimary,
     fontSize: textSize.md,
-    fontWeight: "700",
+    fontWeight: "500",
   },
-  bedList: {
-    gap: spacing.sm,
+  roomMeta: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    marginTop: spacing.xs,
   },
   boardBed: {
     alignItems: "center",
-    backgroundColor: colors.neutral.background,
-    borderColor: colors.neutral.border,
-    borderRadius: radius.sm,
-    borderWidth: 1,
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.md,
+    borderWidth: 0.5,
     flexDirection: "row",
+    gap: spacing.md,
     justifyContent: "space-between",
-    minHeight: 56,
-    padding: spacing.sm,
+    minHeight: 72,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   emptyBoardBed: {
     opacity: 0.72,
@@ -238,20 +315,63 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     gap: spacing.sm,
+    flex: 1,
   },
   acuityRail: {
-    borderRadius: 3,
-    height: 36,
-    width: 6,
+    borderRadius: 2,
+    height: 44,
+    width: 4,
+  },
+  bedCopy: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  bedTopLine: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  acuityText: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.xs,
   },
   patientText: {
-    color: colors.neutral.mutedText,
+    color: colors.neutral.textPrimary,
     fontSize: textSize.sm,
-    marginTop: spacing.xs,
+  },
+  emptyPatientText: {
+    color: colors.neutral.textSecondary,
   },
   assignedText: {
-    color: colors.neutral.text,
+    color: colors.neutral.textPrimary,
     fontSize: textSize.sm,
-    fontWeight: "700",
+    fontWeight: "500",
+  },
+  loadChip: {
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderRadius: radius.sm,
+    paddingHorizontal: 10,
+    paddingVertical: spacing.xs,
+  },
+  emptyLoadChip: {
+    backgroundColor: colors.status.gray100,
+  },
+  warningLoadChip: {
+    backgroundColor: colors.status.amber50,
+  },
+  loadChipText: {
+    color: colors.neutral.textPrimary,
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  emptyLoadChipText: {
+    color: colors.status.gray800,
+  },
+  warningLoadChipText: {
+    color: colors.status.amber800,
+  },
+  dividedRow: {
+    borderTopColor: colors.neutral.borderTertiary,
+    borderTopWidth: 0.5,
   },
 });

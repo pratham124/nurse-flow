@@ -3,11 +3,14 @@ import { StyleSheet, Text, View } from "react-native";
 
 import {
   BedChip,
+  BedChipRow,
+  ScrollableList,
+  SummaryTile,
+  SummaryTileGrid,
   WorkflowSection,
   WorkflowScreen,
-  SummaryChip,
 } from "../components/workflow";
-import { colors, spacing, textSize } from "../theme/tokens";
+import { colors, radius, spacing, textSize } from "../theme/tokens";
 
 const reviewSides = [
   { name: "AB Side", rooms: [{ label: "101", beds: ["101-1", "101-2"] }] },
@@ -31,25 +34,27 @@ export default function TemplateReviewScreen() {
         title="Template summary"
       >
         <Text style={styles.floorName}>4 North</Text>
-        <View style={styles.summaryRow}>
-          <SummaryChip label="2 rooms" />
-          <SummaryChip label="3 beds" />
-          <SummaryChip label="2 doctor sides" />
-        </View>
+        <SummaryTileGrid>
+          <SummaryTile value="2" label="Rooms" />
+          <SummaryTile value="3" label="Beds" />
+          <SummaryTile value="2" label="Doctor sides" />
+        </SummaryTileGrid>
       </WorkflowSection>
 
       {reviewSides.map((side) => (
         <WorkflowSection key={side.name} title={side.name}>
-          {side.rooms.map((room) => (
-            <View key={room.label} style={styles.roomRow}>
-              <Text style={styles.roomLabel}>Room {room.label}</Text>
-              <View style={styles.bedRow}>
-                {room.beds.map((bed) => (
-                  <BedChip key={bed} label={bed} />
-                ))}
+          <ScrollableList maxHeight={280}>
+            {side.rooms.map((room) => (
+              <View key={room.label} style={styles.roomRow}>
+                <Text style={styles.roomLabel}>Room {room.label}</Text>
+                <BedChipRow>
+                  {room.beds.map((bed) => (
+                    <BedChip key={bed} label={bed} />
+                  ))}
+                </BedChipRow>
               </View>
-            </View>
-          ))}
+            ))}
+          </ScrollableList>
         </WorkflowSection>
       ))}
 
@@ -66,45 +71,34 @@ export default function TemplateReviewScreen() {
 
 const styles = StyleSheet.create({
   floorName: {
-    color: colors.brand.burgundy,
+    color: colors.neutral.textPrimary,
     fontSize: textSize.lg,
-    fontWeight: "700",
-  },
-  summaryRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
+    fontWeight: "500",
   },
   roomRow: {
-    borderTopColor: colors.neutral.border,
-    borderTopWidth: 1,
-    gap: spacing.sm,
-    marginTop: spacing.xs,
-    padding: spacing.md,
+    gap: spacing.md,
+    marginTop: spacing.md,
+    paddingVertical: spacing.lg,
     paddingHorizontal: 0,
   },
   roomLabel: {
-    color: colors.neutral.text,
+    color: colors.neutral.textPrimary,
     fontSize: textSize.md,
-    fontWeight: "700",
-  },
-  bedRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
+    fontWeight: "500",
   },
   editArea: {
-    backgroundColor: colors.brand.warmGold,
-    gap: spacing.xs,
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderRadius: radius.xl,
+    gap: spacing.sm,
     padding: spacing.lg,
   },
   editTitle: {
-    color: colors.neutral.text,
+    color: colors.neutral.textPrimary,
     fontSize: textSize.md,
-    fontWeight: "700",
+    fontWeight: "500",
   },
   editText: {
-    color: colors.neutral.text,
+    color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
     lineHeight: 18,
   },

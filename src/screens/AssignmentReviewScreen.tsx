@@ -2,12 +2,15 @@ import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
 import {
+  CheckCircleIcon,
+  ScrollableList,
+  SummaryTile,
+  SummaryTileGrid,
   WorkflowSection,
   WorkflowScreen,
-  SummaryChip,
 } from "../components/workflow";
 import { assignmentFlow } from "../utils/workflowFlows";
-import { colors, spacing, textSize } from "../theme/tokens";
+import { colors, radius, spacing, textSize } from "../theme/tokens";
 
 const checklistItems = [
   "Admitting side selected",
@@ -35,29 +38,39 @@ export default function AssignmentReviewScreen() {
         note="These counts are placeholders until census and nurse state exist."
         title="Shift summary"
       >
-        <View style={styles.summaryRow}>
-          <SummaryChip label="2/3 occupied" />
-          <SummaryChip label="2 nurses" />
-          <SummaryChip label="11 capacity" />
-          <SummaryChip label="AB admitting" />
-        </View>
+        <SummaryTileGrid>
+          <SummaryTile value="2/3" label="Occupied" />
+          <SummaryTile value="2" label="Nurses" />
+          <SummaryTile value="11" label="Capacity" />
+          <SummaryTile value="AB" label="Admitting" />
+        </SummaryTileGrid>
       </WorkflowSection>
 
       <WorkflowSection
         note="Later, these rows will become real blockers before assignment can run."
         title="Readiness checklist"
       >
-        {checklistItems.map((item) => (
-          <View key={item} style={styles.checkRow}>
-            <Text style={styles.checkMark}>OK</Text>
-            <Text style={styles.checkText}>{item}</Text>
-          </View>
-        ))}
+        <ScrollableList maxHeight={260}>
+          {checklistItems.map((item) => (
+            <View key={item} style={styles.checkRow}>
+              <View style={styles.checkBadge}>
+                <CheckCircleIcon />
+              </View>
+              <Text style={styles.checkText}>{item}</Text>
+            </View>
+          ))}
+        </ScrollableList>
       </WorkflowSection>
 
       <WorkflowSection title="Nurse capacity">
-        <PreviewRow label="Taylor" detail="RN, experienced - 0/5 assigned" />
-        <PreviewRow label="Sam" detail="LPN, mid - 0/6 assigned" />
+        <ScrollableList maxHeight={260}>
+          <PreviewRow label="Taylor" detail="RN, experienced - 0/5 assigned" />
+          <PreviewRow
+            divided
+            label="Sam"
+            detail="LPN, mid - 0/6 assigned"
+          />
+        </ScrollableList>
       </WorkflowSection>
 
       <WorkflowSection
@@ -75,9 +88,17 @@ export default function AssignmentReviewScreen() {
   );
 }
 
-function PreviewRow({ label, detail }: { label: string; detail: string }) {
+function PreviewRow({
+  label,
+  detail,
+  divided = false,
+}: {
+  label: string;
+  detail: string;
+  divided?: boolean;
+}) {
   return (
-    <View style={styles.previewRow}>
+    <View style={[styles.previewRow, divided ? styles.dividedRow : null]}>
       <Text style={styles.previewLabel}>{label}</Text>
       <Text style={styles.previewDetail}>{detail}</Text>
     </View>
@@ -85,57 +106,59 @@ function PreviewRow({ label, detail }: { label: string; detail: string }) {
 }
 
 const styles = StyleSheet.create({
-  summaryRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
   checkRow: {
     alignItems: "center",
-    borderTopColor: colors.neutral.border,
-    borderTopWidth: 1,
+    borderLeftColor: colors.status.greenBorder,
+    borderLeftWidth: 2,
     flexDirection: "row",
-    gap: spacing.sm,
+    gap: 10,
+    paddingLeft: 10,
     paddingVertical: spacing.md,
   },
-  checkMark: {
-    color: colors.acuity.green,
-    fontSize: textSize.sm,
-    fontWeight: "700",
-    minWidth: 28,
+  checkBadge: {
+    alignItems: "center",
+    height: 18,
+    justifyContent: "center",
+    width: 18,
   },
   checkText: {
-    color: colors.neutral.text,
+    color: colors.neutral.textPrimary,
     flex: 1,
     fontSize: textSize.md,
   },
   previewRow: {
-    borderTopColor: colors.neutral.border,
-    borderTopWidth: 1,
-    gap: spacing.xs,
-    paddingVertical: spacing.md,
+    gap: spacing.sm,
+    paddingVertical: spacing.lg,
   },
   previewLabel: {
-    color: colors.neutral.text,
+    color: colors.neutral.textPrimary,
     fontSize: textSize.md,
-    fontWeight: "700",
+    fontWeight: "500",
   },
   previewDetail: {
-    color: colors.neutral.mutedText,
+    color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
   },
   warningRow: {
-    backgroundColor: colors.brand.warmGold,
-    gap: spacing.xs,
-    padding: spacing.md,
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.md,
+    borderWidth: 0.5,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
+  },
+  dividedRow: {
+    borderTopColor: colors.neutral.borderTertiary,
+    borderTopWidth: 0.5,
   },
   warningLabel: {
-    color: colors.neutral.text,
+    color: colors.neutral.textPrimary,
     fontSize: textSize.sm,
-    fontWeight: "700",
+    fontWeight: "500",
   },
   warningText: {
-    color: colors.neutral.text,
+    color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
     lineHeight: 18,
   },

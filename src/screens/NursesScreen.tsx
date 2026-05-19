@@ -5,10 +5,12 @@ import {
   NumberStepperPlaceholder,
   PlaceholderButton,
   PlaceholderInput,
+  ScrollableList,
   SegmentedPlaceholder,
+  SummaryTile,
+  SummaryTileGrid,
   WorkflowSection,
   WorkflowScreen,
-  SummaryChip,
 } from "../components/workflow";
 import { shiftSetupFlow } from "../utils/workflowFlows";
 import { colors, spacing, textSize } from "../theme/tokens";
@@ -48,57 +50,59 @@ export default function NursesScreen() {
         note="Max load is a hard cap for assignment in later tasks."
         title="Shift nurses"
       >
-        <View style={styles.summaryRow}>
-          <SummaryChip label="2 nurses" />
-          <SummaryChip label="11 total capacity" />
-        </View>
+        <SummaryTileGrid>
+          <SummaryTile value="2" label="Nurses" />
+          <SummaryTile value="11" label="Total capacity" />
+        </SummaryTileGrid>
 
-        {previewNurses.map((nurse) => (
-          <View key={`${nurse.name}-${nurse.license}`} style={styles.nurseRow}>
-            <View style={styles.nurseInfo}>
-              <Text style={styles.nurseName}>{nurse.name}</Text>
-              <Text style={styles.nurseMeta}>
-                {nurse.license} - {nurse.experience}
-              </Text>
+        <ScrollableList maxHeight={300}>
+          {previewNurses.map((nurse, index) => (
+            <View
+              key={`${nurse.name}-${nurse.license}`}
+              style={[styles.nurseRow, index > 0 ? styles.dividedRow : null]}
+            >
+              <View style={styles.nurseInfo}>
+                <Text style={styles.nurseName}>{nurse.name}</Text>
+                <Text style={styles.nurseMeta}>
+                  {nurse.license} - {nurse.experience}
+                </Text>
+              </View>
+              <View style={styles.maxLoad}>
+                <Text style={styles.maxLoadLabel}>Max load</Text>
+                <NumberStepperPlaceholder value={nurse.maxLoad} />
+              </View>
             </View>
-            <View style={styles.maxLoad}>
-              <Text style={styles.maxLoadLabel}>Max load</Text>
-              <NumberStepperPlaceholder value={nurse.maxLoad} />
-            </View>
-          </View>
-        ))}
+          ))}
+        </ScrollableList>
       </WorkflowSection>
     </WorkflowScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  summaryRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
   nurseRow: {
     alignItems: "center",
-    borderTopColor: colors.neutral.border,
-    borderTopWidth: 1,
     flexDirection: "row",
     gap: spacing.md,
     justifyContent: "space-between",
-    marginTop: spacing.xs,
-    paddingVertical: spacing.md,
+    marginTop: spacing.md,
+    paddingVertical: spacing.lg,
+  },
+  dividedRow: {
+    borderTopColor: colors.neutral.borderTertiary,
+    borderTopWidth: 0.5,
   },
   nurseInfo: {
     flex: 1,
     gap: spacing.xs,
   },
   nurseName: {
-    color: colors.neutral.text,
+    color: colors.neutral.textPrimary,
     fontSize: textSize.md,
-    fontWeight: "700",
+    fontWeight: "500",
   },
   nurseMeta: {
-    color: colors.neutral.mutedText,
+    color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
   },
   maxLoad: {
@@ -106,8 +110,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   maxLoadLabel: {
-    color: colors.neutral.mutedText,
+    color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
-    fontWeight: "700",
   },
 });

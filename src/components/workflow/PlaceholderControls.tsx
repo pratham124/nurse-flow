@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { colors, radius, spacing, textSize } from "../../theme/tokens";
+import { MinusIcon, PlusIcon } from "./Icons";
 
 type PlaceholderInputProps = {
   label: string;
@@ -13,23 +15,35 @@ export function PlaceholderInput({
   placeholder,
   helperText,
 }: PlaceholderInputProps) {
+  const [isFocused, setIsFocused] = useState(false);
+
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput
-        editable={false}
-        placeholder={placeholder}
-        placeholderTextColor={colors.neutral.mutedText}
-        style={styles.input}
-      />
+      <View style={[styles.inputRing, isFocused ? styles.focusedInputRing : null]}>
+        <TextInput
+          onBlur={() => setIsFocused(false)}
+          onFocus={() => setIsFocused(true)}
+          placeholder={placeholder}
+          placeholderTextColor={colors.neutral.textTertiary}
+          style={[styles.input, isFocused ? styles.focusedInput : null]}
+        />
+      </View>
       {helperText ? <Text style={styles.fieldHelper}>{helperText}</Text> : null}
     </View>
   );
 }
 
 export function PlaceholderButton({ label }: { label: string }) {
+  const isAddRoom = label === "Add room";
+
   return (
-    <View style={styles.secondaryButton}>
+    <View
+      style={[
+        styles.secondaryButton,
+        isAddRoom ? styles.addRoomButton : null,
+      ]}
+    >
       <Text style={styles.secondaryButtonText}>{label}</Text>
     </View>
   );
@@ -38,9 +52,13 @@ export function PlaceholderButton({ label }: { label: string }) {
 export function NumberStepperPlaceholder({ value }: { value: string }) {
   return (
     <View style={styles.stepper}>
-      <Text style={styles.stepperButton}>-</Text>
+      <View style={styles.stepperButton}>
+        <MinusIcon />
+      </View>
       <Text style={styles.stepperValue}>{value}</Text>
-      <Text style={styles.stepperButton}>+</Text>
+      <View style={styles.stepperButton}>
+        <PlusIcon />
+      </View>
     </View>
   );
 }
@@ -85,89 +103,102 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   label: {
-    color: colors.neutral.text,
-    fontSize: textSize.sm,
-    fontWeight: "700",
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.md,
+  },
+  inputRing: {
+    borderRadius: 12,
+    padding: 2,
+  },
+  focusedInputRing: {
+    backgroundColor: colors.brand.burgundy12,
   },
   input: {
-    backgroundColor: colors.neutral.background,
-    borderColor: colors.neutral.border,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    color: colors.neutral.text,
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.md,
+    borderWidth: 0.5,
+    color: colors.neutral.textPrimary,
     fontSize: textSize.md,
     minHeight: 48,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  focusedInput: {
+    borderColor: colors.brand.burgundy,
   },
   fieldHelper: {
-    color: colors.neutral.mutedText,
+    color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
     lineHeight: 18,
   },
   secondaryButton: {
     alignItems: "center",
-    borderColor: colors.brand.burgundy,
-    borderRadius: radius.md,
-    borderWidth: 1,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
     minHeight: 44,
     justifyContent: "center",
     paddingHorizontal: spacing.md,
   },
+  addRoomButton: {
+    borderColor: colors.brand.burgundy,
+    borderWidth: 1,
+  },
   secondaryButtonText: {
-    color: colors.brand.burgundy,
-    fontSize: textSize.md,
-    fontWeight: "700",
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.action,
   },
   stepper: {
     alignItems: "center",
     flexDirection: "row",
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   stepperButton: {
-    backgroundColor: colors.neutral.background,
-    borderColor: colors.neutral.border,
+    alignItems: "center",
+    backgroundColor: colors.neutral.backgroundPrimary,
+    borderColor: colors.neutral.borderSecondary,
     borderRadius: radius.sm,
-    borderWidth: 1,
-    color: colors.brand.burgundy,
-    fontSize: textSize.lg,
-    fontWeight: "700",
-    minHeight: 44,
-    minWidth: 44,
-    overflow: "hidden",
-    textAlign: "center",
-    textAlignVertical: "center",
+    borderWidth: 0.5,
+    height: 30,
+    justifyContent: "center",
+    width: 30,
   },
   stepperValue: {
-    color: colors.neutral.text,
-    fontSize: textSize.md,
-    fontWeight: "700",
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.action,
+    fontWeight: "500",
     minWidth: 24,
     textAlign: "center",
   },
   segmented: {
-    borderColor: colors.neutral.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderRadius: 12,
     flexDirection: "row",
+    gap: 3,
     overflow: "hidden",
+    padding: 3,
   },
   segmentOption: {
     alignItems: "center",
+    borderRadius: radius.md,
     flex: 1,
-    minHeight: 44,
     justifyContent: "center",
+    minHeight: 44,
     paddingHorizontal: spacing.sm,
   },
   selectedSegmentOption: {
-    backgroundColor: colors.brand.lavender,
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderSecondary,
+    borderWidth: 0.5,
   },
   segmentText: {
-    color: colors.neutral.mutedText,
-    fontSize: textSize.sm,
-    fontWeight: "700",
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.md,
     textAlign: "center",
   },
   selectedSegmentText: {
-    color: colors.neutral.text,
+    color: colors.neutral.textPrimary,
+    fontWeight: "500",
   },
 });

@@ -4,9 +4,10 @@ import { StyleSheet, Text, View } from "react-native";
 import {
   NumberStepperPlaceholder,
   SegmentedPlaceholder,
+  SummaryTile,
+  SummaryTileGrid,
   WorkflowSection,
   WorkflowScreen,
-  SummaryChip,
 } from "../components/workflow";
 import { shiftSetupFlow } from "../utils/workflowFlows";
 import { colors, spacing, textSize } from "../theme/tokens";
@@ -28,11 +29,11 @@ export default function StartShiftScreen() {
         note="This summary previews the saved floor template that will start a local shift later."
         title="4 North template"
       >
-        <View style={styles.summaryRow}>
-          <SummaryChip label="2 doctor sides" />
-          <SummaryChip label="2 rooms" />
-          <SummaryChip label="3 beds" />
-        </View>
+        <SummaryTileGrid>
+          <SummaryTile value="2" label="Doctor sides" />
+          <SummaryTile value="2" label="Rooms" />
+          <SummaryTile value="3" label="Beds" />
+        </SummaryTileGrid>
       </WorkflowSection>
 
       <WorkflowSection
@@ -67,32 +68,25 @@ export default function StartShiftScreen() {
 }
 
 const styles = StyleSheet.create({
-  summaryRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
   limitRow: {
     alignItems: "center",
-    borderTopColor: colors.neutral.border,
-    borderTopWidth: 1,
     flexDirection: "row",
     gap: spacing.md,
     justifyContent: "space-between",
-    marginTop: spacing.xs,
-    paddingVertical: spacing.md,
+    marginTop: spacing.md,
+    paddingVertical: spacing.lg,
   },
   limitText: {
     flex: 1,
     gap: spacing.xs,
   },
   limitTitle: {
-    color: colors.neutral.text,
+    color: colors.neutral.textPrimary,
     fontSize: textSize.md,
-    fontWeight: "700",
+    fontWeight: "500",
   },
   limitMeta: {
-    color: colors.neutral.mutedText,
+    color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
     lineHeight: 18,
   },

@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { HospitalIcon } from "../components/workflow";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
 
 export default function Index() {
@@ -20,7 +21,7 @@ export default function Index() {
 
         <View style={styles.emptyState}>
           <View style={styles.emptyIcon}>
-            <Text style={styles.emptyIconText}>NF</Text>
+            <HospitalIcon />
           </View>
           <Text style={styles.emptyTitle}>No local floor yet.</Text>
           <Text style={styles.emptyText}>
@@ -47,19 +48,17 @@ export default function Index() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.neutral.background,
+    backgroundColor: colors.neutral.backgroundPrimary,
   },
   header: {
-    backgroundColor: colors.neutral.surface,
-    borderBottomColor: colors.neutral.border,
-    borderBottomWidth: 1,
+    backgroundColor: colors.neutral.backgroundPrimary,
     gap: spacing.xs,
     padding: spacing.xl,
     paddingBottom: spacing.lg,
   },
   content: {
     flex: 1,
-    gap: spacing.lg,
+    gap: spacing.cardGap,
     padding: spacing.xl,
   },
   sectionHeader: {
@@ -68,25 +67,25 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   title: {
-    color: colors.brand.burgundy,
+    color: colors.neutral.textPrimary,
     fontSize: textSize.xl,
-    fontWeight: "700",
+    fontWeight: "500",
   },
   subtitle: {
-    color: colors.neutral.mutedText,
-    fontSize: textSize.md,
+    color: colors.neutral.textSecondary,
+    fontSize: 13,
+    marginTop: 2,
   },
   sectionTitle: {
-    color: colors.neutral.text,
+    color: colors.neutral.textPrimary,
     fontSize: textSize.lg,
-    fontWeight: "700",
+    fontWeight: "500",
   },
   sectionCount: {
-    backgroundColor: colors.brand.lightBlue,
-    borderRadius: radius.md,
-    color: colors.neutral.text,
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderRadius: radius.pill,
+    color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
-    fontWeight: "700",
     minWidth: 32,
     overflow: "hidden",
     paddingHorizontal: spacing.sm,
@@ -95,55 +94,50 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     alignItems: "center",
-    backgroundColor: colors.neutral.surface,
-    borderColor: colors.neutral.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    gap: spacing.sm,
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.xl,
+    borderWidth: 0.5,
+    gap: spacing.md,
     padding: spacing.xl,
   },
   emptyIcon: {
     alignItems: "center",
-    backgroundColor: colors.brand.lightBlue,
-    borderRadius: radius.md,
-    height: 48,
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderRadius: 28,
+    height: 56,
     justifyContent: "center",
-    width: 48,
-  },
-  emptyIconText: {
-    color: colors.brand.burgundy,
-    fontSize: textSize.md,
-    fontWeight: "700",
+    width: 56,
   },
   emptyTitle: {
-    color: colors.neutral.text,
-    fontSize: textSize.lg,
-    fontWeight: "700",
+    color: colors.neutral.textPrimary,
+    fontSize: 17,
+    fontWeight: "500",
     textAlign: "center",
   },
   emptyText: {
-    color: colors.neutral.mutedText,
-    fontSize: textSize.md,
-    lineHeight: 22,
+    color: colors.neutral.textSecondary,
+    fontSize: 13,
+    lineHeight: 20,
+    maxWidth: 260,
     textAlign: "center",
   },
   actionBar: {
-    backgroundColor: colors.neutral.surface,
-    borderTopColor: colors.neutral.border,
-    borderTopWidth: 1,
+    backgroundColor: colors.neutral.backgroundPrimary,
     padding: spacing.xl,
   },
   primaryButton: {
     alignItems: "center",
     backgroundColor: colors.brand.burgundy,
-    borderRadius: radius.md,
-    minHeight: 52,
+    borderRadius: radius.lg,
+    height: 52,
     justifyContent: "center",
+    marginHorizontal: spacing.xl,
     paddingHorizontal: spacing.lg,
   },
   primaryButtonText: {
     color: colors.neutral.surface,
-    fontSize: textSize.md,
-    fontWeight: "700",
+    fontSize: textSize.action,
+    fontWeight: "500",
   },
 });

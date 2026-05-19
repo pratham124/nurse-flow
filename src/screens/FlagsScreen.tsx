@@ -2,9 +2,14 @@ import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
 import {
+  FilterChip,
+  FilterChipRow,
+  ScrollableList,
+  SeverityBadge as SeverityPill,
+  SummaryTile,
+  SummaryTileGrid,
   WorkflowSection,
   WorkflowScreen,
-  SummaryChip,
 } from "../components/workflow";
 import { assignmentFlow } from "../utils/workflowFlows";
 import { colors, spacing, textSize } from "../theme/tokens";
@@ -36,78 +41,69 @@ export default function FlagsScreen() {
       title="Flags"
     >
       <WorkflowSection title="Flag summary">
-        <View style={styles.summaryRow}>
-          <SummaryChip label="0 critical" />
-          <SummaryChip label="1 warning" />
-          <SummaryChip label="1 info" />
-        </View>
+        <SummaryTileGrid>
+          <SummaryTile value="0" label="Critical" />
+          <SummaryTile value="1" label="Warning" />
+          <SummaryTile value="1" label="Info" />
+        </SummaryTileGrid>
       </WorkflowSection>
 
       <WorkflowSection title="Filters">
-        <View style={styles.summaryRow}>
-          {["All", "Critical", "Warning", "Info"].map((filter) => (
-            <SummaryChip key={filter} label={filter} />
+        <FilterChipRow>
+          {["All", "Critical", "Warning", "Info"].map((filter, index) => (
+            <FilterChip key={filter} label={filter} selected={index === 0} />
           ))}
-        </View>
+        </FilterChipRow>
       </WorkflowSection>
 
       <WorkflowSection
         note="Flags are local and informational in Phase 1. They do not imply push notifications."
         title="Flag list"
       >
-        {flags.map((flag) => (
-          <View key={`${flag.severity}-${flag.target}`} style={styles.flagRow}>
-            <View style={styles.flagTopRow}>
-              <Text
-                style={[
-                  styles.severity,
-                  flag.severity === "Warning" ? styles.warningSeverity : null,
-                ]}
-              >
-                {flag.severity}
-              </Text>
-              <Text style={styles.target}>{flag.target}</Text>
+        <ScrollableList maxHeight={280}>
+          {flags.map((flag) => (
+            <View key={`${flag.severity}-${flag.target}`} style={styles.flagRow}>
+              <View style={styles.flagTopRow}>
+                <FlagSeverityBadge severity={flag.severity} />
+                <Text style={styles.target}>{flag.target}</Text>
+              </View>
+              <Text style={styles.message}>{flag.message}</Text>
             </View>
-            <Text style={styles.message}>{flag.message}</Text>
-          </View>
-        ))}
+          ))}
+        </ScrollableList>
       </WorkflowSection>
     </WorkflowScreen>
   );
 }
 
+function FlagSeverityBadge({ severity }: { severity: string }) {
+  const tone =
+    severity === "Critical"
+      ? "critical"
+      : severity === "Warning"
+        ? "warning"
+        : "info";
+
+  return <SeverityPill label={severity} tone={tone} />;
+}
+
 const styles = StyleSheet.create({
-  summaryRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
   flagRow: {
-    borderTopColor: colors.neutral.border,
-    borderTopWidth: 1,
-    gap: spacing.xs,
-    paddingVertical: spacing.md,
+    gap: spacing.sm,
+    paddingVertical: spacing.lg,
   },
   flagTopRow: {
     alignItems: "center",
     flexDirection: "row",
     gap: spacing.sm,
   },
-  severity: {
-    color: colors.neutral.mutedText,
-    fontSize: textSize.sm,
-    fontWeight: "700",
-  },
-  warningSeverity: {
-    color: colors.acuity.yellow,
-  },
   target: {
-    color: colors.neutral.text,
+    color: colors.neutral.textPrimary,
     fontSize: textSize.md,
-    fontWeight: "700",
+    fontWeight: "500",
   },
   message: {
-    color: colors.neutral.mutedText,
+    color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
     lineHeight: 18,
   },

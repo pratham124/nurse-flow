@@ -6,7 +6,7 @@ import {
   WorkflowSection,
   WorkflowScreen,
 } from "../components/workflow";
-import { colors, spacing, textSize } from "../theme/tokens";
+import { colors, radius, spacing, textSize } from "../theme/tokens";
 
 export default function FloorDetailsScreen() {
   return (
@@ -43,17 +43,18 @@ export default function FloorDetailsScreen() {
 
 const styles = StyleSheet.create({
   callout: {
-    backgroundColor: colors.brand.lightBlue,
-    gap: spacing.xs,
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderRadius: radius.xl,
+    gap: spacing.sm,
     padding: spacing.lg,
   },
   calloutTitle: {
-    color: colors.neutral.text,
+    color: colors.neutral.textPrimary,
     fontSize: textSize.md,
-    fontWeight: "700",
+    fontWeight: "500",
   },
   calloutText: {
-    color: colors.neutral.text,
+    color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
     lineHeight: 18,
   },

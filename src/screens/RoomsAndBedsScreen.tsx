@@ -3,9 +3,11 @@ import { StyleSheet, Text, View } from "react-native";
 
 import {
   BedChip,
+  BedChipRow,
   NumberStepperPlaceholder,
   PlaceholderButton,
   PlaceholderInput,
+  ScrollableList,
   WorkflowSection,
   WorkflowScreen,
 } from "../components/workflow";
@@ -41,23 +43,25 @@ export default function RoomsAndBedsScreen() {
       </WorkflowSection>
 
       <WorkflowSection note="Sample room rows for the static path." title="Rooms">
-        {previewRooms.map((room) => (
-          <View key={room.label} style={styles.roomRow}>
-            <View style={styles.roomTopRow}>
-              <View>
-                <Text style={styles.roomLabel}>Room {room.label}</Text>
-                <Text style={styles.roomMeta}>{room.beds.length} beds</Text>
+        <ScrollableList maxHeight={340}>
+          {previewRooms.map((room) => (
+            <View key={room.label} style={styles.roomRow}>
+              <View style={styles.roomTopRow}>
+                <View>
+                  <Text style={styles.roomLabel}>Room {room.label}</Text>
+                  <Text style={styles.roomMeta}>{room.beds.length} beds</Text>
+                </View>
+                <NumberStepperPlaceholder value={room.bedCount} />
               </View>
-              <NumberStepperPlaceholder value={room.bedCount} />
-            </View>
 
-            <View style={styles.bedRow}>
-              {room.beds.map((bed) => (
-                <BedChip key={bed} label={bed} />
-              ))}
+              <BedChipRow>
+                {room.beds.map((bed) => (
+                  <BedChip key={bed} label={bed} />
+                ))}
+              </BedChipRow>
             </View>
-          </View>
-        ))}
+          ))}
+        </ScrollableList>
       </WorkflowSection>
     </WorkflowScreen>
   );
@@ -65,11 +69,9 @@ export default function RoomsAndBedsScreen() {
 
 const styles = StyleSheet.create({
   roomRow: {
-    borderTopColor: colors.neutral.border,
-    borderTopWidth: 1,
-    gap: spacing.md,
-    marginTop: spacing.xs,
-    padding: spacing.md,
+    gap: spacing.lg,
+    marginTop: spacing.md,
+    paddingVertical: spacing.lg,
     paddingHorizontal: 0,
   },
   roomTopRow: {
@@ -78,17 +80,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   roomLabel: {
-    color: colors.neutral.text,
+    color: colors.neutral.textPrimary,
     fontSize: textSize.md,
-    fontWeight: "700",
+    fontWeight: "500",
   },
   roomMeta: {
-    color: colors.neutral.mutedText,
+    color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
-  },
-  bedRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
   },
 });

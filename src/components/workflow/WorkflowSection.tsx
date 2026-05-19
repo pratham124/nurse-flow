@@ -27,23 +27,23 @@ export function WorkflowSection({
 
 const styles = StyleSheet.create({
   section: {
-    backgroundColor: colors.neutral.surface,
-    borderColor: colors.neutral.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    gap: spacing.md,
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.xl,
+    borderWidth: 0.5,
+    gap: spacing.lg,
     padding: spacing.lg,
   },
   sectionHeader: {
     gap: spacing.xs,
   },
   sectionTitle: {
-    color: colors.neutral.text,
+    color: colors.neutral.textPrimary,
     fontSize: textSize.lg,
-    fontWeight: "700",
+    fontWeight: "500",
   },
   sectionNote: {
-    color: colors.neutral.mutedText,
+    color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
     lineHeight: 18,
   },

@@ -3,10 +3,12 @@ import { StyleSheet, Text, View } from "react-native";
 
 import {
   PlaceholderInput,
+  ScrollableList,
   SegmentedPlaceholder,
+  SummaryTile,
+  SummaryTileGrid,
   WorkflowSection,
   WorkflowScreen,
-  SummaryChip,
 } from "../components/workflow";
 import { colors, spacing, textSize } from "../theme/tokens";
 
@@ -39,49 +41,44 @@ export default function DoctorSidesScreen() {
         note="Every room will eventually belong to exactly one side."
         title="Room assignments"
       >
-        <View style={styles.summaryRow}>
-          <SummaryChip label="AB Side: 1 room" />
-          <SummaryChip label="SK Side: 1 room" />
-        </View>
+        <SummaryTileGrid>
+          <SummaryTile value="AB Side" label="1 room" />
+          <SummaryTile value="SK Side" label="1 room" />
+        </SummaryTileGrid>
 
-        {previewAssignments.map((assignment) => (
-          <View key={assignment.room} style={styles.assignmentRow}>
-            <View>
-              <Text style={styles.roomLabel}>Room {assignment.room}</Text>
-              <Text style={styles.roomMeta}>Choose one doctor side</Text>
+        <ScrollableList maxHeight={320}>
+          {previewAssignments.map((assignment) => (
+            <View key={assignment.room} style={styles.assignmentRow}>
+              <View>
+                <Text style={styles.roomLabel}>Room {assignment.room}</Text>
+                <Text style={styles.roomMeta}>Choose one doctor side</Text>
+              </View>
+              <SegmentedPlaceholder
+                options={["AB Side", "SK Side"]}
+                selectedIndex={assignment.selectedIndex}
+              />
             </View>
-            <SegmentedPlaceholder
-              options={["AB Side", "SK Side"]}
-              selectedIndex={assignment.selectedIndex}
-            />
-          </View>
-        ))}
+          ))}
+        </ScrollableList>
       </WorkflowSection>
     </WorkflowScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  summaryRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
   assignmentRow: {
-    borderTopColor: colors.neutral.border,
-    borderTopWidth: 1,
-    gap: spacing.sm,
-    marginTop: spacing.xs,
-    padding: spacing.md,
+    gap: spacing.md,
+    marginTop: spacing.md,
+    paddingVertical: spacing.lg,
     paddingHorizontal: 0,
   },
   roomLabel: {
-    color: colors.neutral.text,
+    color: colors.neutral.textPrimary,
     fontSize: textSize.md,
-    fontWeight: "700",
+    fontWeight: "500",
   },
   roomMeta: {
-    color: colors.neutral.mutedText,
+    color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
   },
 });

@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { WorkflowFlowStep } from "../../utils/workflowFlows";
-import { colors, radius, spacing, textSize } from "../../theme/tokens";
+import { colors, spacing, textSize } from "../../theme/tokens";
 import type { WorkflowStep } from "./types";
 
 type StepIndicatorProps = {
@@ -26,15 +26,13 @@ export function StepIndicator({ activeStep, flow }: StepIndicatorProps) {
             key={step}
             onPress={() => router.push(route)}
             style={[
-              styles.stepChip,
+              styles.tab,
               isActive ? styles.activeStepChip : null,
-              isComplete ? styles.completeStepChip : null,
-              isComplete ? styles.stepButton : null,
             ]}
           >
             <Text
               style={[
-                styles.stepText,
+                styles.tabText,
                 isActive ? styles.activeStepText : null,
               ]}
             >
@@ -49,36 +47,28 @@ export function StepIndicator({ activeStep, flow }: StepIndicatorProps) {
 
 const styles = StyleSheet.create({
   stepRow: {
+    backgroundColor: colors.neutral.backgroundPrimary,
     flexDirection: "row",
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
-  stepChip: {
-    borderColor: colors.neutral.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
+  tab: {
+    alignItems: "center",
+    borderRadius: 20,
     flex: 1,
-    minHeight: 36,
     justifyContent: "center",
+    minHeight: 44,
     paddingHorizontal: spacing.xs,
   },
   activeStepChip: {
     backgroundColor: colors.brand.burgundy,
-    borderColor: colors.brand.burgundy,
   },
-  completeStepChip: {
-    backgroundColor: colors.brand.softGreen,
-    borderColor: colors.brand.softGreen,
-  },
-  stepButton: {
-    borderColor: colors.brand.burgundy,
-  },
-  stepText: {
-    color: colors.neutral.mutedText,
+  tabText: {
+    color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
-    fontWeight: "700",
     textAlign: "center",
   },
   activeStepText: {
     color: colors.neutral.surface,
+    fontWeight: "500",
   },
 });

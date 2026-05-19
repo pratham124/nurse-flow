@@ -6,6 +6,7 @@ import { floorTemplateFlow } from "../../utils/workflowFlows";
 import type { WorkflowFlowStep } from "../../utils/workflowFlows";
 import { colors, radius, spacing, textSize } from "../../theme/tokens";
 import { StepIndicator } from "./StepIndicator";
+import { HomeIcon } from "./Icons";
 import type { WorkflowStep } from "./types";
 
 type WorkflowScreenProps = {
@@ -33,6 +34,11 @@ export function WorkflowScreen({
   onPrimaryPress,
   helperText,
 }: WorkflowScreenProps) {
+  const activeStepIndex = flow.findIndex(
+    (flowStep) => flowStep.step === activeStep,
+  );
+  const showSubtitle = !/^Step \d+ of \d+$/.test(subtitle);
+
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.header}>
@@ -40,15 +46,21 @@ export function WorkflowScreen({
           <Text style={styles.title}>{title}</Text>
           {headerActionLabel && onHeaderActionPress ? (
             <Pressable
+              accessibilityLabel={headerActionLabel}
               accessibilityRole="button"
+              hitSlop={4}
               onPress={onHeaderActionPress}
               style={styles.headerAction}
             >
-              <Text style={styles.headerActionText}>{headerActionLabel}</Text>
+              <HomeIcon />
             </Pressable>
           ) : null}
         </View>
-        <Text style={styles.subtitle}>{subtitle}</Text>
+        {showSubtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+        <SegmentedProgress
+          activeIndex={activeStepIndex}
+          segmentCount={flow.length}
+        />
       </View>
 
       <ScrollView
@@ -75,18 +87,43 @@ export function WorkflowScreen({
   );
 }
 
+function SegmentedProgress({
+  activeIndex,
+  segmentCount,
+}: {
+  activeIndex: number;
+  segmentCount: number;
+}) {
+  return (
+    <View
+      accessibilityLabel={`Step ${activeIndex + 1} of ${segmentCount}`}
+      accessibilityRole="progressbar"
+      style={styles.progressRow}
+    >
+      {Array.from({ length: segmentCount }).map((_, index) => (
+        <View
+          key={index}
+          style={[
+            styles.progressSegment,
+            index < activeIndex ? styles.completedProgressSegment : null,
+            index === activeIndex ? styles.activeProgressSegment : null,
+          ]}
+        />
+      ))}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.neutral.background,
+    backgroundColor: colors.neutral.backgroundPrimary,
   },
   header: {
-    backgroundColor: colors.neutral.surface,
-    borderBottomColor: colors.neutral.border,
-    borderBottomWidth: 1,
-    gap: spacing.xs,
+    backgroundColor: colors.neutral.backgroundPrimary,
+    gap: 2,
     padding: spacing.xl,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.sm,
   },
   headerTopRow: {
     alignItems: "center",
@@ -95,47 +132,60 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   title: {
-    color: colors.brand.burgundy,
+    color: colors.neutral.textPrimary,
     flex: 1,
     fontSize: textSize.xl,
-    fontWeight: "700",
+    fontWeight: "500",
   },
   headerAction: {
     alignItems: "center",
-    borderColor: colors.brand.burgundy,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    minHeight: 44,
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: 18,
+    borderWidth: 0.5,
+    height: 36,
     justifyContent: "center",
-    paddingHorizontal: spacing.md,
-  },
-  headerActionText: {
-    color: colors.brand.burgundy,
-    fontSize: textSize.sm,
-    fontWeight: "700",
+    width: 36,
   },
   subtitle: {
-    color: colors.neutral.mutedText,
-    fontSize: textSize.md,
+    color: colors.neutral.textSecondary,
+    fontSize: 13,
+    marginTop: 2,
+  },
+  progressRow: {
+    flexDirection: "row",
+    gap: spacing.xs,
+    paddingTop: spacing.sm,
+  },
+  progressSegment: {
+    backgroundColor: colors.neutral.borderTertiary,
+    borderRadius: 2,
+    flex: 1,
+    height: 3,
+  },
+  completedProgressSegment: {
+    backgroundColor: colors.brand.burgundy,
+  },
+  activeProgressSegment: {
+    backgroundColor: colors.brand.burgundyLight,
   },
   content: {
-    gap: spacing.lg,
+    gap: spacing.cardGap,
     padding: spacing.xl,
     paddingBottom: spacing.xl,
   },
   actionBar: {
-    backgroundColor: colors.neutral.surface,
-    borderTopColor: colors.neutral.border,
-    borderTopWidth: 1,
+    backgroundColor: colors.neutral.backgroundPrimary,
     gap: spacing.sm,
-    padding: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: 0,
   },
   actionRow: {
     flexDirection: "row",
     gap: spacing.sm,
   },
   helperText: {
-    color: colors.neutral.mutedText,
+    color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
     lineHeight: 18,
     textAlign: "center",
@@ -143,15 +193,17 @@ const styles = StyleSheet.create({
   primaryButton: {
     alignItems: "center",
     backgroundColor: colors.brand.burgundy,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     flex: 1,
-    minHeight: 52,
+    height: 52,
     justifyContent: "center",
+    marginBottom: 24,
+    marginHorizontal: spacing.xl,
     paddingHorizontal: spacing.lg,
   },
   primaryButtonText: {
     color: colors.neutral.surface,
-    fontSize: textSize.md,
-    fontWeight: "700",
+    fontSize: textSize.action,
+    fontWeight: "500",
   },
 });
