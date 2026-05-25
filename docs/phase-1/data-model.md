@@ -311,7 +311,7 @@ interface Flag {
 This is a simple shape for React state. It avoids backend-style normalization while staying easy to reason about.
 
 ```ts
-interface NurseFlowPhase1State {
+interface LocalAppState {
   floorTemplates: FloorTemplate[];
   activeShift?: Shift;
 }

@@ -161,8 +161,6 @@ Story coverage: US1-US18
 Build:
 
 - Add a simple state shape with `floorTemplates` and optional `activeShift`.
-- Use beginner-friendly React state or reducer patterns.
-- Do not add Redux, Zustand, backend persistence, or offline sync in this task.
 
 Validation check:
 
@@ -205,7 +203,7 @@ Build:
 
 Validation check:
 
-- If `4 North` exists, entering `4 North` or ` 4 North ` shows a duplicate-name validation message and does not create another template.
+- If `4 North` exists, entering `4 North` or `4 North` shows a duplicate-name validation message and does not create another template.
 
 ### Task 3.3: US2 Add Room
 

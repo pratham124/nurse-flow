@@ -3,9 +3,13 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { HospitalIcon } from "../components/workflow";
+import { useLocalState } from "../store/LocalStateContext";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
 
 export default function Index() {
+  const { localState } = useLocalState();
+  const floorTemplateCount = localState.floorTemplates.length;
+
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.header}>
@@ -16,7 +20,7 @@ export default function Index() {
       <View style={styles.content}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Floor templates</Text>
-          <Text style={styles.sectionCount}>0</Text>
+          <Text style={styles.sectionCount}>{floorTemplateCount}</Text>
         </View>
 
         <View style={styles.emptyState}>

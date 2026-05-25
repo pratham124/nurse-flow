@@ -129,7 +129,7 @@ export interface Flag {
   teamId?: LocalId;
 }
 
-export interface NurseFlowPhase1State {
+export interface LocalAppState {
   floorTemplates: FloorTemplate[];
   activeShift?: Shift;
 }
