@@ -11,6 +11,7 @@ The model is local-first and can live in React state. It can also be saved to lo
 - Store template structure separately from active shift state.
 - Store patient, acuity, nurse, assignment, and flags on the active shift, not on the reusable floor template.
 - Use IDs to connect entities instead of deeply nesting everything.
+- If a child object is stored inside its parent, it does not also need the parent's ID.
 - Keep future backend fields out of the core Phase 1 model.
 
 ## Shared Types
@@ -58,7 +59,6 @@ interface FloorTemplate {
 ### Relationships
 
 - `FloorTemplate` has exactly two `DoctorSide` records in Phase 1.
-- `Room.floorTemplateId` points to the template.
 - `Room.doctorSideId` points to one doctor side.
 - `Bed.roomId` points to one room.
 
@@ -69,7 +69,6 @@ Doctor sides are part of a floor template. Phase 1 has exactly two.
 ```ts
 interface DoctorSide {
   id: LocalId;
-  floorTemplateId: LocalId;
   name: string;
 }
 ```
@@ -81,10 +80,9 @@ A room belongs to one floor template and one doctor side.
 ```ts
 interface Room {
   id: LocalId;
-  floorTemplateId: LocalId;
   doctorSideId: LocalId;
   label: string;
-  defaultBedCount: number;
+  bedCount: number;
 }
 ```
 
@@ -95,7 +93,6 @@ A bed belongs to one room. Beds are generated from the room label and bed count.
 ```ts
 interface Bed {
   id: LocalId;
-  floorTemplateId: LocalId;
   roomId: LocalId;
   label: string;
   bedNumber: number;
@@ -164,7 +161,6 @@ Nurses are shift-specific in Phase 1.
 ```ts
 interface Nurse {
   id: LocalId;
-  shiftId: LocalId;
   name: string;
   licenseType: LicenseType;
   experienceLevel: ExperienceLevel;
@@ -179,7 +175,6 @@ interface Nurse {
 ```ts
 interface BedState {
   id: LocalId;
-  shiftId: LocalId;
   bedId: LocalId;
   patient?: Patient;
   acuity?: Acuity;
@@ -220,7 +215,6 @@ Assignment is one local action from the charge nurse's point of view. Internally
 ```ts
 interface AssignmentResult {
   id: LocalId;
-  shiftId: LocalId;
   generatedTeams: GeneratedTeam[];
   roomCoverage: RoomCoverage[];
   bedAssignments: BedAssignment[];
@@ -234,7 +228,6 @@ Generated teams are local algorithm output. They are not user accounts or perman
 ```ts
 interface GeneratedTeam {
   id: LocalId;
-  shiftId: LocalId;
   label: string;
   nurseIds: LocalId[];
 }
@@ -253,7 +246,6 @@ Room coverage says which nurses are eligible and expected to cover beds in a roo
 ```ts
 interface RoomCoverage {
   id: LocalId;
-  shiftId: LocalId;
   roomId: LocalId;
   nurseIds: LocalId[];
 }
@@ -273,7 +265,6 @@ Bed assignment is the final patient-to-nurse result.
 ```ts
 interface BedAssignment {
   id: LocalId;
-  shiftId: LocalId;
   bedId: LocalId;
   nurseId: LocalId;
 }
@@ -294,7 +285,6 @@ Flags are local warnings or validation messages for the charge nurse.
 ```ts
 interface Flag {
   id: LocalId;
-  shiftId: LocalId;
   type: FlagType;
   severity: FlagSeverity;
   message: string;
