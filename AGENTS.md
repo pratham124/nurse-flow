@@ -147,3 +147,4 @@ A task is done only when:
 - Code changes are explained clearly.
 - The implementation stays within the current phase.
 - I can explain the changed code myself.
+- The relevant task tracking document is updated with a done marker for the completed task.

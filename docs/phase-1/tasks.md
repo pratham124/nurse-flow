@@ -6,6 +6,11 @@ Phase 1 stays local-only. Do not add backend, auth, realtime collaboration, push
 
 Each task should be small enough for one focused Codex session. Each task includes a validation check that should be manually tested before moving on.
 
+Status legend:
+
+- ✅ Done
+- No marker means not done yet.
+
 ## Build Order Summary
 
 1. Set up the Phase 1 app shell.
@@ -20,7 +25,7 @@ Each task should be small enough for one focused Codex session. Each task includ
 
 ## Setup Tasks
 
-### Task 0.1: Confirm Phase 1 Scope Guardrails
+### ✅ Task 0.1: Confirm Phase 1 Scope Guardrails
 
 Story coverage: US18
 
@@ -33,7 +38,7 @@ Validation check:
 
 - You can point to the Phase 1 docs and explain what is included and excluded before writing feature code.
 
-### Task 0.2: Define Phase 1 Screen List
+### ✅ Task 0.2: Define Phase 1 Screen List
 
 Story coverage: US1-US18
 
@@ -47,7 +52,7 @@ Validation check:
 
 - The app has a clear screen list that matches the Phase 1 screen map.
 
-### Task 0.3: Add Basic Visual Tokens
+### ✅ Task 0.3: Add Basic Visual Tokens
 
 Story coverage: US18
 
@@ -63,7 +68,7 @@ Validation check:
 
 ## Navigation and Static Screens First
 
-### Task 1.1: Add Local Workspace Static Screen
+### ✅ Task 1.1: Add Local Workspace Static Screen
 
 Story coverage: US1, US18
 
@@ -78,7 +83,7 @@ Validation check:
 
 - Opening the app shows the Local Workspace without needing any data, account, network, or setup.
 
-### Task 1.2: Add Static Floor Template Setup Screens
+### ✅ Task 1.2: Add Static Floor Template Setup Screens
 
 Story coverage: US1-US6
 
@@ -94,7 +99,7 @@ Validation check:
 
 - A tester can navigate through the static floor setup path without feature logic.
 
-### Task 1.3: Add Static Shift Setup Screens
+### ✅ Task 1.3: Add Static Shift Setup Screens
 
 Story coverage: US7-US13
 
@@ -109,7 +114,7 @@ Validation check:
 
 - A tester can navigate through the static shift setup path without saved data.
 
-### Task 1.4: Add Static Assignment and Board Screens
+### ✅ Task 1.4: Add Static Assignment and Board Screens
 
 Story coverage: US14-US17
 
@@ -124,7 +129,7 @@ Validation check:
 
 - A tester can reach Assignment Review, Floor Board, and Flags from the navigation flow.
 
-### Task 1.5: Add Basic Back Navigation
+### ✅ Task 1.5: Add Basic Back Navigation
 
 Story coverage: US1-US17
 
@@ -140,7 +145,7 @@ Validation check:
 
 ## Local State and Data Model Setup
 
-### Task 2.1: Add Phase 1 Local Types
+### ✅ Task 2.1: Add Phase 1 Local Types
 
 Story coverage: US1-US18
 
@@ -154,7 +159,7 @@ Validation check:
 
 - The app can compile with the Phase 1 types and no backend/auth/user account fields.
 
-### Task 2.2: Add Simple Local State Container
+### ✅ Task 2.2: Add Simple Local State Container
 
 Story coverage: US1-US18
 
@@ -166,7 +171,7 @@ Validation check:
 
 - The Local Workspace can read an empty floor template list from local app state.
 
-### Task 2.3: Add Local ID Helper
+### ✅ Task 2.3: Add Local ID Helper
 
 Story coverage: US1-US18
 
@@ -181,7 +186,7 @@ Validation check:
 
 ## User Story Tasks
 
-### Task 3.1: US1 Floor Name Entry
+### ✅ Task 3.1: US1 Floor Name Entry
 
 Build:
 
@@ -194,7 +199,7 @@ Validation check:
 - Entering `4 North` allows continuing.
 - Entering blank or spaces-only text shows `Floor name is required.`
 
-### Task 3.2: US1 Duplicate Floor Name Validation
+### ✅ Task 3.2: US1 Duplicate Floor Name Validation
 
 Build:
 
