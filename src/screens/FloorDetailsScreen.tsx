@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -19,6 +19,11 @@ export default function FloorDetailsScreen() {
     localState.draftFloorTemplate?.name ?? "",
   );
   const [floorNameError, setFloorNameError] = useState("");
+
+  useEffect(() => {
+    setFloorName(localState.draftFloorTemplate?.name ?? "");
+    setFloorNameError("");
+  }, [localState.draftFloorTemplate?.id, localState.draftFloorTemplate?.name]);
 
   function handleFloorNameChange(text: string) {
     setFloorName(text);

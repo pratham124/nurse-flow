@@ -7,8 +7,17 @@ import { useLocalState } from "../store/LocalStateContext";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
 
 export default function Index() {
-  const { localState } = useLocalState();
+  const { localState, setLocalState } = useLocalState();
   const floorTemplateCount = localState.floorTemplates.length;
+
+  function handleCreateFloor() {
+    setLocalState((currentState) => ({
+      ...currentState,
+      draftFloorTemplate: undefined,
+    }));
+
+    router.push("/floor-details");
+  }
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -39,7 +48,7 @@ export default function Index() {
         <Pressable
           accessibilityHint="Opens the static floor template setup path."
           accessibilityRole="button"
-          onPress={() => router.push("/floor-details")}
+          onPress={handleCreateFloor}
           style={styles.primaryButton}
         >
           <Text style={styles.primaryButtonText}>Create floor</Text>
