@@ -12,6 +12,7 @@ import { useLocalState } from "../store/LocalStateContext";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
 
 const requiredFloorNameMessage = "Floor name is required.";
+const duplicateFloorNameMessage = "A floor with this name already exists.";
 
 export default function FloorDetailsScreen() {
   const { localState, setLocalState } = useLocalState();
@@ -38,6 +39,15 @@ export default function FloorDetailsScreen() {
 
     if (!trimmedFloorName) {
       setFloorNameError(requiredFloorNameMessage);
+      return;
+    }
+
+    const hasDuplicateFloorName = localState.floorTemplates.some(
+      (floorTemplate) => floorTemplate.name.trim() === trimmedFloorName,
+    );
+
+    if (hasDuplicateFloorName) {
+      setFloorNameError(duplicateFloorNameMessage);
       return;
     }
 
