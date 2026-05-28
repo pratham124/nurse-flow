@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -6,16 +7,59 @@ import {
   WorkflowSection,
   WorkflowScreen,
 } from "../components/workflow";
+import { createLocalId } from "../helpers/localId";
+import { useLocalState } from "../store/LocalStateContext";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
 
+const requiredFloorNameMessage = "Floor name is required.";
+
 export default function FloorDetailsScreen() {
+  const { localState, setLocalState } = useLocalState();
+  const [floorName, setFloorName] = useState(
+    localState.draftFloorTemplate?.name ?? "",
+  );
+  const [floorNameError, setFloorNameError] = useState("");
+
+  function handleFloorNameChange(text: string) {
+    setFloorName(text);
+
+    if (floorNameError) {
+      setFloorNameError("");
+    }
+  }
+
+  function handleContinue() {
+    const trimmedFloorName = floorName.trim();
+
+    if (!trimmedFloorName) {
+      setFloorNameError(requiredFloorNameMessage);
+      return;
+    }
+
+    const draftId =
+      localState.draftFloorTemplate?.id ?? createLocalId("floor-template");
+
+    setLocalState((currentState) => ({
+      ...currentState,
+      draftFloorTemplate: {
+        id: draftId,
+        name: trimmedFloorName,
+        doctorSides: currentState.draftFloorTemplate?.doctorSides ?? [],
+        rooms: currentState.draftFloorTemplate?.rooms ?? [],
+        beds: currentState.draftFloorTemplate?.beds ?? [],
+      },
+    }));
+
+    router.push("/rooms-and-beds");
+  }
+
   return (
     <WorkflowScreen
       activeStep="Floor"
       headerActionLabel="Floors"
-      helperText="Static setup only. Validation and saving come in later tasks."
+      helperText="The floor name is saved locally for this in-progress template."
       onHeaderActionPress={() => router.push("/")}
-      onPrimaryPress={() => router.push("/rooms-and-beds")}
+      onPrimaryPress={handleContinue}
       primaryLabel="Continue"
       subtitle="Step 1 of 4"
       title="Floor details"
@@ -25,9 +69,12 @@ export default function FloorDetailsScreen() {
         title="Floor name"
       >
         <PlaceholderInput
+          errorText={floorNameError}
           helperText="Example: 4 North, 2 East, Cardiac Stepdown"
           label="Floor name"
+          onChangeText={handleFloorNameChange}
           placeholder="4 North"
+          value={floorName}
         />
       </WorkflowSection>
 

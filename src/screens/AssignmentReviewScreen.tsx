@@ -3,11 +3,10 @@ import { StyleSheet, Text, View, type DimensionValue } from "react-native";
 
 import {
   CheckCircleIcon,
-  ScrollableList,
   SummaryTile,
   SummaryTileGrid,
+  WorkflowListScreen,
   WorkflowSection,
-  WorkflowScreen,
 } from "../components/workflow";
 import { assignmentFlow } from "../utils/workflowFlows";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
@@ -36,19 +35,11 @@ const nurseCapacityRows = [
   },
 ];
 
-export default function AssignmentReviewScreen() {
+type NurseCapacityRow = (typeof nurseCapacityRows)[number];
+
+function AssignmentReviewListHeader() {
   return (
-    <WorkflowScreen
-      activeStep="Assign"
-      headerActionLabel="Floors"
-      helperText="Static assignment review only. The local algorithm is added later."
-      onHeaderActionPress={() => router.push("/")}
-      onPrimaryPress={() => router.push("/floor-board")}
-      primaryLabel="Run local assignment"
-      flow={assignmentFlow}
-      subtitle="Static readiness preview"
-      title="Assignment review"
-    >
+    <View style={styles.headerContent}>
       <WorkflowSection
         note="These counts are placeholders until census and nurse state exist."
         title="Shift summary"
@@ -65,33 +56,26 @@ export default function AssignmentReviewScreen() {
         note="Later, these rows will become real blockers before assignment can run."
         title="Readiness checklist"
       >
-        <ScrollableList maxHeight={260}>
-          {checklistItems.map((item) => (
-            <View key={item} style={styles.checkRow}>
-              <View style={styles.checkBadge}>
-                <CheckCircleIcon />
-              </View>
-              <Text style={styles.checkText}>{item}</Text>
+        {checklistItems.map((item) => (
+          <View key={item} style={styles.checkRow}>
+            <View style={styles.checkBadge}>
+              <CheckCircleIcon />
             </View>
-          ))}
-        </ScrollableList>
+            <Text style={styles.checkText}>{item}</Text>
+          </View>
+        ))}
       </WorkflowSection>
 
-      <WorkflowSection title="Nurse capacity">
-        <ScrollableList maxHeight={260}>
-          {nurseCapacityRows.map((nurse, index) => (
-            <CapacityRow
-              key={nurse.name}
-              assigned={nurse.assigned}
-              detail={nurse.detail}
-              divided={index > 0}
-              max={nurse.max}
-              name={nurse.name}
-            />
-          ))}
-        </ScrollableList>
-      </WorkflowSection>
+      <View style={styles.capacityTitleCard}>
+        <Text style={styles.capacityTitle}>Nurse capacity</Text>
+      </View>
+    </View>
+  );
+}
 
+function RedBedRiskFooter() {
+  return (
+    <View style={styles.footerContent}>
       <WorkflowSection
         note="Red beds need RN coverage during the real assignment task."
         title="Red bed risk"
@@ -103,20 +87,58 @@ export default function AssignmentReviewScreen() {
           </View>
         ))}
       </WorkflowSection>
-    </WorkflowScreen>
+    </View>
+  );
+}
+
+function renderNurseCapacityItem({
+  item,
+}: {
+  item: NurseCapacityRow;
+}) {
+  return (
+    <CapacityRow
+      assigned={item.assigned}
+      detail={item.detail}
+      max={item.max}
+      name={item.name}
+    />
+  );
+}
+
+function getNurseCapacityKey(nurse: NurseCapacityRow) {
+  return nurse.name;
+}
+
+export default function AssignmentReviewScreen() {
+  return (
+    <WorkflowListScreen
+      activeStep="Assign"
+      data={nurseCapacityRows}
+      flow={assignmentFlow}
+      headerActionLabel="Floors"
+      helperText="Static assignment review only. The local algorithm is added later."
+      keyExtractor={getNurseCapacityKey}
+      listFooter={<RedBedRiskFooter />}
+      listHeader={<AssignmentReviewListHeader />}
+      onHeaderActionPress={() => router.push("/")}
+      onPrimaryPress={() => router.push("/floor-board")}
+      primaryLabel="Run local assignment"
+      renderItem={renderNurseCapacityItem}
+      subtitle="Static readiness preview"
+      title="Assignment review"
+    />
   );
 }
 
 function CapacityRow({
   assigned,
   detail,
-  divided = false,
   max,
   name,
 }: {
   assigned: number;
   detail: string;
-  divided?: boolean;
   max: number;
   name: string;
 }) {
@@ -124,7 +146,7 @@ function CapacityRow({
     max > 0 ? `${Math.min((assigned / max) * 100, 100)}%` : "0%";
 
   return (
-    <View style={[styles.capacityRow, divided ? styles.dividedRow : null]}>
+    <View style={styles.capacityRow}>
       <View style={styles.capacityHeader}>
         <View style={styles.nurseAvatar}>
           <Text style={styles.nurseAvatarText}>{name.charAt(0)}</Text>
@@ -151,6 +173,12 @@ function CapacityRow({
 }
 
 const styles = StyleSheet.create({
+  headerContent: {
+    gap: spacing.cardGap,
+  },
+  footerContent: {
+    paddingTop: spacing.md,
+  },
   checkRow: {
     alignItems: "center",
     borderLeftColor: colors.status.greenBorder,
@@ -172,8 +200,25 @@ const styles = StyleSheet.create({
     fontSize: textSize.md,
   },
   capacityRow: {
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.xl,
+    borderWidth: 0.5,
     gap: spacing.md,
     paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+  },
+  capacityTitleCard: {
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.xl,
+    borderWidth: 0.5,
+    padding: spacing.lg,
+  },
+  capacityTitle: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.lg,
+    fontWeight: "500",
   },
   capacityHeader: {
     alignItems: "center",
@@ -243,10 +288,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: 10,
-  },
-  dividedRow: {
-    borderTopColor: colors.neutral.borderTertiary,
-    borderTopWidth: 0.5,
   },
   warningLabel: {
     color: colors.neutral.textPrimary,

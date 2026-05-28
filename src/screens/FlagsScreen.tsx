@@ -4,12 +4,11 @@ import { StyleSheet, Text, View } from "react-native";
 import {
   FilterChip,
   FilterChipRow,
-  ScrollableList,
   SeverityBadge as SeverityPill,
   SummaryTile,
   SummaryTileGrid,
+  WorkflowListScreen,
   WorkflowSection,
-  WorkflowScreen,
 } from "../components/workflow";
 import { assignmentFlow } from "../utils/workflowFlows";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
@@ -28,20 +27,13 @@ const flags = [
 ];
 
 type FlagSeverity = (typeof flags)[number]["severity"];
+type PreviewFlag = (typeof flags)[number];
 
-export default function FlagsScreen() {
+const flagFilters = ["All", "Critical", "Warning", "Info"];
+
+function FlagsListHeader() {
   return (
-    <WorkflowScreen
-      activeStep="Flags"
-      headerActionLabel="Floors"
-      helperText="Static flags only. Real flags are generated after the assignment algorithm exists."
-      onHeaderActionPress={() => router.push("/")}
-      onPrimaryPress={() => router.push("/floor-board")}
-      primaryLabel="Return to board"
-      flow={assignmentFlow}
-      subtitle="Local assignment issues"
-      title="Flags"
-    >
+    <View style={styles.headerContent}>
       <WorkflowSection title="Flag summary">
         <SummaryTileGrid>
           <SummaryTile value="0" label="Critical" />
@@ -52,28 +44,54 @@ export default function FlagsScreen() {
 
       <WorkflowSection title="Filters">
         <FilterChipRow>
-          {["All", "Critical", "Warning", "Info"].map((filter, index) => (
+          {flagFilters.map((filter, index) => (
             <FilterChip key={filter} label={filter} selected={index === 0} />
           ))}
         </FilterChipRow>
       </WorkflowSection>
 
-      <WorkflowSection
-        note="Flags are local and informational in Phase 1. They do not imply push notifications."
-        title="Flag list"
-      >
-        <ScrollableList maxHeight={280}>
-          {flags.map((flag) => (
-            <FlagRow
-              key={`${flag.severity}-${flag.target}`}
-              message={flag.message}
-              severity={flag.severity}
-              target={flag.target}
-            />
-          ))}
-        </ScrollableList>
-      </WorkflowSection>
-    </WorkflowScreen>
+      <View style={styles.flagListHeader}>
+        <Text style={styles.flagListTitle}>Flag list</Text>
+        <Text style={styles.flagListNote}>
+          Flags are local and informational in Phase 1. They do not imply push
+          notifications.
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function renderFlagItem({ item }: { item: PreviewFlag }) {
+  return (
+    <FlagRow
+      message={item.message}
+      severity={item.severity}
+      target={item.target}
+    />
+  );
+}
+
+function getFlagKey(flag: PreviewFlag) {
+  return `${flag.severity}-${flag.target}`;
+}
+
+export default function FlagsScreen() {
+  return (
+    <WorkflowListScreen
+      activeStep="Flags"
+      data={flags}
+      flow={assignmentFlow}
+      headerActionLabel="Floors"
+      helperText="Static flags only. Real flags are generated after the assignment algorithm exists."
+      keyExtractor={getFlagKey}
+      listHeader={<FlagsListHeader />}
+      onHeaderActionPress={() => router.push("/")}
+      onPrimaryPress={() => router.push("/floor-board")}
+      primaryLabel="Return to board"
+      renderItem={renderFlagItem}
+      subtitle="Local assignment issues"
+      title="Flags"
+    />
   );
 }
 
@@ -115,6 +133,27 @@ function getSeverityTone(severity: FlagSeverity) {
 }
 
 const styles = StyleSheet.create({
+  headerContent: {
+    gap: spacing.cardGap,
+  },
+  flagListHeader: {
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.xl,
+    borderWidth: 0.5,
+    gap: spacing.xs,
+    padding: spacing.lg,
+  },
+  flagListTitle: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.lg,
+    fontWeight: "500",
+  },
+  flagListNote: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    lineHeight: 18,
+  },
   flagRow: {
     backgroundColor: colors.neutral.surface,
     borderColor: colors.neutral.borderTertiary,

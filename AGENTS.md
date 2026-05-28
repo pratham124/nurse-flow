@@ -32,6 +32,13 @@ Help me build this project while learning. Do not over-automate or generate the 
 
 - Use modern conventions (e.g., fetch latest docs via MCP server).
 
+## Development And Testing Skills
+
+- For any new React Native, Expo, TypeScript, navigation, state, component, styling, or app architecture development task, load and use `@building-react-native-apps` before planning or implementation when that skill is available.
+- For any new testing, quality check, debugging, regression, test setup, lint, or verification task, load and use `@testing-react-native-apps` before changing tests or running validation when that skill is available.
+- If either skill is unavailable in the current Codex session, say that briefly, then continue with the best local project guidance in this file.
+- Keep the skill guidance subordinate to the learning rules, workflow order, Phase 1 scope, and done criteria in this file.
+
 ## Workflow
 
 Use this order:

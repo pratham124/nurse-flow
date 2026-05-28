@@ -6,13 +6,12 @@ import {
   FilterChip,
   FilterChipRow,
   PlaceholderInput,
-  ScrollableList,
   SegmentedPlaceholder,
   StatusPill,
   SummaryTile,
   SummaryTileGrid,
+  WorkflowListScreen,
   WorkflowSection,
-  WorkflowScreen,
 } from "../components/workflow";
 import { shiftSetupFlow } from "../utils/workflowFlows";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
@@ -33,19 +32,13 @@ const previewBeds = [
   },
 ];
 
-export default function PatientsAndAcuityScreen() {
+const previewFilters = ["All", "Occupied", "Empty", "Missing acuity", "Red"];
+
+type PreviewRoom = (typeof previewBeds)[number];
+
+function PatientsListHeader() {
   return (
-    <WorkflowScreen
-      activeStep="Patients"
-      headerActionLabel="Floors"
-      helperText="Static patient setup only. Assignment logic comes in later tasks."
-      onHeaderActionPress={() => router.push("/")}
-      onPrimaryPress={() => router.push("/assignment-review")}
-      primaryLabel="Review assignment"
-      flow={shiftSetupFlow}
-      subtitle="Step 3 of 3"
-      title="Patients and acuity"
-    >
+    <View style={styles.headerContent}>
       <WorkflowSection
         note="Census totals will update from local bed state in a later task."
         title="Census"
@@ -62,81 +55,97 @@ export default function PatientsAndAcuityScreen() {
         title="Filters"
       >
         <FilterChipRow>
-          {["All", "Occupied", "Empty", "Missing acuity", "Red"].map(
-            (filter, index) => (
-              <FilterChip key={filter} label={filter} selected={index === 0} />
-            ),
-          )}
+          {previewFilters.map((filter, index) => (
+            <FilterChip key={filter} label={filter} selected={index === 0} />
+          ))}
         </FilterChipRow>
       </WorkflowSection>
+    </View>
+  );
+}
 
-      <ScrollableList maxHeight={560}>
-        {previewBeds.map((room) => (
-          <WorkflowSection
-            key={room.room}
-            note={room.side}
-            title={`Room ${room.room}`}
-          >
-            {room.beds.map((bed) => (
-              <View key={bed.label} style={styles.bedRow}>
-                <View style={styles.bedHeader}>
-                  <BedChip label={bed.label} />
-                  <BedStatusBadge occupied={bed.occupied} />
-                </View>
+function RoomPatientsPreviewRow({ room }: { room: PreviewRoom }) {
+  return (
+    <WorkflowSection note={room.side} title={`Room ${room.room}`}>
+      {room.beds.map((bed) => (
+        <View key={bed.label} style={styles.bedRow}>
+          <View style={styles.bedHeader}>
+            <BedChip label={bed.label} />
+            <BedStatusBadge occupied={bed.occupied} />
+          </View>
 
-                {bed.occupied ? (
-                  <>
-                    <PlaceholderInput
-                      label="Patient initials"
-                      placeholder="J.S."
-                    />
+          {bed.occupied ? (
+            <>
+              <PlaceholderInput label="Patient initials" placeholder="J.S." />
 
-                    <View style={styles.patientDetailsRow}>
-                      <PlaceholderInput label="Age" placeholder="67" />
-                      <SegmentedPlaceholder options={["F", "M", "Other"]} />
-                    </View>
-
-                    <PlaceholderInput
-                      label="Diagnosis"
-                      placeholder="CHF exacerbation"
-                    />
-
-                    <View style={styles.acuityArea}>
-                      <Text style={styles.acuityLabel}>Bed acuity</Text>
-                      <View style={styles.acuityLegend}>
-                        <AcuityLegendItem
-                          color={colors.status.green700}
-                          label="Green"
-                        />
-                        <AcuityLegendItem
-                          color={colors.status.yellow700}
-                          label="Yellow"
-                        />
-                        <AcuityLegendItem
-                          color={colors.status.red700}
-                          label="Red"
-                        />
-                      </View>
-                      <SegmentedPlaceholder
-                        options={["Green", "Yellow", "Red"]}
-                        selectedIndex={bed.acuity === "Red" ? 2 : 1}
-                      />
-                    </View>
-                  </>
-                ) : (
-                  <View style={styles.emptyBedNote}>
-                    <Text style={styles.emptyBedText}>
-                      Empty beds stay visible but do not need patient details or
-                      acuity.
-                    </Text>
-                  </View>
-                )}
+              <View style={styles.patientDetailsRow}>
+                <PlaceholderInput label="Age" placeholder="67" />
+                <SegmentedPlaceholder options={["F", "M", "Other"]} />
               </View>
-            ))}
-          </WorkflowSection>
-        ))}
-      </ScrollableList>
-    </WorkflowScreen>
+
+              <PlaceholderInput
+                label="Diagnosis"
+                placeholder="CHF exacerbation"
+              />
+
+              <View style={styles.acuityArea}>
+                <Text style={styles.acuityLabel}>Bed acuity</Text>
+                <View style={styles.acuityLegend}>
+                  <AcuityLegendItem
+                    color={colors.status.green700}
+                    label="Green"
+                  />
+                  <AcuityLegendItem
+                    color={colors.status.yellow700}
+                    label="Yellow"
+                  />
+                  <AcuityLegendItem color={colors.status.red700} label="Red" />
+                </View>
+                <SegmentedPlaceholder
+                  options={["Green", "Yellow", "Red"]}
+                  selectedIndex={bed.acuity === "Red" ? 2 : 1}
+                />
+              </View>
+            </>
+          ) : (
+            <View style={styles.emptyBedNote}>
+              <Text style={styles.emptyBedText}>
+                Empty beds stay visible but do not need patient details or
+                acuity.
+              </Text>
+            </View>
+          )}
+        </View>
+      ))}
+    </WorkflowSection>
+  );
+}
+
+function renderRoomPatientsPreviewItem({ item }: { item: PreviewRoom }) {
+  return <RoomPatientsPreviewRow room={item} />;
+}
+
+function getPreviewRoomKey(room: PreviewRoom) {
+  return room.room;
+}
+
+export default function PatientsAndAcuityScreen() {
+  return (
+    <WorkflowListScreen
+      activeStep="Patients"
+      data={previewBeds}
+      flow={shiftSetupFlow}
+      headerActionLabel="Floors"
+      helperText="Static patient setup only. Assignment logic comes in later tasks."
+      keyExtractor={getPreviewRoomKey}
+      listHeader={<PatientsListHeader />}
+      onHeaderActionPress={() => router.push("/")}
+      onPrimaryPress={() => router.push("/assignment-review")}
+      primaryLabel="Review assignment"
+      renderItem={renderRoomPatientsPreviewItem}
+      subtitle="Step 3 of 3"
+      title="Patients and acuity"
+    />
   );
 }
 
@@ -159,6 +168,9 @@ function AcuityLegendItem({ color, label }: { color: string; label: string }) {
 }
 
 const styles = StyleSheet.create({
+  headerContent: {
+    gap: spacing.cardGap,
+  },
   bedRow: {
     gap: spacing.lg,
     marginTop: spacing.md,

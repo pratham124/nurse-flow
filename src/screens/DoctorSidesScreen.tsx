@@ -3,32 +3,24 @@ import { StyleSheet, Text, View } from "react-native";
 
 import {
   PlaceholderInput,
-  ScrollableList,
   SegmentedPlaceholder,
   SummaryTile,
   SummaryTileGrid,
+  WorkflowListScreen,
   WorkflowSection,
-  WorkflowScreen,
 } from "../components/workflow";
-import { colors, spacing, textSize } from "../theme/tokens";
+import { colors, radius, spacing, textSize } from "../theme/tokens";
 
 const previewAssignments = [
   { room: "101", selectedIndex: 0 },
   { room: "102", selectedIndex: 1 },
 ];
 
-export default function DoctorSidesScreen() {
+type PreviewAssignment = (typeof previewAssignments)[number];
+
+function DoctorSidesListHeader() {
   return (
-    <WorkflowScreen
-      activeStep="Sides"
-      headerActionLabel="Floors"
-      helperText="Static preview only. Side names and room choices are not saved yet."
-      onHeaderActionPress={() => router.push("/")}
-      onPrimaryPress={() => router.push("/template-review")}
-      primaryLabel="Review"
-      subtitle="Step 3 of 4"
-      title="Doctor sides"
-    >
+    <View style={styles.headerContent}>
       <WorkflowSection
         note="Phase 1 uses exactly two doctor sides."
         title="Side names"
@@ -37,40 +29,102 @@ export default function DoctorSidesScreen() {
         <PlaceholderInput label="Doctor side 2" placeholder="SK Side" />
       </WorkflowSection>
 
-      <WorkflowSection
-        note="Every room will eventually belong to exactly one side."
-        title="Room assignments"
-      >
+      <View style={styles.assignmentHeader}>
+        <View style={styles.assignmentTitleGroup}>
+          <Text style={styles.assignmentTitle}>Room assignments</Text>
+          <Text style={styles.assignmentNote}>
+            Every room will eventually belong to exactly one side.
+          </Text>
+        </View>
+
         <SummaryTileGrid>
           <SummaryTile value="AB Side" label="1 room" />
           <SummaryTile value="SK Side" label="1 room" />
         </SummaryTileGrid>
+      </View>
+    </View>
+  );
+}
 
-        <ScrollableList maxHeight={320}>
-          {previewAssignments.map((assignment) => (
-            <View key={assignment.room} style={styles.assignmentRow}>
-              <View>
-                <Text style={styles.roomLabel}>Room {assignment.room}</Text>
-                <Text style={styles.roomMeta}>Choose one doctor side</Text>
-              </View>
-              <SegmentedPlaceholder
-                options={["AB Side", "SK Side"]}
-                selectedIndex={assignment.selectedIndex}
-              />
-            </View>
-          ))}
-        </ScrollableList>
-      </WorkflowSection>
-    </WorkflowScreen>
+function AssignmentPreviewRow({
+  assignment,
+}: {
+  assignment: PreviewAssignment;
+}) {
+  return (
+    <View style={styles.assignmentRow}>
+      <View>
+        <Text style={styles.roomLabel}>Room {assignment.room}</Text>
+        <Text style={styles.roomMeta}>Choose one doctor side</Text>
+      </View>
+      <SegmentedPlaceholder
+        options={["AB Side", "SK Side"]}
+        selectedIndex={assignment.selectedIndex}
+      />
+    </View>
+  );
+}
+
+function renderAssignmentPreviewItem({ item }: { item: PreviewAssignment }) {
+  return <AssignmentPreviewRow assignment={item} />;
+}
+
+function getPreviewAssignmentKey(assignment: PreviewAssignment) {
+  return assignment.room;
+}
+
+export default function DoctorSidesScreen() {
+  return (
+    <WorkflowListScreen
+      activeStep="Sides"
+      data={previewAssignments}
+      headerActionLabel="Floors"
+      helperText="Static preview only. Side names and room choices are not saved yet."
+      keyExtractor={getPreviewAssignmentKey}
+      listHeader={<DoctorSidesListHeader />}
+      onHeaderActionPress={() => router.push("/")}
+      onPrimaryPress={() => router.push("/template-review")}
+      primaryLabel="Review"
+      renderItem={renderAssignmentPreviewItem}
+      subtitle="Step 3 of 4"
+      title="Doctor sides"
+    />
   );
 }
 
 const styles = StyleSheet.create({
+  headerContent: {
+    gap: spacing.cardGap,
+  },
+  assignmentHeader: {
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.xl,
+    borderWidth: 0.5,
+    gap: spacing.lg,
+    padding: spacing.lg,
+  },
+  assignmentTitleGroup: {
+    gap: spacing.xs,
+  },
+  assignmentTitle: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.lg,
+    fontWeight: "500",
+  },
+  assignmentNote: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    lineHeight: 18,
+  },
   assignmentRow: {
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.xl,
+    borderWidth: 0.5,
     gap: spacing.md,
-    marginTop: spacing.md,
     paddingVertical: spacing.lg,
-    paddingHorizontal: 0,
+    paddingHorizontal: spacing.lg,
   },
   roomLabel: {
     color: colors.neutral.textPrimary,

@@ -1,0 +1,89 @@
+import type { ReactElement } from "react";
+import {
+  FlatList,
+  StyleSheet,
+  View,
+  type ListRenderItem,
+} from "react-native";
+
+import { floorTemplateFlow } from "../../utils/workflowFlows";
+import type { WorkflowFlowStep } from "../../utils/workflowFlows";
+import { spacing } from "../../theme/tokens";
+import { StepIndicator } from "./StepIndicator";
+import type { WorkflowStep } from "./types";
+import { WorkflowScreen } from "./WorkflowScreen";
+
+type WorkflowListScreenProps<ItemT> = {
+  title: string;
+  subtitle: string;
+  headerActionLabel?: string;
+  onHeaderActionPress?: () => void;
+  activeStep: WorkflowStep;
+  flow?: WorkflowFlowStep[];
+  primaryLabel: string;
+  onPrimaryPress: () => void;
+  helperText?: string;
+  data: ItemT[];
+  keyExtractor: (item: ItemT, index: number) => string;
+  renderItem: ListRenderItem<ItemT>;
+  listHeader?: ReactElement;
+  listFooter?: ReactElement;
+};
+
+export function WorkflowListScreen<ItemT>({
+  title,
+  subtitle,
+  headerActionLabel,
+  onHeaderActionPress,
+  activeStep,
+  flow = floorTemplateFlow,
+  primaryLabel,
+  onPrimaryPress,
+  helperText,
+  data,
+  keyExtractor,
+  renderItem,
+  listHeader,
+  listFooter,
+}: WorkflowListScreenProps<ItemT>) {
+  return (
+    <WorkflowScreen
+      activeStep={activeStep}
+      flow={flow}
+      headerActionLabel={headerActionLabel}
+      helperText={helperText}
+      managesOwnScrolling
+      onHeaderActionPress={onHeaderActionPress}
+      onPrimaryPress={onPrimaryPress}
+      primaryLabel={primaryLabel}
+      subtitle={subtitle}
+      title={title}
+    >
+      <FlatList
+        contentContainerStyle={styles.listContent}
+        data={data}
+        keyExtractor={keyExtractor}
+        keyboardShouldPersistTaps="handled"
+        ListHeaderComponent={
+          <View style={styles.listHeader}>
+            <StepIndicator activeStep={activeStep} flow={flow} />
+            {listHeader}
+          </View>
+        }
+        ListFooterComponent={listFooter}
+        renderItem={renderItem}
+      />
+    </WorkflowScreen>
+  );
+}
+
+const styles = StyleSheet.create({
+  listContent: {
+    gap: spacing.md,
+    padding: spacing.xl,
+    paddingBottom: spacing.xl,
+  },
+  listHeader: {
+    gap: spacing.cardGap,
+  },
+});

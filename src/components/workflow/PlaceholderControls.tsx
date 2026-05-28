@@ -8,14 +8,21 @@ type PlaceholderInputProps = {
   label: string;
   placeholder: string;
   helperText?: string;
+  errorText?: string;
+  value?: string;
+  onChangeText?: (text: string) => void;
 };
 
 export function PlaceholderInput({
   label,
   placeholder,
   helperText,
+  errorText,
+  value,
+  onChangeText,
 }: PlaceholderInputProps) {
   const [isFocused, setIsFocused] = useState(false);
+  const hasError = Boolean(errorText);
 
   return (
     <View style={styles.field}>
@@ -23,13 +30,23 @@ export function PlaceholderInput({
       <View style={[styles.inputRing, isFocused ? styles.focusedInputRing : null]}>
         <TextInput
           onBlur={() => setIsFocused(false)}
+          onChangeText={onChangeText}
           onFocus={() => setIsFocused(true)}
           placeholder={placeholder}
           placeholderTextColor={colors.neutral.textTertiary}
-          style={[styles.input, isFocused ? styles.focusedInput : null]}
+          style={[
+            styles.input,
+            isFocused ? styles.focusedInput : null,
+            hasError ? styles.errorInput : null,
+          ]}
+          value={value}
         />
       </View>
-      {helperText ? <Text style={styles.fieldHelper}>{helperText}</Text> : null}
+      {errorText ? (
+        <Text style={styles.fieldError}>{errorText}</Text>
+      ) : helperText ? (
+        <Text style={styles.fieldHelper}>{helperText}</Text>
+      ) : null}
     </View>
   );
 }
@@ -127,8 +144,16 @@ const styles = StyleSheet.create({
   focusedInput: {
     borderColor: colors.brand.burgundy,
   },
+  errorInput: {
+    borderColor: colors.status.red700,
+  },
   fieldHelper: {
     color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    lineHeight: 18,
+  },
+  fieldError: {
+    color: colors.status.red700,
     fontSize: textSize.sm,
     lineHeight: 18,
   },

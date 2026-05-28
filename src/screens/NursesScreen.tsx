@@ -5,34 +5,25 @@ import {
   NumberStepperPlaceholder,
   PlaceholderButton,
   PlaceholderInput,
-  ScrollableList,
   SegmentedPlaceholder,
   SummaryTile,
   SummaryTileGrid,
+  WorkflowListScreen,
   WorkflowSection,
-  WorkflowScreen,
 } from "../components/workflow";
 import { shiftSetupFlow } from "../utils/workflowFlows";
-import { colors, spacing, textSize } from "../theme/tokens";
+import { colors, radius, spacing, textSize } from "../theme/tokens";
 
 const previewNurses = [
   { name: "Taylor", license: "RN", experience: "Experienced", maxLoad: "5" },
   { name: "Sam", license: "LPN", experience: "Mid", maxLoad: "6" },
 ];
 
-export default function NursesScreen() {
+type PreviewNurse = (typeof previewNurses)[number];
+
+function NursesListHeader() {
   return (
-    <WorkflowScreen
-      activeStep="Nurses"
-      headerActionLabel="Floors"
-      helperText="Static nurse setup only. Nurse rows are sample data for now."
-      onHeaderActionPress={() => router.push("/")}
-      onPrimaryPress={() => router.push("/patients-and-acuity")}
-      primaryLabel="Continue"
-      flow={shiftSetupFlow}
-      subtitle="Step 2 of 3"
-      title="Nurses"
-    >
+    <View style={styles.headerContent}>
       <WorkflowSection
         note="Later, each nurse will be added to the active local shift."
         title="Add nurse"
@@ -46,51 +37,104 @@ export default function NursesScreen() {
         <PlaceholderButton label="Add nurse" />
       </WorkflowSection>
 
-      <WorkflowSection
-        note="Max load is a hard cap for assignment in later tasks."
-        title="Shift nurses"
-      >
+      <View style={styles.shiftNursesHeader}>
+        <View style={styles.shiftNursesTitleGroup}>
+          <Text style={styles.shiftNursesTitle}>Shift nurses</Text>
+          <Text style={styles.shiftNursesNote}>
+            Max load is a hard cap for assignment in later tasks.
+          </Text>
+        </View>
+
         <SummaryTileGrid>
           <SummaryTile value="2" label="Nurses" />
           <SummaryTile value="11" label="Total capacity" />
         </SummaryTileGrid>
+      </View>
+    </View>
+  );
+}
 
-        <ScrollableList maxHeight={300}>
-          {previewNurses.map((nurse, index) => (
-            <View
-              key={`${nurse.name}-${nurse.license}`}
-              style={[styles.nurseRow, index > 0 ? styles.dividedRow : null]}
-            >
-              <View style={styles.nurseInfo}>
-                <Text style={styles.nurseName}>{nurse.name}</Text>
-                <Text style={styles.nurseMeta}>
-                  {nurse.license} - {nurse.experience}
-                </Text>
-              </View>
-              <View style={styles.maxLoad}>
-                <Text style={styles.maxLoadLabel}>Max load</Text>
-                <NumberStepperPlaceholder value={nurse.maxLoad} />
-              </View>
-            </View>
-          ))}
-        </ScrollableList>
-      </WorkflowSection>
-    </WorkflowScreen>
+function NursePreviewRow({ nurse }: { nurse: PreviewNurse }) {
+  return (
+    <View style={styles.nurseRow}>
+      <View style={styles.nurseInfo}>
+        <Text style={styles.nurseName}>{nurse.name}</Text>
+        <Text style={styles.nurseMeta}>
+          {nurse.license} - {nurse.experience}
+        </Text>
+      </View>
+      <View style={styles.maxLoad}>
+        <Text style={styles.maxLoadLabel}>Max load</Text>
+        <NumberStepperPlaceholder value={nurse.maxLoad} />
+      </View>
+    </View>
+  );
+}
+
+function renderNursePreviewItem({ item }: { item: PreviewNurse }) {
+  return <NursePreviewRow nurse={item} />;
+}
+
+function getPreviewNurseKey(nurse: PreviewNurse) {
+  return `${nurse.name}-${nurse.license}`;
+}
+
+export default function NursesScreen() {
+  return (
+    <WorkflowListScreen
+      activeStep="Nurses"
+      data={previewNurses}
+      flow={shiftSetupFlow}
+      headerActionLabel="Floors"
+      helperText="Static nurse setup only. Nurse rows are sample data for now."
+      keyExtractor={getPreviewNurseKey}
+      listHeader={<NursesListHeader />}
+      onHeaderActionPress={() => router.push("/")}
+      onPrimaryPress={() => router.push("/patients-and-acuity")}
+      primaryLabel="Continue"
+      renderItem={renderNursePreviewItem}
+      subtitle="Step 2 of 3"
+      title="Nurses"
+    />
   );
 }
 
 const styles = StyleSheet.create({
+  headerContent: {
+    gap: spacing.cardGap,
+  },
+  shiftNursesHeader: {
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.xl,
+    borderWidth: 0.5,
+    gap: spacing.lg,
+    padding: spacing.lg,
+  },
+  shiftNursesTitleGroup: {
+    gap: spacing.xs,
+  },
+  shiftNursesTitle: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.lg,
+    fontWeight: "500",
+  },
+  shiftNursesNote: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    lineHeight: 18,
+  },
   nurseRow: {
     alignItems: "center",
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.xl,
+    borderWidth: 0.5,
     flexDirection: "row",
     gap: spacing.md,
     justifyContent: "space-between",
-    marginTop: spacing.md,
     paddingVertical: spacing.lg,
-  },
-  dividedRow: {
-    borderTopColor: colors.neutral.borderTertiary,
-    borderTopWidth: 0.5,
+    paddingHorizontal: spacing.lg,
   },
   nurseInfo: {
     flex: 1,

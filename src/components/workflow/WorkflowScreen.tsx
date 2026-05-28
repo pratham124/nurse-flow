@@ -20,6 +20,7 @@ type WorkflowScreenProps = {
   primaryLabel: string;
   onPrimaryPress: () => void;
   helperText?: string;
+  managesOwnScrolling?: boolean;
 };
 
 export function WorkflowScreen({
@@ -33,6 +34,7 @@ export function WorkflowScreen({
   primaryLabel,
   onPrimaryPress,
   helperText,
+  managesOwnScrolling = false,
 }: WorkflowScreenProps) {
   const activeStepIndex = flow.findIndex(
     (flowStep) => flowStep.step === activeStep,
@@ -63,13 +65,17 @@ export function WorkflowScreen({
         />
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-      >
-        <StepIndicator activeStep={activeStep} flow={flow} />
-        {children}
-      </ScrollView>
+      {managesOwnScrolling ? (
+        <View style={styles.managedContent}>{children}</View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+        >
+          <StepIndicator activeStep={activeStep} flow={flow} />
+          {children}
+        </ScrollView>
+      )}
 
       <View style={styles.actionBar}>
         {helperText ? <Text style={styles.helperText}>{helperText}</Text> : null}
@@ -173,6 +179,9 @@ const styles = StyleSheet.create({
     gap: spacing.cardGap,
     padding: spacing.xl,
     paddingBottom: spacing.xl,
+  },
+  managedContent: {
+    flex: 1,
   },
   actionBar: {
     backgroundColor: colors.neutral.backgroundPrimary,

@@ -25,5 +25,6 @@ export {
 export { ScrollableList } from "./ScrollableList";
 export { StepIndicator } from "./StepIndicator";
 export type { WorkflowStep } from "./types";
+export { WorkflowListScreen } from "./WorkflowListScreen";
 export { WorkflowScreen } from "./WorkflowScreen";
 export { WorkflowSection } from "./WorkflowSection";

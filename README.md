@@ -24,6 +24,8 @@ Useful project docs:
 - `AGENTS.md` - project rules and workflow.
 - `docs/product-spec.md` - full product specification.
 
+For Codex agents: `AGENTS.md` also defines when to use the `@building-react-native-apps` and `@testing-react-native-apps` skills for new development and testing tasks.
+
 ## Setup
 
 ### Requirements

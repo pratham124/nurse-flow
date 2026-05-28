@@ -131,5 +131,6 @@ export interface Flag {
 
 export interface LocalAppState {
   floorTemplates: FloorTemplate[];
+  draftFloorTemplate?: FloorTemplate;
   activeShift?: Shift;
 }

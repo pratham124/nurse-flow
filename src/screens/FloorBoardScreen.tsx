@@ -5,12 +5,11 @@ import {
   BedChip,
   FilterChip,
   FilterChipRow,
-  ScrollableList,
   StatusPill,
   SummaryTile,
   SummaryTileGrid,
+  WorkflowListScreen,
   WorkflowSection,
-  WorkflowScreen,
 } from "../components/workflow";
 import { assignmentFlow } from "../utils/workflowFlows";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
@@ -62,19 +61,17 @@ const boardSides = [
   },
 ];
 
-export default function FloorBoardScreen() {
+const boardFilters = ["All", "Flags", "Unassigned", "Red", "RN coverage"];
+
+type NurseWorkload = (typeof nurses)[number];
+type BoardSide = (typeof boardSides)[number];
+type FloorBoardListItem =
+  | { type: "nurse"; nurse: NurseWorkload }
+  | { type: "side"; side: BoardSide };
+
+function FloorBoardListHeader() {
   return (
-    <WorkflowScreen
-      activeStep="Board"
-      headerActionLabel="Floors"
-      helperText="Static board preview only. Editing and re-run behavior come later."
-      onHeaderActionPress={() => router.push("/")}
-      onPrimaryPress={() => router.push("/flags")}
-      primaryLabel="View flags"
-      flow={assignmentFlow}
-      subtitle="4 North - assigned preview"
-      title="Floor board"
-    >
+    <View style={styles.headerContent}>
       <WorkflowSection title="Board summary">
         <SummaryTileGrid>
           <SummaryTile value="2/3" label="Occupied" />
@@ -86,69 +83,100 @@ export default function FloorBoardScreen() {
 
       <WorkflowSection title="Filters">
         <FilterChipRow>
-          {["All", "Flags", "Unassigned", "Red", "RN coverage"].map(
-            (filter, index) => (
-              <FilterChip key={filter} label={filter} selected={index === 0} />
-            ),
-          )}
+          {boardFilters.map((filter, index) => (
+            <FilterChip key={filter} label={filter} selected={index === 0} />
+          ))}
         </FilterChipRow>
       </WorkflowSection>
 
-      <WorkflowSection
-        note="Every nurse stays visible, even when a nurse has no assigned beds."
-        title="Nurse workload"
-      >
-        <ScrollableList maxHeight={280}>
-          {nurses.map((nurse, index) => (
-            <View
-              key={nurse.name}
-              style={[styles.nurseRow, index > 0 ? styles.dividedRow : null]}
-            >
-              <View style={styles.nurseAvatar}>
-                <Text style={styles.nurseAvatarText}>
-                  {nurse.name.charAt(0)}
-                </Text>
-              </View>
-              <View style={styles.nurseInfo}>
-                <View style={styles.nurseTopRow}>
-                  <Text style={styles.nurseName}>{nurse.name}</Text>
-                  <LoadChip value={nurse.load} />
-                </View>
-                <Text style={styles.nurseMeta}>{nurse.detail}</Text>
-                <Text style={styles.nurseMeta}>
-                  {nurse.team} - rooms {nurse.rooms}
-                </Text>
-              </View>
-            </View>
-          ))}
-        </ScrollableList>
-      </WorkflowSection>
+      <View style={styles.workloadHeader}>
+        <Text style={styles.workloadTitle}>Nurse workload</Text>
+        <Text style={styles.workloadNote}>
+          Every nurse stays visible, even when a nurse has no assigned beds.
+        </Text>
+      </View>
+    </View>
+  );
+}
 
-      {boardSides.map((side) => (
-        <WorkflowSection
-          key={side.name}
-          note={side.admitting ? "Admitting side" : "Non-admitting side"}
-          title={side.name}
-        >
-          {side.rooms.map((room) => (
-            <View key={room.label} style={styles.roomSection}>
-              <View style={styles.roomHeader}>
-                <View>
-                  <Text style={styles.roomTitle}>Room {room.label}</Text>
-                  <Text style={styles.roomMeta}>Coverage: {room.coverage}</Text>
-                </View>
-              </View>
+export default function FloorBoardScreen() {
+  const boardListItems: FloorBoardListItem[] = [
+    ...nurses.map((nurse) => ({ type: "nurse" as const, nurse })),
+    ...boardSides.map((side) => ({ type: "side" as const, side })),
+  ];
 
-              <ScrollableList maxHeight={320}>
-                {room.beds.map((bed) => (
-                  <BoardBed key={bed.label} {...bed} />
-                ))}
-              </ScrollableList>
+  return (
+    <WorkflowListScreen
+      activeStep="Board"
+      data={boardListItems}
+      flow={assignmentFlow}
+      headerActionLabel="Floors"
+      helperText="Static board preview only. Editing and re-run behavior come later."
+      keyExtractor={getFloorBoardItemKey}
+      listHeader={<FloorBoardListHeader />}
+      onHeaderActionPress={() => router.push("/")}
+      onPrimaryPress={() => router.push("/flags")}
+      primaryLabel="View flags"
+      renderItem={renderFloorBoardItem}
+      subtitle="4 North - assigned preview"
+      title="Floor board"
+    />
+  );
+}
+
+function renderFloorBoardItem({ item }: { item: FloorBoardListItem }) {
+  if (item.type === "nurse") {
+    return <NurseWorkloadRow nurse={item.nurse} />;
+  }
+
+  return <BoardSideSection side={item.side} />;
+}
+
+function getFloorBoardItemKey(item: FloorBoardListItem) {
+  return item.type === "nurse" ? `nurse-${item.nurse.name}` : `side-${item.side.name}`;
+}
+
+function NurseWorkloadRow({ nurse }: { nurse: NurseWorkload }) {
+  return (
+    <View style={styles.nurseRow}>
+      <View style={styles.nurseAvatar}>
+        <Text style={styles.nurseAvatarText}>{nurse.name.charAt(0)}</Text>
+      </View>
+      <View style={styles.nurseInfo}>
+        <View style={styles.nurseTopRow}>
+          <Text style={styles.nurseName}>{nurse.name}</Text>
+          <LoadChip value={nurse.load} />
+        </View>
+        <Text style={styles.nurseMeta}>{nurse.detail}</Text>
+        <Text style={styles.nurseMeta}>
+          {nurse.team} - rooms {nurse.rooms}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function BoardSideSection({ side }: { side: BoardSide }) {
+  return (
+    <WorkflowSection
+      note={side.admitting ? "Admitting side" : "Non-admitting side"}
+      title={side.name}
+    >
+      {side.rooms.map((room) => (
+        <View key={room.label} style={styles.roomSection}>
+          <View style={styles.roomHeader}>
+            <View>
+              <Text style={styles.roomTitle}>Room {room.label}</Text>
+              <Text style={styles.roomMeta}>Coverage: {room.coverage}</Text>
             </View>
+          </View>
+
+          {room.beds.map((bed) => (
+            <BoardBed key={bed.label} {...bed} />
           ))}
-        </WorkflowSection>
+        </View>
       ))}
-    </WorkflowScreen>
+    </WorkflowSection>
   );
 }
 
@@ -236,10 +264,36 @@ function getAcuityColor(acuity: string) {
 }
 
 const styles = StyleSheet.create({
+  headerContent: {
+    gap: spacing.cardGap,
+  },
+  workloadHeader: {
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.xl,
+    borderWidth: 0.5,
+    gap: spacing.xs,
+    padding: spacing.lg,
+  },
+  workloadTitle: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.lg,
+    fontWeight: "500",
+  },
+  workloadNote: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    lineHeight: 18,
+  },
   nurseRow: {
     alignItems: "center",
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.xl,
+    borderWidth: 0.5,
     flexDirection: "row",
     gap: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
   },
   nurseInfo: {
@@ -369,9 +423,5 @@ const styles = StyleSheet.create({
   },
   warningLoadChipText: {
     color: colors.status.amber800,
-  },
-  dividedRow: {
-    borderTopColor: colors.neutral.borderTertiary,
-    borderTopWidth: 0.5,
   },
 });
