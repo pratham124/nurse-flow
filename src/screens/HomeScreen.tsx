@@ -23,7 +23,10 @@ export default function Index() {
     <SafeAreaView style={styles.screen}>
       <View style={styles.header}>
         <Text style={styles.title}>NurseFlow</Text>
-        <Text style={styles.subtitle}>Local charge nurse prototype</Text>
+        <Text style={styles.subtitle}>Charge nurse workspace</Text>
+        <Text style={styles.headerText}>
+          Build floor templates and prepare shift assignments.
+        </Text>
       </View>
 
       <View style={styles.content}>
@@ -65,7 +68,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: colors.neutral.backgroundPrimary,
-    gap: spacing.xs,
+    gap: spacing.sm,
     padding: spacing.xl,
     paddingBottom: spacing.lg,
   },
@@ -85,9 +88,16 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   subtitle: {
-    color: colors.neutral.textSecondary,
-    fontSize: 13,
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.md,
+    fontWeight: "500",
     marginTop: 2,
+  },
+  headerText: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    lineHeight: 18,
+    maxWidth: 280,
   },
   sectionTitle: {
     color: colors.neutral.textPrimary,

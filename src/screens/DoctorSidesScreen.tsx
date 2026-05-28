@@ -9,6 +9,7 @@ import {
   WorkflowListScreen,
   WorkflowSection,
 } from "../components/workflow";
+import { useLocalState } from "../store/LocalStateContext";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
 
 const previewAssignments = [
@@ -74,6 +75,9 @@ function getPreviewAssignmentKey(assignment: PreviewAssignment) {
 }
 
 export default function DoctorSidesScreen() {
+  const { localState } = useLocalState();
+  const screenTitle = localState.draftFloorTemplate?.name ?? "Doctor sides";
+
   return (
     <WorkflowListScreen
       activeStep="Sides"
@@ -87,7 +91,7 @@ export default function DoctorSidesScreen() {
       primaryLabel="Review"
       renderItem={renderAssignmentPreviewItem}
       subtitle="Step 3 of 4"
-      title="Doctor sides"
+      title={screenTitle}
     />
   );
 }

@@ -10,6 +10,7 @@ import {
   WorkflowSection,
   WorkflowScreen,
 } from "../components/workflow";
+import { useLocalState } from "../store/LocalStateContext";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
 
 const reviewSides = [
@@ -18,6 +19,9 @@ const reviewSides = [
 ];
 
 export default function TemplateReviewScreen() {
+  const { localState } = useLocalState();
+  const screenTitle = localState.draftFloorTemplate?.name ?? "Review floor";
+
   return (
     <WorkflowScreen
       activeStep="Review"
@@ -27,13 +31,13 @@ export default function TemplateReviewScreen() {
       onPrimaryPress={() => router.push("/start-shift")}
       primaryLabel="Save template"
       subtitle="Step 4 of 4"
-      title="Review floor"
+      title={screenTitle}
     >
       <WorkflowSection
         note="This preview shows the information the charge nurse will confirm."
         title="Template summary"
       >
-        <Text style={styles.floorName}>4 North</Text>
+        <Text style={styles.floorName}>{screenTitle}</Text>
         <SummaryTileGrid>
           <SummaryTile value="2" label="Rooms" />
           <SummaryTile value="3" label="Beds" />
