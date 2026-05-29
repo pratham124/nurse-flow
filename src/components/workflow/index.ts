@@ -24,6 +24,7 @@ export {
 } from "./PlaceholderControls";
 export { ScrollableList } from "./ScrollableList";
 export { StepIndicator } from "./StepIndicator";
+export { SwipeRevealAction } from "./SwipeRevealAction";
 export type { WorkflowStep } from "./types";
 export { WorkflowListScreen } from "./WorkflowListScreen";
 export { WorkflowScreen } from "./WorkflowScreen";

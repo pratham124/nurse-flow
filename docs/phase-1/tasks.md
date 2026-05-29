@@ -222,7 +222,7 @@ Validation check:
 - Adding room `101` displays room `101` in the room list.
 - Blank or spaces-only room labels show validation.
 
-### Task 3.4: US2 Remove Room
+### ✅ Task 3.4: US2 Remove Room
 
 Build:
 

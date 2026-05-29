@@ -4,10 +4,10 @@ import { StyleSheet, Text, View } from "react-native";
 
 import {
   BedChip,
-  BedChipRow,
   NumberStepperPlaceholder,
   PlaceholderButton,
   PlaceholderInput,
+  SwipeRevealAction,
   WorkflowListScreen,
   WorkflowSection,
 } from "../components/workflow";
@@ -17,6 +17,7 @@ import { colors, radius, spacing, textSize } from "../theme/tokens";
 import type { Room } from "../types/models";
 
 const requiredRoomNameMessage = "Room name is required.";
+const requiredRoomMessage = "Add at least one room to continue.";
 
 function RoomsListHeader({
   roomName,
@@ -56,36 +57,48 @@ function RoomsListHeader({
   );
 }
 
-function RoomRow({ room }: { room: Room }) {
+function RoomRow({
+  room,
+  onRemoveRoom,
+}: {
+  room: Room;
+  onRemoveRoom: (roomId: string) => void;
+}) {
   const roomBedCount = room.bedCount.toString();
   const bedCountText = room.bedCount === 1 ? "1 bed" : `${room.bedCount} beds`;
 
   return (
-    <View style={styles.roomRow}>
-      <View style={styles.roomTopRow}>
-        <View>
-          <Text style={styles.roomLabel}>Room {room.label}</Text>
-          <Text style={styles.roomMeta}>{bedCountText}</Text>
+    <SwipeRevealAction
+      accessibilityLabel={`Remove room ${room.label}`}
+      actionLabel="Remove"
+      onActionPress={() => onRemoveRoom(room.id)}
+    >
+      <View style={styles.roomRow}>
+        <View style={styles.roomTopRow}>
+          <View>
+            <Text style={styles.roomLabel}>Room {room.label}</Text>
+            <Text style={styles.roomMeta}>{bedCountText}</Text>
+          </View>
+          <View style={styles.roomActions}>
+            <NumberStepperPlaceholder value={roomBedCount} />
+          </View>
         </View>
-        <NumberStepperPlaceholder value={roomBedCount} />
+
+        <View style={styles.roomFooterRow}>
+          <View style={styles.bedPreview}>
+            {room.bedCount > 0
+              ? Array.from({ length: room.bedCount }).map((_, index) => (
+                  <BedChip
+                    key={`${room.id}-bed-preview-${index + 1}`}
+                    label={`${room.label}-${index + 1}`}
+                  />
+                ))
+            : null}
+          </View>
+        </View>
       </View>
-
-      {room.bedCount > 0 ? (
-        <BedChipRow>
-          {Array.from({ length: room.bedCount }).map((_, index) => (
-            <BedChip
-              key={`${room.id}-bed-preview-${index + 1}`}
-              label={`${room.label}-${index + 1}`}
-            />
-          ))}
-        </BedChipRow>
-      ) : null}
-    </View>
+    </SwipeRevealAction>
   );
-}
-
-function renderRoomItem({ item }: { item: Room }) {
-  return <RoomRow room={item} />;
 }
 
 function getRoomKey(room: Room) {
@@ -96,6 +109,7 @@ export default function RoomsAndBedsScreen() {
   const { localState, setLocalState } = useLocalState();
   const [roomName, setRoomName] = useState("");
   const [roomNameError, setRoomNameError] = useState("");
+  const [roomListError, setRoomListError] = useState("");
   const screenTitle = localState.draftFloorTemplate?.name ?? "Rooms and beds";
   const rooms = localState.draftFloorTemplate?.rooms ?? [];
 
@@ -140,6 +154,39 @@ export default function RoomsAndBedsScreen() {
     });
 
     setRoomName("");
+    setRoomListError("");
+  }
+
+  function handleRemoveRoom(roomId: string) {
+    setLocalState((currentState) => {
+      const currentDraft = currentState.draftFloorTemplate;
+
+      if (!currentDraft) {
+        return currentState;
+      }
+
+      return {
+        ...currentState,
+        draftFloorTemplate: {
+          ...currentDraft,
+          rooms: currentDraft.rooms.filter((room) => room.id !== roomId),
+          beds: currentDraft.beds.filter((bed) => bed.roomId !== roomId),
+        },
+      };
+    });
+  }
+
+  function handleContinue() {
+    if (rooms.length === 0) {
+      setRoomListError(requiredRoomMessage);
+      return;
+    }
+
+    router.push("/doctor-sides");
+  }
+
+  function renderRoomItem({ item }: { item: Room }) {
+    return <RoomRow onRemoveRoom={handleRemoveRoom} room={item} />;
   }
 
   return (
@@ -157,14 +204,36 @@ export default function RoomsAndBedsScreen() {
           roomNameError={roomNameError}
         />
       }
-      listFooter={rooms.length === 0 ? <EmptyRoomsMessage /> : undefined}
+      listFooter={
+        rooms.length === 0 ? (
+          <RoomListFooter errorText={roomListError} />
+        ) : undefined
+      }
       onHeaderActionPress={() => router.push("/")}
-      onPrimaryPress={() => router.push("/doctor-sides")}
+      onPrimaryPress={handleContinue}
       primaryLabel="Continue"
       renderItem={renderRoomItem}
       subtitle="Step 2 of 4"
       title={screenTitle}
     />
+  );
+}
+
+function RoomListFooter({ errorText }: { errorText: string }) {
+  return (
+    <View style={styles.roomListFooter}>
+      {errorText ? <RoomListError message={errorText} /> : null}
+      <EmptyRoomsMessage />
+    </View>
+  );
+}
+
+function RoomListError({ message }: { message: string }) {
+  return (
+    <View accessibilityRole="alert" style={styles.roomListError}>
+      <Text style={styles.roomListErrorTitle}>Room required</Text>
+      <Text style={styles.roomListErrorText}>{message}</Text>
+    </View>
   );
 }
 
@@ -211,6 +280,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
   },
+  roomActions: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  roomFooterRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.md,
+    justifyContent: "space-between",
+  },
+  bedPreview: {
+    flex: 1,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
   roomLabel: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.md,
@@ -219,6 +305,28 @@ const styles = StyleSheet.create({
   roomMeta: {
     color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
+  },
+  roomListFooter: {
+    gap: spacing.sm,
+  },
+  roomListError: {
+    backgroundColor: colors.status.red50,
+    borderColor: colors.status.red700,
+    borderLeftWidth: 3,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    gap: 2,
+    padding: spacing.md,
+  },
+  roomListErrorTitle: {
+    color: colors.status.red700,
+    fontSize: textSize.sm,
+    fontWeight: "600",
+  },
+  roomListErrorText: {
+    color: colors.status.red700,
+    fontSize: textSize.sm,
+    lineHeight: 18,
   },
   emptyRooms: {
     alignItems: "center",
