@@ -234,7 +234,7 @@ Validation check:
 - Removing room `101` also removes beds such as `101-1` and `101-2`.
 - If all rooms are removed, continue is disabled or blocked.
 
-### Task 3.5: US2 Duplicate Room Validation
+### ✅ Task 3.5: US2 Duplicate Room Validation
 
 Build:
 

@@ -17,6 +17,7 @@ import { colors, radius, spacing, textSize } from "../theme/tokens";
 import type { Room } from "../types/models";
 
 const requiredRoomNameMessage = "Room name is required.";
+const duplicateRoomNameMessage = "Room already exists.";
 const requiredRoomMessage = "Add at least one room to continue.";
 
 function RoomsListHeader({
@@ -126,6 +127,15 @@ export default function RoomsAndBedsScreen() {
 
     if (!trimmedRoomName) {
       setRoomNameError(requiredRoomNameMessage);
+      return;
+    }
+
+    const hasDuplicateRoomName = rooms.some(
+      (room) => room.label.trim() === trimmedRoomName,
+    );
+
+    if (hasDuplicateRoomName) {
+      setRoomNameError(duplicateRoomNameMessage);
       return;
     }
 
