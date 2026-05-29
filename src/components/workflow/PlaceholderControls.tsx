@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { colors, radius, spacing, textSize } from "../../theme/tokens";
 import { MinusIcon, PlusIcon } from "./Icons";
@@ -51,18 +51,27 @@ export function PlaceholderInput({
   );
 }
 
-export function PlaceholderButton({ label }: { label: string }) {
+export function PlaceholderButton({
+  label,
+  onPress,
+}: {
+  label: string;
+  onPress?: () => void;
+}) {
   const isAddRoom = label === "Add room";
 
   return (
-    <View
+    <Pressable
+      accessibilityRole="button"
+      disabled={!onPress}
+      onPress={onPress}
       style={[
         styles.secondaryButton,
         isAddRoom ? styles.addRoomButton : null,
       ]}
     >
       <Text style={styles.secondaryButtonText}>{label}</Text>
-    </View>
+    </Pressable>
   );
 }
 

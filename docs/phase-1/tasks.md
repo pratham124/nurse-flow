@@ -210,7 +210,7 @@ Validation check:
 
 - If `4 North` exists, entering `4 North` or `4 North` shows a duplicate-name validation message and does not create another template.
 
-### Task 3.3: US2 Add Room
+### ✅ Task 3.3: US2 Add Room
 
 Build:
 
