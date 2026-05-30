@@ -256,18 +256,6 @@ Validation check:
 
 - Room `101` with bed count `2` shows `101-1` and `101-2`.
 
-### Task 3.7: US3 Bed Count Validation
-
-Build:
-
-- Require bed count to be a whole number.
-- Prevent values below 1.
-- Add a simple Phase 1 upper limit.
-
-Validation check:
-
-- Bed count `0`, negative values, decimals, or very large values show clear validation.
-
 ### Task 3.8: US4 Two Doctor Side Names
 
 Build:
