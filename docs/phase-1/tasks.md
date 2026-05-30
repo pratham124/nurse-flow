@@ -280,7 +280,7 @@ Validation check:
 - Blank side names show validation.
 - Naming both sides `AB Side` shows a duplicate-side validation message.
 
-### Task 3.10: US5 Assign Rooms to Doctor Sides
+### ✅ Task 3.10: US5 Assign Rooms to Doctor Sides
 
 Build:
 

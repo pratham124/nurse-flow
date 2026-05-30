@@ -28,7 +28,8 @@ type NumberStepperPlaceholderProps = {
 
 type SegmentedPlaceholderProps = {
   options: string[];
-  selectedIndex?: number;
+  selectedIndex?: number | null;
+  onSelect?: (index: number) => void;
 };
 
 export function PlaceholderInput({
@@ -125,6 +126,7 @@ export function NumberStepperPlaceholder({
 export function SegmentedPlaceholder({
   options,
   selectedIndex = 0,
+  onSelect,
 }: SegmentedPlaceholderProps) {
   return (
     <View style={styles.segmented}>
@@ -132,8 +134,12 @@ export function SegmentedPlaceholder({
         const isSelected = index === selectedIndex;
 
         return (
-          <View
+          <Pressable
             key={`${option}-${index}`}
+            accessibilityRole="button"
+            accessibilityState={{ selected: isSelected }}
+            disabled={!onSelect}
+            onPress={() => onSelect?.(index)}
             style={[
               styles.segmentOption,
               isSelected ? styles.selectedSegmentOption : null,
@@ -147,7 +153,7 @@ export function SegmentedPlaceholder({
             >
               {option}
             </Text>
-          </View>
+          </Pressable>
         );
       })}
     </View>

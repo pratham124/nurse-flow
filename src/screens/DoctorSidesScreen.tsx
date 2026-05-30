@@ -13,25 +13,22 @@ import {
 import { createLocalId } from "../helpers/localId";
 import { useLocalState } from "../store/LocalStateContext";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
-import type { DoctorSide } from "../types/models";
+import type { DoctorSide, Room } from "../types/models";
 
-const previewAssignments = [
-  { room: "101", selectedIndex: 0 },
-  { room: "102", selectedIndex: 1 },
-];
 const requiredDoctorSideNameMessage = "Doctor side name is required.";
 const duplicateDoctorSideNameMessage = "Doctor side names must be different.";
 
-type PreviewAssignment = (typeof previewAssignments)[number];
-
 type AssignmentPreviewRowProps = {
-  assignment: PreviewAssignment;
-  doctorSideNames: string[];
+  doctorSides: DoctorSide[];
+  onAssignRoomToSide: (roomId: string, doctorSideId: string) => void;
+  room: Room;
 };
 
 type DoctorSidesListHeaderProps = {
+  sideOneRoomCount: number;
   sideOneName: string;
   sideOneNameError: string;
+  sideTwoRoomCount: number;
   sideTwoName: string;
   sideTwoNameError: string;
   onSideNameChange: (sideIndex: number, name: string) => void;
@@ -86,8 +83,10 @@ function validateDoctorSideNames(
 }
 
 function DoctorSidesListHeader({
+  sideOneRoomCount,
   sideOneName,
   sideOneNameError,
+  sideTwoRoomCount,
   sideTwoName,
   sideTwoNameError,
   onSideNameChange,
@@ -118,13 +117,19 @@ function DoctorSidesListHeader({
         <View style={styles.assignmentTitleGroup}>
           <Text style={styles.assignmentTitle}>Room assignments</Text>
           <Text style={styles.assignmentNote}>
-            Every room will eventually belong to exactly one side.
+            Pick one doctor side for each room. Counts update from the room list.
           </Text>
         </View>
 
         <SummaryTileGrid>
-          <SummaryTile value={sideOneName || "Side 1"} label="1 room" />
-          <SummaryTile value={sideTwoName || "Side 2"} label="1 room" />
+          <SummaryTile
+            value={formatRoomCount(sideOneRoomCount)}
+            label={sideOneName || "Side 1"}
+          />
+          <SummaryTile
+            value={formatRoomCount(sideTwoRoomCount)}
+            label={sideTwoName || "Side 2"}
+          />
         </SummaryTileGrid>
       </View>
     </View>
@@ -132,25 +137,50 @@ function DoctorSidesListHeader({
 }
 
 function AssignmentPreviewRow({
-  assignment,
-  doctorSideNames,
+  doctorSides,
+  onAssignRoomToSide,
+  room,
 }: AssignmentPreviewRowProps) {
+  const doctorSideNames = doctorSides.map(
+    (doctorSide, index) => doctorSide.name || `Side ${index + 1}`,
+  );
+  const selectedIndex = doctorSides.findIndex(
+    (doctorSide) => doctorSide.id === room.doctorSideId,
+  );
+  const selectedSideName =
+    selectedIndex >= 0 ? doctorSideNames[selectedIndex] : undefined;
+
   return (
     <View style={styles.assignmentRow}>
       <View>
-        <Text style={styles.roomLabel}>Room {assignment.room}</Text>
-        <Text style={styles.roomMeta}>Choose one doctor side</Text>
+        <Text style={styles.roomLabel}>Room {room.label}</Text>
+        <Text style={styles.roomMeta}>
+          {selectedSideName
+            ? `${selectedSideName} assigned`
+            : "Choose one doctor side"}
+        </Text>
       </View>
       <SegmentedPlaceholder
         options={doctorSideNames}
-        selectedIndex={assignment.selectedIndex}
+        selectedIndex={selectedIndex >= 0 ? selectedIndex : null}
+        onSelect={(sideIndex) => {
+          const selectedDoctorSide = doctorSides[sideIndex];
+
+          if (selectedDoctorSide) {
+            onAssignRoomToSide(room.id, selectedDoctorSide.id);
+          }
+        }}
       />
     </View>
   );
 }
 
-function getPreviewAssignmentKey(assignment: PreviewAssignment) {
-  return assignment.room;
+function getRoomKey(room: Room) {
+  return room.id;
+}
+
+function formatRoomCount(roomCount: number) {
+  return roomCount === 1 ? "1 room" : `${roomCount} rooms`;
 }
 
 export default function DoctorSidesScreen() {
@@ -158,9 +188,16 @@ export default function DoctorSidesScreen() {
   const [sideNameErrors, setSideNameErrors] = useState(["", ""]);
   const screenTitle = localState.draftFloorTemplate?.name ?? "Doctor sides";
   const doctorSides = localState.draftFloorTemplate?.doctorSides ?? [];
+  const visibleDoctorSides = createTwoDoctorSides(doctorSides);
   const sideOneName = doctorSides[0]?.name ?? "";
   const sideTwoName = doctorSides[1]?.name ?? "";
-  const doctorSideNames = [sideOneName || "Side 1", sideTwoName || "Side 2"];
+  const rooms = localState.draftFloorTemplate?.rooms ?? [];
+  const sideOneRoomCount = rooms.filter(
+    (room) => room.doctorSideId === visibleDoctorSides[0]?.id,
+  ).length;
+  const sideTwoRoomCount = rooms.filter(
+    (room) => room.doctorSideId === visibleDoctorSides[1]?.id,
+  ).length;
 
   useEffect(() => {
     if (!localState.draftFloorTemplate || doctorSides.length === 2) {
@@ -218,6 +255,29 @@ export default function DoctorSidesScreen() {
     });
   }
 
+  function handleAssignRoomToSide(roomId: string, doctorSideId: string) {
+    setLocalState((currentState) => {
+      const currentDraft = currentState.draftFloorTemplate;
+      const doctorSideExists = currentDraft?.doctorSides.some(
+        (doctorSide) => doctorSide.id === doctorSideId,
+      );
+
+      if (!currentDraft || !doctorSideExists) {
+        return currentState;
+      }
+
+      return {
+        ...currentState,
+        draftFloorTemplate: {
+          ...currentDraft,
+          rooms: currentDraft.rooms.map((room) =>
+            room.id === roomId ? { ...room, doctorSideId } : room,
+          ),
+        },
+      };
+    });
+  }
+
   function handleReview() {
     const trimmedSideOneName = sideOneName.trim();
     const trimmedSideTwoName = sideTwoName.trim();
@@ -259,11 +319,12 @@ export default function DoctorSidesScreen() {
     router.push("/template-review");
   }
 
-  function renderAssignmentPreviewItem({ item }: { item: PreviewAssignment }) {
+  function renderAssignmentPreviewItem({ item }: { item: Room }) {
     return (
       <AssignmentPreviewRow
-        assignment={item}
-        doctorSideNames={doctorSideNames}
+        doctorSides={visibleDoctorSides}
+        onAssignRoomToSide={handleAssignRoomToSide}
+        room={item}
       />
     );
   }
@@ -271,15 +332,17 @@ export default function DoctorSidesScreen() {
   return (
     <WorkflowListScreen
       activeStep="Sides"
-      data={previewAssignments}
+      data={rooms}
       headerActionLabel="Floors"
-      helperText="Side names are saved locally. Room choices are a later task."
-      keyExtractor={getPreviewAssignmentKey}
+      helperText="Side names and room assignments are saved locally in the draft template."
+      keyExtractor={getRoomKey}
       listHeader={
         <DoctorSidesListHeader
           onSideNameChange={handleSideNameChange}
+          sideOneRoomCount={sideOneRoomCount}
           sideOneName={sideOneName}
           sideOneNameError={sideNameErrors[0]}
+          sideTwoRoomCount={sideTwoRoomCount}
           sideTwoName={sideTwoName}
           sideTwoNameError={sideNameErrors[1]}
         />
