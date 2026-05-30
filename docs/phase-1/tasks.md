@@ -292,7 +292,7 @@ Validation check:
 - Each room can be switched between the two sides.
 - A room appears under only one side.
 
-### Task 3.11: US5 Missing Side Validation
+### ✅ Task 3.11: US5 Missing Side Validation
 
 Build:
 

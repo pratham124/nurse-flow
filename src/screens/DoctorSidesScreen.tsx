@@ -17,9 +17,11 @@ import type { DoctorSide, Room } from "../types/models";
 
 const requiredDoctorSideNameMessage = "Doctor side name is required.";
 const duplicateDoctorSideNameMessage = "Doctor side names must be different.";
+const missingDoctorSideMessage = "Every room needs a doctor side.";
 
 type AssignmentPreviewRowProps = {
   doctorSides: DoctorSide[];
+  hasMissingDoctorSide: boolean;
   onAssignRoomToSide: (roomId: string, doctorSideId: string) => void;
   room: Room;
 };
@@ -138,6 +140,7 @@ function DoctorSidesListHeader({
 
 function AssignmentPreviewRow({
   doctorSides,
+  hasMissingDoctorSide,
   onAssignRoomToSide,
   room,
 }: AssignmentPreviewRowProps) {
@@ -151,7 +154,12 @@ function AssignmentPreviewRow({
     selectedIndex >= 0 ? doctorSideNames[selectedIndex] : undefined;
 
   return (
-    <View style={styles.assignmentRow}>
+    <View
+      style={[
+        styles.assignmentRow,
+        hasMissingDoctorSide ? styles.missingDoctorSideRow : null,
+      ]}
+    >
       <View>
         <Text style={styles.roomLabel}>Room {room.label}</Text>
         <Text style={styles.roomMeta}>
@@ -183,9 +191,21 @@ function formatRoomCount(roomCount: number) {
   return roomCount === 1 ? "1 room" : `${roomCount} rooms`;
 }
 
+function getRoomIdsMissingDoctorSide(rooms: Room[], doctorSides: DoctorSide[]) {
+  const doctorSideIds = doctorSides.map((doctorSide) => doctorSide.id);
+
+  return rooms
+    .filter((room) => !doctorSideIds.includes(room.doctorSideId))
+    .map((room) => room.id);
+}
+
 export default function DoctorSidesScreen() {
   const { localState, setLocalState } = useLocalState();
   const [sideNameErrors, setSideNameErrors] = useState(["", ""]);
+  const [missingDoctorSideError, setMissingDoctorSideError] = useState("");
+  const [missingDoctorSideRoomIds, setMissingDoctorSideRoomIds] = useState<
+    string[]
+  >([]);
   const screenTitle = localState.draftFloorTemplate?.name ?? "Doctor sides";
   const doctorSides = localState.draftFloorTemplate?.doctorSides ?? [];
   const visibleDoctorSides = createTwoDoctorSides(doctorSides);
@@ -256,6 +276,21 @@ export default function DoctorSidesScreen() {
   }
 
   function handleAssignRoomToSide(roomId: string, doctorSideId: string) {
+    const roomsAfterSideSelection = rooms.map((room) =>
+      room.id === roomId ? { ...room, doctorSideId } : room,
+    );
+    const roomIdsStillMissingDoctorSide = getRoomIdsMissingDoctorSide(
+      roomsAfterSideSelection,
+      doctorSides,
+    );
+
+    if (missingDoctorSideError) {
+      setMissingDoctorSideRoomIds(roomIdsStillMissingDoctorSide);
+      setMissingDoctorSideError(
+        roomIdsStillMissingDoctorSide.length ? missingDoctorSideMessage : "",
+      );
+    }
+
     setLocalState((currentState) => {
       const currentDraft = currentState.draftFloorTemplate;
       const doctorSideExists = currentDraft?.doctorSides.some(
@@ -286,9 +321,17 @@ export default function DoctorSidesScreen() {
       sideTwoName,
       true,
     );
+    const roomIdsMissingDoctorSide = getRoomIdsMissingDoctorSide(
+      rooms,
+      doctorSides,
+    );
 
-    if (nextSideNameErrors.some(Boolean)) {
+    if (nextSideNameErrors.some(Boolean) || roomIdsMissingDoctorSide.length) {
       setSideNameErrors(nextSideNameErrors);
+      setMissingDoctorSideRoomIds(roomIdsMissingDoctorSide);
+      setMissingDoctorSideError(
+        roomIdsMissingDoctorSide.length ? missingDoctorSideMessage : "",
+      );
       return;
     }
 
@@ -316,6 +359,8 @@ export default function DoctorSidesScreen() {
     });
 
     setSideNameErrors(["", ""]);
+    setMissingDoctorSideError("");
+    setMissingDoctorSideRoomIds([]);
     router.push("/template-review");
   }
 
@@ -323,6 +368,7 @@ export default function DoctorSidesScreen() {
     return (
       <AssignmentPreviewRow
         doctorSides={visibleDoctorSides}
+        hasMissingDoctorSide={missingDoctorSideRoomIds.includes(item.id)}
         onAssignRoomToSide={handleAssignRoomToSide}
         room={item}
       />
@@ -332,9 +378,14 @@ export default function DoctorSidesScreen() {
   return (
     <WorkflowListScreen
       activeStep="Sides"
+      actionErrorText={missingDoctorSideError}
       data={rooms}
       headerActionLabel="Floors"
-      helperText="Side names and room assignments are saved locally in the draft template."
+      helperText={
+        missingDoctorSideError
+          ? undefined
+          : "Side names and room assignments are saved locally in the draft template."
+      }
       keyExtractor={getRoomKey}
       listHeader={
         <DoctorSidesListHeader
@@ -390,6 +441,10 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.lg,
+  },
+  missingDoctorSideRow: {
+    borderColor: colors.status.red700,
+    borderWidth: 1,
   },
   roomLabel: {
     color: colors.neutral.textPrimary,

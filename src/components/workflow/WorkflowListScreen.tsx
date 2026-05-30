@@ -23,6 +23,7 @@ type WorkflowListScreenProps<ItemT> = {
   primaryLabel: string;
   onPrimaryPress: () => void;
   helperText?: string;
+  actionErrorText?: string;
   data: ItemT[];
   keyExtractor: (item: ItemT, index: number) => string;
   renderItem: ListRenderItem<ItemT>;
@@ -40,6 +41,7 @@ export function WorkflowListScreen<ItemT>({
   primaryLabel,
   onPrimaryPress,
   helperText,
+  actionErrorText,
   data,
   keyExtractor,
   renderItem,
@@ -49,6 +51,7 @@ export function WorkflowListScreen<ItemT>({
   return (
     <WorkflowScreen
       activeStep={activeStep}
+      actionErrorText={actionErrorText}
       flow={flow}
       headerActionLabel={headerActionLabel}
       helperText={helperText}

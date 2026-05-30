@@ -20,6 +20,7 @@ type WorkflowScreenProps = {
   primaryLabel: string;
   onPrimaryPress: () => void;
   helperText?: string;
+  actionErrorText?: string;
   managesOwnScrolling?: boolean;
 };
 
@@ -39,6 +40,7 @@ export function WorkflowScreen({
   primaryLabel,
   onPrimaryPress,
   helperText,
+  actionErrorText,
   managesOwnScrolling = false,
 }: WorkflowScreenProps) {
   const activeStepIndex = flow.findIndex(
@@ -84,6 +86,11 @@ export function WorkflowScreen({
 
       <View style={styles.actionBar}>
         {helperText ? <Text style={styles.helperText}>{helperText}</Text> : null}
+        {actionErrorText ? (
+          <Text accessibilityRole="alert" style={styles.actionErrorText}>
+            {actionErrorText}
+          </Text>
+        ) : null}
         <View style={styles.actionRow}>
           <Pressable
             accessibilityRole="button"
@@ -197,6 +204,12 @@ const styles = StyleSheet.create({
   },
   helperText: {
     color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    lineHeight: 18,
+    textAlign: "center",
+  },
+  actionErrorText: {
+    color: colors.status.red700,
     fontSize: textSize.sm,
     lineHeight: 18,
     textAlign: "center",
