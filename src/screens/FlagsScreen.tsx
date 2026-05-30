@@ -62,10 +62,6 @@ function FlagsListHeader() {
 
       <View style={styles.flagListHeader}>
         <Text style={styles.flagListTitle}>Flag list</Text>
-        <Text style={styles.flagListNote}>
-          Flags are local and informational in Phase 1. They do not imply push
-          notifications.
-        </Text>
       </View>
     </View>
   );
@@ -92,7 +88,6 @@ export default function FlagsScreen() {
       data={flags}
       flow={assignmentFlow}
       headerActionLabel="Floors"
-      helperText="Static flags only. Real flags are generated after the assignment algorithm exists."
       keyExtractor={getFlagKey}
       listHeader={<FlagsListHeader />}
       onHeaderActionPress={() => router.push("/")}
@@ -154,11 +149,6 @@ const styles = StyleSheet.create({
     color: colors.neutral.textPrimary,
     fontSize: textSize.lg,
     fontWeight: "500",
-  },
-  flagListNote: {
-    color: colors.neutral.textSecondary,
-    fontSize: textSize.sm,
-    lineHeight: 18,
   },
   flagRow: {
     backgroundColor: colors.neutral.surface,

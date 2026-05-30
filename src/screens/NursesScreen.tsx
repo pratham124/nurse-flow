@@ -28,10 +28,7 @@ type NursePreviewRowProps = {
 function NursesListHeader() {
   return (
     <View style={styles.headerContent}>
-      <WorkflowSection
-        note="Later, each nurse will be added to the active local shift."
-        title="Add nurse"
-      >
+      <WorkflowSection title="Add nurse">
         <PlaceholderInput label="Nurse name" placeholder="Taylor" />
         <SegmentedPlaceholder options={["RN", "LPN"]} />
         <SegmentedPlaceholder
@@ -44,9 +41,6 @@ function NursesListHeader() {
       <View style={styles.shiftNursesHeader}>
         <View style={styles.shiftNursesTitleGroup}>
           <Text style={styles.shiftNursesTitle}>Shift nurses</Text>
-          <Text style={styles.shiftNursesNote}>
-            Max load is a hard cap for assignment in later tasks.
-          </Text>
         </View>
 
         <SummaryTileGrid>
@@ -90,7 +84,6 @@ export default function NursesScreen() {
       data={previewNurses}
       flow={shiftSetupFlow}
       headerActionLabel="Floors"
-      helperText="Static nurse setup only. Nurse rows are sample data for now."
       keyExtractor={getPreviewNurseKey}
       listHeader={<NursesListHeader />}
       onHeaderActionPress={() => router.push("/")}
@@ -122,11 +115,6 @@ const styles = StyleSheet.create({
     color: colors.neutral.textPrimary,
     fontSize: textSize.lg,
     fontWeight: "500",
-  },
-  shiftNursesNote: {
-    color: colors.neutral.textSecondary,
-    fontSize: textSize.sm,
-    lineHeight: 18,
   },
   nurseRow: {
     alignItems: "center",

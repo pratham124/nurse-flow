@@ -12,7 +12,7 @@ import {
 } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
-import type { Bed, DoctorSide, Room } from "../types/models";
+import type { Bed, DoctorSide, FloorTemplate, Room } from "../types/models";
 
 type ReviewRoomRowProps = {
   beds: Bed[];
@@ -24,6 +24,9 @@ type ReviewDoctorSideSectionProps = {
   doctorSide: DoctorSide;
   rooms: Room[];
 };
+
+const invalidTemplateMessage =
+  "Complete the floor name, rooms, beds, and doctor sides before saving.";
 
 function ReviewRoomRow({ beds, room }: ReviewRoomRowProps) {
   const bedCountLabel = getCountLabel(beds.length, "bed", "beds");
@@ -96,29 +99,89 @@ function getCountLabel(count: number, singularLabel: string, pluralLabel: string
   return count === 1 ? singularLabel : pluralLabel;
 }
 
+function isCompletedFloorTemplate(floorTemplate?: FloorTemplate) {
+  if (!floorTemplate) {
+    return false;
+  }
+
+  const doctorSideIds = floorTemplate.doctorSides.map(
+    (doctorSide) => doctorSide.id,
+  );
+  const hasNamedDoctorSides =
+    floorTemplate.doctorSides.length === 2 &&
+    floorTemplate.doctorSides.every((doctorSide) => doctorSide.name.trim());
+  const hasRooms = floorTemplate.rooms.length > 0;
+  const hasValidRooms = floorTemplate.rooms.every(
+    (room) =>
+      room.label.trim() &&
+      room.bedCount > 0 &&
+      doctorSideIds.includes(room.doctorSideId),
+  );
+  const hasBedsForEveryRoom = floorTemplate.rooms.every((room) =>
+    floorTemplate.beds.some((bed) => bed.roomId === room.id),
+  );
+
+  return (
+    Boolean(floorTemplate.name.trim()) &&
+    hasNamedDoctorSides &&
+    hasRooms &&
+    hasValidRooms &&
+    hasBedsForEveryRoom
+  );
+}
+
 export default function TemplateReviewScreen() {
-  const { localState } = useLocalState();
+  const { localState, setLocalState } = useLocalState();
   const draftTemplate = localState.draftFloorTemplate;
   const screenTitle = draftTemplate?.name ?? "Review floor";
   const roomCount = draftTemplate?.rooms.length ?? 0;
   const bedCount = draftTemplate?.beds.length ?? 0;
   const doctorSideCount = draftTemplate?.doctorSides.length ?? 0;
+  const canSaveTemplate = isCompletedFloorTemplate(draftTemplate);
+  const actionErrorText = draftTemplate
+    ? canSaveTemplate
+      ? ""
+      : invalidTemplateMessage
+    : "Create a floor template before saving.";
+
+  function handleSaveTemplate() {
+    if (!isCompletedFloorTemplate(draftTemplate)) {
+      return;
+    }
+
+    setLocalState((currentState) => {
+      if (!currentState.draftFloorTemplate) {
+        return currentState;
+      }
+
+      return {
+        ...currentState,
+        draftFloorTemplate: undefined,
+        floorTemplates: [
+          ...currentState.floorTemplates.filter(
+            (floorTemplate) =>
+              floorTemplate.id !== currentState.draftFloorTemplate?.id,
+          ),
+          currentState.draftFloorTemplate,
+        ],
+      };
+    });
+
+    router.push("/");
+  }
 
   return (
     <WorkflowScreen
       activeStep="Review"
+      actionErrorText={actionErrorText}
       headerActionLabel="Floors"
-      helperText="Review-only for this task. Local template saving comes next."
       onHeaderActionPress={() => router.push("/")}
-      onPrimaryPress={() => undefined}
+      onPrimaryPress={handleSaveTemplate}
       primaryLabel="Save template"
       subtitle="Step 4 of 4"
       title={screenTitle}
     >
-      <WorkflowSection
-        note="This preview shows the information the charge nurse will confirm."
-        title="Template summary"
-      >
+      <WorkflowSection title="Template summary">
         <SummaryTileGrid>
           <SummaryTile
             value={roomCount.toString()}

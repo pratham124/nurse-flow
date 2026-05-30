@@ -5,6 +5,29 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { HospitalIcon } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
+import type { FloorTemplate } from "../types/models";
+
+type FloorTemplateRowProps = {
+  floorTemplate: FloorTemplate;
+};
+
+function FloorTemplateRow({ floorTemplate }: FloorTemplateRowProps) {
+  const roomCount = floorTemplate.rooms.length;
+  const bedCount = floorTemplate.beds.length;
+
+  return (
+    <View style={styles.templateRow}>
+      <View style={styles.templateTitleGroup}>
+        <Text style={styles.templateName}>{floorTemplate.name}</Text>
+        <Text style={styles.templateMeta}>
+          {roomCount} {roomCount === 1 ? "room" : "rooms"} - {bedCount}{" "}
+          {bedCount === 1 ? "bed" : "beds"}
+        </Text>
+      </View>
+      <Text style={styles.templateStatus}>Saved locally</Text>
+    </View>
+  );
+}
 
 export default function Index() {
   const { localState, setLocalState } = useLocalState();
@@ -35,16 +58,27 @@ export default function Index() {
           <Text style={styles.sectionCount}>{floorTemplateCount}</Text>
         </View>
 
-        <View style={styles.emptyState}>
-          <View style={styles.emptyIcon}>
-            <HospitalIcon />
+        {floorTemplateCount ? (
+          <View style={styles.templateList}>
+            {localState.floorTemplates.map((floorTemplate) => (
+              <FloorTemplateRow
+                floorTemplate={floorTemplate}
+                key={floorTemplate.id}
+              />
+            ))}
           </View>
-          <Text style={styles.emptyTitle}>No local floor yet.</Text>
-          <Text style={styles.emptyText}>
-            Create a floor template on this device to start the local charge
-            nurse workflow.
-          </Text>
-        </View>
+        ) : (
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIcon}>
+              <HospitalIcon />
+            </View>
+            <Text style={styles.emptyTitle}>No local floor yet.</Text>
+            <Text style={styles.emptyText}>
+              Create a floor template on this device to start the local charge
+              nurse workflow.
+            </Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.actionBar}>
@@ -144,6 +178,40 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     maxWidth: 260,
     textAlign: "center",
+  },
+  templateList: {
+    gap: spacing.sm,
+  },
+  templateRow: {
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.xl,
+    borderWidth: 0.5,
+    gap: spacing.md,
+    padding: spacing.lg,
+  },
+  templateTitleGroup: {
+    gap: spacing.xs,
+  },
+  templateName: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.lg,
+    fontWeight: "600",
+  },
+  templateMeta: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    lineHeight: 18,
+  },
+  templateStatus: {
+    alignSelf: "flex-start",
+    backgroundColor: colors.brand.burgundy10,
+    borderRadius: radius.pill,
+    color: colors.brand.burgundy,
+    fontSize: textSize.sm,
+    overflow: "hidden",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
   },
   actionBar: {
     backgroundColor: colors.neutral.backgroundPrimary,

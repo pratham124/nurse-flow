@@ -314,7 +314,7 @@ Validation check:
 
 - A completed template review clearly shows both sides, all rooms, and generated bed labels.
 
-### Task 3.13: US6 Save Template Locally
+### ✅ Task 3.13: US6 Save Template Locally
 
 Build:
 

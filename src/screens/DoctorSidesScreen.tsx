@@ -95,10 +95,7 @@ function DoctorSidesListHeader({
 }: DoctorSidesListHeaderProps) {
   return (
     <View style={styles.headerContent}>
-      <WorkflowSection
-        note="Phase 1 uses exactly two doctor sides."
-        title="Side names"
-      >
+      <WorkflowSection title="Side names">
         <PlaceholderInput
           errorText={sideOneNameError}
           label="Doctor side 1"
@@ -118,9 +115,6 @@ function DoctorSidesListHeader({
       <View style={styles.assignmentHeader}>
         <View style={styles.assignmentTitleGroup}>
           <Text style={styles.assignmentTitle}>Room assignments</Text>
-          <Text style={styles.assignmentNote}>
-            Pick one doctor side for each room. Counts update from the room list.
-          </Text>
         </View>
 
         <SummaryTileGrid>
@@ -381,11 +375,6 @@ export default function DoctorSidesScreen() {
       actionErrorText={missingDoctorSideError}
       data={rooms}
       headerActionLabel="Floors"
-      helperText={
-        missingDoctorSideError
-          ? undefined
-          : "Side names and room assignments are saved locally in the draft template."
-      }
       keyExtractor={getRoomKey}
       listHeader={
         <DoctorSidesListHeader
@@ -427,11 +416,6 @@ const styles = StyleSheet.create({
     color: colors.neutral.textPrimary,
     fontSize: textSize.lg,
     fontWeight: "500",
-  },
-  assignmentNote: {
-    color: colors.neutral.textSecondary,
-    fontSize: textSize.sm,
-    lineHeight: 18,
   },
   assignmentRow: {
     backgroundColor: colors.neutral.backgroundSecondary,

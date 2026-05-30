@@ -51,13 +51,9 @@ function RoomsListHeader({
 }: RoomsListHeaderProps) {
   return (
     <View style={styles.headerContent}>
-      <WorkflowSection
-        note="Rooms will become the structure used by the local assignment board."
-        title="Add room"
-      >
+      <WorkflowSection title="Add room">
         <PlaceholderInput
           errorText={roomNameError}
-          helperText="Room names can be numbers or short names."
           label="Room name"
           onChangeText={onRoomNameChange}
           placeholder="101"
@@ -68,9 +64,6 @@ function RoomsListHeader({
 
       <View style={styles.roomsHeader}>
         <Text style={styles.roomsTitle}>Rooms</Text>
-        <Text style={styles.roomsNote}>
-          Added rooms are saved to this draft floor template.
-        </Text>
       </View>
     </View>
   );
@@ -281,7 +274,6 @@ export default function RoomsAndBedsScreen() {
       activeStep="Rooms"
       data={rooms}
       headerActionLabel="Floors"
-      helperText="Room changes are saved locally in the draft floor template."
       keyExtractor={getRoomKey}
       listHeader={
         <RoomsListHeader
@@ -347,11 +339,6 @@ const styles = StyleSheet.create({
     color: colors.neutral.textPrimary,
     fontSize: textSize.lg,
     fontWeight: "500",
-  },
-  roomsNote: {
-    color: colors.neutral.textSecondary,
-    fontSize: textSize.sm,
-    lineHeight: 18,
   },
   roomRow: {
     backgroundColor: colors.neutral.backgroundSecondary,

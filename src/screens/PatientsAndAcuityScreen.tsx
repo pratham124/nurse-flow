@@ -52,10 +52,7 @@ type AcuityLegendItemProps = {
 function PatientsListHeader() {
   return (
     <View style={styles.headerContent}>
-      <WorkflowSection
-        note="Census totals will update from local bed state in a later task."
-        title="Census"
-      >
+      <WorkflowSection title="Census">
         <SummaryTileGrid>
           <SummaryTile value="2" label="Occupied" />
           <SummaryTile value="3" label="Total beds" />
@@ -63,10 +60,7 @@ function PatientsListHeader() {
         </SummaryTileGrid>
       </WorkflowSection>
 
-      <WorkflowSection
-        note="Filters are visual placeholders until patient state exists."
-        title="Filters"
-      >
+      <WorkflowSection title="Filters">
         <FilterChipRow>
           {previewFilters.map((filter, index) => (
             <FilterChip key={filter} label={filter} selected={index === 0} />
@@ -149,7 +143,6 @@ export default function PatientsAndAcuityScreen() {
       data={previewBeds}
       flow={shiftSetupFlow}
       headerActionLabel="Floors"
-      helperText="Static patient setup only. Assignment logic comes in later tasks."
       keyExtractor={getPreviewRoomKey}
       listHeader={<PatientsListHeader />}
       onHeaderActionPress={() => router.push("/")}

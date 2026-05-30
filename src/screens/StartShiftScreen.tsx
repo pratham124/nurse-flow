@@ -17,7 +17,6 @@ export default function StartShiftScreen() {
     <WorkflowScreen
       activeStep="Shift"
       headerActionLabel="Floors"
-      helperText="Static shift setup only. No active shift is saved yet."
       onHeaderActionPress={() => router.push("/")}
       onPrimaryPress={() => router.push("/nurses")}
       primaryLabel="Continue"
@@ -25,10 +24,7 @@ export default function StartShiftScreen() {
       subtitle="Step 1 of 3"
       title="Start shift"
     >
-      <WorkflowSection
-        note="This summary previews the saved floor template that will start a local shift later."
-        title="4 North template"
-      >
+      <WorkflowSection title="4 North template">
         <SummaryTileGrid>
           <SummaryTile value="2" label="Doctor sides" />
           <SummaryTile value="2" label="Rooms" />
@@ -36,17 +32,11 @@ export default function StartShiftScreen() {
         </SummaryTileGrid>
       </WorkflowSection>
 
-      <WorkflowSection
-        note="Phase 1 requires one admitting side before assignment."
-        title="Admitting side"
-      >
+      <WorkflowSection title="Admitting side">
         <SegmentedPlaceholder options={["AB Side", "SK Side"]} />
       </WorkflowSection>
 
-      <WorkflowSection
-        note="These defaults guide local assignment later; nurse max load still stays the hard cap."
-        title="Side-based load limits"
-      >
+      <WorkflowSection title="Side-based load limits">
         <View style={styles.limitRow}>
           <View style={styles.limitText}>
             <Text style={styles.limitTitle}>Admitting-side coverage</Text>

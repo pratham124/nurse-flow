@@ -107,9 +107,6 @@ function FloorBoardListHeader() {
 
       <View style={styles.workloadHeader}>
         <Text style={styles.workloadTitle}>Nurse workload</Text>
-        <Text style={styles.workloadNote}>
-          Every nurse stays visible, even when a nurse has no assigned beds.
-        </Text>
       </View>
     </View>
   );
@@ -127,7 +124,6 @@ export default function FloorBoardScreen() {
       data={boardListItems}
       flow={assignmentFlow}
       headerActionLabel="Floors"
-      helperText="Static board preview only. Editing and re-run behavior come later."
       keyExtractor={getFloorBoardItemKey}
       listHeader={<FloorBoardListHeader />}
       onHeaderActionPress={() => router.push("/")}
@@ -290,11 +286,6 @@ const styles = StyleSheet.create({
     color: colors.neutral.textPrimary,
     fontSize: textSize.lg,
     fontWeight: "500",
-  },
-  workloadNote: {
-    color: colors.neutral.textSecondary,
-    fontSize: textSize.sm,
-    lineHeight: 18,
   },
   nurseRow: {
     alignItems: "center",

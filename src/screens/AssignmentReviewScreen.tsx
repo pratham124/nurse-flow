@@ -47,10 +47,7 @@ type CapacityRowProps = {
 function AssignmentReviewListHeader() {
   return (
     <View style={styles.headerContent}>
-      <WorkflowSection
-        note="These counts are placeholders until census and nurse state exist."
-        title="Shift summary"
-      >
+      <WorkflowSection title="Shift summary">
         <SummaryTileGrid>
           <SummaryTile value="2/3" label="Occupied" />
           <SummaryTile value="2" label="Nurses" />
@@ -59,10 +56,7 @@ function AssignmentReviewListHeader() {
         </SummaryTileGrid>
       </WorkflowSection>
 
-      <WorkflowSection
-        note="Later, these rows will become real blockers before assignment can run."
-        title="Readiness checklist"
-      >
+      <WorkflowSection title="Readiness checklist">
         {checklistItems.map((item) => (
           <View key={item} style={styles.checkRow}>
             <View style={styles.checkBadge}>
@@ -83,10 +77,7 @@ function AssignmentReviewListHeader() {
 function RedBedRiskFooter() {
   return (
     <View style={styles.footerContent}>
-      <WorkflowSection
-        note="Red beds need RN coverage during the real assignment task."
-        title="Red bed risk"
-      >
+      <WorkflowSection title="Red bed risk">
         {redBeds.map((bed) => (
           <View key={bed} style={styles.warningRow}>
             <Text style={styles.warningLabel}>RN required</Text>
@@ -124,7 +115,6 @@ export default function AssignmentReviewScreen() {
       data={nurseCapacityRows}
       flow={assignmentFlow}
       headerActionLabel="Floors"
-      helperText="Static assignment review only. The local algorithm is added later."
       keyExtractor={getNurseCapacityKey}
       listFooter={<RedBedRiskFooter />}
       listHeader={<AssignmentReviewListHeader />}
