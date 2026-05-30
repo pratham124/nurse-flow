@@ -18,6 +18,7 @@ type SwipeRevealActionProps = {
   children: ReactNode;
   onActionPress: () => void;
   actionWidth?: number;
+  actionIcon?: ReactNode;
 };
 
 export function SwipeRevealAction({
@@ -26,6 +27,7 @@ export function SwipeRevealAction({
   children,
   onActionPress,
   actionWidth = defaultActionWidth,
+  actionIcon,
 }: SwipeRevealActionProps) {
   const rowTranslateX = useRef(new Animated.Value(0)).current;
   const [isActionRevealed, setIsActionRevealed] = useState(false);
@@ -80,7 +82,11 @@ export function SwipeRevealAction({
           onPress={onActionPress}
           style={[styles.actionButton, { width: actionWidth }]}
         >
-          <Text style={styles.actionButtonText}>{actionLabel}</Text>
+          {actionIcon ? (
+            actionIcon
+          ) : (
+            <Text style={styles.actionButtonText}>{actionLabel}</Text>
+          )}
         </Pressable>
       </View>
 

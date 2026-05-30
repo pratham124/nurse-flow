@@ -24,6 +24,31 @@ export function MinusIcon({ color = colors.neutral.textPrimary, size = 14 }: Ico
   );
 }
 
+export function TrashIcon({ color = colors.neutral.textPrimary, size = 18 }: IconProps) {
+  const bodyHeight = size * 0.62;
+  const bodyWidth = size * 0.68;
+
+  return (
+    <View style={[styles.trashIcon, { height: size, width: size }]}>
+      <View style={[styles.trashLid, { backgroundColor: color, width: bodyWidth }]} />
+      <View style={[styles.trashHandle, { borderColor: color }]} />
+      <View
+        style={[
+          styles.trashBody,
+          {
+            borderColor: color,
+            height: bodyHeight,
+            width: bodyWidth,
+          },
+        ]}
+      >
+        <View style={[styles.trashLine, { backgroundColor: color }]} />
+        <View style={[styles.trashLine, { backgroundColor: color }]} />
+      </View>
+    </View>
+  );
+}
+
 export function HomeIcon({ color = colors.neutral.textPrimary, size = 18 }: IconProps) {
   const roofSize = size * 0.62;
 
@@ -83,6 +108,40 @@ const styles = StyleSheet.create({
     borderRadius: 1,
     position: "absolute",
     width: 1.5,
+  },
+  trashIcon: {
+    alignItems: "center",
+    justifyContent: "flex-end",
+  },
+  trashLid: {
+    borderRadius: 1,
+    height: 1.6,
+    position: "absolute",
+    top: 3,
+  },
+  trashHandle: {
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 2,
+    borderTopWidth: 1.5,
+    height: 4,
+    position: "absolute",
+    top: 0,
+    width: 7,
+  },
+  trashBody: {
+    alignItems: "center",
+    borderBottomLeftRadius: 2,
+    borderBottomRightRadius: 2,
+    borderTopWidth: 0,
+    borderWidth: 1.5,
+    flexDirection: "row",
+    gap: 3,
+    justifyContent: "center",
+  },
+  trashLine: {
+    borderRadius: 1,
+    height: 7,
+    width: 1.4,
   },
   homeIcon: {
     alignItems: "center",

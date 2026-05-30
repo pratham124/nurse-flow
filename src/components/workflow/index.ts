@@ -15,6 +15,7 @@ export {
   HospitalIcon,
   MinusIcon,
   PlusIcon,
+  TrashIcon,
 } from "./Icons";
 export {
   NumberStepperPlaceholder,

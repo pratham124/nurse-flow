@@ -8,6 +8,7 @@ import {
   PlaceholderButton,
   PlaceholderInput,
   SwipeRevealAction,
+  TrashIcon,
   WorkflowListScreen,
   WorkflowSection,
 } from "../components/workflow";
@@ -72,6 +73,8 @@ function RoomRow({
     <SwipeRevealAction
       accessibilityLabel={`Remove room ${room.label}`}
       actionLabel="Remove"
+      actionIcon={<TrashIcon color={colors.neutral.surface} size={18} />}
+      actionWidth={72}
       onActionPress={() => onRemoveRoom(room.id)}
     >
       <View style={styles.roomRow}>
