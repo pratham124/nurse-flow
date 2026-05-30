@@ -245,7 +245,7 @@ Validation check:
 
 - Adding `101` twice shows a duplicate-room validation message.
 
-### Task 3.6: US3 Bed Count Per Room
+### ✅ Task 3.6: US3 Bed Count Per Room
 
 Build:
 

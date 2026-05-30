@@ -65,9 +65,25 @@ const boardFilters = ["All", "Flags", "Unassigned", "Red", "RN coverage"];
 
 type NurseWorkload = (typeof nurses)[number];
 type BoardSide = (typeof boardSides)[number];
+type BoardRoom = BoardSide["rooms"][number];
+type BoardBedPreview = BoardRoom["beds"][number];
 type FloorBoardListItem =
   | { type: "nurse"; nurse: NurseWorkload }
   | { type: "side"; side: BoardSide };
+
+type NurseWorkloadRowProps = {
+  nurse: NurseWorkload;
+};
+
+type BoardSideSectionProps = {
+  side: BoardSide;
+};
+
+type BoardBedProps = BoardBedPreview;
+
+type LoadChipProps = {
+  value: string;
+};
 
 function FloorBoardListHeader() {
   return (
@@ -136,7 +152,7 @@ function getFloorBoardItemKey(item: FloorBoardListItem) {
   return item.type === "nurse" ? `nurse-${item.nurse.name}` : `side-${item.side.name}`;
 }
 
-function NurseWorkloadRow({ nurse }: { nurse: NurseWorkload }) {
+function NurseWorkloadRow({ nurse }: NurseWorkloadRowProps) {
   return (
     <View style={styles.nurseRow}>
       <View style={styles.nurseAvatar}>
@@ -156,7 +172,7 @@ function NurseWorkloadRow({ nurse }: { nurse: NurseWorkload }) {
   );
 }
 
-function BoardSideSection({ side }: { side: BoardSide }) {
+function BoardSideSection({ side }: BoardSideSectionProps) {
   return (
     <WorkflowSection
       note={side.admitting ? "Admitting side" : "Non-admitting side"}
@@ -185,12 +201,7 @@ function BoardBed({
   patient,
   acuity,
   nurse,
-}: {
-  label: string;
-  patient: string;
-  acuity: string;
-  nurse: string;
-}) {
+}: BoardBedProps) {
   const isEmpty = patient === "Empty";
   const acuityColor = getAcuityColor(acuity);
 
@@ -219,7 +230,7 @@ function BoardBed({
   );
 }
 
-function LoadChip({ value }: { value: string }) {
+function LoadChip({ value }: LoadChipProps) {
   const [assignedText, capacityText] = value.split("/");
   const assigned = Number(assignedText);
   const capacity = Number(capacityText);

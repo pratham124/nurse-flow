@@ -23,6 +23,11 @@ type WorkflowScreenProps = {
   managesOwnScrolling?: boolean;
 };
 
+type SegmentedProgressProps = {
+  activeIndex: number;
+  segmentCount: number;
+};
+
 export function WorkflowScreen({
   title,
   subtitle,
@@ -96,10 +101,7 @@ export function WorkflowScreen({
 function SegmentedProgress({
   activeIndex,
   segmentCount,
-}: {
-  activeIndex: number;
-  segmentCount: number;
-}) {
+}: SegmentedProgressProps) {
   return (
     <View
       accessibilityLabel={`Step ${activeIndex + 1} of ${segmentCount}`}

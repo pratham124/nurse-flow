@@ -29,6 +29,16 @@ const flags = [
 type FlagSeverity = (typeof flags)[number]["severity"];
 type PreviewFlag = (typeof flags)[number];
 
+type FlagRowProps = {
+  message: string;
+  severity: FlagSeverity;
+  target: string;
+};
+
+type FlagSeverityBadgeProps = {
+  severity: FlagSeverity;
+};
+
 const flagFilters = ["All", "Critical", "Warning", "Info"];
 
 function FlagsListHeader() {
@@ -99,11 +109,7 @@ function FlagRow({
   message,
   severity,
   target,
-}: {
-  message: string;
-  severity: FlagSeverity;
-  target: string;
-}) {
+}: FlagRowProps) {
   const tone = getSeverityTone(severity);
 
   return (
@@ -117,7 +123,7 @@ function FlagRow({
   );
 }
 
-function FlagSeverityBadge({ severity }: { severity: FlagSeverity }) {
+function FlagSeverityBadge({ severity }: FlagSeverityBadgeProps) {
   return <SeverityPill label={severity} tone={getSeverityTone(severity)} />;
 }
 

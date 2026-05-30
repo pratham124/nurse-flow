@@ -36,6 +36,19 @@ const previewFilters = ["All", "Occupied", "Empty", "Missing acuity", "Red"];
 
 type PreviewRoom = (typeof previewBeds)[number];
 
+type RoomPatientsPreviewRowProps = {
+  room: PreviewRoom;
+};
+
+type BedStatusBadgeProps = {
+  occupied: boolean;
+};
+
+type AcuityLegendItemProps = {
+  color: string;
+  label: string;
+};
+
 function PatientsListHeader() {
   return (
     <View style={styles.headerContent}>
@@ -64,7 +77,7 @@ function PatientsListHeader() {
   );
 }
 
-function RoomPatientsPreviewRow({ room }: { room: PreviewRoom }) {
+function RoomPatientsPreviewRow({ room }: RoomPatientsPreviewRowProps) {
   return (
     <WorkflowSection note={room.side} title={`Room ${room.room}`}>
       {room.beds.map((bed) => (
@@ -149,7 +162,7 @@ export default function PatientsAndAcuityScreen() {
   );
 }
 
-function BedStatusBadge({ occupied }: { occupied: boolean }) {
+function BedStatusBadge({ occupied }: BedStatusBadgeProps) {
   return (
     <StatusPill
       label={occupied ? "Occupied" : "Empty"}
@@ -158,7 +171,7 @@ function BedStatusBadge({ occupied }: { occupied: boolean }) {
   );
 }
 
-function AcuityLegendItem({ color, label }: { color: string; label: string }) {
+function AcuityLegendItem({ color, label }: AcuityLegendItemProps) {
   return (
     <View style={styles.acuityLegendItem}>
       <View style={[styles.acuityDot, { backgroundColor: color }]} />

@@ -31,6 +31,7 @@ Help me build this project while learning. Do not over-automate or generate the 
 ## Repository Expectations
 
 - Use modern conventions (e.g., fetch latest docs via MCP server).
+- Prefer named `ComponentNameProps` types for React component props so component boundaries stay easy to read and explain. Reserve inline object prop types for tiny non-component callbacks or helpers.
 
 ## Development And Testing Skills
 

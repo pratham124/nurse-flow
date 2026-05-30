@@ -21,6 +21,10 @@ const previewNurses = [
 
 type PreviewNurse = (typeof previewNurses)[number];
 
+type NursePreviewRowProps = {
+  nurse: PreviewNurse;
+};
+
 function NursesListHeader() {
   return (
     <View style={styles.headerContent}>
@@ -54,7 +58,7 @@ function NursesListHeader() {
   );
 }
 
-function NursePreviewRow({ nurse }: { nurse: PreviewNurse }) {
+function NursePreviewRow({ nurse }: NursePreviewRowProps) {
   return (
     <View style={styles.nurseRow}>
       <View style={styles.nurseInfo}>

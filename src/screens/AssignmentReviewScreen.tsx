@@ -37,6 +37,13 @@ const nurseCapacityRows = [
 
 type NurseCapacityRow = (typeof nurseCapacityRows)[number];
 
+type CapacityRowProps = {
+  assigned: number;
+  detail: string;
+  max: number;
+  name: string;
+};
+
 function AssignmentReviewListHeader() {
   return (
     <View style={styles.headerContent}>
@@ -136,12 +143,7 @@ function CapacityRow({
   detail,
   max,
   name,
-}: {
-  assigned: number;
-  detail: string;
-  max: number;
-  name: string;
-}) {
+}: CapacityRowProps) {
   const fillPercent: DimensionValue =
     max > 0 ? `${Math.min((assigned / max) * 100, 100)}%` : "0%";
 

@@ -3,7 +3,43 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { colors, radius, spacing, textSize } from "../../theme/tokens";
 
-export function BedChip({ label }: { label: string }) {
+type BedChipProps = {
+  label: string;
+};
+
+type ChipRowProps = {
+  children: ReactNode;
+};
+
+type SummaryChipProps = {
+  label: string;
+};
+
+type SummaryTileProps = {
+  value: string;
+  label: string;
+};
+
+type FilterChipProps = {
+  label: string;
+  selected?: boolean;
+};
+
+type StatusTone = "occupied" | "empty" | "red" | "yellow" | "green";
+
+type StatusPillProps = {
+  label: string;
+  tone: StatusTone;
+};
+
+type SeverityTone = "warning" | "info" | "critical";
+
+type SeverityBadgeProps = {
+  label: string;
+  tone: SeverityTone;
+};
+
+export function BedChip({ label }: BedChipProps) {
   return (
     <View style={styles.bedChip}>
       <Text style={styles.bedChipText}>{label}</Text>
@@ -11,7 +47,7 @@ export function BedChip({ label }: { label: string }) {
   );
 }
 
-export function BedChipRow({ children }: { children: ReactNode }) {
+export function BedChipRow({ children }: ChipRowProps) {
   return (
     <ScrollView
       contentContainerStyle={styles.bedChipRowContent}
@@ -23,7 +59,7 @@ export function BedChipRow({ children }: { children: ReactNode }) {
   );
 }
 
-export function SummaryChip({ label }: { label: string }) {
+export function SummaryChip({ label }: SummaryChipProps) {
   return (
     <View style={styles.summaryChip}>
       <Text style={styles.summaryChipText}>{label}</Text>
@@ -31,17 +67,14 @@ export function SummaryChip({ label }: { label: string }) {
   );
 }
 
-export function SummaryTileGrid({ children }: { children: ReactNode }) {
+export function SummaryTileGrid({ children }: ChipRowProps) {
   return <View style={styles.summaryTileGrid}>{children}</View>;
 }
 
 export function SummaryTile({
   value,
   label,
-}: {
-  value: string;
-  label: string;
-}) {
+}: SummaryTileProps) {
   return (
     <View style={styles.summaryTile}>
       <Text style={styles.summaryTileValue}>{value}</Text>
@@ -53,10 +86,7 @@ export function SummaryTile({
 export function FilterChip({
   label,
   selected = false,
-}: {
-  label: string;
-  selected?: boolean;
-}) {
+}: FilterChipProps) {
   return (
     <View style={[styles.filterChip, selected ? styles.selectedFilterChip : null]}>
       <Text
@@ -71,7 +101,7 @@ export function FilterChip({
   );
 }
 
-export function FilterChipRow({ children }: { children: ReactNode }) {
+export function FilterChipRow({ children }: ChipRowProps) {
   return (
     <ScrollView
       contentContainerStyle={styles.filterChipRowContent}
@@ -83,15 +113,10 @@ export function FilterChipRow({ children }: { children: ReactNode }) {
   );
 }
 
-type StatusTone = "occupied" | "empty" | "red" | "yellow" | "green";
-
 export function StatusPill({
   label,
   tone,
-}: {
-  label: string;
-  tone: StatusTone;
-}) {
+}: StatusPillProps) {
   return (
     <View style={[styles.statusPill, statusPillStyles[tone]]}>
       <Text style={[styles.statusPillText, statusPillTextStyles[tone]]}>
@@ -101,15 +126,10 @@ export function StatusPill({
   );
 }
 
-type SeverityTone = "warning" | "info" | "critical";
-
 export function SeverityBadge({
   label,
   tone,
-}: {
-  label: string;
-  tone: SeverityTone;
-}) {
+}: SeverityBadgeProps) {
   return (
     <View style={[styles.severityBadge, severityBadgeStyles[tone]]}>
       <Text style={[styles.severityBadgeText, severityBadgeTextStyles[tone]]}>

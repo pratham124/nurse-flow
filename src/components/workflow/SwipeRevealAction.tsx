@@ -19,6 +19,7 @@ type SwipeRevealActionProps = {
   onActionPress: () => void;
   actionWidth?: number;
   actionIcon?: ReactNode;
+  actionSide?: "left" | "right";
 };
 
 export function SwipeRevealAction({
@@ -28,9 +29,12 @@ export function SwipeRevealAction({
   onActionPress,
   actionWidth = defaultActionWidth,
   actionIcon,
+  actionSide = "right",
 }: SwipeRevealActionProps) {
   const rowTranslateX = useRef(new Animated.Value(0)).current;
   const [isActionRevealed, setIsActionRevealed] = useState(false);
+  const revealDirection = actionSide === "left" ? 1 : -1;
+  const revealedTranslateX = actionWidth * revealDirection;
 
   function animateRow(toValue: number) {
     Animated.spring(rowTranslateX, {
@@ -48,33 +52,44 @@ export function SwipeRevealAction({
       const isHorizontalSwipe =
         Math.abs(gestureState.dx) > 8 &&
         Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
+      const isRevealSwipe =
+        actionSide === "left" ? gestureState.dx > 0 : gestureState.dx < 0;
 
-      return isHorizontalSwipe && (gestureState.dx < 0 || isActionRevealed);
+      return isHorizontalSwipe && (isRevealSwipe || isActionRevealed);
     },
     onPanResponderMove: (_, gestureState) => {
-      const startingPoint = isActionRevealed ? -actionWidth : 0;
-      const nextTranslateX = Math.max(
-        -actionWidth,
-        Math.min(0, startingPoint + gestureState.dx),
-      );
+      const startingPoint = isActionRevealed ? revealedTranslateX : 0;
+      const rawTranslateX = startingPoint + gestureState.dx;
+      const nextTranslateX =
+        actionSide === "left"
+          ? Math.max(0, Math.min(actionWidth, rawTranslateX))
+          : Math.max(-actionWidth, Math.min(0, rawTranslateX));
 
       rowTranslateX.setValue(nextTranslateX);
     },
     onPanResponderRelease: (_, gestureState) => {
-      const startingPoint = isActionRevealed ? -actionWidth : 0;
+      const startingPoint = isActionRevealed ? revealedTranslateX : 0;
       const endingPoint = startingPoint + gestureState.dx;
-      const shouldRevealAction = endingPoint < -actionWidth / 2;
+      const shouldRevealAction =
+        actionSide === "left"
+          ? endingPoint > actionWidth / 2
+          : endingPoint < -actionWidth / 2;
 
-      animateRow(shouldRevealAction ? -actionWidth : 0);
+      animateRow(shouldRevealAction ? revealedTranslateX : 0);
     },
     onPanResponderTerminate: () => {
-      animateRow(isActionRevealed ? -actionWidth : 0);
+      animateRow(isActionRevealed ? revealedTranslateX : 0);
     },
   });
 
   return (
     <View style={styles.container}>
-      <View style={styles.actionPane}>
+      <View
+        style={[
+          styles.actionPane,
+          actionSide === "left" ? styles.leftActionPane : styles.rightActionPane,
+        ]}
+      >
         <Pressable
           accessibilityLabel={accessibilityLabel}
           accessibilityRole="button"
@@ -112,8 +127,13 @@ const styles = StyleSheet.create({
   },
   actionPane: {
     ...StyleSheet.absoluteFillObject,
-    alignItems: "flex-end",
     backgroundColor: colors.status.red50,
+  },
+  leftActionPane: {
+    alignItems: "flex-start",
+  },
+  rightActionPane: {
+    alignItems: "flex-end",
   },
   actionButton: {
     alignItems: "center",

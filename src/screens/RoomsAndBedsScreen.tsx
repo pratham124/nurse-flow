@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 import {
   BedChip,
+  BedChipRow,
   NumberStepperPlaceholder,
   PlaceholderButton,
   PlaceholderInput,
@@ -15,23 +16,39 @@ import {
 import { createLocalId } from "../helpers/localId";
 import { useLocalState } from "../store/LocalStateContext";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
-import type { Room } from "../types/models";
+import type { Bed, Room } from "../types/models";
 
 const requiredRoomNameMessage = "Room name is required.";
 const duplicateRoomNameMessage = "Room already exists.";
 const requiredRoomMessage = "Add at least one room to continue.";
+
+type RoomsListHeaderProps = {
+  roomName: string;
+  roomNameError: string;
+  onRoomNameChange: (text: string) => void;
+  onAddRoom: () => void;
+};
+
+type RoomRowProps = {
+  room: Room;
+  onRemoveRoom: (roomId: string) => void;
+  onUpdateBedCount: (roomId: string, bedCount: number) => void;
+};
+
+type RoomListFooterProps = {
+  errorText: string;
+};
+
+type RoomListErrorProps = {
+  message: string;
+};
 
 function RoomsListHeader({
   roomName,
   roomNameError,
   onRoomNameChange,
   onAddRoom,
-}: {
-  roomName: string;
-  roomNameError: string;
-  onRoomNameChange: (text: string) => void;
-  onAddRoom: () => void;
-}) {
+}: RoomsListHeaderProps) {
   return (
     <View style={styles.headerContent}>
       <WorkflowSection
@@ -62,18 +79,18 @@ function RoomsListHeader({
 function RoomRow({
   room,
   onRemoveRoom,
-}: {
-  room: Room;
-  onRemoveRoom: (roomId: string) => void;
-}) {
+  onUpdateBedCount,
+}: RoomRowProps) {
   const roomBedCount = room.bedCount.toString();
   const bedCountText = room.bedCount === 1 ? "1 bed" : `${room.bedCount} beds`;
+  const canDecreaseBedCount = room.bedCount > 1;
 
   return (
     <SwipeRevealAction
       accessibilityLabel={`Remove room ${room.label}`}
       actionLabel="Remove"
       actionIcon={<TrashIcon color={colors.neutral.surface} size={18} />}
+      actionSide="left"
       actionWidth={72}
       onActionPress={() => onRemoveRoom(room.id)}
     >
@@ -84,21 +101,29 @@ function RoomRow({
             <Text style={styles.roomMeta}>{bedCountText}</Text>
           </View>
           <View style={styles.roomActions}>
-            <NumberStepperPlaceholder value={roomBedCount} />
+            <NumberStepperPlaceholder
+              decrementLabel={`Decrease bed count for room ${room.label}`}
+              incrementLabel={`Increase bed count for room ${room.label}`}
+              onDecrement={
+                canDecreaseBedCount
+                  ? () => onUpdateBedCount(room.id, room.bedCount - 1)
+                  : undefined
+              }
+              onIncrement={() => onUpdateBedCount(room.id, room.bedCount + 1)}
+              value={roomBedCount}
+            />
           </View>
         </View>
 
         <View style={styles.roomFooterRow}>
-          <View style={styles.bedPreview}>
-            {room.bedCount > 0
-              ? Array.from({ length: room.bedCount }).map((_, index) => (
-                  <BedChip
-                    key={`${room.id}-bed-preview-${index + 1}`}
-                    label={`${room.label}-${index + 1}`}
-                  />
-                ))
-            : null}
-          </View>
+          <BedChipRow>
+            {Array.from({ length: room.bedCount }).map((_, index) => (
+              <BedChip
+                key={`${room.id}-bed-preview-${index + 1}`}
+                label={`${room.label}-${index + 1}`}
+              />
+            ))}
+          </BedChipRow>
         </View>
       </View>
     </SwipeRevealAction>
@@ -107,6 +132,15 @@ function RoomRow({
 
 function getRoomKey(room: Room) {
   return room.id;
+}
+
+function createRoomBed(room: Room, bedNumber: number): Bed {
+  return {
+    id: createLocalId("bed"),
+    roomId: room.id,
+    label: `${room.label}-${bedNumber}`,
+    bedNumber,
+  };
 }
 
 export default function RoomsAndBedsScreen() {
@@ -149,19 +183,19 @@ export default function RoomsAndBedsScreen() {
         return currentState;
       }
 
+      const newRoom: Room = {
+        id: createLocalId("room"),
+        doctorSideId: "",
+        label: trimmedRoomName,
+        bedCount: 1,
+      };
+
       return {
         ...currentState,
         draftFloorTemplate: {
           ...currentDraft,
-          rooms: [
-            ...currentDraft.rooms,
-            {
-              id: createLocalId("room"),
-              doctorSideId: "",
-              label: trimmedRoomName,
-              bedCount: 1,
-            },
-          ],
+          rooms: [...currentDraft.rooms, newRoom],
+          beds: [...currentDraft.beds, createRoomBed(newRoom, 1)],
         },
       };
     });
@@ -189,6 +223,40 @@ export default function RoomsAndBedsScreen() {
     });
   }
 
+  function handleUpdateBedCount(roomId: string, bedCount: number) {
+    setLocalState((currentState) => {
+      const currentDraft = currentState.draftFloorTemplate;
+      const roomToUpdate = currentDraft?.rooms.find((room) => room.id === roomId);
+
+      if (!currentDraft || !roomToUpdate) {
+        return currentState;
+      }
+
+      const updatedRoom = {
+        ...roomToUpdate,
+        bedCount,
+      };
+      const isAddingBed = bedCount > roomToUpdate.bedCount;
+      const updatedBeds = isAddingBed
+        ? [...currentDraft.beds, createRoomBed(updatedRoom, bedCount)]
+        : currentDraft.beds.filter(
+            (bed) =>
+              !(bed.roomId === roomId && bed.bedNumber === roomToUpdate.bedCount),
+          );
+
+      return {
+        ...currentState,
+        draftFloorTemplate: {
+          ...currentDraft,
+          rooms: currentDraft.rooms.map((room) =>
+            room.id === roomId ? updatedRoom : room,
+          ),
+          beds: updatedBeds,
+        },
+      };
+    });
+  }
+
   function handleContinue() {
     if (rooms.length === 0) {
       setRoomListError(requiredRoomMessage);
@@ -199,7 +267,13 @@ export default function RoomsAndBedsScreen() {
   }
 
   function renderRoomItem({ item }: { item: Room }) {
-    return <RoomRow onRemoveRoom={handleRemoveRoom} room={item} />;
+    return (
+      <RoomRow
+        onRemoveRoom={handleRemoveRoom}
+        onUpdateBedCount={handleUpdateBedCount}
+        room={item}
+      />
+    );
   }
 
   return (
@@ -232,7 +306,7 @@ export default function RoomsAndBedsScreen() {
   );
 }
 
-function RoomListFooter({ errorText }: { errorText: string }) {
+function RoomListFooter({ errorText }: RoomListFooterProps) {
   return (
     <View style={styles.roomListFooter}>
       {errorText ? <RoomListError message={errorText} /> : null}
@@ -241,7 +315,7 @@ function RoomListFooter({ errorText }: { errorText: string }) {
   );
 }
 
-function RoomListError({ message }: { message: string }) {
+function RoomListError({ message }: RoomListErrorProps) {
   return (
     <View accessibilityRole="alert" style={styles.roomListError}>
       <Text style={styles.roomListErrorTitle}>Room required</Text>
@@ -299,16 +373,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   roomFooterRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: spacing.md,
-    justifyContent: "space-between",
-  },
-  bedPreview: {
-    flex: 1,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
+    alignItems: "stretch",
   },
   roomLabel: {
     color: colors.neutral.textPrimary,

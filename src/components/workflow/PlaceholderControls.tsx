@@ -13,6 +13,24 @@ type PlaceholderInputProps = {
   onChangeText?: (text: string) => void;
 };
 
+type PlaceholderButtonProps = {
+  label: string;
+  onPress?: () => void;
+};
+
+type NumberStepperPlaceholderProps = {
+  value: string;
+  onDecrement?: () => void;
+  onIncrement?: () => void;
+  decrementLabel?: string;
+  incrementLabel?: string;
+};
+
+type SegmentedPlaceholderProps = {
+  options: string[];
+  selectedIndex?: number;
+};
+
 export function PlaceholderInput({
   label,
   placeholder,
@@ -54,10 +72,7 @@ export function PlaceholderInput({
 export function PlaceholderButton({
   label,
   onPress,
-}: {
-  label: string;
-  onPress?: () => void;
-}) {
+}: PlaceholderButtonProps) {
   const isAddRoom = label === "Add room";
 
   return (
@@ -75,16 +90,34 @@ export function PlaceholderButton({
   );
 }
 
-export function NumberStepperPlaceholder({ value }: { value: string }) {
+export function NumberStepperPlaceholder({
+  value,
+  onDecrement,
+  onIncrement,
+  decrementLabel = "Decrease value",
+  incrementLabel = "Increase value",
+}: NumberStepperPlaceholderProps) {
   return (
     <View style={styles.stepper}>
-      <View style={styles.stepperButton}>
+      <Pressable
+        accessibilityLabel={decrementLabel}
+        accessibilityRole="button"
+        disabled={!onDecrement}
+        onPress={onDecrement}
+        style={styles.stepperButton}
+      >
         <MinusIcon />
-      </View>
+      </Pressable>
       <Text style={styles.stepperValue}>{value}</Text>
-      <View style={styles.stepperButton}>
+      <Pressable
+        accessibilityLabel={incrementLabel}
+        accessibilityRole="button"
+        disabled={!onIncrement}
+        onPress={onIncrement}
+        style={styles.stepperButton}
+      >
         <PlusIcon />
-      </View>
+      </Pressable>
     </View>
   );
 }
@@ -92,10 +125,7 @@ export function NumberStepperPlaceholder({ value }: { value: string }) {
 export function SegmentedPlaceholder({
   options,
   selectedIndex = 0,
-}: {
-  options: string[];
-  selectedIndex?: number;
-}) {
+}: SegmentedPlaceholderProps) {
   return (
     <View style={styles.segmented}>
       {options.map((option, index) => {

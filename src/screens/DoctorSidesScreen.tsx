@@ -19,6 +19,10 @@ const previewAssignments = [
 
 type PreviewAssignment = (typeof previewAssignments)[number];
 
+type AssignmentPreviewRowProps = {
+  assignment: PreviewAssignment;
+};
+
 function DoctorSidesListHeader() {
   return (
     <View style={styles.headerContent}>
@@ -49,9 +53,7 @@ function DoctorSidesListHeader() {
 
 function AssignmentPreviewRow({
   assignment,
-}: {
-  assignment: PreviewAssignment;
-}) {
+}: AssignmentPreviewRowProps) {
   return (
     <View style={styles.assignmentRow}>
       <View>
