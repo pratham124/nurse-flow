@@ -8,6 +8,7 @@ import {
   NumberStepperPlaceholder,
   PlaceholderButton,
   PlaceholderInput,
+  PlusIcon,
   SwipeRevealAction,
   TrashIcon,
   WorkflowListScreen,
@@ -59,7 +60,12 @@ function RoomsListHeader({
           placeholder="101"
           value={roomName}
         />
-        <PlaceholderButton label="Add room" onPress={onAddRoom} />
+        <PlaceholderButton
+          icon={<PlusIcon color={colors.neutral.surface} size={12} />}
+          label="Add room"
+          onPress={onAddRoom}
+          variant="primary"
+        />
       </WorkflowSection>
 
       <View style={styles.roomsHeader}>

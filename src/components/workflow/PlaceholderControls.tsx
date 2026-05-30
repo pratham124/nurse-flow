@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { colors, radius, spacing, textSize } from "../../theme/tokens";
@@ -14,8 +14,10 @@ type PlaceholderInputProps = {
 };
 
 type PlaceholderButtonProps = {
+  icon?: ReactNode;
   label: string;
   onPress?: () => void;
+  variant?: "secondary" | "primary";
 };
 
 type NumberStepperPlaceholderProps = {
@@ -71,22 +73,34 @@ export function PlaceholderInput({
 }
 
 export function PlaceholderButton({
+  icon,
   label,
   onPress,
+  variant = "secondary",
 }: PlaceholderButtonProps) {
-  const isAddRoom = label === "Add room";
+  const isPrimary = variant === "primary";
 
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityState={{ disabled: !onPress }}
       disabled={!onPress}
       onPress={onPress}
       style={[
         styles.secondaryButton,
-        isAddRoom ? styles.addRoomButton : null,
+        isPrimary ? styles.primaryButton : null,
+        !onPress ? styles.disabledButton : null,
       ]}
     >
-      <Text style={styles.secondaryButtonText}>{label}</Text>
+      {icon ? <View style={styles.buttonIcon}>{icon}</View> : null}
+      <Text
+        style={[
+          styles.secondaryButtonText,
+          isPrimary ? styles.primaryButtonText : null,
+        ]}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -207,17 +221,34 @@ const styles = StyleSheet.create({
     borderColor: colors.neutral.borderTertiary,
     borderRadius: radius.lg,
     borderWidth: 0.5,
+    flexDirection: "row",
+    gap: spacing.xs,
     minHeight: 44,
     justifyContent: "center",
     paddingHorizontal: spacing.md,
   },
-  addRoomButton: {
+  primaryButton: {
+    alignSelf: "flex-end",
+    backgroundColor: colors.brand.burgundy,
     borderColor: colors.brand.burgundy,
-    borderWidth: 1,
+    borderRadius: radius.md,
+    minHeight: 40,
+    paddingHorizontal: spacing.lg,
+  },
+  disabledButton: {
+    opacity: 0.48,
+  },
+  buttonIcon: {
+    alignItems: "center",
+    justifyContent: "center",
   },
   secondaryButtonText: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.action,
+  },
+  primaryButtonText: {
+    color: colors.neutral.surface,
+    fontWeight: "500",
   },
   stepper: {
     alignItems: "center",

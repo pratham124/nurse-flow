@@ -17,6 +17,7 @@ export {
   PlusIcon,
   TrashIcon,
 } from "./Icons";
+export { ConfirmationDialog } from "./ConfirmationDialog";
 export {
   NumberStepperPlaceholder,
   PlaceholderButton,

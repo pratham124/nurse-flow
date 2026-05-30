@@ -1,36 +1,63 @@
+import { useState } from "react";
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { HospitalIcon } from "../components/workflow";
+import {
+  ConfirmationDialog,
+  HospitalIcon,
+  SwipeRevealAction,
+  TrashIcon,
+} from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
 import type { FloorTemplate } from "../types/models";
 
 type FloorTemplateRowProps = {
   floorTemplate: FloorTemplate;
+  onRequestDelete: (floorTemplate: FloorTemplate) => void;
 };
 
-function FloorTemplateRow({ floorTemplate }: FloorTemplateRowProps) {
+function FloorTemplateRow({
+  floorTemplate,
+  onRequestDelete,
+}: FloorTemplateRowProps) {
   const roomCount = floorTemplate.rooms.length;
   const bedCount = floorTemplate.beds.length;
+  const floorInitial = floorTemplate.name.trim().charAt(0).toUpperCase() || "F";
 
   return (
-    <View style={styles.templateRow}>
-      <View style={styles.templateTitleGroup}>
-        <Text style={styles.templateName}>{floorTemplate.name}</Text>
-        <Text style={styles.templateMeta}>
-          {roomCount} {roomCount === 1 ? "room" : "rooms"} - {bedCount}{" "}
-          {bedCount === 1 ? "bed" : "beds"}
-        </Text>
+    <SwipeRevealAction
+      accessibilityLabel={`Delete ${floorTemplate.name}`}
+      actionIcon={<TrashIcon color={colors.neutral.surface} size={18} />}
+      actionLabel="Delete"
+      onActionPress={() => onRequestDelete(floorTemplate)}
+    >
+      <View style={styles.templateRow}>
+        <View style={styles.templateAccent} />
+        <View style={styles.templateBadge}>
+          <Text style={styles.templateBadgeText}>{floorInitial}</Text>
+        </View>
+        <View style={styles.templateTitleGroup}>
+          <Text style={styles.templateName}>{floorTemplate.name}</Text>
+          <View style={styles.templateMetaRow}>
+            <Text style={styles.templateMetaChip}>
+              {roomCount} {roomCount === 1 ? "room" : "rooms"}
+            </Text>
+            <Text style={styles.templateMetaChip}>
+              {bedCount} {bedCount === 1 ? "bed" : "beds"}
+            </Text>
+          </View>
+        </View>
       </View>
-      <Text style={styles.templateStatus}>Saved locally</Text>
-    </View>
+    </SwipeRevealAction>
   );
 }
 
 export default function Index() {
   const { localState, setLocalState } = useLocalState();
+  const [floorTemplateToDelete, setFloorTemplateToDelete] =
+    useState<FloorTemplate>();
   const floorTemplateCount = localState.floorTemplates.length;
 
   function handleCreateFloor() {
@@ -42,14 +69,24 @@ export default function Index() {
     router.push("/floor-details");
   }
 
+  function handleConfirmDeleteFloor() {
+    if (!floorTemplateToDelete) {
+      return;
+    }
+
+    setLocalState((currentState) => ({
+      ...currentState,
+      floorTemplates: currentState.floorTemplates.filter(
+        (floorTemplate) => floorTemplate.id !== floorTemplateToDelete.id,
+      ),
+    }));
+    setFloorTemplateToDelete(undefined);
+  }
+
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.header}>
         <Text style={styles.title}>NurseFlow</Text>
-        <Text style={styles.subtitle}>Charge nurse workspace</Text>
-        <Text style={styles.headerText}>
-          Build floor templates and prepare shift assignments.
-        </Text>
       </View>
 
       <View style={styles.content}>
@@ -64,6 +101,7 @@ export default function Index() {
               <FloorTemplateRow
                 floorTemplate={floorTemplate}
                 key={floorTemplate.id}
+                onRequestDelete={setFloorTemplateToDelete}
               />
             ))}
           </View>
@@ -91,6 +129,20 @@ export default function Index() {
           <Text style={styles.primaryButtonText}>Create floor</Text>
         </Pressable>
       </View>
+
+      <ConfirmationDialog
+        confirmLabel="Delete"
+        confirmTone="danger"
+        message={
+          floorTemplateToDelete
+            ? `${floorTemplateToDelete.name} will be removed from this device.`
+            : ""
+        }
+        onCancel={() => setFloorTemplateToDelete(undefined)}
+        onConfirm={handleConfirmDeleteFloor}
+        title="Delete floor?"
+        visible={Boolean(floorTemplateToDelete)}
+      />
     </SafeAreaView>
   );
 }
@@ -102,9 +154,8 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: colors.neutral.backgroundPrimary,
-    gap: spacing.sm,
     padding: spacing.xl,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.md,
   },
   content: {
     flex: 1,
@@ -119,19 +170,7 @@ const styles = StyleSheet.create({
   title: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.xl,
-    fontWeight: "500",
-  },
-  subtitle: {
-    color: colors.neutral.textPrimary,
-    fontSize: textSize.md,
-    fontWeight: "500",
-    marginTop: 2,
-  },
-  headerText: {
-    color: colors.neutral.textSecondary,
-    fontSize: textSize.sm,
-    lineHeight: 18,
-    maxWidth: 280,
+    fontWeight: "700",
   },
   sectionTitle: {
     color: colors.neutral.textPrimary,
@@ -183,14 +222,43 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   templateRow: {
-    backgroundColor: colors.neutral.backgroundSecondary,
+    alignItems: "center",
+    backgroundColor: colors.neutral.surface,
     borderColor: colors.neutral.borderTertiary,
     borderRadius: radius.xl,
     borderWidth: 0.5,
+    flexDirection: "row",
     gap: spacing.md,
+    minHeight: 76,
+    overflow: "hidden",
     padding: spacing.lg,
+    boxShadow: "0 4px 12px rgba(33, 26, 29, 0.06)",
+  },
+  templateAccent: {
+    backgroundColor: colors.brand.burgundy,
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    top: 0,
+    width: 4,
+  },
+  templateBadge: {
+    alignItems: "center",
+    backgroundColor: colors.brand.burgundy10,
+    borderColor: colors.brand.burgundy15,
+    borderRadius: radius.md,
+    borderWidth: 0.5,
+    height: 40,
+    justifyContent: "center",
+    width: 40,
+  },
+  templateBadgeText: {
+    color: colors.brand.burgundy,
+    fontSize: textSize.lg,
+    fontWeight: "700",
   },
   templateTitleGroup: {
+    flex: 1,
     gap: spacing.xs,
   },
   templateName: {
@@ -198,20 +266,21 @@ const styles = StyleSheet.create({
     fontSize: textSize.lg,
     fontWeight: "600",
   },
-  templateMeta: {
+  templateMetaRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+  },
+  templateMetaChip: {
+    backgroundColor: colors.neutral.backgroundTertiary,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.pill,
+    borderWidth: 0.5,
     color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
-    lineHeight: 18,
-  },
-  templateStatus: {
-    alignSelf: "flex-start",
-    backgroundColor: colors.brand.burgundy10,
-    borderRadius: radius.pill,
-    color: colors.brand.burgundy,
-    fontSize: textSize.sm,
     overflow: "hidden",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
   },
   actionBar: {
     backgroundColor: colors.neutral.backgroundPrimary,
