@@ -256,7 +256,7 @@ Validation check:
 
 - Room `101` with bed count `2` shows `101-1` and `101-2`.
 
-### Task 3.8: US4 Two Doctor Side Names
+### ✅ Task 3.8: US4 Two Doctor Side Names
 
 Build:
 

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -9,8 +10,10 @@ import {
   WorkflowListScreen,
   WorkflowSection,
 } from "../components/workflow";
+import { createLocalId } from "../helpers/localId";
 import { useLocalState } from "../store/LocalStateContext";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
+import type { DoctorSide } from "../types/models";
 
 const previewAssignments = [
   { room: "101", selectedIndex: 0 },
@@ -21,17 +24,57 @@ type PreviewAssignment = (typeof previewAssignments)[number];
 
 type AssignmentPreviewRowProps = {
   assignment: PreviewAssignment;
+  doctorSideNames: string[];
 };
 
-function DoctorSidesListHeader() {
+type DoctorSidesListHeaderProps = {
+  sideOneName: string;
+  sideTwoName: string;
+  onSideNameChange: (sideIndex: number, name: string) => void;
+};
+
+function createDefaultDoctorSide(): DoctorSide {
+  return {
+    id: createLocalId("doctor-side"),
+    name: "",
+  };
+}
+
+function createTwoDoctorSides(doctorSides: DoctorSide[]) {
+  return [0, 1].map((sideIndex) => {
+    const existingDoctorSide = doctorSides[sideIndex];
+
+    if (existingDoctorSide) {
+      return existingDoctorSide;
+    }
+
+    return createDefaultDoctorSide();
+  });
+}
+
+function DoctorSidesListHeader({
+  sideOneName,
+  sideTwoName,
+  onSideNameChange,
+}: DoctorSidesListHeaderProps) {
   return (
     <View style={styles.headerContent}>
       <WorkflowSection
         note="Phase 1 uses exactly two doctor sides."
         title="Side names"
       >
-        <PlaceholderInput label="Doctor side 1" placeholder="AB Side" />
-        <PlaceholderInput label="Doctor side 2" placeholder="SK Side" />
+        <PlaceholderInput
+          label="Doctor side 1"
+          onChangeText={(text) => onSideNameChange(0, text)}
+          placeholder="AB Side"
+          value={sideOneName}
+        />
+        <PlaceholderInput
+          label="Doctor side 2"
+          onChangeText={(text) => onSideNameChange(1, text)}
+          placeholder="SK Side"
+          value={sideTwoName}
+        />
       </WorkflowSection>
 
       <View style={styles.assignmentHeader}>
@@ -43,8 +86,8 @@ function DoctorSidesListHeader() {
         </View>
 
         <SummaryTileGrid>
-          <SummaryTile value="AB Side" label="1 room" />
-          <SummaryTile value="SK Side" label="1 room" />
+          <SummaryTile value={sideOneName || "Side 1"} label="1 room" />
+          <SummaryTile value={sideTwoName || "Side 2"} label="1 room" />
         </SummaryTileGrid>
       </View>
     </View>
@@ -53,6 +96,7 @@ function DoctorSidesListHeader() {
 
 function AssignmentPreviewRow({
   assignment,
+  doctorSideNames,
 }: AssignmentPreviewRowProps) {
   return (
     <View style={styles.assignmentRow}>
@@ -61,15 +105,11 @@ function AssignmentPreviewRow({
         <Text style={styles.roomMeta}>Choose one doctor side</Text>
       </View>
       <SegmentedPlaceholder
-        options={["AB Side", "SK Side"]}
+        options={doctorSideNames}
         selectedIndex={assignment.selectedIndex}
       />
     </View>
   );
-}
-
-function renderAssignmentPreviewItem({ item }: { item: PreviewAssignment }) {
-  return <AssignmentPreviewRow assignment={item} />;
 }
 
 function getPreviewAssignmentKey(assignment: PreviewAssignment) {
@@ -77,17 +117,85 @@ function getPreviewAssignmentKey(assignment: PreviewAssignment) {
 }
 
 export default function DoctorSidesScreen() {
-  const { localState } = useLocalState();
+  const { localState, setLocalState } = useLocalState();
   const screenTitle = localState.draftFloorTemplate?.name ?? "Doctor sides";
+  const doctorSides = localState.draftFloorTemplate?.doctorSides ?? [];
+  const sideOneName = doctorSides[0]?.name ?? "";
+  const sideTwoName = doctorSides[1]?.name ?? "";
+  const doctorSideNames = [sideOneName || "Side 1", sideTwoName || "Side 2"];
+
+  useEffect(() => {
+    if (!localState.draftFloorTemplate || doctorSides.length === 2) {
+      return;
+    }
+
+    setLocalState((currentState) => {
+      const currentDraft = currentState.draftFloorTemplate;
+
+      if (!currentDraft || currentDraft.doctorSides.length === 2) {
+        return currentState;
+      }
+
+      return {
+        ...currentState,
+        draftFloorTemplate: {
+          ...currentDraft,
+          doctorSides: createTwoDoctorSides(currentDraft.doctorSides),
+        },
+      };
+    });
+  }, [
+    doctorSides.length,
+    localState.draftFloorTemplate,
+    setLocalState,
+  ]);
+
+  function handleSideNameChange(sideIndex: number, name: string) {
+    setLocalState((currentState) => {
+      const currentDraft = currentState.draftFloorTemplate;
+
+      if (!currentDraft) {
+        return currentState;
+      }
+
+      const nextDoctorSides = createTwoDoctorSides(currentDraft.doctorSides).map(
+        (doctorSide, currentIndex) =>
+          currentIndex === sideIndex ? { ...doctorSide, name } : doctorSide,
+      );
+
+      return {
+        ...currentState,
+        draftFloorTemplate: {
+          ...currentDraft,
+          doctorSides: nextDoctorSides,
+        },
+      };
+    });
+  }
+
+  function renderAssignmentPreviewItem({ item }: { item: PreviewAssignment }) {
+    return (
+      <AssignmentPreviewRow
+        assignment={item}
+        doctorSideNames={doctorSideNames}
+      />
+    );
+  }
 
   return (
     <WorkflowListScreen
       activeStep="Sides"
       data={previewAssignments}
       headerActionLabel="Floors"
-      helperText="Static preview only. Side names and room choices are not saved yet."
+      helperText="Side names are saved locally. Room choices are a later task."
       keyExtractor={getPreviewAssignmentKey}
-      listHeader={<DoctorSidesListHeader />}
+      listHeader={
+        <DoctorSidesListHeader
+          onSideNameChange={handleSideNameChange}
+          sideOneName={sideOneName}
+          sideTwoName={sideTwoName}
+        />
+      }
       onHeaderActionPress={() => router.push("/")}
       onPrimaryPress={() => router.push("/template-review")}
       primaryLabel="Review"
