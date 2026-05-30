@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -19,6 +19,8 @@ const previewAssignments = [
   { room: "101", selectedIndex: 0 },
   { room: "102", selectedIndex: 1 },
 ];
+const requiredDoctorSideNameMessage = "Doctor side name is required.";
+const duplicateDoctorSideNameMessage = "Doctor side names must be different.";
 
 type PreviewAssignment = (typeof previewAssignments)[number];
 
@@ -29,7 +31,9 @@ type AssignmentPreviewRowProps = {
 
 type DoctorSidesListHeaderProps = {
   sideOneName: string;
+  sideOneNameError: string;
   sideTwoName: string;
+  sideTwoNameError: string;
   onSideNameChange: (sideIndex: number, name: string) => void;
 };
 
@@ -52,9 +56,40 @@ function createTwoDoctorSides(doctorSides: DoctorSide[]) {
   });
 }
 
+function validateDoctorSideNames(
+  sideOneName: string,
+  sideTwoName: string,
+  shouldRequireNames: boolean,
+) {
+  const trimmedSideOneName = sideOneName.trim();
+  const trimmedSideTwoName = sideTwoName.trim();
+  const errors = ["", ""];
+
+  if (shouldRequireNames && !trimmedSideOneName) {
+    errors[0] = requiredDoctorSideNameMessage;
+  }
+
+  if (shouldRequireNames && !trimmedSideTwoName) {
+    errors[1] = requiredDoctorSideNameMessage;
+  }
+
+  if (
+    trimmedSideOneName &&
+    trimmedSideTwoName &&
+    trimmedSideOneName.toLowerCase() === trimmedSideTwoName.toLowerCase()
+  ) {
+    errors[0] = duplicateDoctorSideNameMessage;
+    errors[1] = duplicateDoctorSideNameMessage;
+  }
+
+  return errors;
+}
+
 function DoctorSidesListHeader({
   sideOneName,
+  sideOneNameError,
   sideTwoName,
+  sideTwoNameError,
   onSideNameChange,
 }: DoctorSidesListHeaderProps) {
   return (
@@ -64,12 +99,14 @@ function DoctorSidesListHeader({
         title="Side names"
       >
         <PlaceholderInput
+          errorText={sideOneNameError}
           label="Doctor side 1"
           onChangeText={(text) => onSideNameChange(0, text)}
           placeholder="AB Side"
           value={sideOneName}
         />
         <PlaceholderInput
+          errorText={sideTwoNameError}
           label="Doctor side 2"
           onChangeText={(text) => onSideNameChange(1, text)}
           placeholder="SK Side"
@@ -118,6 +155,7 @@ function getPreviewAssignmentKey(assignment: PreviewAssignment) {
 
 export default function DoctorSidesScreen() {
   const { localState, setLocalState } = useLocalState();
+  const [sideNameErrors, setSideNameErrors] = useState(["", ""]);
   const screenTitle = localState.draftFloorTemplate?.name ?? "Doctor sides";
   const doctorSides = localState.draftFloorTemplate?.doctorSides ?? [];
   const sideOneName = doctorSides[0]?.name ?? "";
@@ -151,6 +189,13 @@ export default function DoctorSidesScreen() {
   ]);
 
   function handleSideNameChange(sideIndex: number, name: string) {
+    const nextSideOneName = sideIndex === 0 ? name : sideOneName;
+    const nextSideTwoName = sideIndex === 1 ? name : sideTwoName;
+
+    setSideNameErrors(
+      validateDoctorSideNames(nextSideOneName, nextSideTwoName, false),
+    );
+
     setLocalState((currentState) => {
       const currentDraft = currentState.draftFloorTemplate;
 
@@ -173,6 +218,47 @@ export default function DoctorSidesScreen() {
     });
   }
 
+  function handleReview() {
+    const trimmedSideOneName = sideOneName.trim();
+    const trimmedSideTwoName = sideTwoName.trim();
+    const nextSideNameErrors = validateDoctorSideNames(
+      sideOneName,
+      sideTwoName,
+      true,
+    );
+
+    if (nextSideNameErrors.some(Boolean)) {
+      setSideNameErrors(nextSideNameErrors);
+      return;
+    }
+
+    setLocalState((currentState) => {
+      const currentDraft = currentState.draftFloorTemplate;
+
+      if (!currentDraft) {
+        return currentState;
+      }
+
+      const nextDoctorSides = createTwoDoctorSides(currentDraft.doctorSides).map(
+        (doctorSide, sideIndex) => ({
+          ...doctorSide,
+          name: sideIndex === 0 ? trimmedSideOneName : trimmedSideTwoName,
+        }),
+      );
+
+      return {
+        ...currentState,
+        draftFloorTemplate: {
+          ...currentDraft,
+          doctorSides: nextDoctorSides,
+        },
+      };
+    });
+
+    setSideNameErrors(["", ""]);
+    router.push("/template-review");
+  }
+
   function renderAssignmentPreviewItem({ item }: { item: PreviewAssignment }) {
     return (
       <AssignmentPreviewRow
@@ -193,11 +279,13 @@ export default function DoctorSidesScreen() {
         <DoctorSidesListHeader
           onSideNameChange={handleSideNameChange}
           sideOneName={sideOneName}
+          sideOneNameError={sideNameErrors[0]}
           sideTwoName={sideTwoName}
+          sideTwoNameError={sideNameErrors[1]}
         />
       }
       onHeaderActionPress={() => router.push("/")}
-      onPrimaryPress={() => router.push("/template-review")}
+      onPrimaryPress={handleReview}
       primaryLabel="Review"
       renderItem={renderAssignmentPreviewItem}
       subtitle="Step 3 of 4"

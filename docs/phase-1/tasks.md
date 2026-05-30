@@ -268,7 +268,7 @@ Validation check:
 - The Doctor Sides screen always shows two side name fields.
 - There is no action to add a third side or remove a side.
 
-### Task 3.9: US4 Doctor Side Name Validation
+### ✅ Task 3.9: US4 Doctor Side Name Validation
 
 Build:
 

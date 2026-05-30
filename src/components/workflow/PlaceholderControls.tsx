@@ -133,7 +133,7 @@ export function SegmentedPlaceholder({
 
         return (
           <View
-            key={option}
+            key={`${option}-${index}`}
             style={[
               styles.segmentOption,
               isSelected ? styles.selectedSegmentOption : null,
