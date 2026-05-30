@@ -302,7 +302,7 @@ Validation check:
 
 - A room without a side shows `Every room needs a doctor side.`
 
-### Task 3.12: US6 Template Review
+### ✅ Task 3.12: US6 Template Review
 
 Build:
 
