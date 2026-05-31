@@ -9,31 +9,70 @@ import {
   WorkflowSection,
   WorkflowScreen,
 } from "../components/workflow";
+import { useLocalState } from "../store/LocalStateContext";
 import { shiftSetupFlow } from "../utils/workflowFlows";
 import { colors, spacing, textSize } from "../theme/tokens";
 
+function getCountLabel(count: number, singularLabel: string, pluralLabel: string) {
+  return count === 1 ? singularLabel : pluralLabel;
+}
+
 export default function StartShiftScreen() {
+  const { localState } = useLocalState();
+  const activeShift = localState.activeShift;
+  const doctorSideOptions =
+    activeShift?.doctorSides.map((doctorSide) => doctorSide.name) ?? [];
+  const canContinue = Boolean(activeShift);
+
+  function handleContinue() {
+    if (!activeShift) {
+      router.push("/");
+      return;
+    }
+
+    router.push("/nurses");
+  }
+
   return (
     <WorkflowScreen
       activeStep="Shift"
+      actionErrorText={
+        canContinue ? "" : "Create a floor template before starting a shift."
+      }
       headerActionLabel="Floors"
       onHeaderActionPress={() => router.push("/")}
-      onPrimaryPress={() => router.push("/nurses")}
-      primaryLabel="Continue"
+      onPrimaryPress={handleContinue}
+      primaryLabel={canContinue ? "Continue" : "Back to floors"}
       flow={shiftSetupFlow}
       subtitle="Step 1 of 3"
-      title="Start shift"
+      title={activeShift?.floorName ?? "Start shift"}
     >
-      <WorkflowSection title="4 North template">
+      <WorkflowSection title="Template summary">
         <SummaryTileGrid>
-          <SummaryTile value="2" label="Doctor sides" />
-          <SummaryTile value="2" label="Rooms" />
-          <SummaryTile value="3" label="Beds" />
+          <SummaryTile
+            value={(activeShift?.doctorSides.length ?? 0).toString()}
+            label={getCountLabel(
+              activeShift?.doctorSides.length ?? 0,
+              "Doctor side",
+              "Doctor sides",
+            )}
+          />
+          <SummaryTile
+            value={(activeShift?.rooms.length ?? 0).toString()}
+            label={getCountLabel(activeShift?.rooms.length ?? 0, "Room", "Rooms")}
+          />
+          <SummaryTile
+            value={(activeShift?.bedStates.length ?? 0).toString()}
+            label={getCountLabel(activeShift?.bedStates.length ?? 0, "Bed", "Beds")}
+          />
         </SummaryTileGrid>
       </WorkflowSection>
 
       <WorkflowSection title="Admitting side">
-        <SegmentedPlaceholder options={["AB Side", "SK Side"]} />
+        <SegmentedPlaceholder
+          options={doctorSideOptions.length ? doctorSideOptions : ["Side 1", "Side 2"]}
+          selectedIndex={null}
+        />
       </WorkflowSection>
 
       <WorkflowSection title="Side-based load limits">
@@ -42,7 +81,9 @@ export default function StartShiftScreen() {
             <Text style={styles.limitTitle}>Admitting-side coverage</Text>
             <Text style={styles.limitMeta}>Default target around 4-5 patients</Text>
           </View>
-          <NumberStepperPlaceholder value="5" />
+          <NumberStepperPlaceholder
+            value={(activeShift?.sideLoadLimits.admitting.max ?? 5).toString()}
+          />
         </View>
 
         <View style={styles.limitRow}>
@@ -50,7 +91,9 @@ export default function StartShiftScreen() {
             <Text style={styles.limitTitle}>Non-admitting only</Text>
             <Text style={styles.limitMeta}>Default target around 6-7 patients</Text>
           </View>
-          <NumberStepperPlaceholder value="6" />
+          <NumberStepperPlaceholder
+            value={(activeShift?.sideLoadLimits.nonAdmitting.max ?? 6).toString()}
+          />
         </View>
       </WorkflowSection>
     </WorkflowScreen>

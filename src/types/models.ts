@@ -52,8 +52,12 @@ export interface Bed {
 export interface Shift {
   id: LocalId;
   floorTemplateId: LocalId;
+  floorName: string;
   status: ShiftStatus;
   admittingDoctorSideId: LocalId;
+  doctorSides: DoctorSide[];
+  rooms: Room[];
+  beds: Bed[];
   sideLoadLimits: SideLoadLimits;
   nurses: Nurse[];
   bedStates: BedState[];

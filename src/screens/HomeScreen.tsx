@@ -14,7 +14,8 @@ import {
 } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
-import type { FloorTemplate } from "../types/models";
+import type { FloorTemplate, Shift } from "../types/models";
+import { createLocalId } from "../helpers/localId";
 
 type FloorTemplateRowProps = {
   floorTemplate: FloorTemplate;
@@ -91,6 +92,58 @@ function FloorTemplateRow({
   );
 }
 
+function isCompletedFloorTemplate(floorTemplate: FloorTemplate) {
+  const doctorSideIds = floorTemplate.doctorSides.map(
+    (doctorSide) => doctorSide.id,
+  );
+  const hasNamedDoctorSides =
+    floorTemplate.doctorSides.length === 2 &&
+    floorTemplate.doctorSides.every((doctorSide) => doctorSide.name.trim());
+  const hasRooms = floorTemplate.rooms.length > 0;
+  const hasValidRooms = floorTemplate.rooms.every(
+    (room) =>
+      room.label.trim() &&
+      room.bedCount > 0 &&
+      doctorSideIds.includes(room.doctorSideId),
+  );
+  const hasBedsForEveryRoom = floorTemplate.rooms.every((room) =>
+    floorTemplate.beds.some((bed) => bed.roomId === room.id),
+  );
+
+  return (
+    Boolean(floorTemplate.name.trim()) &&
+    hasNamedDoctorSides &&
+    hasRooms &&
+    hasValidRooms &&
+    hasBedsForEveryRoom
+  );
+}
+
+function createShiftFromTemplate(floorTemplate: FloorTemplate): Shift {
+  return {
+    id: createLocalId("shift"),
+    floorTemplateId: floorTemplate.id,
+    floorName: floorTemplate.name,
+    status: "setup",
+    admittingDoctorSideId: "",
+    doctorSides: floorTemplate.doctorSides.map((doctorSide) => ({
+      ...doctorSide,
+    })),
+    rooms: floorTemplate.rooms.map((room) => ({ ...room })),
+    beds: floorTemplate.beds.map((bed) => ({ ...bed })),
+    sideLoadLimits: {
+      admitting: { min: 4, max: 5 },
+      nonAdmitting: { min: 6, max: 7 },
+    },
+    nurses: [],
+    bedStates: floorTemplate.beds.map((bed) => ({
+      id: createLocalId("bed-state"),
+      bedId: bed.id,
+    })),
+    flags: [],
+  };
+}
+
 export default function Index() {
   const { localState, setLocalState } = useLocalState();
   const [floorTemplateToDelete, setFloorTemplateToDelete] =
@@ -103,7 +156,8 @@ export default function Index() {
         (t) => t.id === activeShift.floorTemplateId,
       )
     : null;
-  const activeShiftFloorName = activeShiftTemplate?.name ?? "Active Floor";
+  const activeShiftFloorName =
+    activeShift?.floorName ?? activeShiftTemplate?.name ?? "Active Floor";
   const activeShiftNursesCount = activeShift?.nurses?.length ?? 0;
   const activeShiftPatientsCount =
     activeShift?.bedStates?.filter((bs) => bs.patient).length ?? 0;
@@ -122,12 +176,20 @@ export default function Index() {
       return;
     }
 
-    setLocalState((currentState) => ({
-      ...currentState,
-      floorTemplates: currentState.floorTemplates.filter(
-        (floorTemplate) => floorTemplate.id !== floorTemplateToDelete.id,
-      ),
-    }));
+    setLocalState((currentState) => {
+      const shouldClearActiveShift =
+        currentState.activeShift?.floorTemplateId === floorTemplateToDelete.id;
+
+      return {
+        ...currentState,
+        activeShift: shouldClearActiveShift
+          ? undefined
+          : currentState.activeShift,
+        floorTemplates: currentState.floorTemplates.filter(
+          (floorTemplate) => floorTemplate.id !== floorTemplateToDelete.id,
+        ),
+      };
+    });
     setFloorTemplateToDelete(undefined);
   }
 
@@ -140,9 +202,14 @@ export default function Index() {
   }
 
   function handleStartShift(floorTemplate: FloorTemplate) {
+    if (!isCompletedFloorTemplate(floorTemplate)) {
+      return;
+    }
+
     setLocalState((currentState) => ({
       ...currentState,
       draftFloorTemplate: floorTemplate,
+      activeShift: createShiftFromTemplate(floorTemplate),
     }));
     router.push("/start-shift");
   }
@@ -173,10 +240,6 @@ export default function Index() {
           <View style={styles.statsHeader}>
             <Text style={styles.statsTitle}>Overview</Text>
           </View>
-          <Text style={styles.statsSubtitle}>
-            Design floor templates, configure doctor sides, manage acuities, and
-            calculate balanced nurse assignments.
-          </Text>
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
               <Text style={styles.statNumber}>{floorTemplateCount}</Text>
@@ -372,11 +435,6 @@ const styles = StyleSheet.create({
     color: colors.brand.burgundy,
     fontSize: 11,
     fontWeight: "600",
-  },
-  statsSubtitle: {
-    color: colors.neutral.textSecondary,
-    fontSize: 13,
-    lineHeight: 18,
   },
   statsRow: {
     flexDirection: "row",

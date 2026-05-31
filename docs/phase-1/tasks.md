@@ -326,7 +326,7 @@ Validation check:
 - After saving, the template appears on Local Workspace.
 - Incomplete templates cannot be saved.
 
-### Task 4.1: US7 Start Shift From Template
+### ✅ Task 4.1: US7 Start Shift From Template
 
 Build:
 

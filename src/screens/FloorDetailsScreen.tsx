@@ -40,8 +40,11 @@ export default function FloorDetailsScreen() {
       return;
     }
 
+    const currentDraftId = localState.draftFloorTemplate?.id;
     const hasDuplicateFloorName = localState.floorTemplates.some(
-      (floorTemplate) => floorTemplate.name.trim() === trimmedFloorName,
+      (floorTemplate) =>
+        floorTemplate.id !== currentDraftId &&
+        floorTemplate.name.trim() === trimmedFloorName,
     );
 
     if (hasDuplicateFloorName) {
@@ -49,8 +52,7 @@ export default function FloorDetailsScreen() {
       return;
     }
 
-    const draftId =
-      localState.draftFloorTemplate?.id ?? createLocalId("floor-template");
+    const draftId = currentDraftId ?? createLocalId("floor-template");
 
     setLocalState((currentState) => ({
       ...currentState,
