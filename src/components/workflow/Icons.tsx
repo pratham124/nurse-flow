@@ -94,6 +94,52 @@ export function HospitalIcon({
   );
 }
 
+export function ChevronRightIcon({
+  color = colors.neutral.textSecondary,
+  size = 14,
+}: IconProps) {
+  const arrowSize = size * 0.45;
+  return (
+    <View style={[styles.icon, { height: size, width: size }]}>
+      <View
+        style={{
+          borderColor: color,
+          borderRightWidth: 2,
+          borderTopWidth: 2,
+          height: arrowSize,
+          width: arrowSize,
+          transform: [{ rotate: "45deg" }],
+          marginLeft: -size * 0.15,
+        }}
+      />
+    </View>
+  );
+}
+
+export function BedIcon({
+  color = colors.neutral.textSecondary,
+  size = 14,
+}: IconProps) {
+  return (
+    <View style={[styles.bedIcon, { height: size, width: size }]}>
+      <View style={[styles.bedHeadboard, { backgroundColor: color }]} />
+      <View style={[styles.bedBody, { backgroundColor: color }]} />
+      <View style={[styles.bedPillow, { backgroundColor: color }]} />
+    </View>
+  );
+}
+
+export function RoomIcon({
+  color = colors.neutral.textSecondary,
+  size = 14,
+}: IconProps) {
+  return (
+    <View style={[styles.roomIcon, { borderColor: color, height: size, width: size }]}>
+      <View style={[styles.roomDoor, { borderColor: color }]} />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   icon: {
     alignItems: "center",
@@ -205,5 +251,49 @@ const styles = StyleSheet.create({
     height: 6,
     position: "absolute",
     width: 6,
+  },
+  bedIcon: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "flex-start",
+    position: "relative",
+  },
+  bedHeadboard: {
+    width: 2,
+    height: "85%",
+    borderRadius: 0.5,
+    position: "absolute",
+    left: 0,
+    bottom: 0,
+  },
+  bedBody: {
+    width: "75%",
+    height: "45%",
+    borderRadius: 0.5,
+    position: "absolute",
+    right: 0,
+    bottom: 0,
+  },
+  bedPillow: {
+    width: "25%",
+    height: "20%",
+    borderRadius: 0.5,
+    position: "absolute",
+    left: 3,
+    top: "35%",
+  },
+  roomIcon: {
+    borderRadius: 3,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "flex-end",
+  },
+  roomDoor: {
+    borderWidth: 1.5,
+    borderBottomWidth: 0,
+    borderTopLeftRadius: 1,
+    borderTopRightRadius: 1,
+    width: "45%",
+    height: "55%",
   },
 });

@@ -16,6 +16,9 @@ export {
   MinusIcon,
   PlusIcon,
   TrashIcon,
+  ChevronRightIcon,
+  BedIcon,
+  RoomIcon,
 } from "./Icons";
 export { ConfirmationDialog } from "./ConfirmationDialog";
 export {
