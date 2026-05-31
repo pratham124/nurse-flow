@@ -349,7 +349,7 @@ Validation check:
 
 - Assignment cannot be reached or run until one doctor side is selected as admitting.
 
-### Task 4.3: US8 Default Side-Based Load Limits
+### ✅ Task 4.3: US8 Default Side-Based Load Limits
 
 Build:
 
@@ -360,7 +360,7 @@ Validation check:
 
 - Starting a shift displays both default load limits clearly.
 
-### Task 4.4: US8 Override Side-Based Load Limits
+### ✅ Task 4.4: US8 Override Side-Based Load Limits
 
 Build:
 

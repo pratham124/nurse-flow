@@ -12,10 +12,72 @@ import {
 } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
 import { shiftSetupFlow } from "../utils/workflowFlows";
-import { colors, spacing, textSize } from "../theme/tokens";
+import { colors, radius, spacing, textSize } from "../theme/tokens";
+import type { LoadLimitRange } from "../types/models";
+
+type LoadLimitKind = "admitting" | "nonAdmitting";
+
+type LoadLimitField = "min" | "max";
+
+const phaseOneMaxLoadLimit = 12;
+const minimumLoadLimitMessage = "Load limit must be at least 1.";
+const maximumLoadLimitMessage = `Load limit cannot be higher than ${phaseOneMaxLoadLimit}.`;
+const invalidLoadLimitRangeMessage =
+  "Minimum load cannot be higher than maximum load.";
 
 function getCountLabel(count: number, singularLabel: string, pluralLabel: string) {
   return count === 1 ? singularLabel : pluralLabel;
+}
+
+type LoadLimitRangeControlProps = {
+  loadLimitRange?: LoadLimitRange;
+  onChange?: (field: LoadLimitField, value: number) => void;
+};
+
+function LoadLimitRangeControl({
+  loadLimitRange,
+  onChange,
+}: LoadLimitRangeControlProps) {
+  return (
+    <View style={styles.rangeControls}>
+      <View style={styles.rangeControlGroup}>
+        <Text style={styles.rangeLabel}>Min</Text>
+        <NumberStepperPlaceholder
+          decrementLabel="Decrease minimum load"
+          incrementLabel="Increase minimum load"
+          onDecrement={
+            loadLimitRange && onChange
+              ? () => onChange("min", loadLimitRange.min - 1)
+              : undefined
+          }
+          onIncrement={
+            loadLimitRange && onChange
+              ? () => onChange("min", loadLimitRange.min + 1)
+              : undefined
+          }
+          value={loadLimitRange ? loadLimitRange.min.toString() : "--"}
+        />
+      </View>
+      <View style={styles.rangeControlGroup}>
+        <Text style={styles.rangeLabel}>Max</Text>
+        <NumberStepperPlaceholder
+          decrementLabel="Decrease maximum load"
+          incrementLabel="Increase maximum load"
+          onDecrement={
+            loadLimitRange && onChange
+              ? () => onChange("max", loadLimitRange.max - 1)
+              : undefined
+          }
+          onIncrement={
+            loadLimitRange && onChange
+              ? () => onChange("max", loadLimitRange.max + 1)
+              : undefined
+          }
+          value={loadLimitRange ? loadLimitRange.max.toString() : "--"}
+        />
+      </View>
+    </View>
+  );
 }
 
 export default function StartShiftScreen() {
@@ -30,6 +92,7 @@ export default function StartShiftScreen() {
     : -1;
   const hasAdmittingSide = selectedAdmittingSideIndex >= 0;
   const [admittingSideError, setAdmittingSideError] = useState("");
+  const [loadLimitError, setLoadLimitError] = useState("");
   const canContinue = Boolean(activeShift);
 
   function handleSelectAdmittingSide(index: number) {
@@ -55,6 +118,59 @@ export default function StartShiftScreen() {
     });
   }
 
+  function handleLoadLimitChange(
+    loadLimitKind: LoadLimitKind,
+    field: LoadLimitField,
+    value: number,
+  ) {
+    const currentRange = activeShift?.sideLoadLimits[loadLimitKind];
+
+    if (!activeShift || !currentRange) {
+      return;
+    }
+
+    if (value < 1) {
+      setLoadLimitError(minimumLoadLimitMessage);
+      return;
+    }
+
+    if (value > phaseOneMaxLoadLimit) {
+      setLoadLimitError(maximumLoadLimitMessage);
+      return;
+    }
+
+    const nextRange = {
+      ...currentRange,
+      [field]: value,
+    };
+
+    if (nextRange.min > nextRange.max) {
+      setLoadLimitError(invalidLoadLimitRangeMessage);
+      return;
+    }
+
+    setLoadLimitError("");
+
+    setLocalState((currentState) => {
+      const currentShift = currentState.activeShift;
+
+      if (!currentShift) {
+        return currentState;
+      }
+
+      return {
+        ...currentState,
+        activeShift: {
+          ...currentShift,
+          sideLoadLimits: {
+            ...currentShift.sideLoadLimits,
+            [loadLimitKind]: nextRange,
+          },
+        },
+      };
+    });
+  }
+
   function handleContinue() {
     if (!activeShift) {
       router.push("/");
@@ -66,6 +182,10 @@ export default function StartShiftScreen() {
       return;
     }
 
+    if (loadLimitError) {
+      return;
+    }
+
     router.push("/nurses");
   }
 
@@ -74,6 +194,7 @@ export default function StartShiftScreen() {
       activeStep="Shift"
       actionErrorText={
         admittingSideError ||
+        loadLimitError ||
         (canContinue ? "" : "Create a floor template before starting a shift.")
       }
       headerActionLabel="Floors"
@@ -119,8 +240,11 @@ export default function StartShiftScreen() {
             <Text style={styles.limitTitle}>Admitting-side coverage</Text>
             <Text style={styles.limitMeta}>Default target around 4-5 patients</Text>
           </View>
-          <NumberStepperPlaceholder
-            value={(activeShift?.sideLoadLimits.admitting.max ?? 5).toString()}
+          <LoadLimitRangeControl
+            loadLimitRange={activeShift?.sideLoadLimits.admitting}
+            onChange={(field, value) =>
+              handleLoadLimitChange("admitting", field, value)
+            }
           />
         </View>
 
@@ -129,8 +253,11 @@ export default function StartShiftScreen() {
             <Text style={styles.limitTitle}>Non-admitting only</Text>
             <Text style={styles.limitMeta}>Default target around 6-7 patients</Text>
           </View>
-          <NumberStepperPlaceholder
-            value={(activeShift?.sideLoadLimits.nonAdmitting.max ?? 6).toString()}
+          <LoadLimitRangeControl
+            loadLimitRange={activeShift?.sideLoadLimits.nonAdmitting}
+            onChange={(field, value) =>
+              handleLoadLimitChange("nonAdmitting", field, value)
+            }
           />
         </View>
       </WorkflowSection>
@@ -140,15 +267,13 @@ export default function StartShiftScreen() {
 
 const styles = StyleSheet.create({
   limitRow: {
-    alignItems: "center",
-    flexDirection: "row",
+    alignItems: "stretch",
+    flexDirection: "column",
     gap: spacing.md,
-    justifyContent: "space-between",
     marginTop: spacing.md,
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.md,
   },
   limitText: {
-    flex: 1,
     gap: spacing.xs,
   },
   limitTitle: {
@@ -160,5 +285,26 @@ const styles = StyleSheet.create({
     color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
     lineHeight: 18,
+  },
+  rangeControls: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  rangeControlGroup: {
+    alignItems: "center",
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.md,
+    borderWidth: 0.5,
+    flex: 1,
+    gap: spacing.xs,
+    minWidth: 132,
+    padding: spacing.xs,
+  },
+  rangeLabel: {
+    color: colors.neutral.textSecondary,
+    fontSize: 10,
+    fontWeight: "500",
   },
 });
