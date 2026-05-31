@@ -338,7 +338,7 @@ Validation check:
 
 - Starting a shift creates an active local shift with all template beds represented in bed state.
 
-### Task 4.2: US7 Select Admitting Side
+### ✅ Task 4.2: US7 Select Admitting Side
 
 Build:
 

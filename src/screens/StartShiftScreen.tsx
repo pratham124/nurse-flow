@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -18,15 +19,50 @@ function getCountLabel(count: number, singularLabel: string, pluralLabel: string
 }
 
 export default function StartShiftScreen() {
-  const { localState } = useLocalState();
+  const { localState, setLocalState } = useLocalState();
   const activeShift = localState.activeShift;
   const doctorSideOptions =
     activeShift?.doctorSides.map((doctorSide) => doctorSide.name) ?? [];
+  const selectedAdmittingSideIndex = activeShift
+    ? activeShift.doctorSides.findIndex(
+        (doctorSide) => doctorSide.id === activeShift.admittingDoctorSideId,
+      )
+    : -1;
+  const hasAdmittingSide = selectedAdmittingSideIndex >= 0;
+  const [admittingSideError, setAdmittingSideError] = useState("");
   const canContinue = Boolean(activeShift);
+
+  function handleSelectAdmittingSide(index: number) {
+    const selectedDoctorSide = activeShift?.doctorSides[index];
+
+    if (!activeShift || !selectedDoctorSide) {
+      return;
+    }
+
+    setAdmittingSideError("");
+    setLocalState((currentState) => {
+      if (!currentState.activeShift) {
+        return currentState;
+      }
+
+      return {
+        ...currentState,
+        activeShift: {
+          ...currentState.activeShift,
+          admittingDoctorSideId: selectedDoctorSide.id,
+        },
+      };
+    });
+  }
 
   function handleContinue() {
     if (!activeShift) {
       router.push("/");
+      return;
+    }
+
+    if (!hasAdmittingSide) {
+      setAdmittingSideError("Choose the admitting side for this shift.");
       return;
     }
 
@@ -37,7 +73,8 @@ export default function StartShiftScreen() {
     <WorkflowScreen
       activeStep="Shift"
       actionErrorText={
-        canContinue ? "" : "Create a floor template before starting a shift."
+        admittingSideError ||
+        (canContinue ? "" : "Create a floor template before starting a shift.")
       }
       headerActionLabel="Floors"
       onHeaderActionPress={() => router.push("/")}
@@ -71,7 +108,8 @@ export default function StartShiftScreen() {
       <WorkflowSection title="Admitting side">
         <SegmentedPlaceholder
           options={doctorSideOptions.length ? doctorSideOptions : ["Side 1", "Side 2"]}
-          selectedIndex={null}
+          selectedIndex={hasAdmittingSide ? selectedAdmittingSideIndex : null}
+          onSelect={activeShift ? handleSelectAdmittingSide : undefined}
         />
       </WorkflowSection>
 

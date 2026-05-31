@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { router } from "expo-router";
 import { StyleSheet, Text, View, type DimensionValue } from "react-native";
 
@@ -8,6 +9,7 @@ import {
   WorkflowListScreen,
   WorkflowSection,
 } from "../components/workflow";
+import { useLocalState } from "../store/LocalStateContext";
 import { assignmentFlow } from "../utils/workflowFlows";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
 
@@ -44,7 +46,13 @@ type CapacityRowProps = {
   name: string;
 };
 
-function AssignmentReviewListHeader() {
+type AssignmentReviewListHeaderProps = {
+  admittingSideName: string;
+};
+
+function AssignmentReviewListHeader({
+  admittingSideName,
+}: AssignmentReviewListHeaderProps) {
   return (
     <View style={styles.headerContent}>
       <WorkflowSection title="Shift summary">
@@ -52,7 +60,7 @@ function AssignmentReviewListHeader() {
           <SummaryTile value="2/3" label="Occupied" />
           <SummaryTile value="2" label="Nurses" />
           <SummaryTile value="11" label="Capacity" />
-          <SummaryTile value="AB" label="Admitting" />
+          <SummaryTile value={admittingSideName} label="Admitting" />
         </SummaryTileGrid>
       </WorkflowSection>
 
@@ -109,17 +117,46 @@ function getNurseCapacityKey(nurse: NurseCapacityRow) {
 }
 
 export default function AssignmentReviewScreen() {
+  const { localState } = useLocalState();
+  const activeShift = localState.activeShift;
+  const admittingDoctorSide = activeShift?.doctorSides.find(
+    (doctorSide) => doctorSide.id === activeShift.admittingDoctorSideId,
+  );
+  const canReviewAssignment = Boolean(activeShift && admittingDoctorSide);
+
+  useEffect(() => {
+    if (!canReviewAssignment) {
+      router.replace("/start-shift");
+    }
+  }, [canReviewAssignment]);
+
+  function handlePrimaryPress() {
+    if (!canReviewAssignment) {
+      router.replace("/start-shift");
+      return;
+    }
+
+    router.push("/floor-board");
+  }
+
   return (
     <WorkflowListScreen
       activeStep="Assign"
+      actionErrorText={
+        canReviewAssignment ? "" : "Choose the admitting side for this shift."
+      }
       data={nurseCapacityRows}
       flow={assignmentFlow}
       headerActionLabel="Floors"
       keyExtractor={getNurseCapacityKey}
       listFooter={<RedBedRiskFooter />}
-      listHeader={<AssignmentReviewListHeader />}
+      listHeader={
+        <AssignmentReviewListHeader
+          admittingSideName={admittingDoctorSide?.name ?? "-"}
+        />
+      }
       onHeaderActionPress={() => router.push("/")}
-      onPrimaryPress={() => router.push("/floor-board")}
+      onPrimaryPress={handlePrimaryPress}
       primaryLabel="Run local assignment"
       renderItem={renderNurseCapacityItem}
       subtitle="Static readiness preview"
