@@ -166,6 +166,7 @@ export default function Index() {
     setLocalState((currentState) => ({
       ...currentState,
       draftFloorTemplate: undefined,
+      isEditingActiveShiftTemplate: false,
     }));
 
     router.push("/floor-details");
@@ -185,6 +186,9 @@ export default function Index() {
         activeShift: shouldClearActiveShift
           ? undefined
           : currentState.activeShift,
+        isEditingActiveShiftTemplate: shouldClearActiveShift
+          ? false
+          : currentState.isEditingActiveShiftTemplate,
         floorTemplates: currentState.floorTemplates.filter(
           (floorTemplate) => floorTemplate.id !== floorTemplateToDelete.id,
         ),
@@ -197,6 +201,7 @@ export default function Index() {
     setLocalState((currentState) => ({
       ...currentState,
       draftFloorTemplate: floorTemplate,
+      isEditingActiveShiftTemplate: false,
     }));
     router.push("/template-review");
   }
@@ -209,6 +214,7 @@ export default function Index() {
     setLocalState((currentState) => ({
       ...currentState,
       draftFloorTemplate: floorTemplate,
+      isEditingActiveShiftTemplate: true,
       activeShift: createShiftFromTemplate(floorTemplate),
     }));
     router.push("/start-shift");
@@ -235,24 +241,6 @@ export default function Index() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Welcome / System Status Card */}
-        <View style={styles.statsCard}>
-          <View style={styles.statsHeader}>
-            <Text style={styles.statsTitle}>Overview</Text>
-          </View>
-          <View style={styles.statsRow}>
-            <View style={styles.statBox}>
-              <Text style={styles.statNumber}>{floorTemplateCount}</Text>
-              <Text style={styles.statLabel}>Templates</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statBox}>
-              <Text style={styles.statNumber}>{activeShift ? "1" : "0"}</Text>
-              <Text style={styles.statLabel}>Active Shift</Text>
-            </View>
-          </View>
-        </View>
-
         {/* Active Shift Card */}
         {activeShift && (
           <View style={styles.activeShiftCard}>
@@ -403,67 +391,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     textAlign: "center",
     fontWeight: "600",
-  },
-  statsCard: {
-    backgroundColor: colors.neutral.surface,
-    borderColor: colors.neutral.borderTertiary,
-    borderRadius: radius.xl,
-    borderWidth: 0.5,
-    padding: spacing.lg,
-    gap: spacing.md,
-    boxShadow: "0 4px 12px rgba(33, 26, 29, 0.04)",
-  },
-  statsHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  statsTitle: {
-    color: colors.brand.burgundy,
-    fontSize: textSize.lg,
-    fontWeight: "700",
-  },
-  statsBadge: {
-    backgroundColor: colors.brand.burgundy10,
-    borderColor: colors.brand.burgundy15,
-    borderWidth: 0.5,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-  },
-  statsBadgeText: {
-    color: colors.brand.burgundy,
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  statsRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    backgroundColor: colors.neutral.backgroundPrimary,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    marginTop: spacing.xs,
-  },
-  statBox: {
-    alignItems: "center",
-    flex: 1,
-  },
-  statNumber: {
-    color: colors.neutral.textPrimary,
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  statLabel: {
-    color: colors.neutral.textSecondary,
-    fontSize: 11,
-    marginTop: 2,
-    fontWeight: "500",
-  },
-  statDivider: {
-    width: 1,
-    height: "60%",
-    backgroundColor: colors.neutral.borderSecondary,
   },
   activeShiftCard: {
     backgroundColor: colors.neutral.surface,
