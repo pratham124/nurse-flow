@@ -19,7 +19,7 @@ import { createLocalId } from "../helpers/localId";
 import { useLocalState } from "../store/LocalStateContext";
 import { shiftSetupFlow } from "../utils/workflowFlows";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
-import type { ExperienceLevel, LicenseType, Nurse } from "../types/models";
+import type { ExperienceLevel, LicenseType, Nurse, Shift } from "../types/models";
 
 const licenseTypeOptions: LicenseType[] = ["RN", "LPN"];
 const experienceLevelOptions: ExperienceLevel[] = [
@@ -29,6 +29,9 @@ const experienceLevelOptions: ExperienceLevel[] = [
 ];
 const nurseNameRequiredMessage = "Nurse name is required.";
 const requiredNurseMessage = "Add at least one nurse before continuing.";
+const missingMaxLoadMessage = "Set a max load for each nurse.";
+const minimumMaxLoadMessage = "Max load must be at least 1.";
+const wholeNumberMaxLoadMessage = "Max load must be a whole number.";
 
 type AddNurseFormProps = {
   experienceLevel: ExperienceLevel;
@@ -49,6 +52,7 @@ type NursesListHeaderProps = AddNurseFormProps & {
 type NurseRowProps = {
   nurse: Nurse;
   onRemoveNurse: (nurseId: string) => void;
+  onUpdateMaxPatientLoad: (nurseId: string, maxPatientLoad: number) => void;
   rowNumber: number;
 };
 
@@ -71,6 +75,36 @@ function getSelectedExperienceLevelIndex(experienceLevel: ExperienceLevel) {
   return experienceLevelOptions.findIndex(
     (option) => option === experienceLevel,
   );
+}
+
+function getSideBasedMaxLoad(activeShift: Shift) {
+  return Math.max(
+    activeShift.sideLoadLimits.admitting.max,
+    activeShift.sideLoadLimits.nonAdmitting.max,
+  );
+}
+
+function getMaximumMaxLoadMessage(sideBasedMaxLoad: number) {
+  return `Max load cannot be higher than the side-based max of ${sideBasedMaxLoad}.`;
+}
+
+function getMaxLoadValidationMessage(
+  maxPatientLoad: number,
+  sideBasedMaxLoad: number,
+) {
+  if (!Number.isInteger(maxPatientLoad)) {
+    return wholeNumberMaxLoadMessage;
+  }
+
+  if (maxPatientLoad < 1) {
+    return minimumMaxLoadMessage;
+  }
+
+  if (maxPatientLoad > sideBasedMaxLoad) {
+    return getMaximumMaxLoadMessage(sideBasedMaxLoad);
+  }
+
+  return "";
 }
 
 function AddNurseForm({
@@ -162,9 +196,15 @@ function NursesListHeader({
   );
 }
 
-function NurseRow({ nurse, onRemoveNurse, rowNumber }: NurseRowProps) {
+function NurseRow({
+  nurse,
+  onRemoveNurse,
+  onUpdateMaxPatientLoad,
+  rowNumber,
+}: NurseRowProps) {
   const maxLoadValue =
     nurse.maxPatientLoad > 0 ? nurse.maxPatientLoad.toString() : "--";
+  const canDecreaseMaxLoad = nurse.maxPatientLoad > 0;
 
   return (
     <SwipeRevealAction
@@ -184,7 +224,23 @@ function NurseRow({ nurse, onRemoveNurse, rowNumber }: NurseRowProps) {
         </View>
         <View style={styles.maxLoad}>
           <Text style={styles.maxLoadLabel}>Max load</Text>
-          <NumberStepperPlaceholder value={maxLoadValue} />
+          <NumberStepperPlaceholder
+            decrementLabel={`Decrease max load for nurse ${rowNumber}, ${nurse.name}`}
+            incrementLabel={`Increase max load for nurse ${rowNumber}, ${nurse.name}`}
+            onDecrement={
+              canDecreaseMaxLoad
+                ? () =>
+                    onUpdateMaxPatientLoad(
+                      nurse.id,
+                      nurse.maxPatientLoad - 1,
+                    )
+                : undefined
+            }
+            onIncrement={() =>
+              onUpdateMaxPatientLoad(nurse.id, nurse.maxPatientLoad + 1)
+            }
+            value={maxLoadValue}
+          />
         </View>
       </View>
     </SwipeRevealAction>
@@ -240,7 +296,7 @@ export default function NursesScreen() {
         name: trimmedName,
         licenseType,
         experienceLevel,
-        maxPatientLoad: 0,
+        maxPatientLoad: currentState.activeShift.sideLoadLimits.admitting.max,
       };
 
       return {
@@ -292,6 +348,45 @@ export default function NursesScreen() {
     });
   }
 
+  function handleUpdateMaxPatientLoad(
+    nurseId: string,
+    maxPatientLoad: number,
+  ) {
+    if (!activeShift) {
+      return;
+    }
+
+    const validationMessage = getMaxLoadValidationMessage(
+      maxPatientLoad,
+      getSideBasedMaxLoad(activeShift),
+    );
+
+    if (validationMessage) {
+      setNurseListError(validationMessage);
+      return;
+    }
+
+    setLocalState((currentState) => {
+      const currentShift = currentState.activeShift;
+
+      if (!currentShift) {
+        return currentState;
+      }
+
+      return {
+        ...currentState,
+        activeShift: {
+          ...currentShift,
+          nurses: currentShift.nurses.map((nurse) =>
+            nurse.id === nurseId ? { ...nurse, maxPatientLoad } : nurse,
+          ),
+        },
+      };
+    });
+
+    setNurseListError("");
+  }
+
   function handleContinue() {
     if (!activeShift) {
       return;
@@ -299,6 +394,25 @@ export default function NursesScreen() {
 
     if (nurses.length === 0) {
       setNurseListError(requiredNurseMessage);
+      return;
+    }
+
+    if (nurses.some((nurse) => nurse.maxPatientLoad < 1)) {
+      setNurseListError(missingMaxLoadMessage);
+      return;
+    }
+
+    const invalidMaxLoadMessage = nurses
+      .map((nurse) =>
+        getMaxLoadValidationMessage(
+          nurse.maxPatientLoad,
+          getSideBasedMaxLoad(activeShift),
+        ),
+      )
+      .find(Boolean);
+
+    if (invalidMaxLoadMessage) {
+      setNurseListError(invalidMaxLoadMessage);
       return;
     }
 
@@ -310,6 +424,7 @@ export default function NursesScreen() {
       <NurseRow
         nurse={item}
         onRemoveNurse={handleRemoveNurse}
+        onUpdateMaxPatientLoad={handleUpdateMaxPatientLoad}
         rowNumber={index + 1}
       />
     );
@@ -346,7 +461,7 @@ export default function NursesScreen() {
       primaryLabel="Continue"
       renderItem={renderNurseItem}
       subtitle="Step 2 of 3"
-      title="Nurses"
+      title={activeShift?.floorName ?? "Nurses"}
     />
   );
 }

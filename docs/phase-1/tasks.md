@@ -407,7 +407,7 @@ Validation check:
 
 - Two nurses named `Sam` can exist and be edited independently.
 
-### Task 5.4: US10 Set Nurse Max Load
+### ✅ Task 5.4: US10 Set Nurse Max Load
 
 Build:
 
@@ -419,7 +419,7 @@ Validation check:
 - Each nurse row shows its max load.
 - Assignment readiness catches nurses missing max load.
 
-### Task 5.5: US10 Max Load Validation
+### ✅ Task 5.5: US10 Max Load Validation
 
 Build:
 
