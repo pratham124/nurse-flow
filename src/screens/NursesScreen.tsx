@@ -49,6 +49,7 @@ type NursesListHeaderProps = AddNurseFormProps & {
 type NurseRowProps = {
   nurse: Nurse;
   onRemoveNurse: (nurseId: string) => void;
+  rowNumber: number;
 };
 
 function getExperienceLabel(experienceLevel: ExperienceLevel) {
@@ -161,13 +162,13 @@ function NursesListHeader({
   );
 }
 
-function NurseRow({ nurse, onRemoveNurse }: NurseRowProps) {
+function NurseRow({ nurse, onRemoveNurse, rowNumber }: NurseRowProps) {
   const maxLoadValue =
     nurse.maxPatientLoad > 0 ? nurse.maxPatientLoad.toString() : "--";
 
   return (
     <SwipeRevealAction
-      accessibilityLabel={`Remove nurse ${nurse.name}`}
+      accessibilityLabel={`Remove nurse ${rowNumber}, ${nurse.name}`}
       actionIcon={<TrashIcon color={colors.neutral.surface} size={18} />}
       actionLabel="Remove"
       actionWidth={72}
@@ -177,7 +178,8 @@ function NurseRow({ nurse, onRemoveNurse }: NurseRowProps) {
         <View style={styles.nurseInfo}>
           <Text style={styles.nurseName}>{nurse.name}</Text>
           <Text style={styles.nurseMeta}>
-            {nurse.licenseType} - {getExperienceLabel(nurse.experienceLevel)}
+            Nurse {rowNumber} - {nurse.licenseType} -{" "}
+            {getExperienceLabel(nurse.experienceLevel)}
           </Text>
         </View>
         <View style={styles.maxLoad}>
@@ -303,8 +305,14 @@ export default function NursesScreen() {
     router.push("/patients-and-acuity");
   }
 
-  function renderNurseItem({ item }: { item: Nurse }) {
-    return <NurseRow nurse={item} onRemoveNurse={handleRemoveNurse} />;
+  function renderNurseItem({ item, index }: { item: Nurse; index: number }) {
+    return (
+      <NurseRow
+        nurse={item}
+        onRemoveNurse={handleRemoveNurse}
+        rowNumber={index + 1}
+      />
+    );
   }
 
   return (

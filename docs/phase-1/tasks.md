@@ -396,7 +396,7 @@ Validation check:
 - Removing a nurse removes them from the list.
 - If all nurses are removed, assignment cannot run.
 
-### Task 5.3: US9 Allow Duplicate Nurse Names Safely
+### ✅ Task 5.3: US9 Allow Duplicate Nurse Names Safely
 
 Build:
 
