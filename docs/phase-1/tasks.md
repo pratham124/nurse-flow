@@ -384,7 +384,7 @@ Validation check:
 - Adding `Taylor`, RN, experienced shows that nurse in the nurse list.
 - Blank nurse name shows validation.
 
-### Task 5.2: US9 Remove Nurse
+### ✅ Task 5.2: US9 Remove Nurse
 
 Build:
 

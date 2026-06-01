@@ -10,6 +10,8 @@ import {
   SegmentedPlaceholder,
   SummaryTile,
   SummaryTileGrid,
+  SwipeRevealAction,
+  TrashIcon,
   WorkflowListScreen,
   WorkflowSection,
 } from "../components/workflow";
@@ -26,6 +28,7 @@ const experienceLevelOptions: ExperienceLevel[] = [
   "experienced",
 ];
 const nurseNameRequiredMessage = "Nurse name is required.";
+const requiredNurseMessage = "Add at least one nurse before continuing.";
 
 type AddNurseFormProps = {
   experienceLevel: ExperienceLevel;
@@ -45,6 +48,7 @@ type NursesListHeaderProps = AddNurseFormProps & {
 
 type NurseRowProps = {
   nurse: Nurse;
+  onRemoveNurse: (nurseId: string) => void;
 };
 
 function getExperienceLabel(experienceLevel: ExperienceLevel) {
@@ -157,28 +161,32 @@ function NursesListHeader({
   );
 }
 
-function NurseRow({ nurse }: NurseRowProps) {
+function NurseRow({ nurse, onRemoveNurse }: NurseRowProps) {
   const maxLoadValue =
     nurse.maxPatientLoad > 0 ? nurse.maxPatientLoad.toString() : "--";
 
   return (
-    <View style={styles.nurseRow}>
-      <View style={styles.nurseInfo}>
-        <Text style={styles.nurseName}>{nurse.name}</Text>
-        <Text style={styles.nurseMeta}>
-          {nurse.licenseType} - {getExperienceLabel(nurse.experienceLevel)}
-        </Text>
+    <SwipeRevealAction
+      accessibilityLabel={`Remove nurse ${nurse.name}`}
+      actionIcon={<TrashIcon color={colors.neutral.surface} size={18} />}
+      actionLabel="Remove"
+      actionWidth={72}
+      onActionPress={() => onRemoveNurse(nurse.id)}
+    >
+      <View style={styles.nurseRow}>
+        <View style={styles.nurseInfo}>
+          <Text style={styles.nurseName}>{nurse.name}</Text>
+          <Text style={styles.nurseMeta}>
+            {nurse.licenseType} - {getExperienceLabel(nurse.experienceLevel)}
+          </Text>
+        </View>
+        <View style={styles.maxLoad}>
+          <Text style={styles.maxLoadLabel}>Max load</Text>
+          <NumberStepperPlaceholder value={maxLoadValue} />
+        </View>
       </View>
-      <View style={styles.maxLoad}>
-        <Text style={styles.maxLoadLabel}>Max load</Text>
-        <NumberStepperPlaceholder value={maxLoadValue} />
-      </View>
-    </View>
+    </SwipeRevealAction>
   );
-}
-
-function renderNurseItem({ item }: { item: Nurse }) {
-  return <NurseRow nurse={item} />;
 }
 
 function getNurseKey(nurse: Nurse) {
@@ -198,6 +206,7 @@ export default function NursesScreen() {
   const [experienceLevel, setExperienceLevel] =
     useState<ExperienceLevel>("experienced");
   const [nurseNameError, setNurseNameError] = useState("");
+  const [nurseListError, setNurseListError] = useState("");
 
   function handleNurseNameChange(name: string) {
     setNurseName(name);
@@ -243,13 +252,68 @@ export default function NursesScreen() {
 
     setNurseName("");
     setNurseNameError("");
+    setNurseListError("");
+  }
+
+  function handleRemoveNurse(nurseId: string) {
+    setLocalState((currentState) => {
+      const currentShift = currentState.activeShift;
+
+      if (!currentShift) {
+        return currentState;
+      }
+
+      const nurseExists = currentShift.nurses.some(
+        (nurse) => nurse.id === nurseId,
+      );
+
+      if (!nurseExists) {
+        return currentState;
+      }
+
+      const shouldClearAssignment =
+        currentShift.status === "assigned" ||
+        Boolean(currentShift.assignmentResult);
+
+      return {
+        ...currentState,
+        activeShift: {
+          ...currentShift,
+          assignmentResult: shouldClearAssignment
+            ? undefined
+            : currentShift.assignmentResult,
+          flags: shouldClearAssignment ? [] : currentShift.flags,
+          nurses: currentShift.nurses.filter((nurse) => nurse.id !== nurseId),
+          status: shouldClearAssignment ? "setup" : currentShift.status,
+        },
+      };
+    });
+  }
+
+  function handleContinue() {
+    if (!activeShift) {
+      return;
+    }
+
+    if (nurses.length === 0) {
+      setNurseListError(requiredNurseMessage);
+      return;
+    }
+
+    router.push("/patients-and-acuity");
+  }
+
+  function renderNurseItem({ item }: { item: Nurse }) {
+    return <NurseRow nurse={item} onRemoveNurse={handleRemoveNurse} />;
   }
 
   return (
     <WorkflowListScreen
       activeStep="Nurses"
       actionErrorText={
-        activeShift ? "" : "Start a shift before adding nurses."
+        activeShift
+          ? nurseListError
+          : "Start a shift before adding nurses."
       }
       data={nurses}
       flow={shiftSetupFlow}
@@ -270,7 +334,7 @@ export default function NursesScreen() {
         />
       }
       onHeaderActionPress={() => router.push("/")}
-      onPrimaryPress={() => router.push("/patients-and-acuity")}
+      onPrimaryPress={handleContinue}
       primaryLabel="Continue"
       renderItem={renderNurseItem}
       subtitle="Step 2 of 3"
