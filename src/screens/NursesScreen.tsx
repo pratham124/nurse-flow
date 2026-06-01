@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -5,38 +6,142 @@ import {
   NumberStepperPlaceholder,
   PlaceholderButton,
   PlaceholderInput,
+  PlusIcon,
   SegmentedPlaceholder,
   SummaryTile,
   SummaryTileGrid,
   WorkflowListScreen,
   WorkflowSection,
 } from "../components/workflow";
+import { createLocalId } from "../helpers/localId";
+import { useLocalState } from "../store/LocalStateContext";
 import { shiftSetupFlow } from "../utils/workflowFlows";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
+import type { ExperienceLevel, LicenseType, Nurse } from "../types/models";
 
-const previewNurses = [
-  { name: "Taylor", license: "RN", experience: "Experienced", maxLoad: "5" },
-  { name: "Sam", license: "LPN", experience: "Mid", maxLoad: "6" },
+const licenseTypeOptions: LicenseType[] = ["RN", "LPN"];
+const experienceLevelOptions: ExperienceLevel[] = [
+  "new_grad",
+  "mid",
+  "experienced",
 ];
+const nurseNameRequiredMessage = "Nurse name is required.";
 
-type PreviewNurse = (typeof previewNurses)[number];
-
-type NursePreviewRowProps = {
-  nurse: PreviewNurse;
+type AddNurseFormProps = {
+  experienceLevel: ExperienceLevel;
+  licenseType: LicenseType;
+  name: string;
+  nameError: string;
+  onAddNurse: () => void;
+  onExperienceLevelChange: (experienceLevel: ExperienceLevel) => void;
+  onLicenseTypeChange: (licenseType: LicenseType) => void;
+  onNameChange: (name: string) => void;
 };
 
-function NursesListHeader() {
+type NursesListHeaderProps = AddNurseFormProps & {
+  nurseCount: number;
+  totalCapacity: number;
+};
+
+type NurseRowProps = {
+  nurse: Nurse;
+};
+
+function getExperienceLabel(experienceLevel: ExperienceLevel) {
+  switch (experienceLevel) {
+    case "new_grad":
+      return "New grad";
+    case "mid":
+      return "Mid";
+    case "experienced":
+      return "Experienced";
+  }
+}
+
+function getSelectedLicenseTypeIndex(licenseType: LicenseType) {
+  return licenseTypeOptions.findIndex((option) => option === licenseType);
+}
+
+function getSelectedExperienceLevelIndex(experienceLevel: ExperienceLevel) {
+  return experienceLevelOptions.findIndex(
+    (option) => option === experienceLevel,
+  );
+}
+
+function AddNurseForm({
+  experienceLevel,
+  licenseType,
+  name,
+  nameError,
+  onAddNurse,
+  onExperienceLevelChange,
+  onLicenseTypeChange,
+  onNameChange,
+}: AddNurseFormProps) {
+  return (
+    <WorkflowSection title="Add nurse">
+      <PlaceholderInput
+        errorText={nameError}
+        label="Nurse name"
+        onChangeText={onNameChange}
+        placeholder="Taylor"
+        value={name}
+      />
+
+      <View style={styles.selectorField}>
+        <Text style={styles.selectorLabel}>License type</Text>
+        <SegmentedPlaceholder
+          options={licenseTypeOptions}
+          selectedIndex={getSelectedLicenseTypeIndex(licenseType)}
+          onSelect={(index) => onLicenseTypeChange(licenseTypeOptions[index])}
+        />
+      </View>
+
+      <View style={styles.selectorField}>
+        <Text style={styles.selectorLabel}>Experience level</Text>
+        <SegmentedPlaceholder
+          options={experienceLevelOptions.map(getExperienceLabel)}
+          selectedIndex={getSelectedExperienceLevelIndex(experienceLevel)}
+          onSelect={(index) =>
+            onExperienceLevelChange(experienceLevelOptions[index])
+          }
+        />
+      </View>
+
+      <PlaceholderButton
+        icon={<PlusIcon color={colors.neutral.surface} size={12} />}
+        label="Add nurse"
+        onPress={onAddNurse}
+        variant="primary"
+      />
+    </WorkflowSection>
+  );
+}
+
+function NursesListHeader({
+  experienceLevel,
+  licenseType,
+  name,
+  nameError,
+  nurseCount,
+  onAddNurse,
+  onExperienceLevelChange,
+  onLicenseTypeChange,
+  onNameChange,
+  totalCapacity,
+}: NursesListHeaderProps) {
   return (
     <View style={styles.headerContent}>
-      <WorkflowSection title="Add nurse">
-        <PlaceholderInput label="Nurse name" placeholder="Taylor" />
-        <SegmentedPlaceholder options={["RN", "LPN"]} />
-        <SegmentedPlaceholder
-          options={["New grad", "Mid", "Experienced"]}
-          selectedIndex={2}
-        />
-        <PlaceholderButton label="Add nurse" />
-      </WorkflowSection>
+      <AddNurseForm
+        experienceLevel={experienceLevel}
+        licenseType={licenseType}
+        name={name}
+        nameError={nameError}
+        onAddNurse={onAddNurse}
+        onExperienceLevelChange={onExperienceLevelChange}
+        onLicenseTypeChange={onLicenseTypeChange}
+        onNameChange={onNameChange}
+      />
 
       <View style={styles.shiftNursesHeader}>
         <View style={styles.shiftNursesTitleGroup}>
@@ -44,52 +149,130 @@ function NursesListHeader() {
         </View>
 
         <SummaryTileGrid>
-          <SummaryTile value="2" label="Nurses" />
-          <SummaryTile value="11" label="Total capacity" />
+          <SummaryTile value={nurseCount.toString()} label="Nurses" />
+          <SummaryTile value={totalCapacity.toString()} label="Total capacity" />
         </SummaryTileGrid>
       </View>
     </View>
   );
 }
 
-function NursePreviewRow({ nurse }: NursePreviewRowProps) {
+function NurseRow({ nurse }: NurseRowProps) {
+  const maxLoadValue =
+    nurse.maxPatientLoad > 0 ? nurse.maxPatientLoad.toString() : "--";
+
   return (
     <View style={styles.nurseRow}>
       <View style={styles.nurseInfo}>
         <Text style={styles.nurseName}>{nurse.name}</Text>
         <Text style={styles.nurseMeta}>
-          {nurse.license} - {nurse.experience}
+          {nurse.licenseType} - {getExperienceLabel(nurse.experienceLevel)}
         </Text>
       </View>
       <View style={styles.maxLoad}>
         <Text style={styles.maxLoadLabel}>Max load</Text>
-        <NumberStepperPlaceholder value={nurse.maxLoad} />
+        <NumberStepperPlaceholder value={maxLoadValue} />
       </View>
     </View>
   );
 }
 
-function renderNursePreviewItem({ item }: { item: PreviewNurse }) {
-  return <NursePreviewRow nurse={item} />;
+function renderNurseItem({ item }: { item: Nurse }) {
+  return <NurseRow nurse={item} />;
 }
 
-function getPreviewNurseKey(nurse: PreviewNurse) {
-  return `${nurse.name}-${nurse.license}`;
+function getNurseKey(nurse: Nurse) {
+  return nurse.id;
 }
 
 export default function NursesScreen() {
+  const { localState, setLocalState } = useLocalState();
+  const activeShift = localState.activeShift;
+  const nurses = activeShift?.nurses ?? [];
+  const totalCapacity = nurses.reduce(
+    (capacity, nurse) => capacity + nurse.maxPatientLoad,
+    0,
+  );
+  const [nurseName, setNurseName] = useState("");
+  const [licenseType, setLicenseType] = useState<LicenseType>("RN");
+  const [experienceLevel, setExperienceLevel] =
+    useState<ExperienceLevel>("experienced");
+  const [nurseNameError, setNurseNameError] = useState("");
+
+  function handleNurseNameChange(name: string) {
+    setNurseName(name);
+
+    if (nurseNameError) {
+      setNurseNameError("");
+    }
+  }
+
+  function handleAddNurse() {
+    const trimmedName = nurseName.trim();
+
+    if (!trimmedName) {
+      setNurseNameError(nurseNameRequiredMessage);
+      return;
+    }
+
+    if (!activeShift) {
+      return;
+    }
+
+    setLocalState((currentState) => {
+      if (!currentState.activeShift) {
+        return currentState;
+      }
+
+      const nextNurse: Nurse = {
+        id: createLocalId("nurse"),
+        name: trimmedName,
+        licenseType,
+        experienceLevel,
+        maxPatientLoad: 0,
+      };
+
+      return {
+        ...currentState,
+        activeShift: {
+          ...currentState.activeShift,
+          nurses: [...currentState.activeShift.nurses, nextNurse],
+        },
+      };
+    });
+
+    setNurseName("");
+    setNurseNameError("");
+  }
+
   return (
     <WorkflowListScreen
       activeStep="Nurses"
-      data={previewNurses}
+      actionErrorText={
+        activeShift ? "" : "Start a shift before adding nurses."
+      }
+      data={nurses}
       flow={shiftSetupFlow}
       headerActionLabel="Floors"
-      keyExtractor={getPreviewNurseKey}
-      listHeader={<NursesListHeader />}
+      keyExtractor={getNurseKey}
+      listHeader={
+        <NursesListHeader
+          experienceLevel={experienceLevel}
+          licenseType={licenseType}
+          name={nurseName}
+          nameError={nurseNameError}
+          nurseCount={nurses.length}
+          onAddNurse={handleAddNurse}
+          onExperienceLevelChange={setExperienceLevel}
+          onLicenseTypeChange={setLicenseType}
+          onNameChange={handleNurseNameChange}
+          totalCapacity={totalCapacity}
+        />
+      }
       onHeaderActionPress={() => router.push("/")}
       onPrimaryPress={() => router.push("/patients-and-acuity")}
       primaryLabel="Continue"
-      renderItem={renderNursePreviewItem}
+      renderItem={renderNurseItem}
       subtitle="Step 2 of 3"
       title="Nurses"
     />
@@ -99,6 +282,13 @@ export default function NursesScreen() {
 const styles = StyleSheet.create({
   headerContent: {
     gap: spacing.cardGap,
+  },
+  selectorField: {
+    gap: spacing.sm,
+  },
+  selectorLabel: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.md,
   },
   shiftNursesHeader: {
     backgroundColor: colors.neutral.backgroundSecondary,

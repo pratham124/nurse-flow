@@ -372,7 +372,7 @@ Validation check:
 - Changing admitting-side or non-admitting-side limits updates active shift state.
 - Values below 1 or above the Phase 1 limit show validation.
 
-### Task 5.1: US9 Add Nurse
+### ✅ Task 5.1: US9 Add Nurse
 
 Build:
 
