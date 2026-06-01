@@ -431,7 +431,7 @@ Validation check:
 
 - Invalid max load values show clear validation and block assignment.
 
-### Task 6.1: US11 Add Patient To Bed
+### ✅ Task 6.1: US11 Add Patient To Bed
 
 Build:
 

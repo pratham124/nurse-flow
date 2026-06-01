@@ -1,5 +1,12 @@
 import { ReactNode, useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  type KeyboardTypeOptions,
+} from "react-native";
 
 import { colors, radius, spacing, textSize } from "../../theme/tokens";
 import { MinusIcon, PlusIcon } from "./Icons";
@@ -11,6 +18,7 @@ type PlaceholderInputProps = {
   errorText?: string;
   value?: string;
   onChangeText?: (text: string) => void;
+  keyboardType?: KeyboardTypeOptions;
 };
 
 type PlaceholderButtonProps = {
@@ -41,6 +49,7 @@ export function PlaceholderInput({
   errorText,
   value,
   onChangeText,
+  keyboardType,
 }: PlaceholderInputProps) {
   const [isFocused, setIsFocused] = useState(false);
   const hasError = Boolean(errorText);
@@ -53,6 +62,7 @@ export function PlaceholderInput({
           onBlur={() => setIsFocused(false)}
           onChangeText={onChangeText}
           onFocus={() => setIsFocused(true)}
+          keyboardType={keyboardType}
           placeholder={placeholder}
           placeholderTextColor={colors.neutral.textTertiary}
           style={[

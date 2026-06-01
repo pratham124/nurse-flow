@@ -160,7 +160,9 @@ export default function Index() {
     activeShift?.floorName ?? activeShiftTemplate?.name ?? "Active Floor";
   const activeShiftNursesCount = activeShift?.nurses?.length ?? 0;
   const activeShiftPatientsCount =
-    activeShift?.bedStates?.filter((bs) => bs.patient).length ?? 0;
+    activeShift?.bedStates?.filter((bedState) =>
+      bedState.patient?.initials.trim(),
+    ).length ?? 0;
 
   function handleCreateFloor() {
     setLocalState((currentState) => ({
