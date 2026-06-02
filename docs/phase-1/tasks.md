@@ -468,7 +468,7 @@ Validation check:
 
 - Removing patient info from `101-1` decreases occupied census and removes it from assignment eligibility.
 
-### Task 6.4: US12 Set Bed-Level Acuity
+### ✅ Task 6.4: US12 Set Bed-Level Acuity
 
 Build:
 

@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { router } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import {
   BedChip,
+  CheckCircleIcon,
   FilterChip,
   FilterChipRow,
   PlaceholderButton,
@@ -17,11 +18,19 @@ import {
 } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
 import { colors, spacing, textSize } from "../theme/tokens";
-import type { Bed, BedState, Patient, Sex, Shift } from "../types/models";
+import type {
+  Acuity,
+  Bed,
+  BedState,
+  Patient,
+  Sex,
+  Shift,
+} from "../types/models";
 import { shiftSetupFlow } from "../utils/workflowFlows";
 
 const censusFilters = ["All beds", "Occupied", "Empty"];
 const sexOptions = ["F", "M", "Other"];
+const acuityOptions: Acuity[] = ["green", "yellow", "red"];
 const wholeNumberAgeMessage = "Age must be a whole number.";
 
 type PatientField = "initials" | "age" | "sex" | "diagnosis";
@@ -52,6 +61,7 @@ type RoomPatientsRowProps = {
     field: PatientField,
     value: string,
   ) => void;
+  onUpdateAcuity: (bedId: string, acuity: Acuity) => void;
 };
 
 type BedPatientFormProps = {
@@ -64,10 +74,17 @@ type BedPatientFormProps = {
     field: PatientField,
     value: string,
   ) => void;
+  onUpdateAcuity: (bedId: string, acuity: Acuity) => void;
 };
 
 type BedStatusBadgeProps = {
   occupied: boolean;
+};
+
+type AcuitySelectorProps = {
+  acuity?: Acuity;
+  bedLabel: string;
+  onSelect: (acuity: Acuity) => void;
 };
 
 function isOccupiedBedState(bedState?: BedState) {
@@ -119,6 +136,43 @@ function getSexFromIndex(index: number): Sex {
       return "other";
     default:
       return "female";
+  }
+}
+
+function getAcuityLabel(acuity: Acuity) {
+  return acuity.charAt(0).toUpperCase() + acuity.slice(1);
+}
+
+function getAcuityOptionStyle(acuity: Acuity) {
+  switch (acuity) {
+    case "red":
+      return styles.redAcuityOption;
+    case "yellow":
+      return styles.yellowAcuityOption;
+    default:
+      return styles.greenAcuityOption;
+  }
+}
+
+function getAcuityOptionTextStyle(acuity: Acuity) {
+  switch (acuity) {
+    case "red":
+      return styles.redAcuityOptionText;
+    case "yellow":
+      return styles.yellowAcuityOptionText;
+    default:
+      return styles.greenAcuityOptionText;
+  }
+}
+
+function getAcuityMarkerColor(acuity: Acuity) {
+  switch (acuity) {
+    case "red":
+      return colors.status.red800;
+    case "yellow":
+      return colors.status.amber800;
+    default:
+      return colors.status.green800;
   }
 }
 
@@ -187,6 +241,7 @@ function RoomPatientsRow({
   room,
   onClearPatient,
   onUpdatePatientField,
+  onUpdateAcuity,
 }: RoomPatientsRowProps) {
   return (
     <WorkflowSection note={room.sideName} title={`Room ${room.label}`}>
@@ -207,6 +262,7 @@ function RoomPatientsRow({
           bedRow={bedRow}
           key={bedRow.bed.id}
           onClearPatient={onClearPatient}
+          onUpdateAcuity={onUpdateAcuity}
           onUpdatePatientField={onUpdatePatientField}
         />
       ))}
@@ -219,6 +275,7 @@ function BedPatientForm({
   ageText,
   bedRow,
   onClearPatient,
+  onUpdateAcuity,
   onUpdatePatientField,
 }: BedPatientFormProps) {
   const patient = bedRow.bedState?.patient;
@@ -285,6 +342,13 @@ function BedPatientForm({
         value={patient?.diagnosis ?? ""}
       />
 
+      {occupied ? (
+        <AcuitySelector
+          acuity={bedRow.bedState?.acuity}
+          bedLabel={bedRow.bed.label}
+          onSelect={(acuity) => onUpdateAcuity(bedRow.bed.id, acuity)}
+        />
+      ) : null}
     </View>
   );
 }
@@ -295,6 +359,65 @@ function BedStatusBadge({ occupied }: BedStatusBadgeProps) {
       label={occupied ? "Occupied" : "Empty"}
       tone={occupied ? "occupied" : "empty"}
     />
+  );
+}
+
+function AcuitySelector({
+  acuity,
+  bedLabel,
+  onSelect,
+}: AcuitySelectorProps) {
+  return (
+    <View style={styles.selectorField}>
+      <Text style={styles.selectorLabel}>Acuity</Text>
+      <View style={styles.acuityOptionRow}>
+        {acuityOptions.map((option) => {
+          const selected = option === acuity;
+
+          return (
+            <Pressable
+              accessibilityLabel={`Set ${bedLabel} acuity to ${getAcuityLabel(
+                option,
+              )}`}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
+              key={option}
+              onPress={() => onSelect(option)}
+              style={[
+                styles.acuityOption,
+                getAcuityOptionStyle(option),
+                selected ? styles.selectedAcuityOption : null,
+              ]}
+            >
+              {selected ? (
+                <View style={styles.selectedAcuityMarker}>
+                  <CheckCircleIcon
+                    color={getAcuityMarkerColor(option)}
+                    size={14}
+                  />
+                  <Text
+                    style={[
+                      styles.selectedAcuityText,
+                      getAcuityOptionTextStyle(option),
+                    ]}
+                  >
+                    Selected
+                  </Text>
+                </View>
+              ) : null}
+              <Text
+                style={[
+                  styles.acuityOptionText,
+                  getAcuityOptionTextStyle(option),
+                ]}
+              >
+                {getAcuityLabel(option)}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
   );
 }
 
@@ -370,11 +493,34 @@ export default function PatientsAndAcuityScreen() {
 
             return {
               ...bedState,
+              acuity: updatedPatient.initials.trim()
+                ? bedState.acuity
+                : undefined,
               patient: shouldKeepPatient(updatedPatient)
                 ? updatedPatient
                 : undefined,
             };
           }),
+        },
+      };
+    });
+  }
+
+  function handleUpdateAcuity(bedId: string, acuity: Acuity) {
+    setLocalState((currentState) => {
+      const currentShift = currentState.activeShift;
+
+      if (!currentShift) {
+        return currentState;
+      }
+
+      return {
+        ...currentState,
+        activeShift: {
+          ...currentShift,
+          bedStates: currentShift.bedStates.map((bedState) =>
+            bedState.bedId === bedId ? { ...bedState, acuity } : bedState,
+          ),
         },
       };
     });
@@ -401,7 +547,7 @@ export default function PatientsAndAcuityScreen() {
           ...currentShift,
           bedStates: currentShift.bedStates.map((bedState) =>
             bedState.bedId === bedId
-              ? { ...bedState, patient: undefined }
+              ? { ...bedState, acuity: undefined, patient: undefined }
               : bedState,
           ),
         },
@@ -425,6 +571,7 @@ export default function PatientsAndAcuityScreen() {
       <RoomPatientsRow
         ageTextByBedId={ageTextByBedId}
         onClearPatient={handleClearPatient}
+        onUpdateAcuity={handleUpdateAcuity}
         room={item}
         onUpdatePatientField={handleUpdatePatientField}
       />
@@ -493,5 +640,59 @@ const styles = StyleSheet.create({
   selectorLabel: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.md,
+  },
+  acuityOptionRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  acuityOption: {
+    alignItems: "center",
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    gap: 2,
+    justifyContent: "center",
+    minHeight: 52,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.sm,
+  },
+  selectedAcuityOption: {
+    borderColor: colors.neutral.textPrimary,
+    borderWidth: 2,
+  },
+  selectedAcuityMarker: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.xs,
+  },
+  selectedAcuityText: {
+    fontSize: textSize.xs,
+    fontWeight: "600",
+    textTransform: "uppercase",
+  },
+  acuityOptionText: {
+    fontSize: textSize.md,
+    fontWeight: "500",
+  },
+  greenAcuityOption: {
+    backgroundColor: colors.status.green50,
+    borderColor: colors.status.greenBorder,
+  },
+  yellowAcuityOption: {
+    backgroundColor: colors.status.amber50,
+    borderColor: colors.status.yellow700,
+  },
+  redAcuityOption: {
+    backgroundColor: colors.status.red50,
+    borderColor: colors.status.red700,
+  },
+  greenAcuityOptionText: {
+    color: colors.status.green800,
+  },
+  yellowAcuityOptionText: {
+    color: colors.status.amber800,
+  },
+  redAcuityOptionText: {
+    color: colors.status.red800,
   },
 });
