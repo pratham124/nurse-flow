@@ -28,12 +28,17 @@ import type {
 } from "../types/models";
 import { shiftSetupFlow } from "../utils/workflowFlows";
 
-const censusFilters = ["All beds", "Occupied", "Empty"];
+const censusFilters = [
+  { label: "All beds", value: "all" },
+  { label: "Occupied", value: "occupied" },
+  { label: "Empty", value: "empty" },
+] as const;
 const sexOptions = ["F", "M", "Other"];
 const acuityOptions: Acuity[] = ["green", "yellow", "red"];
 const wholeNumberAgeMessage = "Age must be a whole number.";
 
 type PatientField = "initials" | "age" | "sex" | "diagnosis";
+type CensusFilter = (typeof censusFilters)[number]["value"];
 
 type PatientBedRow = {
   bed: Bed;
@@ -49,6 +54,8 @@ type PatientRoomGroup = {
 
 type PatientsListHeaderProps = {
   occupiedBedCount: number;
+  onSelectFilter: (filter: CensusFilter) => void;
+  selectedFilter: CensusFilter;
   totalBedCount: number;
 };
 
@@ -212,8 +219,30 @@ function getRoomGroups(activeShift?: Shift): PatientRoomGroup[] {
   });
 }
 
+function getFilteredRoomGroups(
+  roomGroups: PatientRoomGroup[],
+  selectedFilter: CensusFilter,
+) {
+  if (selectedFilter === "all") {
+    return roomGroups;
+  }
+
+  return roomGroups
+    .map((room) => ({
+      ...room,
+      beds: room.beds.filter((bedRow) => {
+        const occupied = isOccupiedBedState(bedRow.bedState);
+
+        return selectedFilter === "occupied" ? occupied : !occupied;
+      }),
+    }))
+    .filter((room) => room.beds.length > 0);
+}
+
 function PatientsListHeader({
   occupiedBedCount,
+  onSelectFilter,
+  selectedFilter,
   totalBedCount,
 }: PatientsListHeaderProps) {
   return (
@@ -227,8 +256,13 @@ function PatientsListHeader({
 
       <WorkflowSection title="Filters">
         <FilterChipRow>
-          {censusFilters.map((filter, index) => (
-            <FilterChip key={filter} label={filter} selected={index === 0} />
+          {censusFilters.map((filter) => (
+            <FilterChip
+              key={filter.value}
+              label={filter.label}
+              onPress={() => onSelectFilter(filter.value)}
+              selected={filter.value === selectedFilter}
+            />
           ))}
         </FilterChipRow>
       </WorkflowSection>
@@ -430,8 +464,10 @@ export default function PatientsAndAcuityScreen() {
   const [ageTextByBedId, setAgeTextByBedId] = useState<Record<string, string>>(
     {},
   );
+  const [selectedFilter, setSelectedFilter] = useState<CensusFilter>("all");
   const activeShift = localState.activeShift;
   const roomGroups = getRoomGroups(activeShift);
+  const filteredRoomGroups = getFilteredRoomGroups(roomGroups, selectedFilter);
   const occupiedBedCount =
     activeShift?.bedStates.filter(isOccupiedBedState).length ?? 0;
   const totalBedCount = activeShift?.beds.length ?? 0;
@@ -588,13 +624,15 @@ export default function PatientsAndAcuityScreen() {
             : ""
           : "Start a shift before adding patients."
       }
-      data={roomGroups}
+      data={filteredRoomGroups}
       flow={shiftSetupFlow}
       headerActionLabel="Floors"
       keyExtractor={getRoomKey}
       listHeader={
         <PatientsListHeader
+          onSelectFilter={setSelectedFilter}
           occupiedBedCount={occupiedBedCount}
+          selectedFilter={selectedFilter}
           totalBedCount={totalBedCount}
         />
       }

@@ -4,6 +4,7 @@ import { StyleSheet, Text, View, type DimensionValue } from "react-native";
 
 import {
   CheckCircleIcon,
+  SeverityBadge,
   SummaryTile,
   SummaryTileGrid,
   WorkflowListScreen,
@@ -12,15 +13,12 @@ import {
 import { useLocalState } from "../store/LocalStateContext";
 import { assignmentFlow } from "../utils/workflowFlows";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
+import type { BedState, Shift } from "../types/models";
 
-const checklistItems = [
+const completeChecklistItems = [
   "Admitting side selected",
   "2 nurses have max loads",
-  "2 occupied beds have acuity",
-  "RN coverage available for red beds",
 ];
-
-const redBeds = ["102-1"];
 
 const nurseCapacityRows = [
   {
@@ -48,10 +46,50 @@ type CapacityRowProps = {
 
 type AssignmentReviewListHeaderProps = {
   admittingSideName: string;
+  hasMissingAcuity: boolean;
+  missingAcuityBeds: AssignmentBedSummary[];
 };
+
+type AssignmentBedSummary = {
+  bedId: string;
+  bedLabel: string;
+  patientInitials: string;
+};
+
+function isOccupiedBedState(bedState: BedState) {
+  return Boolean(bedState.patient?.initials.trim());
+}
+
+function getBedLabel(activeShift: Shift, bedId: string) {
+  return (
+    activeShift.beds.find((bed) => bed.id === bedId)?.label ?? "Unknown bed"
+  );
+}
+
+function getMissingAcuityBeds(activeShift?: Shift): AssignmentBedSummary[] {
+  if (!activeShift) {
+    return [];
+  }
+
+  return activeShift.bedStates
+    .filter((bedState) => isOccupiedBedState(bedState) && !bedState.acuity)
+    .map((bedState) => ({
+      bedId: bedState.bedId,
+      bedLabel: getBedLabel(activeShift, bedState.bedId),
+      patientInitials: bedState.patient?.initials.trim() ?? "",
+    }));
+}
+
+function getMissingAcuityMessage(bed: AssignmentBedSummary) {
+  const patientText = bed.patientInitials ? ` by ${bed.patientInitials}` : "";
+
+  return `Bed ${bed.bedLabel} is occupied${patientText} but missing acuity.`;
+}
 
 function AssignmentReviewListHeader({
   admittingSideName,
+  hasMissingAcuity,
+  missingAcuityBeds,
 }: AssignmentReviewListHeaderProps) {
   return (
     <View style={styles.headerContent}>
@@ -65,7 +103,7 @@ function AssignmentReviewListHeader({
       </WorkflowSection>
 
       <WorkflowSection title="Readiness checklist">
-        {checklistItems.map((item) => (
+        {completeChecklistItems.map((item) => (
           <View key={item} style={styles.checkRow}>
             <View style={styles.checkBadge}>
               <CheckCircleIcon />
@@ -73,26 +111,49 @@ function AssignmentReviewListHeader({
             <Text style={styles.checkText}>{item}</Text>
           </View>
         ))}
+        <View
+          style={[
+            styles.checkRow,
+            hasMissingAcuity ? styles.blockedCheckRow : null,
+          ]}
+        >
+          <View style={styles.checkBadge}>
+            {hasMissingAcuity ? (
+              <SeverityBadge label="Fix" tone="warning" />
+            ) : (
+              <CheckCircleIcon />
+            )}
+          </View>
+          <Text
+            style={[
+              styles.checkText,
+              hasMissingAcuity ? styles.blockedCheckText : null,
+            ]}
+          >
+            {hasMissingAcuity
+              ? "Occupied beds need acuity"
+              : "Occupied beds have acuity"}
+          </Text>
+        </View>
       </WorkflowSection>
+
+      {hasMissingAcuity ? (
+        <WorkflowSection
+          note="Set acuity before running local assignment."
+          title="Assignment blockers"
+        >
+          {missingAcuityBeds.map((bed) => (
+            <View key={bed.bedId} style={styles.blockerRow}>
+              <SeverityBadge label="Missing acuity" tone="warning" />
+              <Text style={styles.blockerText}>{getMissingAcuityMessage(bed)}</Text>
+            </View>
+          ))}
+        </WorkflowSection>
+      ) : null}
 
       <View style={styles.capacityTitleCard}>
         <Text style={styles.capacityTitle}>Nurse capacity</Text>
       </View>
-    </View>
-  );
-}
-
-function RedBedRiskFooter() {
-  return (
-    <View style={styles.footerContent}>
-      <WorkflowSection title="Red bed risk">
-        {redBeds.map((bed) => (
-          <View key={bed} style={styles.warningRow}>
-            <Text style={styles.warningLabel}>RN required</Text>
-            <Text style={styles.warningText}>Bed {bed} is marked red.</Text>
-          </View>
-        ))}
-      </WorkflowSection>
     </View>
   );
 }
@@ -122,17 +183,23 @@ export default function AssignmentReviewScreen() {
   const admittingDoctorSide = activeShift?.doctorSides.find(
     (doctorSide) => doctorSide.id === activeShift.admittingDoctorSideId,
   );
-  const canReviewAssignment = Boolean(activeShift && admittingDoctorSide);
+  const missingAcuityBeds = getMissingAcuityBeds(activeShift);
+  const hasMissingAcuity = missingAcuityBeds.length > 0;
+  const hasShiftBasics = Boolean(activeShift && admittingDoctorSide);
 
   useEffect(() => {
-    if (!canReviewAssignment) {
+    if (!hasShiftBasics) {
       router.replace("/start-shift");
     }
-  }, [canReviewAssignment]);
+  }, [hasShiftBasics]);
 
   function handlePrimaryPress() {
-    if (!canReviewAssignment) {
+    if (!hasShiftBasics) {
       router.replace("/start-shift");
+      return;
+    }
+
+    if (hasMissingAcuity) {
       return;
     }
 
@@ -143,16 +210,21 @@ export default function AssignmentReviewScreen() {
     <WorkflowListScreen
       activeStep="Assign"
       actionErrorText={
-        canReviewAssignment ? "" : "Choose the admitting side for this shift."
+        hasShiftBasics
+          ? hasMissingAcuity
+            ? "All occupied beds need acuity."
+            : ""
+          : "Choose the admitting side for this shift."
       }
       data={nurseCapacityRows}
       flow={assignmentFlow}
       headerActionLabel="Floors"
       keyExtractor={getNurseCapacityKey}
-      listFooter={<RedBedRiskFooter />}
       listHeader={
         <AssignmentReviewListHeader
           admittingSideName={admittingDoctorSide?.name ?? "-"}
+          hasMissingAcuity={hasMissingAcuity}
+          missingAcuityBeds={missingAcuityBeds}
         />
       }
       onHeaderActionPress={() => router.push("/")}
@@ -205,9 +277,6 @@ const styles = StyleSheet.create({
   headerContent: {
     gap: spacing.cardGap,
   },
-  footerContent: {
-    paddingTop: spacing.md,
-  },
   checkRow: {
     alignItems: "center",
     borderLeftColor: colors.status.greenBorder,
@@ -221,12 +290,33 @@ const styles = StyleSheet.create({
     alignItems: "center",
     height: 18,
     justifyContent: "center",
-    width: 18,
+    minWidth: 18,
   },
   checkText: {
     color: colors.neutral.textPrimary,
     flex: 1,
     fontSize: textSize.md,
+  },
+  blockedCheckRow: {
+    borderLeftColor: colors.status.amber800,
+  },
+  blockedCheckText: {
+    color: colors.status.amber800,
+    fontWeight: "500",
+  },
+  blockerRow: {
+    backgroundColor: colors.status.amber50,
+    borderColor: colors.status.amber800,
+    borderRadius: radius.md,
+    borderWidth: 0.5,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
+  },
+  blockerText: {
+    color: colors.status.amber800,
+    fontSize: textSize.sm,
+    lineHeight: 18,
   },
   capacityRow: {
     backgroundColor: colors.neutral.backgroundSecondary,
@@ -308,24 +398,5 @@ const styles = StyleSheet.create({
   capacityHint: {
     color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
-  },
-  warningRow: {
-    backgroundColor: colors.neutral.surface,
-    borderColor: colors.neutral.borderTertiary,
-    borderRadius: radius.md,
-    borderWidth: 0.5,
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 10,
-  },
-  warningLabel: {
-    color: colors.neutral.textPrimary,
-    fontSize: textSize.sm,
-    fontWeight: "500",
-  },
-  warningText: {
-    color: colors.neutral.textSecondary,
-    fontSize: textSize.sm,
-    lineHeight: 18,
   },
 });

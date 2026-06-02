@@ -480,7 +480,7 @@ Validation check:
 - An occupied bed can show green, yellow, or red.
 - Empty beds do not require acuity.
 
-### Task 6.5: US12 Acuity Validation
+### ✅ Task 6.5: US12 Acuity Validation
 
 Build:
 

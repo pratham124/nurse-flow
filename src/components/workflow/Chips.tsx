@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { colors, radius, spacing, textSize } from "../../theme/tokens";
 
@@ -22,6 +22,7 @@ type SummaryTileProps = {
 
 type FilterChipProps = {
   label: string;
+  onPress?: () => void;
   selected?: boolean;
 };
 
@@ -85,10 +86,17 @@ export function SummaryTile({
 
 export function FilterChip({
   label,
+  onPress,
   selected = false,
 }: FilterChipProps) {
   return (
-    <View style={[styles.filterChip, selected ? styles.selectedFilterChip : null]}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !onPress, selected }}
+      disabled={!onPress}
+      onPress={onPress}
+      style={[styles.filterChip, selected ? styles.selectedFilterChip : null]}
+    >
       <Text
         style={[
           styles.filterChipText,
@@ -97,7 +105,7 @@ export function FilterChip({
       >
         {label}
       </Text>
-    </View>
+    </Pressable>
   );
 }
 
