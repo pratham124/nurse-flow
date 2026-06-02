@@ -457,7 +457,7 @@ Validation check:
 - Two patients with initials `J.S.` are allowed.
 - Non-whole-number age shows validation.
 
-### Task 6.3: US11 Remove Patient From Bed
+### ✅ Task 6.3: US11 Remove Patient From Bed
 
 Build:
 

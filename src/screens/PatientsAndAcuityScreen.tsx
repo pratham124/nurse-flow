@@ -6,6 +6,7 @@ import {
   BedChip,
   FilterChip,
   FilterChipRow,
+  PlaceholderButton,
   PlaceholderInput,
   SegmentedPlaceholder,
   StatusPill,
@@ -45,6 +46,7 @@ type PatientsListHeaderProps = {
 type RoomPatientsRowProps = {
   ageTextByBedId: Record<string, string>;
   room: PatientRoomGroup;
+  onClearPatient: (bedId: string) => void;
   onUpdatePatientField: (
     bedId: string,
     field: PatientField,
@@ -56,6 +58,7 @@ type BedPatientFormProps = {
   ageErrorText: string;
   ageText: string;
   bedRow: PatientBedRow;
+  onClearPatient: (bedId: string) => void;
   onUpdatePatientField: (
     bedId: string,
     field: PatientField,
@@ -182,6 +185,7 @@ function PatientsListHeader({
 function RoomPatientsRow({
   ageTextByBedId,
   room,
+  onClearPatient,
   onUpdatePatientField,
 }: RoomPatientsRowProps) {
   return (
@@ -202,6 +206,7 @@ function RoomPatientsRow({
           }
           bedRow={bedRow}
           key={bedRow.bed.id}
+          onClearPatient={onClearPatient}
           onUpdatePatientField={onUpdatePatientField}
         />
       ))}
@@ -213,16 +218,26 @@ function BedPatientForm({
   ageErrorText,
   ageText,
   bedRow,
+  onClearPatient,
   onUpdatePatientField,
 }: BedPatientFormProps) {
   const patient = bedRow.bedState?.patient;
   const occupied = isOccupiedBedState(bedRow.bedState);
+  const hasPatientInfo = Boolean(patient);
 
   return (
     <View style={styles.bedRow}>
       <View style={styles.bedHeader}>
         <BedChip label={bedRow.bed.label} />
-        <BedStatusBadge occupied={occupied} />
+        <View style={styles.bedHeaderActions}>
+          <BedStatusBadge occupied={occupied} />
+          {hasPatientInfo ? (
+            <PlaceholderButton
+              label="Clear patient"
+              onPress={() => onClearPatient(bedRow.bed.id)}
+            />
+          ) : null}
+        </View>
       </View>
 
       <PlaceholderInput
@@ -269,6 +284,7 @@ function BedPatientForm({
         placeholder="CHF exacerbation"
         value={patient?.diagnosis ?? ""}
       />
+
     </View>
   );
 }
@@ -364,6 +380,35 @@ export default function PatientsAndAcuityScreen() {
     });
   }
 
+  function handleClearPatient(bedId: string) {
+    setAgeTextByBedId((currentAgeTextByBedId) => {
+      const nextAgeTextByBedId = { ...currentAgeTextByBedId };
+      delete nextAgeTextByBedId[bedId];
+
+      return nextAgeTextByBedId;
+    });
+
+    setLocalState((currentState) => {
+      const currentShift = currentState.activeShift;
+
+      if (!currentShift) {
+        return currentState;
+      }
+
+      return {
+        ...currentState,
+        activeShift: {
+          ...currentShift,
+          bedStates: currentShift.bedStates.map((bedState) =>
+            bedState.bedId === bedId
+              ? { ...bedState, patient: undefined }
+              : bedState,
+          ),
+        },
+      };
+    });
+  }
+
   function handleContinue() {
     if (!activeShift) {
       router.replace("/start-shift");
@@ -379,6 +424,7 @@ export default function PatientsAndAcuityScreen() {
     return (
       <RoomPatientsRow
         ageTextByBedId={ageTextByBedId}
+        onClearPatient={handleClearPatient}
         room={item}
         onUpdatePatientField={handleUpdatePatientField}
       />
@@ -427,7 +473,16 @@ const styles = StyleSheet.create({
   bedHeader: {
     alignItems: "center",
     flexDirection: "row",
+    gap: spacing.sm,
     justifyContent: "space-between",
+  },
+  bedHeaderActions: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexShrink: 1,
+    flexWrap: "wrap",
+    gap: spacing.sm,
+    justifyContent: "flex-end",
   },
   patientDetailsRow: {
     gap: spacing.md,
