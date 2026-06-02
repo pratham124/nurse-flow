@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -20,6 +21,7 @@ import { shiftSetupFlow } from "../utils/workflowFlows";
 
 const censusFilters = ["All beds", "Occupied", "Empty"];
 const sexOptions = ["F", "M", "Other"];
+const wholeNumberAgeMessage = "Age must be a whole number.";
 
 type PatientField = "initials" | "age" | "sex" | "diagnosis";
 
@@ -41,6 +43,7 @@ type PatientsListHeaderProps = {
 };
 
 type RoomPatientsRowProps = {
+  ageTextByBedId: Record<string, string>;
   room: PatientRoomGroup;
   onUpdatePatientField: (
     bedId: string,
@@ -50,6 +53,8 @@ type RoomPatientsRowProps = {
 };
 
 type BedPatientFormProps = {
+  ageErrorText: string;
+  ageText: string;
   bedRow: PatientBedRow;
   onUpdatePatientField: (
     bedId: string,
@@ -64,6 +69,12 @@ type BedStatusBadgeProps = {
 
 function isOccupiedBedState(bedState?: BedState) {
   return Boolean(bedState?.patient?.initials.trim());
+}
+
+function isWholeNumberText(value: string) {
+  const trimmedValue = value.trim();
+
+  return !trimmedValue || /^\d+$/.test(trimmedValue);
 }
 
 function getPatientAgeText(patient?: Patient) {
@@ -169,6 +180,7 @@ function PatientsListHeader({
 }
 
 function RoomPatientsRow({
+  ageTextByBedId,
   room,
   onUpdatePatientField,
 }: RoomPatientsRowProps) {
@@ -176,6 +188,18 @@ function RoomPatientsRow({
     <WorkflowSection note={room.sideName} title={`Room ${room.label}`}>
       {room.beds.map((bedRow) => (
         <BedPatientForm
+          ageErrorText={
+            isWholeNumberText(
+              ageTextByBedId[bedRow.bed.id] ??
+                getPatientAgeText(bedRow.bedState?.patient),
+            )
+              ? ""
+              : wholeNumberAgeMessage
+          }
+          ageText={
+            ageTextByBedId[bedRow.bed.id] ??
+            getPatientAgeText(bedRow.bedState?.patient)
+          }
           bedRow={bedRow}
           key={bedRow.bed.id}
           onUpdatePatientField={onUpdatePatientField}
@@ -186,6 +210,8 @@ function RoomPatientsRow({
 }
 
 function BedPatientForm({
+  ageErrorText,
+  ageText,
   bedRow,
   onUpdatePatientField,
 }: BedPatientFormProps) {
@@ -210,13 +236,13 @@ function BedPatientForm({
 
       <View style={styles.patientDetailsRow}>
         <PlaceholderInput
-          keyboardType="number-pad"
+          errorText={ageErrorText}
           label="Age"
           onChangeText={(value) =>
             onUpdatePatientField(bedRow.bed.id, "age", value)
           }
           placeholder="67"
-          value={getPatientAgeText(patient)}
+          value={ageText}
         />
 
         <View style={styles.selectorField}>
@@ -262,17 +288,33 @@ function getRoomKey(room: PatientRoomGroup) {
 
 export default function PatientsAndAcuityScreen() {
   const { localState, setLocalState } = useLocalState();
+  const [ageTextByBedId, setAgeTextByBedId] = useState<Record<string, string>>(
+    {},
+  );
   const activeShift = localState.activeShift;
   const roomGroups = getRoomGroups(activeShift);
   const occupiedBedCount =
     activeShift?.bedStates.filter(isOccupiedBedState).length ?? 0;
   const totalBedCount = activeShift?.beds.length ?? 0;
+  const hasInvalidAge =
+    activeShift?.beds.some((bed) => {
+      const ageText = ageTextByBedId[bed.id] ?? "";
+
+      return !isWholeNumberText(ageText);
+    }) ?? false;
 
   function handleUpdatePatientField(
     bedId: string,
     field: PatientField,
     value: string,
   ) {
+    if (field === "age") {
+      setAgeTextByBedId((currentAgeTextByBedId) => ({
+        ...currentAgeTextByBedId,
+        [bedId]: value,
+      }));
+    }
+
     setLocalState((currentState) => {
       const currentShift = currentState.activeShift;
 
@@ -297,7 +339,9 @@ export default function PatientsAndAcuityScreen() {
             }
 
             if (field === "age") {
-              updatedPatient.age = getPatientAgeFromText(value);
+              updatedPatient.age = isWholeNumberText(value)
+                ? getPatientAgeFromText(value)
+                : undefined;
             }
 
             if (field === "sex") {
@@ -326,12 +370,15 @@ export default function PatientsAndAcuityScreen() {
       return;
     }
 
-    router.push("/assignment-review");
+    if (!hasInvalidAge) {
+      router.push("/assignment-review");
+    }
   }
 
   function renderRoomItem({ item }: { item: PatientRoomGroup }) {
     return (
       <RoomPatientsRow
+        ageTextByBedId={ageTextByBedId}
         room={item}
         onUpdatePatientField={handleUpdatePatientField}
       />
@@ -341,7 +388,13 @@ export default function PatientsAndAcuityScreen() {
   return (
     <WorkflowListScreen
       activeStep="Patients"
-      actionErrorText={activeShift ? "" : "Start a shift before adding patients."}
+      actionErrorText={
+        activeShift
+          ? hasInvalidAge
+            ? wholeNumberAgeMessage
+            : ""
+          : "Start a shift before adding patients."
+      }
       data={roomGroups}
       flow={shiftSetupFlow}
       headerActionLabel="Floors"

@@ -443,7 +443,7 @@ Validation check:
 
 - Adding initials to bed `101-1` makes it occupied and visible in the census.
 
-### Task 6.2: US11 Patient Validation
+### ✅ Task 6.2: US11 Patient Validation
 
 Build:
 
