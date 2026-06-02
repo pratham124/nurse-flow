@@ -11,6 +11,8 @@ import {
   WorkflowListScreen,
   WorkflowSection,
 } from "../components/workflow";
+import { useLocalState } from "../store/LocalStateContext";
+import { getShiftCensus } from "../utils/census";
 import { assignmentFlow } from "../utils/workflowFlows";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
 
@@ -85,12 +87,23 @@ type LoadChipProps = {
   value: string;
 };
 
-function FloorBoardListHeader() {
+type FloorBoardListHeaderProps = {
+  occupiedBedCount: number;
+  totalBedCount: number;
+};
+
+function FloorBoardListHeader({
+  occupiedBedCount,
+  totalBedCount,
+}: FloorBoardListHeaderProps) {
   return (
     <View style={styles.headerContent}>
       <WorkflowSection title="Board summary">
         <SummaryTileGrid>
-          <SummaryTile value="2/3" label="Occupied" />
+          <SummaryTile
+            value={`${occupiedBedCount}/${totalBedCount}`}
+            label="Occupied"
+          />
           <SummaryTile value="AB" label="Admitting" />
           <SummaryTile value="Assigned" label="Status" />
           <SummaryTile value="2" label="Flags" />
@@ -113,6 +126,10 @@ function FloorBoardListHeader() {
 }
 
 export default function FloorBoardScreen() {
+  const { localState } = useLocalState();
+  const { occupiedBedCount, totalBedCount } = getShiftCensus(
+    localState.activeShift,
+  );
   const boardListItems: FloorBoardListItem[] = [
     ...nurses.map((nurse) => ({ type: "nurse" as const, nurse })),
     ...boardSides.map((side) => ({ type: "side" as const, side })),
@@ -125,7 +142,12 @@ export default function FloorBoardScreen() {
       flow={assignmentFlow}
       headerActionLabel="Floors"
       keyExtractor={getFloorBoardItemKey}
-      listHeader={<FloorBoardListHeader />}
+      listHeader={
+        <FloorBoardListHeader
+          occupiedBedCount={occupiedBedCount}
+          totalBedCount={totalBedCount}
+        />
+      }
       onHeaderActionPress={() => router.push("/")}
       onPrimaryPress={() => router.push("/flags")}
       primaryLabel="View flags"

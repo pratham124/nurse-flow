@@ -13,7 +13,8 @@ import {
 import { useLocalState } from "../store/LocalStateContext";
 import { assignmentFlow } from "../utils/workflowFlows";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
-import type { BedState, Shift } from "../types/models";
+import { getShiftCensus, isOccupiedBedState } from "../utils/census";
+import type { Shift } from "../types/models";
 
 const completeChecklistItems = [
   "Admitting side selected",
@@ -48,6 +49,8 @@ type AssignmentReviewListHeaderProps = {
   admittingSideName: string;
   hasMissingAcuity: boolean;
   missingAcuityBeds: AssignmentBedSummary[];
+  occupiedBedCount: number;
+  totalBedCount: number;
 };
 
 type AssignmentBedSummary = {
@@ -55,10 +58,6 @@ type AssignmentBedSummary = {
   bedLabel: string;
   patientInitials: string;
 };
-
-function isOccupiedBedState(bedState: BedState) {
-  return Boolean(bedState.patient?.initials.trim());
-}
 
 function getBedLabel(activeShift: Shift, bedId: string) {
   return (
@@ -90,12 +89,17 @@ function AssignmentReviewListHeader({
   admittingSideName,
   hasMissingAcuity,
   missingAcuityBeds,
+  occupiedBedCount,
+  totalBedCount,
 }: AssignmentReviewListHeaderProps) {
   return (
     <View style={styles.headerContent}>
       <WorkflowSection title="Shift summary">
         <SummaryTileGrid>
-          <SummaryTile value="2/3" label="Occupied" />
+          <SummaryTile
+            value={`${occupiedBedCount}/${totalBedCount}`}
+            label="Occupied"
+          />
           <SummaryTile value="2" label="Nurses" />
           <SummaryTile value="11" label="Capacity" />
           <SummaryTile value={admittingSideName} label="Admitting" />
@@ -184,6 +188,7 @@ export default function AssignmentReviewScreen() {
     (doctorSide) => doctorSide.id === activeShift.admittingDoctorSideId,
   );
   const missingAcuityBeds = getMissingAcuityBeds(activeShift);
+  const { occupiedBedCount, totalBedCount } = getShiftCensus(activeShift);
   const hasMissingAcuity = missingAcuityBeds.length > 0;
   const hasShiftBasics = Boolean(activeShift && admittingDoctorSide);
 
@@ -225,6 +230,8 @@ export default function AssignmentReviewScreen() {
           admittingSideName={admittingDoctorSide?.name ?? "-"}
           hasMissingAcuity={hasMissingAcuity}
           missingAcuityBeds={missingAcuityBeds}
+          occupiedBedCount={occupiedBedCount}
+          totalBedCount={totalBedCount}
         />
       }
       onHeaderActionPress={() => router.push("/")}

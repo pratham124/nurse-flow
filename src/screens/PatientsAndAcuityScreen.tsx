@@ -18,6 +18,7 @@ import {
 } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
 import { colors, spacing, textSize } from "../theme/tokens";
+import { getShiftCensus, isOccupiedBedState } from "../utils/census";
 import type {
   Acuity,
   Bed,
@@ -93,10 +94,6 @@ type AcuitySelectorProps = {
   bedLabel: string;
   onSelect: (acuity: Acuity) => void;
 };
-
-function isOccupiedBedState(bedState?: BedState) {
-  return Boolean(bedState?.patient?.initials.trim());
-}
 
 function isWholeNumberText(value: string) {
   const trimmedValue = value.trim();
@@ -468,9 +465,7 @@ export default function PatientsAndAcuityScreen() {
   const activeShift = localState.activeShift;
   const roomGroups = getRoomGroups(activeShift);
   const filteredRoomGroups = getFilteredRoomGroups(roomGroups, selectedFilter);
-  const occupiedBedCount =
-    activeShift?.bedStates.filter(isOccupiedBedState).length ?? 0;
-  const totalBedCount = activeShift?.beds.length ?? 0;
+  const { occupiedBedCount, totalBedCount } = getShiftCensus(activeShift);
   const hasInvalidAge =
     activeShift?.beds.some((bed) => {
       const ageText = ageTextByBedId[bed.id] ?? "";

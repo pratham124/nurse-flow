@@ -491,7 +491,7 @@ Validation check:
 
 - An occupied bed with no acuity appears in Assignment Review as a blocker.
 
-### Task 6.6: US13 Census Totals
+### ✅ Task 6.6: US13 Census Totals
 
 Build:
 
