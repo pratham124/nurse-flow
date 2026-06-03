@@ -514,7 +514,7 @@ Validation check:
 
 - Assignment cannot run with no nurses, missing max loads, missing admitting side, invalid load limits, or occupied beds without acuity.
 
-### Task 7.2: US14 Patient Need Summary
+### âœ… Task 7.2: US14 Patient Need Summary
 
 Build:
 
