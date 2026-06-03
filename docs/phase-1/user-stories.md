@@ -301,7 +301,7 @@ As a charge nurse, I want to run one local assignment process so the app can bal
 - Nurses are not assigned more patients than their max load.
 - Red beds are prioritized before yellow beds.
 - Yellow beds are prioritized before green beds.
-- Among eligible nurses, the algorithm favors lower current acuity load.
+- Among otherwise eligible nurses, the Phase 1 prototype uses stable nurse order.
 - Assignment details are documented in `docs/phase-1/assignment-algorithm.md`.
 - Assignment results are visible on the charge nurse floor board.
 
@@ -315,7 +315,6 @@ As a charge nurse, I want to run one local assignment process so the app can bal
 - If no nurse is eligible to cover occupied beds in a room, the room is flagged as having no eligible coverage.
 - If no eligible nurse exists for a bed, the bed remains unassigned and is flagged.
 - If total occupied beds exceed total max load, some beds may remain unassigned and a floor-level warning appears.
-- If there are not enough RNs for red beds, red beds fall back from experienced RN to mid RN to new grad RN before becoming unassigned.
 - If staffing is too limited to create balanced teams, the app should generate the best local assignment and show a clear warning.
 - The algorithm does not call AI, external APIs, backend services, or realtime services.
 

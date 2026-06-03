@@ -139,19 +139,10 @@ For each occupied bed, the app filters eligible nurses:
 - The nurse must not exceed their max patient load.
 - LPNs are excluded from red critical beds.
 
-For red critical beds, prefer RNs in this order:
-
-1. Experienced RN.
-2. Mid RN.
-3. New grad RN.
-
-Among eligible nurses, choose the nurse with the lowest current acuity load. Acuity score:
-
-- Red = 3.
-- Yellow = 2.
-- Green = 1.
-
-If there is still a tie, use stable deterministic tie-breakers, such as lower current patient count, then nurse list order.
+The Phase 1 frontend prototype uses stable nurse order so the same inputs produce
+the same result. Advanced candidate preferences, including lower acuity load,
+lower patient count, and RN experience preference for red beds, are deferred to
+the future production assignment optimizer.
 
 ### Step 7: Generate Flags
 
@@ -185,7 +176,6 @@ Re-running assignment clears stale generated teams, room coverage, and bed assig
 ## Manual Testing Examples
 
 - Red bed with only LPN coverage should remain unassigned and flagged.
-- Red bed with multiple RNs should prefer experienced RN, then mid RN, then new grad RN.
 - A room with multiple occupied beds can split beds across different nurses.
 - A nurse assigned admitting-side room coverage should use the admitting-side load limit.
 - A nurse covering only non-admitting-side rooms should use the non-admitting-side load limit.

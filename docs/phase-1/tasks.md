@@ -503,7 +503,7 @@ Validation check:
 - Adding and removing patients updates census immediately.
 - Empty beds count toward total but not occupied.
 
-### âœ… Task 7.1: US14 Assignment Input Validation
+### ✅ Task 7.1: US14 Assignment Input Validation
 
 Build:
 
@@ -514,7 +514,7 @@ Validation check:
 
 - Assignment cannot run with no nurses, missing max loads, missing admitting side, invalid load limits, or occupied beds without acuity.
 
-### âœ… Task 7.2: US14 Patient Need Summary
+### ✅ Task 7.2: US14 Patient Need Summary
 
 Build:
 
@@ -526,7 +526,7 @@ Validation check:
 
 - Assignment Review can display accurate census, red-bed count, and capacity summary from local state.
 
-### âœ… Task 7.3: US14 Generate Balanced Teams
+### ✅ Task 7.3: US14 Generate Balanced Teams
 
 Build:
 
@@ -538,7 +538,7 @@ Validation check:
 - Running assignment twice with the same inputs produces the same generated teams.
 - Teams can contain nurses who cover one or both doctor sides.
 
-### âœ… Task 7.4: US14 Generate Room Coverage
+### ✅ Task 7.4: US14 Generate Room Coverage
 
 Build:
 
@@ -551,7 +551,7 @@ Validation check:
 - A room can show multiple coverage nurses.
 - A room with a red bed does not rely on LPN-only coverage when an RN is available.
 
-### âœ… Task 7.5: US14 Assign Beds To Nurses
+### ✅ Task 7.5: US14 Assign Beds To Nurses
 
 Build:
 
@@ -567,18 +567,7 @@ Validation check:
 - Red beds are assigned to eligible RNs before lower-acuity beds.
 - No nurse exceeds max load.
 
-### Task 7.6: US14 Deterministic Tie-Breakers
-
-Build:
-
-- Add stable tie-breakers for equal candidates.
-- Prefer lower acuity load, then lower patient count, then stable nurse order.
-
-Validation check:
-
-- Re-running assignment without input changes produces identical bed assignments.
-
-### Task 7.7: US16 Generate Assignment Flags
+### Task 7.6: US16 Generate Assignment Flags
 
 Build:
 
@@ -711,7 +700,6 @@ Build:
 Validation check:
 
 - Red bed with only LPNs remains unassigned and flagged.
-- Red bed with multiple RNs prefers experienced RN, then mid RN, then new grad RN.
 - A room with multiple occupied beds can split patients across nurses.
 - A low total nurse capacity creates understaffed or unassigned flags.
 
@@ -744,6 +732,8 @@ Save these for future phases:
 
 ### Future Task: Production Assignment Optimizer (Backend Phase)
 
+Includes the former Phase 1 Task 7.6 deterministic tie-breaker work.
+
 Build:
 
 - Keep the Phase 1 local assignment algorithm as a frontend workflow prototype, not a clinical-grade optimizer.
@@ -751,7 +741,8 @@ Build:
 - Optimize generated teams, room coverage, and bed assignments together instead of making each decision greedily.
 - Support any number of generated teams and allow room coverage to include multiple nurses when needed.
 - Treat nurse max load, red-bed RN eligibility, occupied-bed-only assignment, and room coverage eligibility as hard constraints.
-- Use deterministic optimization objectives that first minimize unassigned occupied beds, then balance patient count and acuity workload.
+- Use deterministic optimization objectives that first minimize unassigned occupied beds, then prefer lower acuity load, lower patient count, and stable nurse order.
+- Prefer experienced RNs, then mid RNs, then new grad RNs for red beds when multiple eligible RNs are otherwise equal.
 - Add a repeatable complex-scenario test suite with many rooms, nurses, bed counts, max loads, and acuity mixes.
 
 Validation check:
@@ -759,6 +750,7 @@ Validation check:
 - No occupied bed remains unassigned when a valid assignment exists within the configured constraints.
 - A lower-census room does not strand capacity needed by a higher-census room.
 - Red beds are never assigned to LPNs.
+- Red beds with multiple otherwise-equal eligible RNs prefer experienced RN, then mid RN, then new grad RN.
 - The same inputs produce the same assignment result.
 
 Research references:
