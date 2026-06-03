@@ -503,7 +503,7 @@ Validation check:
 - Adding and removing patients updates census immediately.
 - Empty beds count toward total but not occupied.
 
-### Task 7.1: US14 Assignment Input Validation
+### âœ… Task 7.1: US14 Assignment Input Validation
 
 Build:
 

@@ -22,6 +22,7 @@ type WorkflowListScreenProps<ItemT> = {
   flow?: WorkflowFlowStep[];
   primaryLabel: string;
   onPrimaryPress: () => void;
+  primaryDisabled?: boolean;
   actionErrorText?: string;
   data: ItemT[];
   keyExtractor: (item: ItemT, index: number) => string;
@@ -39,6 +40,7 @@ export function WorkflowListScreen<ItemT>({
   flow = floorTemplateFlow,
   primaryLabel,
   onPrimaryPress,
+  primaryDisabled,
   actionErrorText,
   data,
   keyExtractor,
@@ -55,6 +57,7 @@ export function WorkflowListScreen<ItemT>({
       managesOwnScrolling
       onHeaderActionPress={onHeaderActionPress}
       onPrimaryPress={onPrimaryPress}
+      primaryDisabled={primaryDisabled}
       primaryLabel={primaryLabel}
       subtitle={subtitle}
       title={title}

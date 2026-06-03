@@ -19,6 +19,7 @@ type WorkflowScreenProps = {
   children: ReactNode;
   primaryLabel: string;
   onPrimaryPress: () => void;
+  primaryDisabled?: boolean;
   actionErrorText?: string;
   managesOwnScrolling?: boolean;
 };
@@ -38,6 +39,7 @@ export function WorkflowScreen({
   children,
   primaryLabel,
   onPrimaryPress,
+  primaryDisabled = false,
   actionErrorText,
   managesOwnScrolling = false,
 }: WorkflowScreenProps) {
@@ -91,8 +93,13 @@ export function WorkflowScreen({
         <View style={styles.actionRow}>
           <Pressable
             accessibilityRole="button"
+            accessibilityState={{ disabled: primaryDisabled }}
+            disabled={primaryDisabled}
             onPress={onPrimaryPress}
-            style={styles.primaryButton}
+            style={[
+              styles.primaryButton,
+              primaryDisabled ? styles.disabledPrimaryButton : null,
+            ]}
           >
             <Text style={styles.primaryButtonText}>{primaryLabel}</Text>
           </Pressable>
@@ -215,6 +222,9 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     marginHorizontal: spacing.xl,
     paddingHorizontal: spacing.lg,
+  },
+  disabledPrimaryButton: {
+    opacity: 0.48,
   },
   primaryButtonText: {
     color: colors.neutral.surface,

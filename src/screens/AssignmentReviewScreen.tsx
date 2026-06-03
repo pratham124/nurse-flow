@@ -13,30 +13,20 @@ import {
 import { useLocalState } from "../store/LocalStateContext";
 import { assignmentFlow } from "../utils/workflowFlows";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
-import { getShiftCensus, isOccupiedBedState } from "../utils/census";
-import type { Shift } from "../types/models";
+import { getShiftCensus } from "../utils/census";
+import {
+  getAssignmentValidation,
+  type AssignmentValidationBlocker,
+} from "../utils/assignmentValidation";
+import type { ExperienceLevel, Nurse } from "../types/models";
 
-const completeChecklistItems = [
-  "Admitting side selected",
-  "2 nurses have max loads",
-];
-
-const nurseCapacityRows = [
-  {
-    assigned: 0,
-    detail: "RN, experienced",
-    max: 5,
-    name: "Taylor",
-  },
-  {
-    assigned: 0,
-    detail: "LPN, mid",
-    max: 6,
-    name: "Sam",
-  },
-];
-
-type NurseCapacityRow = (typeof nurseCapacityRows)[number];
+type NurseCapacityRow = {
+  assigned: number;
+  detail: string;
+  id: string;
+  max: number;
+  name: string;
+};
 
 type CapacityRowProps = {
   assigned: number;
@@ -47,49 +37,79 @@ type CapacityRowProps = {
 
 type AssignmentReviewListHeaderProps = {
   admittingSideName: string;
+  blockers: AssignmentValidationBlocker[];
+  hasAdmittingSide: boolean;
   hasMissingAcuity: boolean;
-  missingAcuityBeds: AssignmentBedSummary[];
+  hasValidNurseInputs: boolean;
+  hasValidSideLoadLimits: boolean;
+  nurseCount: number;
   occupiedBedCount: number;
+  totalNurseCapacity: number;
   totalBedCount: number;
 };
 
-type AssignmentBedSummary = {
-  bedId: string;
-  bedLabel: string;
-  patientInitials: string;
+type ChecklistRowProps = {
+  complete: boolean;
+  completeText: string;
+  blockedText: string;
 };
 
-function getBedLabel(activeShift: Shift, bedId: string) {
-  return (
-    activeShift.beds.find((bed) => bed.id === bedId)?.label ?? "Unknown bed"
-  );
-}
-
-function getMissingAcuityBeds(activeShift?: Shift): AssignmentBedSummary[] {
-  if (!activeShift) {
-    return [];
+function getExperienceLabel(experienceLevel: ExperienceLevel) {
+  switch (experienceLevel) {
+    case "new_grad":
+      return "new grad";
+    case "mid":
+      return "mid";
+    case "experienced":
+      return "experienced";
   }
-
-  return activeShift.bedStates
-    .filter((bedState) => isOccupiedBedState(bedState) && !bedState.acuity)
-    .map((bedState) => ({
-      bedId: bedState.bedId,
-      bedLabel: getBedLabel(activeShift, bedState.bedId),
-      patientInitials: bedState.patient?.initials.trim() ?? "",
-    }));
 }
 
-function getMissingAcuityMessage(bed: AssignmentBedSummary) {
-  const patientText = bed.patientInitials ? ` by ${bed.patientInitials}` : "";
+function getNurseCapacityRows(nurses: Nurse[]): NurseCapacityRow[] {
+  return nurses.map((nurse) => ({
+    assigned: 0,
+    detail: `${nurse.licenseType}, ${getExperienceLabel(nurse.experienceLevel)}`,
+    id: nurse.id,
+    max: nurse.maxPatientLoad,
+    name: nurse.name,
+  }));
+}
 
-  return `Bed ${bed.bedLabel} is occupied${patientText} but missing acuity.`;
+function getCountLabel(count: number, singularLabel: string, pluralLabel: string) {
+  return count === 1 ? singularLabel : pluralLabel;
+}
+
+function ChecklistRow({
+  complete,
+  completeText,
+  blockedText,
+}: ChecklistRowProps) {
+  return (
+    <View style={[styles.checkRow, complete ? null : styles.blockedCheckRow]}>
+      <View style={styles.checkBadge}>
+        {complete ? (
+          <CheckCircleIcon />
+        ) : (
+          <SeverityBadge label="Fix" tone="warning" />
+        )}
+      </View>
+      <Text style={[styles.checkText, complete ? null : styles.blockedCheckText]}>
+        {complete ? completeText : blockedText}
+      </Text>
+    </View>
+  );
 }
 
 function AssignmentReviewListHeader({
   admittingSideName,
+  blockers,
+  hasAdmittingSide,
   hasMissingAcuity,
-  missingAcuityBeds,
+  hasValidNurseInputs,
+  hasValidSideLoadLimits,
+  nurseCount,
   occupiedBedCount,
+  totalNurseCapacity,
   totalBedCount,
 }: AssignmentReviewListHeaderProps) {
   return (
@@ -100,56 +120,48 @@ function AssignmentReviewListHeader({
             value={`${occupiedBedCount}/${totalBedCount}`}
             label="Occupied"
           />
-          <SummaryTile value="2" label="Nurses" />
-          <SummaryTile value="11" label="Capacity" />
+          <SummaryTile value={nurseCount.toString()} label="Nurses" />
+          <SummaryTile value={totalNurseCapacity.toString()} label="Capacity" />
           <SummaryTile value={admittingSideName} label="Admitting" />
         </SummaryTileGrid>
       </WorkflowSection>
 
       <WorkflowSection title="Readiness checklist">
-        {completeChecklistItems.map((item) => (
-          <View key={item} style={styles.checkRow}>
-            <View style={styles.checkBadge}>
-              <CheckCircleIcon />
-            </View>
-            <Text style={styles.checkText}>{item}</Text>
-          </View>
-        ))}
-        <View
-          style={[
-            styles.checkRow,
-            hasMissingAcuity ? styles.blockedCheckRow : null,
-          ]}
-        >
-          <View style={styles.checkBadge}>
-            {hasMissingAcuity ? (
-              <SeverityBadge label="Fix" tone="warning" />
-            ) : (
-              <CheckCircleIcon />
-            )}
-          </View>
-          <Text
-            style={[
-              styles.checkText,
-              hasMissingAcuity ? styles.blockedCheckText : null,
-            ]}
-          >
-            {hasMissingAcuity
-              ? "Occupied beds need acuity"
-              : "Occupied beds have acuity"}
-          </Text>
-        </View>
+        <ChecklistRow
+          blockedText="Choose admitting side"
+          complete={hasAdmittingSide}
+          completeText="Admitting side selected"
+        />
+        <ChecklistRow
+          blockedText="Add nurses and set max loads"
+          complete={hasValidNurseInputs}
+          completeText={`${nurseCount} ${getCountLabel(
+            nurseCount,
+            "nurse has",
+            "nurses have",
+          )} max loads`}
+        />
+        <ChecklistRow
+          blockedText="Fix side load limits"
+          complete={hasValidSideLoadLimits}
+          completeText="Side load limits are valid"
+        />
+        <ChecklistRow
+          blockedText="Occupied beds need acuity"
+          complete={!hasMissingAcuity}
+          completeText="Occupied beds have acuity"
+        />
       </WorkflowSection>
 
-      {hasMissingAcuity ? (
+      {blockers.length ? (
         <WorkflowSection
-          note="Set acuity before running local assignment."
+          note="Fix these before running local assignment."
           title="Assignment blockers"
         >
-          {missingAcuityBeds.map((bed) => (
-            <View key={bed.bedId} style={styles.blockerRow}>
-              <SeverityBadge label="Missing acuity" tone="warning" />
-              <Text style={styles.blockerText}>{getMissingAcuityMessage(bed)}</Text>
+          {blockers.map((blocker) => (
+            <View key={blocker.id} style={styles.blockerRow}>
+              <SeverityBadge label={blocker.label} tone="warning" />
+              <Text style={styles.blockerText}>{blocker.message}</Text>
             </View>
           ))}
         </WorkflowSection>
@@ -178,33 +190,34 @@ function renderNurseCapacityItem({
 }
 
 function getNurseCapacityKey(nurse: NurseCapacityRow) {
-  return nurse.name;
+  return nurse.id;
 }
 
 export default function AssignmentReviewScreen() {
   const { localState } = useLocalState();
   const activeShift = localState.activeShift;
+  const nurses = activeShift?.nurses ?? [];
+  const validation = getAssignmentValidation(activeShift);
   const admittingDoctorSide = activeShift?.doctorSides.find(
     (doctorSide) => doctorSide.id === activeShift.admittingDoctorSideId,
   );
-  const missingAcuityBeds = getMissingAcuityBeds(activeShift);
   const { occupiedBedCount, totalBedCount } = getShiftCensus(activeShift);
-  const hasMissingAcuity = missingAcuityBeds.length > 0;
-  const hasShiftBasics = Boolean(activeShift && admittingDoctorSide);
+  const nurseCapacityRows = getNurseCapacityRows(nurses);
+  const firstBlockerMessage = validation.blockers[0]?.message ?? "";
 
   useEffect(() => {
-    if (!hasShiftBasics) {
+    if (!activeShift) {
       router.replace("/start-shift");
     }
-  }, [hasShiftBasics]);
+  }, [activeShift]);
 
   function handlePrimaryPress() {
-    if (!hasShiftBasics) {
+    if (!activeShift) {
       router.replace("/start-shift");
       return;
     }
 
-    if (hasMissingAcuity) {
+    if (!validation.canRunAssignment) {
       return;
     }
 
@@ -214,13 +227,7 @@ export default function AssignmentReviewScreen() {
   return (
     <WorkflowListScreen
       activeStep="Assign"
-      actionErrorText={
-        hasShiftBasics
-          ? hasMissingAcuity
-            ? "All occupied beds need acuity."
-            : ""
-          : "Choose the admitting side for this shift."
-      }
+      actionErrorText={firstBlockerMessage}
       data={nurseCapacityRows}
       flow={assignmentFlow}
       headerActionLabel="Floors"
@@ -228,17 +235,23 @@ export default function AssignmentReviewScreen() {
       listHeader={
         <AssignmentReviewListHeader
           admittingSideName={admittingDoctorSide?.name ?? "-"}
-          hasMissingAcuity={hasMissingAcuity}
-          missingAcuityBeds={missingAcuityBeds}
+          blockers={validation.blockers}
+          hasAdmittingSide={validation.hasAdmittingSide}
+          hasMissingAcuity={validation.hasMissingAcuity}
+          hasValidNurseInputs={validation.hasValidNurseInputs}
+          hasValidSideLoadLimits={validation.hasValidSideLoadLimits}
+          nurseCount={nurses.length}
           occupiedBedCount={occupiedBedCount}
+          totalNurseCapacity={validation.totalNurseCapacity}
           totalBedCount={totalBedCount}
         />
       }
       onHeaderActionPress={() => router.push("/")}
       onPrimaryPress={handlePrimaryPress}
+      primaryDisabled={!validation.canRunAssignment}
       primaryLabel="Run local assignment"
       renderItem={renderNurseCapacityItem}
-      subtitle="Static readiness preview"
+      subtitle="Readiness preview"
       title="Assignment review"
     />
   );
