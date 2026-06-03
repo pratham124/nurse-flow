@@ -526,7 +526,7 @@ Validation check:
 
 - Assignment Review can display accurate census, red-bed count, and capacity summary from local state.
 
-### Task 7.3: US14 Generate Balanced Teams
+### âœ… Task 7.3: US14 Generate Balanced Teams
 
 Build:
 
@@ -538,7 +538,7 @@ Validation check:
 - Running assignment twice with the same inputs produces the same generated teams.
 - Teams can contain nurses who cover one or both doctor sides.
 
-### Task 7.4: US14 Generate Room Coverage
+### âœ… Task 7.4: US14 Generate Room Coverage
 
 Build:
 
@@ -551,7 +551,7 @@ Validation check:
 - A room can show multiple coverage nurses.
 - A room with a red bed does not rely on LPN-only coverage when an RN is available.
 
-### Task 7.5: US14 Assign Beds To Nurses
+### âœ… Task 7.5: US14 Assign Beds To Nurses
 
 Build:
 
@@ -741,6 +741,34 @@ Validation check:
 ## Later, Not Phase 1
 
 Save these for future phases:
+
+### Future Task: Production Assignment Optimizer (Backend Phase)
+
+Build:
+
+- Keep the Phase 1 local assignment algorithm as a frontend workflow prototype, not a clinical-grade optimizer.
+- Move production assignment calculation to a backend service after backend infrastructure exists.
+- Optimize generated teams, room coverage, and bed assignments together instead of making each decision greedily.
+- Support any number of generated teams and allow room coverage to include multiple nurses when needed.
+- Treat nurse max load, red-bed RN eligibility, occupied-bed-only assignment, and room coverage eligibility as hard constraints.
+- Use deterministic optimization objectives that first minimize unassigned occupied beds, then balance patient count and acuity workload.
+- Add a repeatable complex-scenario test suite with many rooms, nurses, bed counts, max loads, and acuity mixes.
+
+Validation check:
+
+- No occupied bed remains unassigned when a valid assignment exists within the configured constraints.
+- A lower-census room does not strand capacity needed by a higher-census room.
+- Red beds are never assigned to LPNs.
+- The same inputs produce the same assignment result.
+
+Research references:
+
+- Google OR-Tools: Assignment with Task Sizes  
+  `https://developers.google.com/optimization/assignment/assignment_cp`
+- Google OR-Tools: Constraint Optimization  
+  `https://developers.google.com/optimization/cp/`
+- Integrated patient-to-room and nurse-to-patient assignment in hospital wards  
+  `https://link.springer.com/article/10.1007/s00291-024-00800-z`
 
 - Local persistence across app restarts.
 - Carry-over suggestions from a previous shift.

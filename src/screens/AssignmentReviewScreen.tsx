@@ -23,6 +23,7 @@ import {
   type AssignmentNeedSideSummary,
   type AssignmentNeedRoomSummary,
 } from "../utils/assignmentNeedSummary";
+import { generateLocalAssignmentResult } from "../utils/assignmentTeams";
 
 type AssignmentReviewListHeaderProps = {
   admittingSideName: string;
@@ -93,10 +94,7 @@ function PatientNeedRoomRow({ room }: PatientNeedRoomRowProps) {
 
       <View style={styles.acuityPillRow}>
         <StatusPill label={room.acuityCounts.green.toString()} tone="green" />
-        <StatusPill
-          label={room.acuityCounts.yellow.toString()}
-          tone="yellow"
-        />
+        <StatusPill label={room.acuityCounts.yellow.toString()} tone="yellow" />
         <StatusPill label={room.acuityCounts.red.toString()} tone="red" />
       </View>
 
@@ -138,7 +136,7 @@ function AssignmentReviewListHeader({
 
       {blockers.length ? (
         <WorkflowSection
-          note="Fix these before running local assignment."
+          note="Fix these before running assignment."
           title="Assignment blockers"
         >
           {blockers.map((blocker) => (
@@ -154,7 +152,7 @@ function AssignmentReviewListHeader({
 }
 
 export default function AssignmentReviewScreen() {
-  const { localState } = useLocalState();
+  const { localState, setLocalState } = useLocalState();
   const activeShift = localState.activeShift;
   const nurses = activeShift?.nurses ?? [];
   const validation = getAssignmentValidation(activeShift);
@@ -181,6 +179,24 @@ export default function AssignmentReviewScreen() {
       return;
     }
 
+    setLocalState((currentState) => {
+      const currentShift = currentState.activeShift;
+
+      if (!currentShift) {
+        return currentState;
+      }
+
+      return {
+        ...currentState,
+        activeShift: {
+          ...currentShift,
+          assignmentResult: generateLocalAssignmentResult(currentShift),
+          flags: [],
+          status: "assigned",
+        },
+      };
+    });
+
     router.push("/floor-board");
   }
 
@@ -194,8 +210,8 @@ export default function AssignmentReviewScreen() {
       onPrimaryPress={handlePrimaryPress}
       primaryDisabled={!validation.canRunAssignment}
       primaryLabel="Run local assignment"
-      subtitle="Readiness preview"
-      title="Assignment review"
+      subtitle="Assignment review"
+      title={activeShift?.floorName ?? "Assignment review"}
     >
       <AssignmentReviewListHeader
         admittingSideName={admittingDoctorSide?.name ?? "-"}

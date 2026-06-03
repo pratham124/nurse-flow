@@ -15,23 +15,7 @@ import { useLocalState } from "../store/LocalStateContext";
 import { getShiftCensus } from "../utils/census";
 import { assignmentFlow } from "../utils/workflowFlows";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
-
-const nurses = [
-  {
-    name: "Taylor",
-    detail: "RN, experienced",
-    team: "Team A",
-    rooms: "101, 102",
-    load: "2/5",
-  },
-  {
-    name: "Sam",
-    detail: "LPN, mid",
-    team: "Team B",
-    rooms: "101",
-    load: "0/6",
-  },
-];
+import type { Acuity, Shift } from "../types/models";
 
 const boardSides = [
   {
@@ -42,7 +26,12 @@ const boardSides = [
         label: "101",
         coverage: "Taylor, Sam",
         beds: [
-          { label: "101-1", patient: "J.S.", acuity: "Yellow", nurse: "Taylor" },
+          {
+            label: "101-1",
+            patient: "J.S.",
+            acuity: "Yellow",
+            nurse: "Taylor",
+          },
           { label: "101-2", patient: "Empty", acuity: "Empty", nurse: "Open" },
         ],
       },
@@ -65,17 +54,23 @@ const boardSides = [
 
 const boardFilters = ["All", "Flags", "Unassigned", "Red", "RN coverage"];
 
-type NurseWorkload = (typeof nurses)[number];
-type BoardSide = (typeof boardSides)[number];
-type BoardRoom = BoardSide["rooms"][number];
-type BoardBedPreview = BoardRoom["beds"][number];
-type FloorBoardListItem =
-  | { type: "nurse"; nurse: NurseWorkload }
-  | { type: "side"; side: BoardSide };
-
-type NurseWorkloadRowProps = {
-  nurse: NurseWorkload;
+type BoardBedPreview = {
+  label: string;
+  patient: string;
+  acuity: string;
+  nurse: string;
 };
+type BoardRoom = {
+  label: string;
+  coverage: string;
+  beds: BoardBedPreview[];
+};
+type BoardSide = {
+  name: string;
+  admitting: boolean;
+  rooms: BoardRoom[];
+};
+type FloorBoardListItem = { type: "side"; side: BoardSide };
 
 type BoardSideSectionProps = {
   side: BoardSide;
@@ -83,17 +78,19 @@ type BoardSideSectionProps = {
 
 type BoardBedProps = BoardBedPreview;
 
-type LoadChipProps = {
-  value: string;
-};
-
 type FloorBoardListHeaderProps = {
   occupiedBedCount: number;
   totalBedCount: number;
+  admittingSideName: string;
+  flagCount: number;
+  status: string;
 };
 
 function FloorBoardListHeader({
+  admittingSideName,
+  flagCount,
   occupiedBedCount,
+  status,
   totalBedCount,
 }: FloorBoardListHeaderProps) {
   return (
@@ -104,9 +101,9 @@ function FloorBoardListHeader({
             value={`${occupiedBedCount}/${totalBedCount}`}
             label="Occupied"
           />
-          <SummaryTile value="AB" label="Admitting" />
-          <SummaryTile value="Assigned" label="Status" />
-          <SummaryTile value="2" label="Flags" />
+          <SummaryTile value={admittingSideName} label="Admitting" />
+          <SummaryTile value={status} label="Status" />
+          <SummaryTile value={flagCount.toString()} label="Flags" />
         </SummaryTileGrid>
       </WorkflowSection>
 
@@ -117,23 +114,90 @@ function FloorBoardListHeader({
           ))}
         </FilterChipRow>
       </WorkflowSection>
-
-      <View style={styles.workloadHeader}>
-        <Text style={styles.workloadTitle}>Nurse workload</Text>
-      </View>
     </View>
   );
 }
 
+function getAcuityLabel(acuity?: Acuity) {
+  if (!acuity) {
+    return "Empty";
+  }
+
+  return acuity.charAt(0).toUpperCase() + acuity.slice(1);
+}
+
+function getRoomCoverageLabel(activeShift: Shift, roomId: string) {
+  const roomCoverage = activeShift.assignmentResult?.roomCoverage.find(
+    (coverage) => coverage.roomId === roomId,
+  );
+  const nurseNames =
+    roomCoverage?.nurseIds
+      .map(
+        (nurseId) =>
+          activeShift.nurses.find((nurse) => nurse.id === nurseId)?.name,
+      )
+      .filter(Boolean) ?? [];
+
+  return nurseNames.length ? nurseNames.join(", ") : "No coverage yet";
+}
+
+function getBedAssignmentNurseName(activeShift: Shift, bedId: string) {
+  const bedAssignment = activeShift.assignmentResult?.bedAssignments.find(
+    (assignment) => assignment.bedId === bedId,
+  );
+
+  return (
+    activeShift.nurses.find((nurse) => nurse.id === bedAssignment?.nurseId)
+      ?.name ?? "Open"
+  );
+}
+
+function getBoardSides(activeShift?: Shift): BoardSide[] {
+  if (!activeShift?.assignmentResult) {
+    return boardSides;
+  }
+
+  return activeShift.doctorSides.map((doctorSide) => ({
+    name: doctorSide.name,
+    admitting: doctorSide.id === activeShift.admittingDoctorSideId,
+    rooms: activeShift.rooms
+      .filter((room) => room.doctorSideId === doctorSide.id)
+      .map((room) => ({
+        label: room.label,
+        coverage: getRoomCoverageLabel(activeShift, room.id),
+        beds: activeShift.beds
+          .filter((bed) => bed.roomId === room.id)
+          .map((bed) => {
+            const bedState = activeShift.bedStates.find(
+              (shiftBedState) => shiftBedState.bedId === bed.id,
+            );
+            const patientInitials = bedState?.patient?.initials.trim();
+
+            return {
+              label: bed.label,
+              patient: patientInitials || "Empty",
+              acuity: patientInitials
+                ? getAcuityLabel(bedState?.acuity)
+                : "Empty",
+              nurse: getBedAssignmentNurseName(activeShift, bed.id),
+            };
+          }),
+      })),
+  }));
+}
+
 export default function FloorBoardScreen() {
   const { localState } = useLocalState();
-  const { occupiedBedCount, totalBedCount } = getShiftCensus(
-    localState.activeShift,
+  const activeShift = localState.activeShift;
+  const { occupiedBedCount, totalBedCount } = getShiftCensus(activeShift);
+  const admittingDoctorSide = activeShift?.doctorSides.find(
+    (doctorSide) => doctorSide.id === activeShift.admittingDoctorSideId,
   );
-  const boardListItems: FloorBoardListItem[] = [
-    ...nurses.map((nurse) => ({ type: "nurse" as const, nurse })),
-    ...boardSides.map((side) => ({ type: "side" as const, side })),
-  ];
+  const activeBoardSides = getBoardSides(activeShift);
+  const boardListItems: FloorBoardListItem[] = activeBoardSides.map((side) => ({
+    type: "side",
+    side,
+  }));
 
   return (
     <WorkflowListScreen
@@ -144,7 +208,10 @@ export default function FloorBoardScreen() {
       keyExtractor={getFloorBoardItemKey}
       listHeader={
         <FloorBoardListHeader
+          admittingSideName={admittingDoctorSide?.name ?? "AB"}
+          flagCount={activeShift?.flags.length ?? 2}
           occupiedBedCount={occupiedBedCount}
+          status={activeShift?.status === "assigned" ? "Assigned" : "Preview"}
           totalBedCount={totalBedCount}
         />
       }
@@ -152,42 +219,18 @@ export default function FloorBoardScreen() {
       onPrimaryPress={() => router.push("/flags")}
       primaryLabel="View flags"
       renderItem={renderFloorBoardItem}
-      subtitle="4 North - assigned preview"
-      title="Floor board"
+      subtitle="Assigned floor board"
+      title={activeShift?.floorName ?? "Floor board"}
     />
   );
 }
 
 function renderFloorBoardItem({ item }: { item: FloorBoardListItem }) {
-  if (item.type === "nurse") {
-    return <NurseWorkloadRow nurse={item.nurse} />;
-  }
-
   return <BoardSideSection side={item.side} />;
 }
 
 function getFloorBoardItemKey(item: FloorBoardListItem) {
-  return item.type === "nurse" ? `nurse-${item.nurse.name}` : `side-${item.side.name}`;
-}
-
-function NurseWorkloadRow({ nurse }: NurseWorkloadRowProps) {
-  return (
-    <View style={styles.nurseRow}>
-      <View style={styles.nurseAvatar}>
-        <Text style={styles.nurseAvatarText}>{nurse.name.charAt(0)}</Text>
-      </View>
-      <View style={styles.nurseInfo}>
-        <View style={styles.nurseTopRow}>
-          <Text style={styles.nurseName}>{nurse.name}</Text>
-          <LoadChip value={nurse.load} />
-        </View>
-        <Text style={styles.nurseMeta}>{nurse.detail}</Text>
-        <Text style={styles.nurseMeta}>
-          {nurse.team} - rooms {nurse.rooms}
-        </Text>
-      </View>
-    </View>
-  );
+  return `side-${item.side.name}`;
 }
 
 function BoardSideSection({ side }: BoardSideSectionProps) {
@@ -214,12 +257,7 @@ function BoardSideSection({ side }: BoardSideSectionProps) {
   );
 }
 
-function BoardBed({
-  label,
-  patient,
-  acuity,
-  nurse,
-}: BoardBedProps) {
+function BoardBed({ label, patient, acuity, nurse }: BoardBedProps) {
   const isEmpty = patient === "Empty";
   const acuityColor = getAcuityColor(acuity);
 
@@ -234,7 +272,12 @@ function BoardBed({
               <Text style={styles.acuityText}>{acuity}</Text>
             ) : null}
           </View>
-          <Text style={[styles.patientText, isEmpty ? styles.emptyPatientText : null]}>
+          <Text
+            style={[
+              styles.patientText,
+              isEmpty ? styles.emptyPatientText : null,
+            ]}
+          >
             {patient}
           </Text>
         </View>
@@ -244,34 +287,6 @@ function BoardBed({
       ) : (
         <Text style={styles.assignedText}>{nurse}</Text>
       )}
-    </View>
-  );
-}
-
-function LoadChip({ value }: LoadChipProps) {
-  const [assignedText, capacityText] = value.split("/");
-  const assigned = Number(assignedText);
-  const capacity = Number(capacityText);
-  const isEmpty = assigned === 0;
-  const isNearCapacity = capacity > 0 && assigned / capacity >= 0.8;
-
-  return (
-    <View
-      style={[
-        styles.loadChip,
-        isEmpty ? styles.emptyLoadChip : null,
-        isNearCapacity ? styles.warningLoadChip : null,
-      ]}
-    >
-      <Text
-        style={[
-          styles.loadChipText,
-          isEmpty ? styles.emptyLoadChipText : null,
-          isNearCapacity ? styles.warningLoadChipText : null,
-        ]}
-      >
-        {value}
-      </Text>
     </View>
   );
 }
@@ -295,63 +310,6 @@ function getAcuityColor(acuity: string) {
 const styles = StyleSheet.create({
   headerContent: {
     gap: spacing.cardGap,
-  },
-  workloadHeader: {
-    backgroundColor: colors.neutral.backgroundSecondary,
-    borderColor: colors.neutral.borderTertiary,
-    borderRadius: radius.xl,
-    borderWidth: 0.5,
-    gap: spacing.xs,
-    padding: spacing.lg,
-  },
-  workloadTitle: {
-    color: colors.neutral.textPrimary,
-    fontSize: textSize.lg,
-    fontWeight: "500",
-  },
-  nurseRow: {
-    alignItems: "center",
-    backgroundColor: colors.neutral.backgroundSecondary,
-    borderColor: colors.neutral.borderTertiary,
-    borderRadius: radius.xl,
-    borderWidth: 0.5,
-    flexDirection: "row",
-    gap: spacing.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-  },
-  nurseInfo: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  nurseTopRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  nurseAvatar: {
-    alignItems: "center",
-    backgroundColor: colors.neutral.surface,
-    borderColor: colors.neutral.borderTertiary,
-    borderRadius: 18,
-    borderWidth: 0.5,
-    height: 36,
-    justifyContent: "center",
-    width: 36,
-  },
-  nurseAvatarText: {
-    color: colors.neutral.textSecondary,
-    fontSize: textSize.action,
-    fontWeight: "500",
-  },
-  nurseName: {
-    color: colors.neutral.textPrimary,
-    fontSize: textSize.md,
-    fontWeight: "500",
-  },
-  nurseMeta: {
-    color: colors.neutral.textSecondary,
-    fontSize: textSize.sm,
   },
   roomSection: {
     gap: spacing.lg,
@@ -424,28 +382,5 @@ const styles = StyleSheet.create({
     color: colors.neutral.textPrimary,
     fontSize: textSize.sm,
     fontWeight: "500",
-  },
-  loadChip: {
-    backgroundColor: colors.neutral.backgroundSecondary,
-    borderRadius: radius.sm,
-    paddingHorizontal: 10,
-    paddingVertical: spacing.xs,
-  },
-  emptyLoadChip: {
-    backgroundColor: colors.status.gray100,
-  },
-  warningLoadChip: {
-    backgroundColor: colors.status.amber50,
-  },
-  loadChipText: {
-    color: colors.neutral.textPrimary,
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  emptyLoadChipText: {
-    color: colors.status.gray800,
-  },
-  warningLoadChipText: {
-    color: colors.status.amber800,
   },
 });
