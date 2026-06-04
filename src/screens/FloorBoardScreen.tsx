@@ -6,6 +6,7 @@ import {
   BedChip,
   FilterChip,
   FilterChipRow,
+  SeverityBadge,
   StatusPill,
   SummaryTile,
   SummaryTileGrid,
@@ -16,7 +17,13 @@ import { useLocalState } from "../store/LocalStateContext";
 import { getShiftCensus, isOccupiedBedState } from "../utils/census";
 import { assignmentFlow } from "../utils/workflowFlows";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
-import type { Acuity, ExperienceLevel, Shift } from "../types/models";
+import type {
+  Acuity,
+  ExperienceLevel,
+  Flag,
+  FlagSeverity,
+  Shift,
+} from "../types/models";
 
 const boardFilters = [
   "All",
@@ -36,7 +43,7 @@ type BoardBedViewModel = {
   patient: string;
   acuity: string;
   acuityValue?: Acuity;
-  hasFlag: boolean;
+  flags: InlineFlagViewModel[];
   state: BoardBedState;
   nurse?: string;
 };
@@ -45,6 +52,7 @@ type BoardRoom = {
   label: string;
   coverage: string;
   beds: BoardBedViewModel[];
+  flags: InlineFlagViewModel[];
   hasFlag: boolean;
   hasRnCoverage: boolean;
   roomHasFlag: boolean;
@@ -57,6 +65,12 @@ type BoardSide = {
 };
 type FloorBoardListItem = { type: "side"; side: BoardSide };
 
+type InlineFlagViewModel = {
+  id: string;
+  label: string;
+  severity: FlagSeverity;
+};
+
 type NurseWorkloadViewModel = {
   id: string;
   name: string;
@@ -65,6 +79,7 @@ type NurseWorkloadViewModel = {
   team: string;
   roomCoverage: string;
   currentLoad: number;
+  flags: InlineFlagViewModel[];
   maxLoad: number;
 };
 
@@ -187,6 +202,25 @@ function NurseWorkloadRow({ nurseWorkload }: NurseWorkloadRowProps) {
       <Text style={styles.nurseWorkloadMeta}>
         Rooms: {nurseWorkload.roomCoverage}
       </Text>
+      <InlineFlagList flags={nurseWorkload.flags} />
+    </View>
+  );
+}
+
+function InlineFlagList({ flags }: { flags: InlineFlagViewModel[] }) {
+  if (!flags.length) {
+    return null;
+  }
+
+  return (
+    <View style={styles.inlineFlagList}>
+      {flags.map((flag) => (
+        <SeverityBadge
+          key={flag.id}
+          label={flag.label}
+          tone={flag.severity}
+        />
+      ))}
     </View>
   );
 }
@@ -247,6 +281,53 @@ function getExperienceLabel(experienceLevel: ExperienceLevel) {
   return "Experienced";
 }
 
+function getFlagLabel(flag: Flag) {
+  switch (flag.type) {
+    case "unassigned_bed":
+      return "Unassigned";
+    case "no_eligible_coverage":
+      return "No coverage";
+    case "rn_required":
+      return "RN needed";
+    case "over_side_load_limit":
+      return "Side limit";
+    case "over_max_load":
+      return "Over max";
+    case "team_imbalance":
+      return "Imbalance";
+    case "understaffed":
+      return "Understaffed";
+    case "validation":
+      return "Input";
+  }
+}
+
+function getInlineFlag(flag: Flag): InlineFlagViewModel {
+  return {
+    id: flag.id,
+    label: getFlagLabel(flag),
+    severity: flag.severity,
+  };
+}
+
+function getBedInlineFlags(activeShift: Shift, bedId: string) {
+  return activeShift.flags
+    .filter((flag) => flag.bedId === bedId)
+    .map(getInlineFlag);
+}
+
+function getRoomInlineFlags(activeShift: Shift, roomId: string) {
+  return activeShift.flags
+    .filter((flag) => flag.roomId === roomId && !flag.bedId)
+    .map(getInlineFlag);
+}
+
+function getNurseInlineFlags(activeShift: Shift, nurseId: string) {
+  return activeShift.flags
+    .filter((flag) => flag.nurseId === nurseId)
+    .map(getInlineFlag);
+}
+
 function getBedAssignmentNurseName(activeShift: Shift, bedId: string) {
   const bedAssignment = activeShift.assignmentResult?.bedAssignments.find(
     (assignment) => assignment.bedId === bedId,
@@ -254,16 +335,6 @@ function getBedAssignmentNurseName(activeShift: Shift, bedId: string) {
 
   return activeShift.nurses.find((nurse) => nurse.id === bedAssignment?.nurseId)
     ?.name;
-}
-
-function bedHasFlag(activeShift: Shift, bedId: string) {
-  return activeShift.flags.some((flag) => flag.bedId === bedId);
-}
-
-function roomHasDirectFlag(activeShift: Shift, roomId: string) {
-  return activeShift.flags.some(
-    (flag) => flag.roomId === roomId && !flag.bedId,
-  );
 }
 
 function getBoardSides(activeShift?: Shift): BoardSide[] {
@@ -282,7 +353,7 @@ function getBoardSides(activeShift?: Shift): BoardSide[] {
           activeShift,
           room.id,
         );
-        const roomHasFlag = roomHasDirectFlag(activeShift, room.id);
+        const roomFlags = getRoomInlineFlags(activeShift, room.id);
         const beds = activeShift.beds
           .filter((bed) => bed.roomId === room.id)
           .map((bed): BoardBedViewModel => {
@@ -291,6 +362,7 @@ function getBoardSides(activeShift?: Shift): BoardSide[] {
             );
             const isOccupied = isOccupiedBedState(bedState);
             const nurseName = getBedAssignmentNurseName(activeShift, bed.id);
+            const bedFlags = getBedInlineFlags(activeShift, bed.id);
 
             if (!isOccupied) {
               return {
@@ -298,7 +370,7 @@ function getBoardSides(activeShift?: Shift): BoardSide[] {
                 label: bed.label,
                 patient: "Empty",
                 acuity: "Empty",
-                hasFlag: bedHasFlag(activeShift, bed.id),
+                flags: bedFlags,
                 state: "empty",
               };
             }
@@ -309,7 +381,7 @@ function getBoardSides(activeShift?: Shift): BoardSide[] {
               patient: bedState?.patient?.initials.trim() ?? "Occupied",
               acuity: getAcuityLabel(bedState?.acuity),
               acuityValue: bedState?.acuity,
-              hasFlag: bedHasFlag(activeShift, bed.id),
+              flags: bedFlags,
               nurse: nurseName,
               state: nurseName ? "assigned" : "unassigned",
             };
@@ -327,9 +399,12 @@ function getBoardSides(activeShift?: Shift): BoardSide[] {
             occupiedBedCount,
           ),
           beds,
-          hasFlag: roomHasFlag || beds.some((bed) => bed.hasFlag),
+          flags: roomFlags,
+          hasFlag:
+            roomFlags.length > 0 ||
+            beds.some((bed) => bed.flags.length > 0),
           hasRnCoverage: roomHasRnCoverage(activeShift, coverageNurseIds),
-          roomHasFlag,
+          roomHasFlag: roomFlags.length > 0,
         };
       }),
   }));
@@ -353,7 +428,7 @@ function getFilteredBoardSides(
 
         const filteredBeds = room.beds.filter((bed) => {
           if (selectedFilter === "Flags") {
-            return bed.hasFlag;
+            return bed.flags.length > 0;
           }
 
           if (selectedFilter === "Unassigned") {
@@ -406,6 +481,7 @@ function getNurseWorkloads(activeShift?: Shift): NurseWorkloadViewModel[] {
         ? coveredRoomLabels.join(", ")
         : "No rooms",
       currentLoad,
+      flags: getNurseInlineFlags(activeShift, nurse.id),
       maxLoad: nurse.maxPatientLoad,
     };
   });
@@ -487,6 +563,7 @@ function BoardSideSection({ side }: BoardSideSectionProps) {
               <Text style={styles.roomMeta}>Coverage: {room.coverage}</Text>
             </View>
           </View>
+          <InlineFlagList flags={room.flags} />
 
           {room.beds.map((bed) => (
             <BoardBed key={bed.id} {...bed} />
@@ -497,7 +574,14 @@ function BoardSideSection({ side }: BoardSideSectionProps) {
   );
 }
 
-function BoardBed({ label, patient, acuity, nurse, state }: BoardBedProps) {
+function BoardBed({
+  label,
+  patient,
+  acuity,
+  flags,
+  nurse,
+  state,
+}: BoardBedProps) {
   const isEmpty = state === "empty";
   const isUnassigned = state === "unassigned";
   const acuityColor = getAcuityColor(acuity);
@@ -524,6 +608,7 @@ function BoardBed({ label, patient, acuity, nurse, state }: BoardBedProps) {
           >
             {patient}
           </Text>
+          <InlineFlagList flags={flags} />
         </View>
       </View>
       {isEmpty ? (
@@ -556,6 +641,11 @@ function getAcuityColor(acuity: string) {
 const styles = StyleSheet.create({
   headerContent: {
     gap: spacing.cardGap,
+  },
+  inlineFlagList: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
   },
   emptyWorkloadText: {
     color: colors.neutral.textSecondary,

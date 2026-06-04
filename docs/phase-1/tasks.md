@@ -601,7 +601,7 @@ Validation check:
 - A nurse with no assigned beds still appears.
 - Current load updates from bed assignments.
 
-### Task 8.3: US16 Inline Board Flags
+### ✅ Task 8.3: US16 Inline Board Flags
 
 Build:
 
