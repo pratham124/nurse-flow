@@ -1,61 +1,79 @@
+import { useState } from "react";
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
 import {
   FilterChip,
   FilterChipRow,
-  SeverityBadge as SeverityPill,
+  SeverityBadge,
   SummaryTile,
   SummaryTileGrid,
   WorkflowListScreen,
   WorkflowSection,
 } from "../components/workflow";
-import { assignmentFlow } from "../utils/workflowFlows";
+import { useLocalState } from "../store/LocalStateContext";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
+import type { Flag, FlagSeverity, Shift } from "../types/models";
+import { assignmentFlow } from "../utils/workflowFlows";
 
-const flags = [
-  {
-    severity: "Warning",
-    target: "Floor",
-    message: "Total occupied beds are close to current nurse capacity.",
-  },
-  {
-    severity: "Info",
-    target: "Sam",
-    message: "Sam has room coverage but no assigned beds in this preview.",
-  },
-];
+const flagFilters = ["All", "Critical", "Warning", "Info"] as const;
 
-type FlagSeverity = (typeof flags)[number]["severity"];
-type PreviewFlag = (typeof flags)[number];
+type FlagFilter = (typeof flagFilters)[number];
 
-type FlagRowProps = {
+type FlagRowViewModel = {
+  id: string;
   message: string;
   severity: FlagSeverity;
+  severityLabel: string;
   target: string;
 };
 
-type FlagSeverityBadgeProps = {
-  severity: FlagSeverity;
+type FlagsListHeaderProps = {
+  criticalCount: number;
+  infoCount: number;
+  onFilterPress: (filter: FlagFilter) => void;
+  selectedFilter: FlagFilter;
+  warningCount: number;
 };
 
-const flagFilters = ["All", "Critical", "Warning", "Info"];
+type FlagRowProps = {
+  flag: FlagRowViewModel;
+};
 
-function FlagsListHeader() {
+type EmptyFlagRowProps = {
+  selectedFilter: FlagFilter;
+};
+
+type FlagListItem =
+  | { type: "flag"; flag: FlagRowViewModel }
+  | { type: "empty"; id: string; selectedFilter: FlagFilter };
+
+function FlagsListHeader({
+  criticalCount,
+  infoCount,
+  onFilterPress,
+  selectedFilter,
+  warningCount,
+}: FlagsListHeaderProps) {
   return (
     <View style={styles.headerContent}>
       <WorkflowSection title="Flag summary">
         <SummaryTileGrid>
-          <SummaryTile value="0" label="Critical" />
-          <SummaryTile value="1" label="Warning" />
-          <SummaryTile value="1" label="Info" />
+          <SummaryTile value={criticalCount.toString()} label="Critical" />
+          <SummaryTile value={warningCount.toString()} label="Warning" />
+          <SummaryTile value={infoCount.toString()} label="Info" />
         </SummaryTileGrid>
       </WorkflowSection>
 
       <WorkflowSection title="Filters">
         <FilterChipRow>
-          {flagFilters.map((filter, index) => (
-            <FilterChip key={filter} label={filter} selected={index === 0} />
+          {flagFilters.map((filter) => (
+            <FilterChip
+              key={filter}
+              label={filter}
+              onPress={() => onFilterPress(filter)}
+              selected={filter === selectedFilter}
+            />
           ))}
         </FilterChipRow>
       </WorkflowSection>
@@ -67,70 +85,169 @@ function FlagsListHeader() {
   );
 }
 
-function renderFlagItem({ item }: { item: PreviewFlag }) {
-  return (
-    <FlagRow
-      message={item.message}
-      severity={item.severity}
-      target={item.target}
-    />
-  );
+function getSeverityLabel(severity: FlagSeverity) {
+  if (severity === "critical") {
+    return "Critical";
+  }
+
+  if (severity === "warning") {
+    return "Warning";
+  }
+
+  return "Info";
 }
 
-function getFlagKey(flag: PreviewFlag) {
-  return `${flag.severity}-${flag.target}`;
+function getFlagTarget(activeShift: Shift, flag: Flag) {
+  if (flag.bedId) {
+    const bed = activeShift.beds.find((shiftBed) => shiftBed.id === flag.bedId);
+    const room = activeShift.rooms.find(
+      (shiftRoom) => shiftRoom.id === (flag.roomId ?? bed?.roomId),
+    );
+
+    return room && bed
+      ? `Bed ${bed.label} / Room ${room.label}`
+      : bed
+        ? `Bed ${bed.label}`
+        : "Bed";
+  }
+
+  if (flag.roomId) {
+    const room = activeShift.rooms.find(
+      (shiftRoom) => shiftRoom.id === flag.roomId,
+    );
+
+    return room ? `Room ${room.label}` : "Room";
+  }
+
+  if (flag.nurseId) {
+    const nurse = activeShift.nurses.find(
+      (shiftNurse) => shiftNurse.id === flag.nurseId,
+    );
+
+    return nurse?.name ?? "Nurse";
+  }
+
+  if (flag.teamId) {
+    const team = activeShift.assignmentResult?.generatedTeams.find(
+      (generatedTeam) => generatedTeam.id === flag.teamId,
+    );
+
+    return team?.label ?? "Team";
+  }
+
+  return "Floor";
+}
+
+function getFlagRows(activeShift?: Shift): FlagRowViewModel[] {
+  if (!activeShift) {
+    return [];
+  }
+
+  return activeShift.flags.map((flag) => ({
+    id: flag.id,
+    message: flag.message,
+    severity: flag.severity,
+    severityLabel: getSeverityLabel(flag.severity),
+    target: getFlagTarget(activeShift, flag),
+  }));
+}
+
+function filterFlagRows(
+  flags: FlagRowViewModel[],
+  selectedFilter: FlagFilter,
+) {
+  if (selectedFilter === "All") {
+    return flags;
+  }
+
+  return flags.filter((flag) => flag.severityLabel === selectedFilter);
+}
+
+function getFlagListItems(
+  flags: FlagRowViewModel[],
+  selectedFilter: FlagFilter,
+): FlagListItem[] {
+  if (!flags.length) {
+    return [{ id: "empty-flags", selectedFilter, type: "empty" }];
+  }
+
+  return flags.map((flag) => ({ flag, type: "flag" }));
+}
+
+function getFlagItemKey(item: FlagListItem) {
+  return item.type === "flag" ? item.flag.id : item.id;
+}
+
+function renderFlagItem({ item }: { item: FlagListItem }) {
+  if (item.type === "empty") {
+    return <EmptyFlagRow selectedFilter={item.selectedFilter} />;
+  }
+
+  return <FlagRow flag={item.flag} />;
 }
 
 export default function FlagsScreen() {
+  const { localState } = useLocalState();
+  const [selectedFilter, setSelectedFilter] = useState<FlagFilter>("All");
+  const flags = getFlagRows(localState.activeShift);
+  const filteredFlags = filterFlagRows(flags, selectedFilter);
+  const criticalCount = flags.filter(
+    (flag) => flag.severity === "critical",
+  ).length;
+  const warningCount = flags.filter(
+    (flag) => flag.severity === "warning",
+  ).length;
+  const infoCount = flags.filter((flag) => flag.severity === "info").length;
+
   return (
     <WorkflowListScreen
       activeStep="Flags"
-      data={flags}
+      data={getFlagListItems(filteredFlags, selectedFilter)}
       flow={assignmentFlow}
       headerActionLabel="Floors"
-      keyExtractor={getFlagKey}
-      listHeader={<FlagsListHeader />}
+      keyExtractor={getFlagItemKey}
+      listHeader={
+        <FlagsListHeader
+          criticalCount={criticalCount}
+          infoCount={infoCount}
+          onFilterPress={setSelectedFilter}
+          selectedFilter={selectedFilter}
+          warningCount={warningCount}
+        />
+      }
       onHeaderActionPress={() => router.push("/")}
       onPrimaryPress={() => router.push("/floor-board")}
       primaryLabel="Return to board"
       renderItem={renderFlagItem}
-      subtitle="Local assignment issues"
+      subtitle=""
       title="Flags"
     />
   );
 }
 
-function FlagRow({
-  message,
-  severity,
-  target,
-}: FlagRowProps) {
-  const tone = getSeverityTone(severity);
-
+function FlagRow({ flag }: FlagRowProps) {
   return (
-    <View style={[styles.flagRow, severityAccentStyles[tone]]}>
+    <View style={[styles.flagRow, severityAccentStyles[flag.severity]]}>
       <View style={styles.flagTopRow}>
-        <FlagSeverityBadge severity={severity} />
-        <Text style={styles.target}>{target}</Text>
+        <SeverityBadge label={flag.severityLabel} tone={flag.severity} />
+        <Text style={styles.target}>{flag.target}</Text>
       </View>
-      <Text style={styles.message}>{message}</Text>
+      <Text style={styles.message}>{flag.message}</Text>
     </View>
   );
 }
 
-function FlagSeverityBadge({ severity }: FlagSeverityBadgeProps) {
-  return <SeverityPill label={severity} tone={getSeverityTone(severity)} />;
-}
+function EmptyFlagRow({ selectedFilter }: EmptyFlagRowProps) {
+  const message =
+    selectedFilter === "All"
+      ? "No assignment issues found."
+      : `No ${selectedFilter.toLowerCase()} flags.`;
 
-function getSeverityTone(severity: FlagSeverity) {
-  const tone =
-    severity === "Critical"
-      ? "critical"
-      : severity === "Warning"
-        ? "warning"
-        : "info";
-
-  return tone;
+  return (
+    <View style={styles.emptyFlagRow}>
+      <Text style={styles.emptyFlagTitle}>{message}</Text>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -163,14 +280,29 @@ const styles = StyleSheet.create({
   flagTopRow: {
     alignItems: "center",
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.sm,
   },
   target: {
     color: colors.neutral.textPrimary,
+    flexShrink: 1,
     fontSize: textSize.md,
     fontWeight: "500",
   },
   message: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    lineHeight: 18,
+  },
+  emptyFlagRow: {
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.md,
+    borderWidth: 0.5,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  emptyFlagTitle: {
     color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
     lineHeight: 18,

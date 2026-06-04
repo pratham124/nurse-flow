@@ -612,7 +612,7 @@ Validation check:
 
 - Unassigned beds and overloaded nurses are visible without opening another screen.
 
-### Task 8.4: US16 Flags Screen
+### ✅ Task 8.4: US16 Flags Screen
 
 Build:
 
