@@ -567,7 +567,7 @@ Validation check:
 - Red beds are assigned to eligible RNs before lower-acuity beds.
 - No nurse exceeds max load.
 
-### Task 7.6: US16 Generate Assignment Flags
+### ✅ Task 7.6: US16 Generate Assignment Flags
 
 Build:
 

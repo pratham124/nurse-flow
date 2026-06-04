@@ -23,6 +23,7 @@ import {
   type AssignmentNeedSideSummary,
   type AssignmentNeedRoomSummary,
 } from "../utils/assignmentNeedSummary";
+import { generateAssignmentFlags } from "../utils/assignmentFlags";
 import { generateLocalAssignmentResult } from "../utils/assignmentTeams";
 
 type AssignmentReviewListHeaderProps = {
@@ -186,12 +187,14 @@ export default function AssignmentReviewScreen() {
         return currentState;
       }
 
+      const assignmentResult = generateLocalAssignmentResult(currentShift);
+
       return {
         ...currentState,
         activeShift: {
           ...currentShift,
-          assignmentResult: generateLocalAssignmentResult(currentShift),
-          flags: [],
+          assignmentResult,
+          flags: generateAssignmentFlags(currentShift, assignmentResult),
           status: "assigned",
         },
       };
