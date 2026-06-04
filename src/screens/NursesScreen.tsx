@@ -18,7 +18,7 @@ import {
 import { createLocalId } from "../helpers/localId";
 import { useLocalState } from "../store/LocalStateContext";
 import { shiftSetupFlow } from "../utils/workflowFlows";
-import { colors, radius, spacing, textSize } from "../theme/tokens";
+import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
 import type { ExperienceLevel, LicenseType, Nurse, Shift } from "../types/models";
 
 const licenseTypeOptions: LicenseType[] = ["RN", "LPN"];
@@ -196,6 +196,16 @@ function NursesListHeader({
   );
 }
 
+function getInitials(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .map((part) => part.charAt(0))
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
 function NurseRow({
   nurse,
   onRemoveNurse,
@@ -215,12 +225,33 @@ function NurseRow({
       onActionPress={() => onRemoveNurse(nurse.id)}
     >
       <View style={styles.nurseRow}>
-        <View style={styles.nurseInfo}>
-          <Text style={styles.nurseName}>{nurse.name}</Text>
-          <Text style={styles.nurseMeta}>
-            Nurse {rowNumber} - {nurse.licenseType} -{" "}
-            {getExperienceLabel(nurse.experienceLevel)}
-          </Text>
+        <View style={styles.nurseLeft}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{getInitials(nurse.name)}</Text>
+          </View>
+          <View style={styles.nurseInfo}>
+            <View style={styles.nameRow}>
+              <Text style={styles.nurseName}>{nurse.name}</Text>
+              <View
+                style={[
+                  styles.licenseBadge,
+                  nurse.licenseType === "RN" ? styles.rnBadge : styles.lpnBadge,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.licenseBadgeText,
+                    nurse.licenseType === "RN" ? styles.rnBadgeText : styles.lpnBadgeText,
+                  ]}
+                >
+                  {nurse.licenseType}
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.nurseMeta}>
+              Nurse {rowNumber} • {getExperienceLabel(nurse.experienceLevel)}
+            </Text>
+          </View>
         </View>
         <View style={styles.maxLoad}>
           <Text style={styles.maxLoadLabel}>Max load</Text>
@@ -476,14 +507,16 @@ const styles = StyleSheet.create({
   selectorLabel: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.md,
+    fontWeight: fontWeight.medium,
   },
   shiftNursesHeader: {
-    backgroundColor: colors.neutral.backgroundSecondary,
+    backgroundColor: colors.neutral.surface,
     borderColor: colors.neutral.borderTertiary,
     borderRadius: radius.xl,
     borderWidth: 0.5,
     gap: spacing.lg,
     padding: spacing.lg,
+    ...shadows.sm,
   },
   shiftNursesTitleGroup: {
     gap: spacing.xs,
@@ -491,19 +524,63 @@ const styles = StyleSheet.create({
   shiftNursesTitle: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.lg,
-    fontWeight: "500",
+    fontWeight: fontWeight.bold,
   },
   nurseRow: {
     alignItems: "center",
-    backgroundColor: colors.neutral.backgroundSecondary,
-    borderColor: colors.neutral.borderTertiary,
-    borderRadius: radius.xl,
-    borderWidth: 0.5,
+    backgroundColor: colors.neutral.surface,
     flexDirection: "row",
     gap: spacing.md,
     justifyContent: "space-between",
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.lg,
+  },
+  nurseLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    flex: 1,
+  },
+  avatar: {
+    backgroundColor: colors.brand.burgundy10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    borderColor: colors.brand.burgundy15,
+    borderWidth: 1,
+  },
+  avatarText: {
+    color: colors.brand.burgundy,
+    fontSize: textSize.md,
+    fontWeight: fontWeight.bold,
+  },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  licenseBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: radius.micro,
+  },
+  rnBadge: {
+    backgroundColor: colors.status.blue50,
+  },
+  rnBadgeText: {
+    color: colors.status.blue800,
+  },
+  lpnBadge: {
+    backgroundColor: colors.status.amber50,
+  },
+  lpnBadgeText: {
+    color: colors.status.amber800,
+  },
+  licenseBadgeText: {
+    fontSize: 10,
+    fontWeight: fontWeight.bold,
   },
   nurseInfo: {
     flex: 1,
@@ -512,11 +589,12 @@ const styles = StyleSheet.create({
   nurseName: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.md,
-    fontWeight: "500",
+    fontWeight: fontWeight.bold,
   },
   nurseMeta: {
     color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
+    fontWeight: fontWeight.medium,
   },
   maxLoad: {
     alignItems: "flex-end",
@@ -524,6 +602,7 @@ const styles = StyleSheet.create({
   },
   maxLoadLabel: {
     color: colors.neutral.textSecondary,
-    fontSize: textSize.sm,
+    fontSize: 10,
+    fontWeight: fontWeight.bold,
   },
 });

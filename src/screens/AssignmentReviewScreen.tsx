@@ -12,7 +12,7 @@ import {
 } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
 import { assignmentFlow } from "../utils/workflowFlows";
-import { colors, radius, spacing, textSize } from "../theme/tokens";
+import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
 import { getShiftCensus } from "../utils/census";
 import {
   getAssignmentValidation,
@@ -56,7 +56,7 @@ function getCountLabel(
 function getAcuityMixLabel(
   acuityCounts: AssignmentNeedRoomSummary["acuityCounts"],
 ) {
-  return `${acuityCounts.green} green / ${acuityCounts.yellow} yellow / ${acuityCounts.red} red`;
+  return `${acuityCounts.green} Low / ${acuityCounts.yellow} Medium / ${acuityCounts.red} High`;
 }
 
 function PatientNeedSection({ sides }: PatientNeedSectionProps) {
@@ -148,7 +148,7 @@ function AssignmentReviewListHeader({
         >
           {blockers.map((blocker) => (
             <View key={blocker.id} style={styles.blockerRow}>
-              <SeverityBadge label={blocker.label} tone="warning" />
+              <SeverityBadge label={`⚠️ ${blocker.label}`} tone="warning" />
               <Text style={styles.blockerText}>{blocker.message}</Text>
             </View>
           ))}
@@ -248,14 +248,17 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: 10,
+    ...shadows.sm,
   },
   blockerText: {
     color: colors.status.amber800,
     fontSize: textSize.sm,
     lineHeight: 18,
+    fontWeight: fontWeight.medium,
   },
   needSide: {
     gap: spacing.md,
+    paddingVertical: spacing.xs,
   },
   needSideHeader: {
     gap: spacing.xs,
@@ -263,20 +266,22 @@ const styles = StyleSheet.create({
   needSideTitle: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.md,
-    fontWeight: "600",
+    fontWeight: fontWeight.bold,
   },
   needSideMeta: {
     color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
     lineHeight: 18,
+    fontWeight: fontWeight.medium,
   },
   needRoom: {
-    backgroundColor: colors.neutral.surface,
+    backgroundColor: colors.neutral.backgroundPrimary,
     borderColor: colors.neutral.borderTertiary,
     borderRadius: radius.md,
     borderWidth: 0.5,
     gap: spacing.sm,
     padding: spacing.md,
+    ...shadows.sm,
   },
   needRoomHeader: {
     alignItems: "center",
@@ -287,11 +292,12 @@ const styles = StyleSheet.create({
   needRoomTitle: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.md,
-    fontWeight: "500",
+    fontWeight: fontWeight.bold,
   },
   needRoomMeta: {
     color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
   },
   acuityPillRow: {
     flexDirection: "row",
@@ -302,5 +308,6 @@ const styles = StyleSheet.create({
     color: colors.status.red800,
     fontSize: textSize.sm,
     lineHeight: 18,
+    fontWeight: fontWeight.semibold,
   },
 });

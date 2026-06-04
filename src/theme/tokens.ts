@@ -48,16 +48,20 @@ export const spacing = {
   xs: 4,
   sm: 8,
   md: 12,
+  md2: 14,
   cardGap: 14,
   lg: 16,
   xl: 20,
+  xxl: 28,
 } as const;
 
 export const radius = {
+  micro: 6,
   sm: 8,
   md: 10,
   lg: 14,
   xl: 16,
+  xxl: 20,
   pill: 999,
 } as const;
 
@@ -67,5 +71,38 @@ export const textSize = {
   md: 14,
   action: 15,
   lg: 16,
-  xl: 24,
+  xl: 26,
 } as const;
+
+export const fontWeight = {
+  regular: "400" as const,
+  medium: "500" as const,
+  semibold: "600" as const,
+  bold: "700" as const,
+  heavy: "800" as const,
+} as const;
+
+export const shadows = {
+  sm: {
+    shadowColor: "#211a1d",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  md: {
+    shadowColor: "#211a1d",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  lg: {
+    shadowColor: "#211a1d",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+} as const;
+

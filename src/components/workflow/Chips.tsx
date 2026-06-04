@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { colors, radius, spacing, textSize } from "../../theme/tokens";
+import { colors, radius, spacing, textSize, fontWeight, shadows } from "../../theme/tokens";
 
 type BedChipProps = {
   label: string;
@@ -127,6 +127,7 @@ export function StatusPill({
 }: StatusPillProps) {
   return (
     <View style={[styles.statusPill, statusPillStyles[tone]]}>
+      <View style={[styles.statusDot, statusDotStyles[tone]]} />
       <Text style={[styles.statusPillText, statusPillTextStyles[tone]]}>
         {label}
       </Text>
@@ -150,6 +151,8 @@ export function SeverityBadge({
 const styles = StyleSheet.create({
   bedChip: {
     backgroundColor: colors.brand.burgundy10,
+    borderColor: "rgba(107, 30, 58, 0.2)",
+    borderWidth: 1,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
@@ -157,6 +160,7 @@ const styles = StyleSheet.create({
   bedChipText: {
     color: colors.brand.burgundy,
     fontSize: textSize.sm,
+    fontWeight: fontWeight.medium,
   },
   bedChipRowContent: {
     flexDirection: "row",
@@ -189,16 +193,18 @@ const styles = StyleSheet.create({
     minWidth: 86,
     paddingHorizontal: spacing.sm,
     paddingVertical: 10,
+    ...shadows.sm,
   },
   summaryTileValue: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.lg,
-    fontWeight: "500",
+    fontWeight: fontWeight.bold,
     textAlign: "center",
   },
   summaryTileLabel: {
     color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
+    fontWeight: fontWeight.medium,
     textAlign: "center",
   },
   filterChip: {
@@ -219,6 +225,8 @@ const styles = StyleSheet.create({
   selectedFilterChip: {
     backgroundColor: colors.brand.burgundy10,
     borderColor: colors.brand.burgundy,
+    borderWidth: 1,
+    ...shadows.sm,
   },
   filterChipText: {
     color: colors.neutral.textSecondary,
@@ -226,15 +234,24 @@ const styles = StyleSheet.create({
   },
   selectedFilterChipText: {
     color: colors.brand.burgundy,
-    fontWeight: "500",
+    fontWeight: fontWeight.semibold,
   },
   statusPill: {
     borderRadius: 6,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   statusPillText: {
     fontSize: textSize.xs,
+    fontWeight: fontWeight.medium,
   },
   severityBadge: {
     borderRadius: 6,
@@ -243,6 +260,24 @@ const styles = StyleSheet.create({
   },
   severityBadgeText: {
     fontSize: textSize.xs,
+  },
+});
+
+const statusDotStyles = StyleSheet.create({
+  occupied: {
+    backgroundColor: colors.status.green700,
+  },
+  empty: {
+    backgroundColor: colors.status.gray800,
+  },
+  red: {
+    backgroundColor: colors.status.red700,
+  },
+  yellow: {
+    backgroundColor: colors.status.yellow700,
+  },
+  green: {
+    backgroundColor: colors.status.green700,
   },
 });
 

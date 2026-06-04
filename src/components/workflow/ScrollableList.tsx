@@ -30,6 +30,6 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: spacing.sm,
-    paddingBottom: spacing.xs,
+    paddingBottom: spacing.md,
   },
 });

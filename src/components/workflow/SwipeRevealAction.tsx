@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 
-import { colors, radius, textSize } from "../../theme/tokens";
+import { colors, radius, textSize, fontWeight, shadows } from "../../theme/tokens";
 
 const defaultActionWidth = 96;
 
@@ -95,7 +95,11 @@ export function SwipeRevealAction({
           accessibilityRole="button"
           disabled={!isActionRevealed}
           onPress={onActionPress}
-          style={[styles.actionButton, { width: actionWidth }]}
+          style={({ pressed }) => [
+            styles.actionButton,
+            { width: actionWidth },
+            pressed ? styles.actionButtonPressed : null,
+          ]}
         >
           {actionIcon ? (
             actionIcon
@@ -124,6 +128,10 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: radius.xl,
     overflow: "hidden",
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderWidth: 0.5,
+    ...shadows.sm,
   },
   actionPane: {
     ...StyleSheet.absoluteFillObject,
@@ -141,12 +149,16 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
   },
+  actionButtonPressed: {
+    backgroundColor: colors.status.red800,
+  },
   actionButtonText: {
     color: colors.neutral.surface,
     fontSize: textSize.sm,
-    fontWeight: "600",
+    fontWeight: fontWeight.bold,
   },
   content: {
-    borderRadius: radius.xl,
+    backgroundColor: colors.neutral.surface,
   },
 });
+

@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { WorkflowFlowStep } from "../../utils/workflowFlows";
-import { colors, spacing, textSize } from "../../theme/tokens";
+import { colors, spacing, textSize, fontWeight, shadows } from "../../theme/tokens";
 import type { WorkflowStep } from "./types";
 
 type StepIndicatorProps = {
@@ -25,9 +25,10 @@ export function StepIndicator({ activeStep, flow }: StepIndicatorProps) {
             disabled={!isComplete}
             key={step}
             onPress={() => router.push(route)}
-            style={[
+            style={({ pressed }) => [
               styles.tab,
               isActive ? styles.activeStepChip : null,
+              pressed && isComplete ? styles.pressedTab : null,
             ]}
           >
             <Text
@@ -56,19 +57,25 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     flex: 1,
     justifyContent: "center",
-    minHeight: 44,
+    minHeight: 46,
     paddingHorizontal: spacing.xs,
+  },
+  pressedTab: {
+    opacity: 0.7,
   },
   activeStepChip: {
     backgroundColor: colors.brand.burgundy,
+    ...shadows.sm,
   },
   tabText: {
     color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
+    fontWeight: fontWeight.medium,
     textAlign: "center",
   },
   activeStepText: {
     color: colors.neutral.surface,
-    fontWeight: "500",
+    fontWeight: fontWeight.semibold,
   },
 });
+

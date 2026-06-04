@@ -16,7 +16,7 @@ import {
 } from "../components/workflow";
 import { createLocalId } from "../helpers/localId";
 import { useLocalState } from "../store/LocalStateContext";
-import { colors, radius, spacing, textSize } from "../theme/tokens";
+import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
 import type { Bed, Room } from "../types/models";
 
 const requiredRoomNameMessage = "Room name is required.";
@@ -67,6 +67,8 @@ function RoomsListHeader({
           variant="primary"
         />
       </WorkflowSection>
+
+      <View style={styles.divider} />
 
       <View style={styles.roomsHeader}>
         <Text style={styles.roomsTitle}>Rooms</Text>
@@ -344,13 +346,15 @@ const styles = StyleSheet.create({
   roomsTitle: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.lg,
-    fontWeight: "500",
+    fontWeight: fontWeight.bold,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.neutral.borderTertiary,
+    marginVertical: spacing.xs,
   },
   roomRow: {
-    backgroundColor: colors.neutral.backgroundSecondary,
-    borderColor: colors.neutral.borderTertiary,
-    borderRadius: radius.xl,
-    borderWidth: 0.5,
+    backgroundColor: colors.neutral.surface,
     gap: spacing.lg,
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.lg,
@@ -370,12 +374,13 @@ const styles = StyleSheet.create({
   },
   roomLabel: {
     color: colors.neutral.textPrimary,
-    fontSize: textSize.md,
-    fontWeight: "500",
+    fontSize: textSize.lg,
+    fontWeight: fontWeight.bold,
   },
   roomMeta: {
     color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
   },
   roomListFooter: {
     gap: spacing.sm,
@@ -383,7 +388,7 @@ const styles = StyleSheet.create({
   roomListError: {
     backgroundColor: colors.status.red50,
     borderColor: colors.status.red700,
-    borderLeftWidth: 3,
+    borderLeftWidth: 4,
     borderRadius: radius.lg,
     borderWidth: 0.5,
     gap: 2,
@@ -392,7 +397,7 @@ const styles = StyleSheet.create({
   roomListErrorTitle: {
     color: colors.status.red700,
     fontSize: textSize.sm,
-    fontWeight: "600",
+    fontWeight: fontWeight.bold,
   },
   roomListErrorText: {
     color: colors.status.red700,
@@ -401,17 +406,18 @@ const styles = StyleSheet.create({
   },
   emptyRooms: {
     alignItems: "center",
-    backgroundColor: colors.neutral.backgroundSecondary,
+    backgroundColor: colors.neutral.surface,
     borderColor: colors.neutral.borderTertiary,
     borderRadius: radius.xl,
     borderWidth: 0.5,
     gap: spacing.xs,
     padding: spacing.lg,
+    ...shadows.sm,
   },
   emptyRoomsTitle: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.md,
-    fontWeight: "500",
+    fontWeight: fontWeight.bold,
     textAlign: "center",
   },
   emptyRoomsText: {

@@ -29,6 +29,7 @@ type WorkflowListScreenProps<ItemT> = {
   renderItem: ListRenderItem<ItemT>;
   listHeader?: ReactElement;
   listFooter?: ReactElement;
+  ListEmptyComponent?: ReactElement;
 };
 
 export function WorkflowListScreen<ItemT>({
@@ -47,6 +48,7 @@ export function WorkflowListScreen<ItemT>({
   renderItem,
   listHeader,
   listFooter,
+  ListEmptyComponent,
 }: WorkflowListScreenProps<ItemT>) {
   return (
     <WorkflowScreen
@@ -74,6 +76,7 @@ export function WorkflowListScreen<ItemT>({
           </View>
         }
         ListFooterComponent={listFooter}
+        ListEmptyComponent={ListEmptyComponent}
         renderItem={renderItem}
       />
     </WorkflowScreen>

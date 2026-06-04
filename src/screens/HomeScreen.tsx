@@ -13,7 +13,7 @@ import {
   RoomIcon,
 } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
-import { colors, radius, spacing, textSize } from "../theme/tokens";
+import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
 import type { FloorTemplate, Shift } from "../types/models";
 import { createLocalId } from "../helpers/localId";
 
@@ -346,22 +346,25 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral.backgroundPrimary,
   },
   header: {
-    backgroundColor: colors.neutral.backgroundPrimary,
+    backgroundColor: colors.neutral.surface,
     paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xl,
+    paddingTop: spacing.xl + 10,
     paddingBottom: spacing.md,
     gap: 4,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.neutral.borderTertiary,
+    ...shadows.sm,
   },
   title: {
     color: colors.neutral.textPrimary,
-    fontSize: 28,
-    fontWeight: "800",
+    fontSize: 30,
+    fontWeight: fontWeight.heavy,
     letterSpacing: -0.5,
   },
   subtitle: {
     color: colors.neutral.textSecondary,
     fontSize: textSize.md,
-    fontWeight: "500",
+    fontWeight: fontWeight.semibold,
   },
   scroll: {
     flex: 1,
@@ -380,7 +383,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.lg,
-    fontWeight: "700",
+    fontWeight: fontWeight.bold,
   },
   sectionCount: {
     backgroundColor: colors.neutral.backgroundSecondary,
@@ -392,7 +395,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     textAlign: "center",
-    fontWeight: "600",
+    fontWeight: fontWeight.semibold,
   },
   activeShiftCard: {
     backgroundColor: colors.neutral.surface,
@@ -401,7 +404,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: spacing.lg,
     gap: spacing.sm,
-    boxShadow: "0 6px 16px rgba(79, 127, 42, 0.08)",
+    shadowColor: colors.status.greenIcon || "#3b6d11",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   activeShiftHeader: {
     flexDirection: "row",
@@ -422,23 +429,25 @@ const styles = StyleSheet.create({
   activeShiftBadgeText: {
     color: colors.status.greenIcon || "#3b6d11",
     fontSize: 10,
-    fontWeight: "700",
+    fontWeight: fontWeight.bold,
     letterSpacing: 0.5,
   },
   activeShiftTime: {
     color: colors.neutral.textSecondary,
     fontSize: 11,
+    fontWeight: fontWeight.medium,
   },
   activeShiftName: {
     color: colors.neutral.textPrimary,
     fontSize: 18,
-    fontWeight: "700",
+    fontWeight: fontWeight.bold,
     marginTop: 2,
   },
   activeShiftStats: {
     color: colors.neutral.textSecondary,
     fontSize: 13,
     marginBottom: spacing.xs,
+    fontWeight: fontWeight.medium,
   },
   resumeButton: {
     flexDirection: "row",
@@ -449,14 +458,15 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     paddingVertical: 12,
     marginTop: spacing.xs,
+    ...shadows.sm,
   },
   resumeButtonPressed: {
-    opacity: 0.9,
+    opacity: 0.85,
   },
   resumeButtonText: {
     color: colors.neutral.surface,
     fontSize: textSize.action,
-    fontWeight: "600",
+    fontWeight: fontWeight.semibold,
   },
   emptyState: {
     alignItems: "center",
@@ -466,7 +476,7 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     gap: spacing.md,
     padding: spacing.xl,
-    boxShadow: "0 4px 12px rgba(33, 26, 29, 0.04)",
+    ...shadows.sm,
   },
   emptyIcon: {
     alignItems: "center",
@@ -479,7 +489,7 @@ const styles = StyleSheet.create({
   emptyTitle: {
     color: colors.neutral.textPrimary,
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: fontWeight.bold,
     textAlign: "center",
   },
   emptyText: {
@@ -495,21 +505,15 @@ const styles = StyleSheet.create({
   templateRow: {
     alignItems: "center",
     backgroundColor: colors.neutral.surface,
-    borderColor: colors.neutral.borderTertiary,
-    borderRadius: radius.xl,
-    borderWidth: 0.5,
     flexDirection: "row",
     justifyContent: "space-between",
     gap: spacing.md,
     minHeight: 76,
-    overflow: "hidden",
     padding: spacing.lg,
-    boxShadow: "0 4px 12px rgba(33, 26, 29, 0.06)",
   },
   templateRowPressed: {
     opacity: 0.92,
     backgroundColor: colors.neutral.backgroundTertiary,
-    transform: [{ scale: 0.985 }],
   },
   templateAccent: {
     backgroundColor: colors.brand.burgundy,
@@ -543,7 +547,7 @@ const styles = StyleSheet.create({
   templateBadgeText: {
     color: colors.brand.burgundy,
     fontSize: textSize.lg,
-    fontWeight: "700",
+    fontWeight: fontWeight.bold,
   },
   templateTitleGroup: {
     flex: 1,
@@ -552,7 +556,7 @@ const styles = StyleSheet.create({
   templateName: {
     color: colors.neutral.textPrimary,
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: fontWeight.bold,
   },
   templateMetaRow: {
     flexDirection: "row",
@@ -573,13 +577,14 @@ const styles = StyleSheet.create({
   templateMetaChipText: {
     color: colors.neutral.textSecondary,
     fontSize: 11,
-    fontWeight: "500",
+    fontWeight: fontWeight.medium,
   },
   startShiftButton: {
     backgroundColor: colors.brand.burgundy,
     borderRadius: radius.md,
     paddingHorizontal: 12,
     paddingVertical: 8,
+    ...shadows.sm,
   },
   startShiftButtonPressed: {
     opacity: 0.85,
@@ -587,7 +592,7 @@ const styles = StyleSheet.create({
   startShiftButtonText: {
     color: colors.neutral.surface,
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: fontWeight.bold,
   },
   actionBar: {
     backgroundColor: colors.neutral.backgroundPrimary,
@@ -602,6 +607,7 @@ const styles = StyleSheet.create({
     height: 52,
     justifyContent: "center",
     paddingHorizontal: spacing.lg,
+    ...shadows.sm,
   },
   primaryButtonPressed: {
     opacity: 0.85,
@@ -609,6 +615,6 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     color: colors.neutral.surface,
     fontSize: textSize.action,
-    fontWeight: "700",
+    fontWeight: fontWeight.semibold,
   },
 });

@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { floorTemplateFlow } from "../../utils/workflowFlows";
 import type { WorkflowFlowStep } from "../../utils/workflowFlows";
-import { colors, radius, spacing, textSize } from "../../theme/tokens";
+import { colors, radius, spacing, textSize, fontWeight, shadows } from "../../theme/tokens";
 import { StepIndicator } from "./StepIndicator";
 import { HomeIcon } from "./Icons";
 import type { WorkflowStep } from "./types";
@@ -59,7 +59,10 @@ export function WorkflowScreen({
               accessibilityRole="button"
               hitSlop={4}
               onPress={onHeaderActionPress}
-              style={styles.headerAction}
+              style={({ pressed }) => [
+                styles.headerAction,
+                pressed ? styles.headerActionPressed : null,
+              ]}
             >
               <HomeIcon />
             </Pressable>
@@ -96,9 +99,10 @@ export function WorkflowScreen({
             accessibilityState={{ disabled: primaryDisabled }}
             disabled={primaryDisabled}
             onPress={onPrimaryPress}
-            style={[
+            style={({ pressed }) => [
               styles.primaryButton,
               primaryDisabled ? styles.disabledPrimaryButton : null,
+              pressed && !primaryDisabled ? styles.pressedPrimaryButton : null,
             ]}
           >
             <Text style={styles.primaryButtonText}>{primaryLabel}</Text>
@@ -139,10 +143,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral.backgroundPrimary,
   },
   header: {
-    backgroundColor: colors.neutral.backgroundPrimary,
+    backgroundColor: colors.neutral.surface,
     gap: 2,
-    padding: spacing.xl,
-    paddingBottom: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.neutral.borderTertiary,
+    ...shadows.sm,
   },
   headerTopRow: {
     alignItems: "center",
@@ -154,7 +162,7 @@ const styles = StyleSheet.create({
     color: colors.neutral.textPrimary,
     flex: 1,
     fontSize: textSize.xl,
-    fontWeight: "500",
+    fontWeight: fontWeight.bold,
   },
   headerAction: {
     alignItems: "center",
@@ -166,21 +174,25 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: 36,
   },
+  headerActionPressed: {
+    opacity: 0.7,
+  },
   subtitle: {
     color: colors.neutral.textSecondary,
     fontSize: 13,
+    fontWeight: fontWeight.medium,
     marginTop: 2,
   },
   progressRow: {
     flexDirection: "row",
     gap: spacing.xs,
-    paddingTop: spacing.sm,
+    paddingTop: spacing.md,
   },
   progressSegment: {
-    backgroundColor: colors.neutral.borderTertiary,
-    borderRadius: 2,
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderRadius: radius.pill,
     flex: 1,
-    height: 3,
+    height: 4,
   },
   completedProgressSegment: {
     backgroundColor: colors.brand.burgundy,
@@ -200,7 +212,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral.backgroundPrimary,
     gap: spacing.sm,
     paddingTop: spacing.md,
-    paddingBottom: 0,
+    paddingBottom: spacing.sm,
   },
   actionRow: {
     flexDirection: "row",
@@ -219,16 +231,21 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 52,
     justifyContent: "center",
-    marginBottom: 24,
+    marginBottom: spacing.md,
     marginHorizontal: spacing.xl,
     paddingHorizontal: spacing.lg,
+    ...shadows.sm,
   },
   disabledPrimaryButton: {
     opacity: 0.48,
   },
+  pressedPrimaryButton: {
+    opacity: 0.85,
+  },
   primaryButtonText: {
     color: colors.neutral.surface,
     fontSize: textSize.action,
-    fontWeight: "500",
+    fontWeight: fontWeight.semibold,
   },
 });
+

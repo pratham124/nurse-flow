@@ -636,17 +636,6 @@ Future direction:
 - Let the charge nurse manually adjust assignments after auto-assignment runs.
 - Keep this out of Phase 1 until manual override scope is intentionally added.
 
-### Task 8.6: US17 Re-Run Assignment
-
-Build:
-
-- Clear stale generated teams, room coverage, bed assignments, and flags before re-running.
-- Replace previous results with new local results.
-
-Validation check:
-
-- Lowering a nurse max load and re-running changes assignments or creates unassigned-bed flags as expected.
-
 ## Full Manual Testing Pass
 
 ### Task 9.1: Happy Path Test

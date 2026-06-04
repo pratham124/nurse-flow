@@ -12,7 +12,7 @@ import {
 } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
 import { shiftSetupFlow } from "../utils/workflowFlows";
-import { colors, radius, spacing, textSize } from "../theme/tokens";
+import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
 import type { LoadLimitRange } from "../types/models";
 
 type LoadLimitKind = "admitting" | "nonAdmitting";
@@ -271,7 +271,9 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     gap: spacing.md,
     marginTop: spacing.md,
-    paddingVertical: spacing.md,
+    paddingBottom: spacing.lg,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.neutral.borderTertiary,
   },
   limitText: {
     gap: spacing.xs,
@@ -279,7 +281,7 @@ const styles = StyleSheet.create({
   limitTitle: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.md,
-    fontWeight: "500",
+    fontWeight: fontWeight.bold,
   },
   limitMeta: {
     color: colors.neutral.textSecondary,
@@ -293,18 +295,19 @@ const styles = StyleSheet.create({
   },
   rangeControlGroup: {
     alignItems: "center",
-    backgroundColor: colors.neutral.backgroundSecondary,
+    backgroundColor: colors.neutral.surface,
     borderColor: colors.neutral.borderTertiary,
     borderRadius: radius.md,
     borderWidth: 0.5,
     flex: 1,
     gap: spacing.xs,
     minWidth: 132,
-    padding: spacing.xs,
+    padding: spacing.sm,
+    ...shadows.sm,
   },
   rangeLabel: {
     color: colors.neutral.textSecondary,
     fontSize: 10,
-    fontWeight: "500",
+    fontWeight: fontWeight.bold,
   },
 });

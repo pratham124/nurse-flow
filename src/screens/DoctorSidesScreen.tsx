@@ -12,7 +12,7 @@ import {
 } from "../components/workflow";
 import { createLocalId } from "../helpers/localId";
 import { useLocalState } from "../store/LocalStateContext";
-import { colors, radius, spacing, textSize } from "../theme/tokens";
+import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
 import type { DoctorSide, Room } from "../types/models";
 
 const requiredDoctorSideNameMessage = "Doctor side name is required.";
@@ -111,6 +111,8 @@ function DoctorSidesListHeader({
           value={sideTwoName}
         />
       </WorkflowSection>
+
+      <View style={styles.divider} />
 
       <View style={styles.assignmentHeader}>
         <View style={styles.assignmentTitleGroup}>
@@ -402,12 +404,18 @@ const styles = StyleSheet.create({
     gap: spacing.cardGap,
   },
   assignmentHeader: {
-    backgroundColor: colors.neutral.backgroundSecondary,
+    backgroundColor: colors.neutral.surface,
     borderColor: colors.neutral.borderTertiary,
     borderRadius: radius.xl,
     borderWidth: 0.5,
     gap: spacing.lg,
     padding: spacing.lg,
+    ...shadows.sm,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.neutral.borderTertiary,
+    marginVertical: spacing.xs,
   },
   assignmentTitleGroup: {
     gap: spacing.xs,
@@ -415,28 +423,31 @@ const styles = StyleSheet.create({
   assignmentTitle: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.lg,
-    fontWeight: "500",
+    fontWeight: fontWeight.bold,
   },
   assignmentRow: {
-    backgroundColor: colors.neutral.backgroundSecondary,
+    backgroundColor: colors.neutral.surface,
     borderColor: colors.neutral.borderTertiary,
     borderRadius: radius.xl,
     borderWidth: 0.5,
     gap: spacing.md,
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.lg,
+    ...shadows.sm,
   },
   missingDoctorSideRow: {
     borderColor: colors.status.red700,
-    borderWidth: 1,
+    backgroundColor: colors.status.red50,
+    borderWidth: 1.5,
   },
   roomLabel: {
     color: colors.neutral.textPrimary,
-    fontSize: textSize.md,
-    fontWeight: "500",
+    fontSize: textSize.lg,
+    fontWeight: fontWeight.bold,
   },
   roomMeta: {
     color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
   },
 });

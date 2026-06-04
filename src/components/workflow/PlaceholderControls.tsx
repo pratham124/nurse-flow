@@ -8,7 +8,7 @@ import {
   type KeyboardTypeOptions,
 } from "react-native";
 
-import { colors, radius, spacing, textSize } from "../../theme/tokens";
+import { colors, radius, spacing, textSize, fontWeight, shadows } from "../../theme/tokens";
 import { MinusIcon, PlusIcon } from "./Icons";
 
 type PlaceholderInputProps = {
@@ -96,10 +96,10 @@ export function PlaceholderButton({
       accessibilityState={{ disabled: !onPress }}
       disabled={!onPress}
       onPress={onPress}
-      style={[
-        styles.secondaryButton,
-        isPrimary ? styles.primaryButton : null,
+      style={({ pressed }) => [
+        isPrimary ? styles.primaryButton : styles.secondaryButton,
         !onPress ? styles.disabledButton : null,
+        pressed && onPress ? styles.buttonPressed : null,
       ]}
     >
       {icon ? <View style={styles.buttonIcon}>{icon}</View> : null}
@@ -129,9 +129,13 @@ export function NumberStepperPlaceholder({
         accessibilityRole="button"
         disabled={!onDecrement}
         onPress={onDecrement}
-        style={styles.stepperButton}
+        style={({ pressed }) => [
+          styles.stepperButton,
+          !onDecrement ? styles.disabledButton : null,
+          pressed && onDecrement ? styles.stepperButtonPressed : null,
+        ]}
       >
-        <MinusIcon />
+        <MinusIcon color={onDecrement ? colors.brand.burgundy : colors.neutral.textTertiary} size={10} />
       </Pressable>
       <Text style={styles.stepperValue}>{value}</Text>
       <Pressable
@@ -139,9 +143,13 @@ export function NumberStepperPlaceholder({
         accessibilityRole="button"
         disabled={!onIncrement}
         onPress={onIncrement}
-        style={styles.stepperButton}
+        style={({ pressed }) => [
+          styles.stepperButton,
+          !onIncrement ? styles.disabledButton : null,
+          pressed && onIncrement ? styles.stepperButtonPressed : null,
+        ]}
       >
-        <PlusIcon />
+        <PlusIcon color={onIncrement ? colors.brand.burgundy : colors.neutral.textTertiary} size={10} />
       </Pressable>
     </View>
   );
@@ -164,9 +172,10 @@ export function SegmentedPlaceholder({
             accessibilityState={{ selected: isSelected }}
             disabled={!onSelect}
             onPress={() => onSelect?.(index)}
-            style={[
+            style={({ pressed }) => [
               styles.segmentOption,
               isSelected ? styles.selectedSegmentOption : null,
+              pressed && onSelect ? styles.segmentOptionPressed : null,
             ]}
           >
             <Text
@@ -191,16 +200,18 @@ const styles = StyleSheet.create({
   label: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.md,
+    fontWeight: fontWeight.medium,
   },
   inputRing: {
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 2,
   },
   focusedInputRing: {
     backgroundColor: colors.brand.burgundy12,
+    ...shadows.sm,
   },
   input: {
-    backgroundColor: colors.neutral.backgroundSecondary,
+    backgroundColor: colors.neutral.surface,
     borderColor: colors.neutral.borderTertiary,
     borderRadius: radius.md,
     borderWidth: 0.5,
@@ -229,6 +240,7 @@ const styles = StyleSheet.create({
   secondaryButton: {
     alignItems: "center",
     borderColor: colors.neutral.borderTertiary,
+    backgroundColor: colors.neutral.surface,
     borderRadius: radius.lg,
     borderWidth: 0.5,
     flexDirection: "row",
@@ -236,17 +248,26 @@ const styles = StyleSheet.create({
     minHeight: 44,
     justifyContent: "center",
     paddingHorizontal: spacing.md,
+    ...shadows.sm,
   },
   primaryButton: {
+    alignItems: "center",
     alignSelf: "flex-end",
     backgroundColor: colors.brand.burgundy,
     borderColor: colors.brand.burgundy,
     borderRadius: radius.md,
+    flexDirection: "row",
+    gap: spacing.xs,
     minHeight: 40,
+    justifyContent: "center",
     paddingHorizontal: spacing.lg,
+    ...shadows.sm,
   },
   disabledButton: {
     opacity: 0.48,
+  },
+  buttonPressed: {
+    opacity: 0.8,
   },
   buttonIcon: {
     alignItems: "center",
@@ -255,31 +276,40 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.action,
+    fontWeight: fontWeight.medium,
   },
   primaryButtonText: {
     color: colors.neutral.surface,
-    fontWeight: "500",
+    fontSize: textSize.action,
+    fontWeight: fontWeight.semibold,
   },
   stepper: {
     alignItems: "center",
     flexDirection: "row",
-    gap: spacing.sm,
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderRadius: radius.pill,
+    padding: 3,
+    borderWidth: 0.5,
+    borderColor: colors.neutral.borderTertiary,
   },
   stepperButton: {
     alignItems: "center",
-    backgroundColor: colors.neutral.backgroundPrimary,
-    borderColor: colors.neutral.borderSecondary,
-    borderRadius: radius.sm,
-    borderWidth: 0.5,
-    height: 30,
+    backgroundColor: colors.neutral.surface,
+    borderRadius: radius.pill,
+    height: 28,
+    width: 28,
     justifyContent: "center",
-    width: 30,
+    ...shadows.sm,
+  },
+  stepperButtonPressed: {
+    backgroundColor: colors.neutral.backgroundTertiary,
+    opacity: 0.85,
   },
   stepperValue: {
     color: colors.neutral.textPrimary,
-    fontSize: textSize.action,
-    fontWeight: "500",
-    minWidth: 24,
+    fontSize: textSize.md,
+    fontWeight: fontWeight.bold,
+    minWidth: 32,
     textAlign: "center",
   },
   segmented: {
@@ -298,10 +328,14 @@ const styles = StyleSheet.create({
     minHeight: 44,
     paddingHorizontal: spacing.sm,
   },
+  segmentOptionPressed: {
+    opacity: 0.8,
+  },
   selectedSegmentOption: {
     backgroundColor: colors.neutral.surface,
     borderColor: colors.neutral.borderSecondary,
     borderWidth: 0.5,
+    ...shadows.sm,
   },
   segmentText: {
     color: colors.neutral.textSecondary,
@@ -310,6 +344,7 @@ const styles = StyleSheet.create({
   },
   selectedSegmentText: {
     color: colors.neutral.textPrimary,
-    fontWeight: "500",
+    fontWeight: fontWeight.semibold,
   },
 });
+

@@ -12,7 +12,7 @@ import {
   WorkflowSection,
 } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
-import { colors, radius, spacing, textSize } from "../theme/tokens";
+import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
 import type { Flag, FlagSeverity, Shift } from "../types/models";
 import { assignmentFlow } from "../utils/workflowFlows";
 
@@ -226,10 +226,22 @@ export default function FlagsScreen() {
 }
 
 function FlagRow({ flag }: FlagRowProps) {
+  const emojiLabel = flag.severity === "critical"
+    ? `🚨 ${flag.severityLabel}`
+    : flag.severity === "warning"
+      ? `⚠️ ${flag.severityLabel}`
+      : `ℹ️ ${flag.severityLabel}`;
+
   return (
-    <View style={[styles.flagRow, severityAccentStyles[flag.severity]]}>
+    <View
+      style={[
+        styles.flagRow,
+        severityAccentStyles[flag.severity],
+        severityBackgroundStyles[flag.severity],
+      ]}
+    >
       <View style={styles.flagTopRow}>
-        <SeverityBadge label={flag.severityLabel} tone={flag.severity} />
+        <SeverityBadge label={emojiLabel} tone={flag.severity} />
         <Text style={styles.target}>{flag.target}</Text>
       </View>
       <Text style={styles.message}>{flag.message}</Text>
@@ -255,27 +267,29 @@ const styles = StyleSheet.create({
     gap: spacing.cardGap,
   },
   flagListHeader: {
-    backgroundColor: colors.neutral.backgroundSecondary,
+    backgroundColor: colors.neutral.surface,
     borderColor: colors.neutral.borderTertiary,
     borderRadius: radius.xl,
     borderWidth: 0.5,
     gap: spacing.xs,
     padding: spacing.lg,
+    ...shadows.sm,
   },
   flagListTitle: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.lg,
-    fontWeight: "500",
+    fontWeight: fontWeight.bold,
   },
   flagRow: {
     backgroundColor: colors.neutral.surface,
     borderColor: colors.neutral.borderTertiary,
-    borderLeftWidth: 3,
+    borderLeftWidth: 4,
     borderRadius: radius.md,
     borderWidth: 0.5,
     gap: spacing.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
+    ...shadows.sm,
   },
   flagTopRow: {
     alignItems: "center",
@@ -287,12 +301,13 @@ const styles = StyleSheet.create({
     color: colors.neutral.textPrimary,
     flexShrink: 1,
     fontSize: textSize.md,
-    fontWeight: "500",
+    fontWeight: fontWeight.bold,
   },
   message: {
     color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
     lineHeight: 18,
+    fontWeight: fontWeight.medium,
   },
   emptyFlagRow: {
     backgroundColor: colors.neutral.surface,
@@ -301,11 +316,13 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
+    ...shadows.sm,
   },
   emptyFlagTitle: {
     color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
     lineHeight: 18,
+    fontWeight: fontWeight.medium,
   },
 });
 
@@ -318,5 +335,17 @@ const severityAccentStyles = StyleSheet.create({
   },
   warning: {
     borderLeftColor: colors.status.amber800,
+  },
+});
+
+const severityBackgroundStyles = StyleSheet.create({
+  critical: {
+    backgroundColor: colors.status.red50,
+  },
+  warning: {
+    backgroundColor: colors.status.amber50,
+  },
+  info: {
+    backgroundColor: colors.status.blue50,
   },
 });

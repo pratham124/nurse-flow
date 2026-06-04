@@ -1,13 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { router } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import {
   BedChip,
-  CheckCircleIcon,
   FilterChip,
   FilterChipRow,
-  PlaceholderButton,
   PlaceholderInput,
   SegmentedPlaceholder,
   StatusPill,
@@ -17,7 +15,7 @@ import {
   WorkflowSection,
 } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
-import { colors, spacing, textSize } from "../theme/tokens";
+import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
 import { getShiftCensus, isOccupiedBedState } from "../utils/census";
 import type {
   Acuity,
@@ -144,21 +142,28 @@ function getSexFromIndex(index: number): Sex {
 }
 
 function getAcuityLabel(acuity: Acuity) {
-  return acuity.charAt(0).toUpperCase() + acuity.slice(1);
-}
-
-function getAcuityOptionStyle(acuity: Acuity) {
   switch (acuity) {
-    case "red":
-      return styles.redAcuityOption;
+    case "green":
+      return "Low";
     case "yellow":
-      return styles.yellowAcuityOption;
-    default:
-      return styles.greenAcuityOption;
+      return "Medium";
+    case "red":
+      return "High";
   }
 }
 
-function getAcuityOptionTextStyle(acuity: Acuity) {
+function getAcuitySegmentStyle(acuity: Acuity) {
+  switch (acuity) {
+    case "red":
+      return styles.redSelectedSegment;
+    case "yellow":
+      return styles.yellowSelectedSegment;
+    default:
+      return styles.greenSelectedSegment;
+  }
+}
+
+function getAcuitySegmentTextStyle(acuity: Acuity) {
   switch (acuity) {
     case "red":
       return styles.redAcuityOptionText;
@@ -166,17 +171,6 @@ function getAcuityOptionTextStyle(acuity: Acuity) {
       return styles.yellowAcuityOptionText;
     default:
       return styles.greenAcuityOptionText;
-  }
-}
-
-function getAcuityMarkerColor(acuity: Acuity) {
-  switch (acuity) {
-    case "red":
-      return colors.status.red800;
-    case "yellow":
-      return colors.status.amber800;
-    default:
-      return colors.status.green800;
   }
 }
 
@@ -274,31 +268,101 @@ function RoomPatientsRow({
   onUpdatePatientField,
   onUpdateAcuity,
 }: RoomPatientsRowProps) {
+  const [activeBedIndex, setActiveBedIndex] = useState(0);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  useEffect(() => {
+    if (activeBedIndex >= room.beds.length) {
+      setActiveBedIndex(Math.max(0, room.beds.length - 1));
+    }
+  }, [room.beds.length, activeBedIndex]);
+
+  const handleScroll = (event: any) => {
+    const contentOffset = event.nativeEvent.contentOffset.x;
+    const width = event.nativeEvent.layoutMeasurement.width || containerWidth;
+    if (width > 0) {
+      const page = Math.round(contentOffset / width);
+      if (page >= 0 && page < room.beds.length) {
+        if (page !== activeBedIndex) {
+          setActiveBedIndex(page);
+        }
+      }
+    }
+  };
+
+  const showDots = room.beds.length > 1;
+
   return (
     <WorkflowSection note={room.sideName} title={`Room ${room.label}`}>
-      {room.beds.map((bedRow) => (
-        <BedPatientForm
-          ageErrorText={
-            isWholeNumberText(
-              ageTextByBedId[bedRow.bed.id] ??
-                getPatientAgeText(bedRow.bedState?.patient),
-            )
-              ? ""
-              : wholeNumberAgeMessage
-          }
-          ageText={
-            ageTextByBedId[bedRow.bed.id] ??
-            getPatientAgeText(bedRow.bedState?.patient)
-          }
-          bedRow={bedRow}
-          key={bedRow.bed.id}
-          onClearPatient={onClearPatient}
-          onUpdateAcuity={onUpdateAcuity}
-          onUpdatePatientField={onUpdatePatientField}
-        />
-      ))}
+      <View
+        onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
+        style={styles.carouselContainer}
+      >
+        <ScrollView
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          style={styles.carouselScrollView}
+        >
+          {room.beds.map((bedRow) => (
+            <View
+              key={bedRow.bed.id}
+              style={containerWidth > 0 ? { width: containerWidth } : null}
+            >
+              <BedPatientForm
+                ageErrorText={
+                  isWholeNumberText(
+                    ageTextByBedId[bedRow.bed.id] ??
+                      getPatientAgeText(bedRow.bedState?.patient),
+                  )
+                    ? ""
+                    : wholeNumberAgeMessage
+                }
+                ageText={
+                  ageTextByBedId[bedRow.bed.id] ??
+                  getPatientAgeText(bedRow.bedState?.patient)
+                }
+                bedRow={bedRow}
+                onClearPatient={onClearPatient}
+                onUpdateAcuity={onUpdateAcuity}
+                onUpdatePatientField={onUpdatePatientField}
+              />
+            </View>
+          ))}
+        </ScrollView>
+      </View>
+      {showDots ? (
+        <View style={styles.dotsRow}>
+          {room.beds.map((_, index) => {
+            const isActive = index === activeBedIndex;
+            return (
+              <View
+                key={index}
+                style={[
+                  styles.dot,
+                  isActive ? styles.activeDot : null,
+                ]}
+              />
+            );
+          })}
+        </View>
+      ) : null}
     </WorkflowSection>
   );
+}
+
+function getAcuityColor(acuity?: Acuity) {
+  if (!acuity) return undefined;
+  switch (acuity) {
+    case "red":
+      return colors.status.red700;
+    case "yellow":
+      return colors.status.yellow700;
+    case "green":
+      return colors.status.green700;
+  }
 }
 
 function BedPatientForm({
@@ -312,19 +376,23 @@ function BedPatientForm({
   const patient = bedRow.bedState?.patient;
   const occupied = isOccupiedBedState(bedRow.bedState);
   const hasPatientInfo = Boolean(patient);
+  const acuityColor = getAcuityColor(bedRow.bedState?.acuity);
 
   return (
-    <View style={styles.bedRow}>
+    <View
+      style={[
+        styles.bedRow,
+        occupied && acuityColor
+          ? { borderLeftWidth: 4, borderLeftColor: acuityColor }
+          : occupied
+            ? { borderLeftWidth: 4, borderLeftColor: colors.neutral.border }
+            : null,
+      ]}
+    >
       <View style={styles.bedHeader}>
         <BedChip label={bedRow.bed.label} />
         <View style={styles.bedHeaderActions}>
           <BedStatusBadge occupied={occupied} />
-          {hasPatientInfo ? (
-            <PlaceholderButton
-              label="Clear patient"
-              onPress={() => onClearPatient(bedRow.bed.id)}
-            />
-          ) : null}
         </View>
       </View>
 
@@ -401,7 +469,7 @@ function AcuitySelector({
   return (
     <View style={styles.selectorField}>
       <Text style={styles.selectorLabel}>Acuity</Text>
-      <View style={styles.acuityOptionRow}>
+      <View style={styles.acuitySegmented}>
         {acuityOptions.map((option) => {
           const selected = option === acuity;
 
@@ -414,32 +482,18 @@ function AcuitySelector({
               accessibilityState={{ selected }}
               key={option}
               onPress={() => onSelect(option)}
-              style={[
-                styles.acuityOption,
-                getAcuityOptionStyle(option),
-                selected ? styles.selectedAcuityOption : null,
+              style={({ pressed }) => [
+                styles.acuitySegmentOption,
+                selected ? getAcuitySegmentStyle(option) : null,
+                pressed ? styles.acuitySegmentPressed : null,
               ]}
             >
-              {selected ? (
-                <View style={styles.selectedAcuityMarker}>
-                  <CheckCircleIcon
-                    color={getAcuityMarkerColor(option)}
-                    size={14}
-                  />
-                  <Text
-                    style={[
-                      styles.selectedAcuityText,
-                      getAcuityOptionTextStyle(option),
-                    ]}
-                  >
-                    Selected
-                  </Text>
-                </View>
-              ) : null}
               <Text
                 style={[
                   styles.acuityOptionText,
-                  getAcuityOptionTextStyle(option),
+                  selected
+                    ? getAcuitySegmentTextStyle(option)
+                    : styles.unselectedAcuityText,
                 ]}
               >
                 {getAcuityLabel(option)}
@@ -454,6 +508,22 @@ function AcuitySelector({
 
 function getRoomKey(room: PatientRoomGroup) {
   return room.id;
+}
+
+function EmptyCensusMessage({ selectedFilter }: { selectedFilter: CensusFilter }) {
+  const message =
+    selectedFilter === "occupied"
+      ? "There are no occupied beds on this shift yet. Enter initials above to occupy a bed."
+      : selectedFilter === "empty"
+        ? "All beds on this floor are occupied."
+        : "No beds found.";
+
+  return (
+    <View style={styles.emptyCensus}>
+      <Text style={styles.emptyCensusTitle}>No beds match filter</Text>
+      <Text style={styles.emptyCensusText}>{message}</Text>
+    </View>
+  );
 }
 
 export default function PatientsAndAcuityScreen() {
@@ -631,6 +701,9 @@ export default function PatientsAndAcuityScreen() {
           totalBedCount={totalBedCount}
         />
       }
+      ListEmptyComponent={
+        <EmptyCensusMessage selectedFilter={selectedFilter} />
+      }
       onHeaderActionPress={() => router.push("/")}
       onPrimaryPress={handleContinue}
       primaryLabel="Review assignment"
@@ -646,9 +719,14 @@ const styles = StyleSheet.create({
     gap: spacing.cardGap,
   },
   bedRow: {
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
     gap: spacing.lg,
     marginTop: spacing.md,
-    paddingVertical: spacing.lg,
+    padding: spacing.lg,
+    ...shadows.sm,
   },
   bedHeader: {
     alignItems: "center",
@@ -673,51 +751,53 @@ const styles = StyleSheet.create({
   selectorLabel: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.md,
+    fontWeight: fontWeight.medium,
   },
-  acuityOptionRow: {
+  acuitySegmented: {
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderRadius: 12,
     flexDirection: "row",
-    gap: spacing.sm,
+    gap: 3,
+    overflow: "hidden",
+    padding: 3,
   },
-  acuityOption: {
+  acuitySegmentOption: {
     alignItems: "center",
     borderRadius: 8,
-    borderWidth: 1,
     flex: 1,
-    gap: 2,
     justifyContent: "center",
-    minHeight: 52,
+    minHeight: 40,
     paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
   },
-  selectedAcuityOption: {
-    borderColor: colors.neutral.textPrimary,
-    borderWidth: 2,
+  acuitySegmentPressed: {
+    opacity: 0.8,
   },
-  selectedAcuityMarker: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: spacing.xs,
-  },
-  selectedAcuityText: {
-    fontSize: textSize.xs,
-    fontWeight: "600",
-    textTransform: "uppercase",
+  unselectedAcuityText: {
+    color: colors.neutral.textSecondary,
+    fontWeight: fontWeight.medium,
   },
   acuityOptionText: {
     fontSize: textSize.md,
-    fontWeight: "500",
+    fontWeight: fontWeight.semibold,
   },
-  greenAcuityOption: {
+  greenSelectedSegment: {
     backgroundColor: colors.status.green50,
     borderColor: colors.status.greenBorder,
+    borderWidth: 0.5,
+    ...shadows.sm,
   },
-  yellowAcuityOption: {
+  yellowSelectedSegment: {
     backgroundColor: colors.status.amber50,
     borderColor: colors.status.yellow700,
+    borderWidth: 0.5,
+    ...shadows.sm,
   },
-  redAcuityOption: {
+  redSelectedSegment: {
     backgroundColor: colors.status.red50,
     borderColor: colors.status.red700,
+    borderWidth: 0.5,
+    ...shadows.sm,
   },
   greenAcuityOptionText: {
     color: colors.status.green800,
@@ -727,5 +807,52 @@ const styles = StyleSheet.create({
   },
   redAcuityOptionText: {
     color: colors.status.red800,
+  },
+  emptyCensus: {
+    alignItems: "center",
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.xl,
+    borderWidth: 0.5,
+    gap: spacing.xs,
+    padding: spacing.xl,
+    marginTop: spacing.md,
+    ...shadows.sm,
+  },
+  emptyCensusTitle: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.md,
+    fontWeight: fontWeight.bold,
+    textAlign: "center",
+  },
+  emptyCensusText: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    lineHeight: 18,
+    textAlign: "center",
+  },
+  carouselContainer: {
+    width: "100%",
+  },
+  carouselScrollView: {
+    width: "100%",
+  },
+  dotsRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 6,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xs,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.neutral.border,
+  },
+  activeDot: {
+    backgroundColor: colors.brand.burgundy,
+    width: 12,
   },
 });

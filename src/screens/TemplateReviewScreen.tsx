@@ -13,8 +13,15 @@ import {
 } from "../components/workflow";
 import { createLocalId } from "../helpers/localId";
 import { useLocalState } from "../store/LocalStateContext";
-import { colors, radius, spacing, textSize } from "../theme/tokens";
-import type { Bed, BedState, DoctorSide, FloorTemplate, Room, Shift } from "../types/models";
+import { colors, radius, spacing, textSize, fontWeight } from "../theme/tokens";
+import type {
+  Bed,
+  BedState,
+  DoctorSide,
+  FloorTemplate,
+  Room,
+  Shift,
+} from "../types/models";
 
 type ReviewRoomRowProps = {
   beds: Bed[];
@@ -97,7 +104,11 @@ function getRoomBeds(room: Room, beds: Bed[]) {
     .sort((firstBed, secondBed) => firstBed.bedNumber - secondBed.bedNumber);
 }
 
-function getCountLabel(count: number, singularLabel: string, pluralLabel: string) {
+function getCountLabel(
+  count: number,
+  singularLabel: string,
+  pluralLabel: string,
+) {
   return count === 1 ? singularLabel : pluralLabel;
 }
 
@@ -132,7 +143,9 @@ function isCompletedFloorTemplate(floorTemplate?: FloorTemplate) {
   );
 }
 
-function getFloorTemplateFromActiveShift(activeShift?: Shift): FloorTemplate | undefined {
+function getFloorTemplateFromActiveShift(
+  activeShift?: Shift,
+): FloorTemplate | undefined {
   if (!activeShift) {
     return undefined;
   }
@@ -164,7 +177,10 @@ function getSyncedBedStates(shift: Shift, floorTemplate: FloorTemplate) {
   return [...bedStatesForBedsStillInTemplate, ...bedStatesForNewTemplateBeds];
 }
 
-function getShiftSyncedWithTemplate(shift: Shift, floorTemplate: FloorTemplate) {
+function getShiftSyncedWithTemplate(
+  shift: Shift,
+  floorTemplate: FloorTemplate,
+) {
   const hasCurrentAdmittingSide = floorTemplate.doctorSides.some(
     (doctorSide) => doctorSide.id === shift.admittingDoctorSideId,
   );
@@ -189,8 +205,7 @@ export default function TemplateReviewScreen() {
   const activeShiftTemplate = getFloorTemplateFromActiveShift(activeShift);
   const reviewTemplate = draftTemplate ?? activeShiftTemplate;
   const isReviewingActiveShiftTemplate =
-    Boolean(reviewTemplate) &&
-    Boolean(localState.isEditingActiveShiftTemplate);
+    Boolean(reviewTemplate) && Boolean(localState.isEditingActiveShiftTemplate);
   const screenTitle = reviewTemplate?.name ?? "Review floor";
   const roomCount = reviewTemplate?.rooms.length ?? 0;
   const bedCount = reviewTemplate?.beds.length ?? 0;
@@ -275,14 +290,13 @@ export default function TemplateReviewScreen() {
             ? getShiftSyncedWithTemplate(
                 currentState.activeShift,
                 completedDraft,
-            )
+              )
             : currentState.activeShift,
         draftFloorTemplate: undefined,
         isEditingActiveShiftTemplate: false,
         floorTemplates: [
           ...currentState.floorTemplates.filter(
-            (floorTemplate) =>
-              floorTemplate.id !== completedDraft.id,
+            (floorTemplate) => floorTemplate.id !== completedDraft.id,
           ),
           completedDraft,
         ],
@@ -299,11 +313,13 @@ export default function TemplateReviewScreen() {
       headerActionLabel="Floors"
       onHeaderActionPress={() => router.push("/")}
       onPrimaryPress={handleSaveTemplate}
-      primaryLabel={isReviewingActiveShiftTemplate ? "Back to shift" : "Save template"}
+      primaryLabel={
+        isReviewingActiveShiftTemplate ? "Back to shift" : "Save template"
+      }
       subtitle="Step 4 of 4"
       title={screenTitle}
     >
-      <WorkflowSection title="Template summary">
+      <WorkflowSection title="✓ Template summary">
         <SummaryTileGrid>
           <SummaryTile
             value={roomCount.toString()}
@@ -338,6 +354,7 @@ export default function TemplateReviewScreen() {
 
 const styles = StyleSheet.create({
   roomRow: {
+    backgroundColor: colors.neutral.backgroundPrimary,
     borderColor: colors.neutral.borderTertiary,
     borderRadius: radius.md,
     borderWidth: 0.5,
@@ -353,11 +370,12 @@ const styles = StyleSheet.create({
   roomLabel: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.md,
-    fontWeight: "600",
+    fontWeight: fontWeight.bold,
   },
   roomBedCount: {
     color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
   },
   emptySideText: {
     color: colors.neutral.textSecondary,
@@ -370,12 +388,13 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   sideSummaryText: {
-    backgroundColor: colors.neutral.surface,
+    backgroundColor: colors.neutral.backgroundPrimary,
     borderColor: colors.neutral.borderTertiary,
     borderRadius: radius.pill,
     borderWidth: 0.5,
     color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
     overflow: "hidden",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,

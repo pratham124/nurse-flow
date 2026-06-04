@@ -16,7 +16,7 @@ import {
 import { useLocalState } from "../store/LocalStateContext";
 import { getShiftCensus, isOccupiedBedState } from "../utils/census";
 import { assignmentFlow } from "../utils/workflowFlows";
-import { colors, radius, spacing, textSize } from "../theme/tokens";
+import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
 import type {
   Acuity,
   ExperienceLevel,
@@ -29,7 +29,7 @@ const boardFilters = [
   "All",
   "Flags",
   "Unassigned",
-  "Red",
+  "High acuity",
   "RN coverage",
 ] as const;
 
@@ -90,14 +90,13 @@ type BoardSideSectionProps = {
 type BoardBedProps = BoardBedViewModel;
 
 type FloorBoardListHeaderProps = {
-  occupiedBedCount: number;
-  totalBedCount: number;
   admittingSideName: string;
   flagCount: number;
   nurseWorkloads: NurseWorkloadViewModel[];
   onFilterPress: (filter: BoardFilter) => void;
+  occupiedBedCount: number;
   selectedFilter: BoardFilter;
-  status: string;
+  totalBedCount: number;
 };
 
 function FloorBoardListHeader({
@@ -107,7 +106,6 @@ function FloorBoardListHeader({
   onFilterPress,
   occupiedBedCount,
   selectedFilter,
-  status,
   totalBedCount,
 }: FloorBoardListHeaderProps) {
   return (
@@ -119,8 +117,10 @@ function FloorBoardListHeader({
             label="Occupied"
           />
           <SummaryTile value={admittingSideName} label="Admitting" />
-          <SummaryTile value={status} label="Status" />
-          <SummaryTile value={flagCount.toString()} label="Flags" />
+          <SummaryTile
+            value={flagCount.toString()}
+            label={flagCount === 1 ? "Flag" : "Flags"}
+          />
         </SummaryTileGrid>
       </WorkflowSection>
 
@@ -235,7 +235,14 @@ function getAcuityLabel(acuity?: Acuity) {
     return "No acuity";
   }
 
-  return acuity.charAt(0).toUpperCase() + acuity.slice(1);
+  switch (acuity) {
+    case "green":
+      return "Low";
+    case "yellow":
+      return "Medium";
+    case "red":
+      return "High";
+  }
 }
 
 function getRoomCoverageNurseIds(activeShift: Shift, roomId: string) {
@@ -492,6 +499,26 @@ function getNurseWorkloads(activeShift?: Shift): NurseWorkloadViewModel[] {
   });
 }
 
+function EmptyBoardMessage({ selectedFilter }: { selectedFilter: BoardFilter }) {
+  const message =
+    selectedFilter === "Flags"
+      ? "There are no active flags on this shift board."
+      : selectedFilter === "Unassigned"
+        ? "All occupied beds on this floor have been assigned to nurses."
+        : selectedFilter === "High acuity"
+          ? "There are no high acuity (red) patients on this shift."
+          : selectedFilter === "RN coverage"
+            ? "There are no rooms requiring RN coverage on this shift."
+            : "No beds found.";
+
+  return (
+    <View style={styles.emptyBoard}>
+      <Text style={styles.emptyBoardTitle}>No matching items</Text>
+      <Text style={styles.emptyBoardText}>{message}</Text>
+    </View>
+  );
+}
+
 export default function FloorBoardScreen() {
   const { localState } = useLocalState();
   const [selectedFilter, setSelectedFilter] = useState<BoardFilter>("All");
@@ -524,7 +551,6 @@ export default function FloorBoardScreen() {
           onFilterPress={setSelectedFilter}
           occupiedBedCount={occupiedBedCount}
           selectedFilter={selectedFilter}
-          status={getBoardStatus(activeShift)}
           totalBedCount={totalBedCount}
         />
       }
@@ -532,6 +558,7 @@ export default function FloorBoardScreen() {
       onPrimaryPress={() => router.push("/flags")}
       primaryLabel="View flags"
       renderItem={renderFloorBoardItem}
+      ListEmptyComponent={<EmptyBoardMessage selectedFilter={selectedFilter} />}
       subtitle=""
       title={activeShift?.floorName ?? "Floor board"}
     />
@@ -544,14 +571,6 @@ function renderFloorBoardItem({ item }: { item: FloorBoardListItem }) {
 
 function getFloorBoardItemKey(item: FloorBoardListItem) {
   return `side-${item.side.id}`;
-}
-
-function getBoardStatus(activeShift?: Shift) {
-  if (!activeShift) {
-    return "No shift";
-  }
-
-  return activeShift.status === "assigned" ? "Assigned" : "No assignment";
 }
 
 function BoardSideSection({ side }: BoardSideSectionProps) {
@@ -628,15 +647,15 @@ function BoardBed({
 }
 
 function getAcuityColor(acuity: string) {
-  if (acuity === "Red") {
+  if (acuity === "High") {
     return colors.status.red700;
   }
 
-  if (acuity === "Yellow") {
+  if (acuity === "Medium") {
     return colors.status.yellow700;
   }
 
-  if (acuity === "Green") {
+  if (acuity === "Low") {
     return colors.status.green700;
   }
 
@@ -667,12 +686,13 @@ const styles = StyleSheet.create({
   nurseWorkloadRow: {
     backgroundColor: colors.neutral.surface,
     borderColor: colors.neutral.borderTertiary,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     borderWidth: 0.5,
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    width: 196,
+    width: 210,
+    ...shadows.sm,
   },
   nurseWorkloadTopRow: {
     alignItems: "flex-start",
@@ -687,21 +707,28 @@ const styles = StyleSheet.create({
   nurseWorkloadName: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.md,
-    fontWeight: "500",
+    fontWeight: fontWeight.bold,
   },
   nurseWorkloadMeta: {
     color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
     lineHeight: 18,
+    fontWeight: fontWeight.semibold,
   },
   nurseWorkloadLoad: {
-    color: colors.neutral.textPrimary,
+    color: colors.brand.burgundy,
     fontSize: textSize.md,
-    fontWeight: "600",
+    fontWeight: fontWeight.bold,
   },
   roomSection: {
-    gap: spacing.lg,
-    paddingVertical: spacing.lg,
+    backgroundColor: colors.neutral.backgroundPrimary,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.xl,
+    borderWidth: 0.5,
+    gap: spacing.md,
+    padding: spacing.md,
+    marginTop: spacing.md,
+    ...shadows.sm,
   },
   roomHeader: {
     alignItems: "flex-start",
@@ -712,11 +739,12 @@ const styles = StyleSheet.create({
   roomTitle: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.md,
-    fontWeight: "500",
+    fontWeight: fontWeight.bold,
   },
   roomMeta: {
     color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
     marginTop: spacing.xs,
   },
   boardBed: {
@@ -731,6 +759,7 @@ const styles = StyleSheet.create({
     minHeight: 72,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
+    ...shadows.sm,
   },
   emptyBoardBed: {
     opacity: 0.72,
@@ -738,6 +767,8 @@ const styles = StyleSheet.create({
   unassignedBoardBed: {
     backgroundColor: colors.status.red50,
     borderColor: colors.status.red700,
+    borderWidth: 1.5,
+    ...shadows.sm,
   },
   bedIdentity: {
     alignItems: "center",
@@ -746,9 +777,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   acuityRail: {
-    borderRadius: 2,
+    borderRadius: 3,
     height: 44,
-    width: 4,
+    width: 5,
   },
   bedCopy: {
     flex: 1,
@@ -762,6 +793,7 @@ const styles = StyleSheet.create({
   patientText: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
   },
   emptyPatientText: {
     color: colors.neutral.textSecondary,
@@ -769,6 +801,29 @@ const styles = StyleSheet.create({
   assignedText: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.sm,
-    fontWeight: "500",
+    fontWeight: fontWeight.bold,
+  },
+  emptyBoard: {
+    alignItems: "center",
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.xl,
+    borderWidth: 0.5,
+    gap: spacing.xs,
+    padding: spacing.xl,
+    marginTop: spacing.md,
+    ...shadows.sm,
+  },
+  emptyBoardTitle: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.md,
+    fontWeight: fontWeight.bold,
+    textAlign: "center",
+  },
+  emptyBoardText: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    lineHeight: 18,
+    textAlign: "center",
   },
 });
