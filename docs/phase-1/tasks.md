@@ -590,7 +590,7 @@ Validation check:
 
 - A completed assignment can be understood from the board on a phone-sized screen.
 
-### Task 8.2: US15 Nurse Workload Summary
+### ✅ Task 8.2: US15 Nurse Workload Summary
 
 Build:
 

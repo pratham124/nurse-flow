@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { router } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { FlatList, StyleSheet, Text, View } from "react-native";
 
 import {
   BedChip,
@@ -16,7 +16,7 @@ import { useLocalState } from "../store/LocalStateContext";
 import { getShiftCensus, isOccupiedBedState } from "../utils/census";
 import { assignmentFlow } from "../utils/workflowFlows";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
-import type { Acuity, Shift } from "../types/models";
+import type { Acuity, ExperienceLevel, Shift } from "../types/models";
 
 const boardFilters = [
   "All",
@@ -57,6 +57,17 @@ type BoardSide = {
 };
 type FloorBoardListItem = { type: "side"; side: BoardSide };
 
+type NurseWorkloadViewModel = {
+  id: string;
+  name: string;
+  licenseType: string;
+  experience: string;
+  team: string;
+  roomCoverage: string;
+  currentLoad: number;
+  maxLoad: number;
+};
+
 type BoardSideSectionProps = {
   side: BoardSide;
 };
@@ -68,6 +79,7 @@ type FloorBoardListHeaderProps = {
   totalBedCount: number;
   admittingSideName: string;
   flagCount: number;
+  nurseWorkloads: NurseWorkloadViewModel[];
   onFilterPress: (filter: BoardFilter) => void;
   selectedFilter: BoardFilter;
   status: string;
@@ -76,6 +88,7 @@ type FloorBoardListHeaderProps = {
 function FloorBoardListHeader({
   admittingSideName,
   flagCount,
+  nurseWorkloads,
   onFilterPress,
   occupiedBedCount,
   selectedFilter,
@@ -96,6 +109,8 @@ function FloorBoardListHeader({
         </SummaryTileGrid>
       </WorkflowSection>
 
+      <NurseWorkloadSection nurseWorkloads={nurseWorkloads} />
+
       <WorkflowSection title="Filters">
         <FilterChipRow>
           {boardFilters.map((filter) => (
@@ -108,6 +123,70 @@ function FloorBoardListHeader({
           ))}
         </FilterChipRow>
       </WorkflowSection>
+    </View>
+  );
+}
+
+type NurseWorkloadSectionProps = {
+  nurseWorkloads: NurseWorkloadViewModel[];
+};
+
+type NurseWorkloadRowProps = {
+  nurseWorkload: NurseWorkloadViewModel;
+};
+
+function NurseWorkloadSection({
+  nurseWorkloads,
+}: NurseWorkloadSectionProps) {
+  return (
+    <WorkflowSection title="Nurse workload">
+      {nurseWorkloads.length ? (
+        <FlatList
+          contentContainerStyle={styles.nurseWorkloadListContent}
+          data={nurseWorkloads}
+          horizontal
+          keyExtractor={getNurseWorkloadKey}
+          renderItem={renderNurseWorkloadItem}
+          showsHorizontalScrollIndicator={false}
+        />
+      ) : (
+        <Text style={styles.emptyWorkloadText}>No nurses added yet.</Text>
+      )}
+    </WorkflowSection>
+  );
+}
+
+function renderNurseWorkloadItem({
+  item,
+}: {
+  item: NurseWorkloadViewModel;
+}) {
+  return <NurseWorkloadRow nurseWorkload={item} />;
+}
+
+function getNurseWorkloadKey(nurseWorkload: NurseWorkloadViewModel) {
+  return nurseWorkload.id;
+}
+
+function NurseWorkloadRow({ nurseWorkload }: NurseWorkloadRowProps) {
+  return (
+    <View style={styles.nurseWorkloadRow}>
+      <View style={styles.nurseWorkloadTopRow}>
+        <View style={styles.nurseWorkloadNameGroup}>
+          <Text style={styles.nurseWorkloadName}>{nurseWorkload.name}</Text>
+          <Text style={styles.nurseWorkloadMeta}>
+            {nurseWorkload.licenseType} - {nurseWorkload.experience}
+          </Text>
+        </View>
+        <Text style={styles.nurseWorkloadLoad}>
+          {nurseWorkload.currentLoad}/{nurseWorkload.maxLoad}
+        </Text>
+      </View>
+
+      <Text style={styles.nurseWorkloadMeta}>Team: {nurseWorkload.team}</Text>
+      <Text style={styles.nurseWorkloadMeta}>
+        Rooms: {nurseWorkload.roomCoverage}
+      </Text>
     </View>
   );
 }
@@ -154,6 +233,18 @@ function roomHasRnCoverage(activeShift: Shift, nurseIds: string[]) {
       activeShift.nurses.find((nurse) => nurse.id === nurseId)?.licenseType ===
       "RN",
   );
+}
+
+function getExperienceLabel(experienceLevel: ExperienceLevel) {
+  if (experienceLevel === "new_grad") {
+    return "New grad";
+  }
+
+  if (experienceLevel === "mid") {
+    return "Mid";
+  }
+
+  return "Experienced";
 }
 
 function getBedAssignmentNurseName(activeShift: Shift, bedId: string) {
@@ -282,6 +373,44 @@ function getFilteredBoardSides(
     .filter((side) => side.rooms.length > 0);
 }
 
+function getNurseWorkloads(activeShift?: Shift): NurseWorkloadViewModel[] {
+  if (!activeShift) {
+    return [];
+  }
+
+  return activeShift.nurses.map((nurse) => {
+    const team = activeShift.assignmentResult?.generatedTeams.find(
+      (generatedTeam) => generatedTeam.nurseIds.includes(nurse.id),
+    );
+    const coveredRoomLabels =
+      activeShift.assignmentResult?.roomCoverage
+        .filter((coverage) => coverage.nurseIds.includes(nurse.id))
+        .map(
+          (coverage) =>
+            activeShift.rooms.find((room) => room.id === coverage.roomId)
+              ?.label,
+        )
+        .filter(Boolean) ?? [];
+    const currentLoad =
+      activeShift.assignmentResult?.bedAssignments.filter(
+        (assignment) => assignment.nurseId === nurse.id,
+      ).length ?? 0;
+
+    return {
+      id: nurse.id,
+      name: nurse.name,
+      licenseType: nurse.licenseType,
+      experience: getExperienceLabel(nurse.experienceLevel),
+      team: team?.label ?? "No team yet",
+      roomCoverage: coveredRoomLabels.length
+        ? coveredRoomLabels.join(", ")
+        : "No rooms",
+      currentLoad,
+      maxLoad: nurse.maxPatientLoad,
+    };
+  });
+}
+
 export default function FloorBoardScreen() {
   const { localState } = useLocalState();
   const [selectedFilter, setSelectedFilter] = useState<BoardFilter>("All");
@@ -310,6 +439,7 @@ export default function FloorBoardScreen() {
         <FloorBoardListHeader
           admittingSideName={admittingDoctorSide?.name ?? "-"}
           flagCount={activeShift?.flags.length ?? 0}
+          nurseWorkloads={getNurseWorkloads(activeShift)}
           onFilterPress={setSelectedFilter}
           occupiedBedCount={occupiedBedCount}
           selectedFilter={selectedFilter}
@@ -426,6 +556,50 @@ function getAcuityColor(acuity: string) {
 const styles = StyleSheet.create({
   headerContent: {
     gap: spacing.cardGap,
+  },
+  emptyWorkloadText: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    lineHeight: 18,
+  },
+  nurseWorkloadListContent: {
+    gap: spacing.sm,
+    paddingRight: spacing.lg,
+  },
+  nurseWorkloadRow: {
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.md,
+    borderWidth: 0.5,
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    width: 196,
+  },
+  nurseWorkloadTopRow: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: spacing.md,
+    justifyContent: "space-between",
+  },
+  nurseWorkloadNameGroup: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  nurseWorkloadName: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.md,
+    fontWeight: "500",
+  },
+  nurseWorkloadMeta: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    lineHeight: 18,
+  },
+  nurseWorkloadLoad: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.md,
+    fontWeight: "600",
   },
   roomSection: {
     gap: spacing.lg,
