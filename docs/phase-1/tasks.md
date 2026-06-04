@@ -601,18 +601,7 @@ Validation check:
 - A nurse with no assigned beds still appears.
 - Current load updates from bed assignments.
 
-### Task 8.3: US15 Admitting Side Highlight
-
-Build:
-
-- Highlight the admitting doctor side on the board.
-- Show which nurses are affected by admitting-side load limits when coverage includes admitting-side rooms.
-
-Validation check:
-
-- The admitting side is visually clear without hiding the non-admitting side.
-
-### Task 8.4: US16 Inline Board Flags
+### Task 8.3: US16 Inline Board Flags
 
 Build:
 
@@ -623,7 +612,7 @@ Validation check:
 
 - Unassigned beds and overloaded nurses are visible without opening another screen.
 
-### Task 8.5: US16 Flags Screen
+### Task 8.4: US16 Flags Screen
 
 Build:
 
@@ -635,7 +624,7 @@ Validation check:
 
 - A generated critical RN-required flag appears in Flags and can be traced back to the affected bed.
 
-### Task 8.6: US17 Edit Shift Inputs After Assignment
+### Task 8.5: US17 Edit Shift Inputs After Assignment
 
 Build:
 
@@ -646,7 +635,7 @@ Validation check:
 
 - Changing a nurse from RN to LPN after assignment marks the board as needing re-run.
 
-### Task 8.7: US17 Re-Run Assignment
+### Task 8.6: US17 Re-Run Assignment
 
 Build:
 
