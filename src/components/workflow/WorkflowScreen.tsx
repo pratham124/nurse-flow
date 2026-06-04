@@ -46,7 +46,7 @@ export function WorkflowScreen({
   const activeStepIndex = flow.findIndex(
     (flowStep) => flowStep.step === activeStep,
   );
-  const showSubtitle = !/^Step \d+ of \d+$/.test(subtitle);
+  const showSubtitle = Boolean(subtitle) && !/^Step \d+ of \d+$/.test(subtitle);
 
   return (
     <SafeAreaView style={styles.screen}>

@@ -578,7 +578,7 @@ Validation check:
 - Red bed with no RN creates a critical flag.
 - Too many occupied beds for total nurse capacity creates a floor-level warning.
 
-### Task 8.1: US15 Basic Floor Board
+### ✅ Task 8.1: US15 Basic Floor Board
 
 Build:
 

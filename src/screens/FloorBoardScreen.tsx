@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -12,60 +13,44 @@ import {
   WorkflowSection,
 } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
-import { getShiftCensus } from "../utils/census";
+import { getShiftCensus, isOccupiedBedState } from "../utils/census";
 import { assignmentFlow } from "../utils/workflowFlows";
 import { colors, radius, spacing, textSize } from "../theme/tokens";
 import type { Acuity, Shift } from "../types/models";
 
-const boardSides = [
-  {
-    name: "AB Side",
-    admitting: true,
-    rooms: [
-      {
-        label: "101",
-        coverage: "Taylor, Sam",
-        beds: [
-          {
-            label: "101-1",
-            patient: "J.S.",
-            acuity: "Yellow",
-            nurse: "Taylor",
-          },
-          { label: "101-2", patient: "Empty", acuity: "Empty", nurse: "Open" },
-        ],
-      },
-    ],
-  },
-  {
-    name: "SK Side",
-    admitting: false,
-    rooms: [
-      {
-        label: "102",
-        coverage: "Taylor",
-        beds: [
-          { label: "102-1", patient: "M.R.", acuity: "Red", nurse: "Taylor" },
-        ],
-      },
-    ],
-  },
-];
+const boardFilters = [
+  "All",
+  "Flags",
+  "Unassigned",
+  "Red",
+  "RN coverage",
+] as const;
 
-const boardFilters = ["All", "Flags", "Unassigned", "Red", "RN coverage"];
+type BoardFilter = (typeof boardFilters)[number];
 
-type BoardBedPreview = {
+type BoardBedState = "assigned" | "empty" | "unassigned";
+
+type BoardBedViewModel = {
+  id: string;
   label: string;
   patient: string;
   acuity: string;
-  nurse: string;
+  acuityValue?: Acuity;
+  hasFlag: boolean;
+  state: BoardBedState;
+  nurse?: string;
 };
 type BoardRoom = {
+  id: string;
   label: string;
   coverage: string;
-  beds: BoardBedPreview[];
+  beds: BoardBedViewModel[];
+  hasFlag: boolean;
+  hasRnCoverage: boolean;
+  roomHasFlag: boolean;
 };
 type BoardSide = {
+  id: string;
   name: string;
   admitting: boolean;
   rooms: BoardRoom[];
@@ -76,20 +61,24 @@ type BoardSideSectionProps = {
   side: BoardSide;
 };
 
-type BoardBedProps = BoardBedPreview;
+type BoardBedProps = BoardBedViewModel;
 
 type FloorBoardListHeaderProps = {
   occupiedBedCount: number;
   totalBedCount: number;
   admittingSideName: string;
   flagCount: number;
+  onFilterPress: (filter: BoardFilter) => void;
+  selectedFilter: BoardFilter;
   status: string;
 };
 
 function FloorBoardListHeader({
   admittingSideName,
   flagCount,
+  onFilterPress,
   occupiedBedCount,
+  selectedFilter,
   status,
   totalBedCount,
 }: FloorBoardListHeaderProps) {
@@ -109,8 +98,13 @@ function FloorBoardListHeader({
 
       <WorkflowSection title="Filters">
         <FilterChipRow>
-          {boardFilters.map((filter, index) => (
-            <FilterChip key={filter} label={filter} selected={index === 0} />
+          {boardFilters.map((filter) => (
+            <FilterChip
+              key={filter}
+              label={filter}
+              onPress={() => onFilterPress(filter)}
+              selected={filter === selectedFilter}
+            />
           ))}
         </FilterChipRow>
       </WorkflowSection>
@@ -120,25 +114,46 @@ function FloorBoardListHeader({
 
 function getAcuityLabel(acuity?: Acuity) {
   if (!acuity) {
-    return "Empty";
+    return "No acuity";
   }
 
   return acuity.charAt(0).toUpperCase() + acuity.slice(1);
 }
 
-function getRoomCoverageLabel(activeShift: Shift, roomId: string) {
-  const roomCoverage = activeShift.assignmentResult?.roomCoverage.find(
-    (coverage) => coverage.roomId === roomId,
+function getRoomCoverageNurseIds(activeShift: Shift, roomId: string) {
+  return (
+    activeShift.assignmentResult?.roomCoverage.find(
+      (coverage) => coverage.roomId === roomId,
+    )?.nurseIds ?? []
   );
+}
+
+function getRoomCoverageLabel(
+  activeShift: Shift,
+  nurseIds: string[],
+  occupiedBedCount: number,
+) {
   const nurseNames =
-    roomCoverage?.nurseIds
+    nurseIds
       .map(
         (nurseId) =>
           activeShift.nurses.find((nurse) => nurse.id === nurseId)?.name,
       )
       .filter(Boolean) ?? [];
 
-  return nurseNames.length ? nurseNames.join(", ") : "No coverage yet";
+  if (nurseNames.length) {
+    return nurseNames.join(", ");
+  }
+
+  return occupiedBedCount > 0 ? "Uncovered" : "No occupied beds";
+}
+
+function roomHasRnCoverage(activeShift: Shift, nurseIds: string[]) {
+  return nurseIds.some(
+    (nurseId) =>
+      activeShift.nurses.find((nurse) => nurse.id === nurseId)?.licenseType ===
+      "RN",
+  );
 }
 
 function getBedAssignmentNurseName(activeShift: Shift, bedId: string) {
@@ -146,54 +161,139 @@ function getBedAssignmentNurseName(activeShift: Shift, bedId: string) {
     (assignment) => assignment.bedId === bedId,
   );
 
-  return (
-    activeShift.nurses.find((nurse) => nurse.id === bedAssignment?.nurseId)
-      ?.name ?? "Open"
+  return activeShift.nurses.find((nurse) => nurse.id === bedAssignment?.nurseId)
+    ?.name;
+}
+
+function bedHasFlag(activeShift: Shift, bedId: string) {
+  return activeShift.flags.some((flag) => flag.bedId === bedId);
+}
+
+function roomHasDirectFlag(activeShift: Shift, roomId: string) {
+  return activeShift.flags.some(
+    (flag) => flag.roomId === roomId && !flag.bedId,
   );
 }
 
 function getBoardSides(activeShift?: Shift): BoardSide[] {
-  if (!activeShift?.assignmentResult) {
-    return boardSides;
+  if (!activeShift) {
+    return [];
   }
 
   return activeShift.doctorSides.map((doctorSide) => ({
+    id: doctorSide.id,
     name: doctorSide.name,
     admitting: doctorSide.id === activeShift.admittingDoctorSideId,
     rooms: activeShift.rooms
       .filter((room) => room.doctorSideId === doctorSide.id)
-      .map((room) => ({
-        label: room.label,
-        coverage: getRoomCoverageLabel(activeShift, room.id),
-        beds: activeShift.beds
+      .map((room) => {
+        const coverageNurseIds = getRoomCoverageNurseIds(
+          activeShift,
+          room.id,
+        );
+        const roomHasFlag = roomHasDirectFlag(activeShift, room.id);
+        const beds = activeShift.beds
           .filter((bed) => bed.roomId === room.id)
-          .map((bed) => {
+          .map((bed): BoardBedViewModel => {
             const bedState = activeShift.bedStates.find(
               (shiftBedState) => shiftBedState.bedId === bed.id,
             );
-            const patientInitials = bedState?.patient?.initials.trim();
+            const isOccupied = isOccupiedBedState(bedState);
+            const nurseName = getBedAssignmentNurseName(activeShift, bed.id);
+
+            if (!isOccupied) {
+              return {
+                id: bed.id,
+                label: bed.label,
+                patient: "Empty",
+                acuity: "Empty",
+                hasFlag: bedHasFlag(activeShift, bed.id),
+                state: "empty",
+              };
+            }
 
             return {
+              id: bed.id,
               label: bed.label,
-              patient: patientInitials || "Empty",
-              acuity: patientInitials
-                ? getAcuityLabel(bedState?.acuity)
-                : "Empty",
-              nurse: getBedAssignmentNurseName(activeShift, bed.id),
+              patient: bedState?.patient?.initials.trim() ?? "Occupied",
+              acuity: getAcuityLabel(bedState?.acuity),
+              acuityValue: bedState?.acuity,
+              hasFlag: bedHasFlag(activeShift, bed.id),
+              nurse: nurseName,
+              state: nurseName ? "assigned" : "unassigned",
             };
-          }),
-      })),
+          });
+        const occupiedBedCount = beds.filter(
+          (bed) => bed.state !== "empty",
+        ).length;
+
+        return {
+          id: room.id,
+          label: room.label,
+          coverage: getRoomCoverageLabel(
+            activeShift,
+            coverageNurseIds,
+            occupiedBedCount,
+          ),
+          beds,
+          hasFlag: roomHasFlag || beds.some((bed) => bed.hasFlag),
+          hasRnCoverage: roomHasRnCoverage(activeShift, coverageNurseIds),
+          roomHasFlag,
+        };
+      }),
   }));
+}
+
+function getFilteredBoardSides(
+  boardSides: BoardSide[],
+  selectedFilter: BoardFilter,
+) {
+  if (selectedFilter === "All") {
+    return boardSides;
+  }
+
+  return boardSides
+    .map((side) => ({
+      ...side,
+      rooms: side.rooms.flatMap((room) => {
+        if (selectedFilter === "RN coverage") {
+          return room.hasRnCoverage ? [room] : [];
+        }
+
+        const filteredBeds = room.beds.filter((bed) => {
+          if (selectedFilter === "Flags") {
+            return bed.hasFlag;
+          }
+
+          if (selectedFilter === "Unassigned") {
+            return bed.state === "unassigned";
+          }
+
+          return bed.acuityValue === "red";
+        });
+
+        if (selectedFilter === "Flags" && room.roomHasFlag) {
+          return [{ ...room, beds: room.beds }];
+        }
+
+        return filteredBeds.length ? [{ ...room, beds: filteredBeds }] : [];
+      }),
+    }))
+    .filter((side) => side.rooms.length > 0);
 }
 
 export default function FloorBoardScreen() {
   const { localState } = useLocalState();
+  const [selectedFilter, setSelectedFilter] = useState<BoardFilter>("All");
   const activeShift = localState.activeShift;
   const { occupiedBedCount, totalBedCount } = getShiftCensus(activeShift);
   const admittingDoctorSide = activeShift?.doctorSides.find(
     (doctorSide) => doctorSide.id === activeShift.admittingDoctorSideId,
   );
-  const activeBoardSides = getBoardSides(activeShift);
+  const activeBoardSides = getFilteredBoardSides(
+    getBoardSides(activeShift),
+    selectedFilter,
+  );
   const boardListItems: FloorBoardListItem[] = activeBoardSides.map((side) => ({
     type: "side",
     side,
@@ -208,10 +308,12 @@ export default function FloorBoardScreen() {
       keyExtractor={getFloorBoardItemKey}
       listHeader={
         <FloorBoardListHeader
-          admittingSideName={admittingDoctorSide?.name ?? "AB"}
-          flagCount={activeShift?.flags.length ?? 2}
+          admittingSideName={admittingDoctorSide?.name ?? "-"}
+          flagCount={activeShift?.flags.length ?? 0}
+          onFilterPress={setSelectedFilter}
           occupiedBedCount={occupiedBedCount}
-          status={activeShift?.status === "assigned" ? "Assigned" : "Preview"}
+          selectedFilter={selectedFilter}
+          status={getBoardStatus(activeShift)}
           totalBedCount={totalBedCount}
         />
       }
@@ -219,7 +321,7 @@ export default function FloorBoardScreen() {
       onPrimaryPress={() => router.push("/flags")}
       primaryLabel="View flags"
       renderItem={renderFloorBoardItem}
-      subtitle="Assigned floor board"
+      subtitle=""
       title={activeShift?.floorName ?? "Floor board"}
     />
   );
@@ -230,7 +332,15 @@ function renderFloorBoardItem({ item }: { item: FloorBoardListItem }) {
 }
 
 function getFloorBoardItemKey(item: FloorBoardListItem) {
-  return `side-${item.side.name}`;
+  return `side-${item.side.id}`;
+}
+
+function getBoardStatus(activeShift?: Shift) {
+  if (!activeShift) {
+    return "No shift";
+  }
+
+  return activeShift.status === "assigned" ? "Assigned" : "No assignment";
 }
 
 function BoardSideSection({ side }: BoardSideSectionProps) {
@@ -240,7 +350,7 @@ function BoardSideSection({ side }: BoardSideSectionProps) {
       title={side.name}
     >
       {side.rooms.map((room) => (
-        <View key={room.label} style={styles.roomSection}>
+        <View key={room.id} style={styles.roomSection}>
           <View style={styles.roomHeader}>
             <View>
               <Text style={styles.roomTitle}>Room {room.label}</Text>
@@ -249,7 +359,7 @@ function BoardSideSection({ side }: BoardSideSectionProps) {
           </View>
 
           {room.beds.map((bed) => (
-            <BoardBed key={bed.label} {...bed} />
+            <BoardBed key={bed.id} {...bed} />
           ))}
         </View>
       ))}
@@ -257,20 +367,24 @@ function BoardSideSection({ side }: BoardSideSectionProps) {
   );
 }
 
-function BoardBed({ label, patient, acuity, nurse }: BoardBedProps) {
-  const isEmpty = patient === "Empty";
+function BoardBed({ label, patient, acuity, nurse, state }: BoardBedProps) {
+  const isEmpty = state === "empty";
+  const isUnassigned = state === "unassigned";
   const acuityColor = getAcuityColor(acuity);
 
   return (
-    <View style={[styles.boardBed, isEmpty ? styles.emptyBoardBed : null]}>
+    <View
+      style={[
+        styles.boardBed,
+        isEmpty ? styles.emptyBoardBed : null,
+        isUnassigned ? styles.unassignedBoardBed : null,
+      ]}
+    >
       <View style={styles.bedIdentity}>
         <View style={[styles.acuityRail, { backgroundColor: acuityColor }]} />
         <View style={styles.bedCopy}>
           <View style={styles.bedTopLine}>
             <BedChip label={label} />
-            {acuity !== "Empty" ? (
-              <Text style={styles.acuityText}>{acuity}</Text>
-            ) : null}
           </View>
           <Text
             style={[
@@ -282,8 +396,10 @@ function BoardBed({ label, patient, acuity, nurse }: BoardBedProps) {
           </Text>
         </View>
       </View>
-      {isEmpty || nurse === "Open" ? (
-        <StatusPill label="Not assigned" tone="empty" />
+      {isEmpty ? (
+        <StatusPill label="Empty" tone="empty" />
+      ) : isUnassigned ? (
+        <StatusPill label="Unassigned" tone="red" />
       ) : (
         <Text style={styles.assignedText}>{nurse}</Text>
       )}
@@ -347,6 +463,10 @@ const styles = StyleSheet.create({
   emptyBoardBed: {
     opacity: 0.72,
   },
+  unassignedBoardBed: {
+    backgroundColor: colors.status.red50,
+    borderColor: colors.status.red700,
+  },
   bedIdentity: {
     alignItems: "center",
     flexDirection: "row",
@@ -366,10 +486,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     gap: spacing.sm,
-  },
-  acuityText: {
-    color: colors.neutral.textSecondary,
-    fontSize: textSize.xs,
   },
   patientText: {
     color: colors.neutral.textPrimary,
