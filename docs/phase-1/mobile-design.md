@@ -163,7 +163,7 @@ Sticky summary at the top:
 - Floor name.
 - Census, such as `36/38 occupied`.
 - Admitting side chip.
-- Assignment status: `Not run`, `Assigned`, or `Needs re-run`.
+- Assignment status: `Not run` or `Assigned`.
 - Flag count.
 
 ### Filters

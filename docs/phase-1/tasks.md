@@ -624,16 +624,17 @@ Validation check:
 
 - A generated critical RN-required flag appears in Flags and can be traced back to the affected bed.
 
-### Task 8.5: US17 Edit Shift Inputs After Assignment
+### Removed Task 8.5: US17 Edit Shift Inputs After Assignment
 
-Build:
+Decision:
 
-- Let the charge nurse return to nurses, load limits, patients, and acuity after assignment.
-- Mark assignment as needing re-run when inputs change.
+- Removed from Phase 1 because post-assignment input editing is less useful than direct assignment adjustment.
+- Do not implement stale-assignment status for Phase 1.
 
-Validation check:
+Future direction:
 
-- Changing a nurse from RN to LPN after assignment marks the board as needing re-run.
+- Let the charge nurse manually adjust assignments after auto-assignment runs.
+- Keep this out of Phase 1 until manual override scope is intentionally added.
 
 ### Task 8.6: US17 Re-Run Assignment
 

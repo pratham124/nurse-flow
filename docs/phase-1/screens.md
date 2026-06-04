@@ -494,19 +494,17 @@ Show the active shift floor board after assignment, with enough detail for a cha
 - Room coverage chips.
 - Bed pill with patient initials, acuity, assigned nurse, and unassigned state.
 - Inline flag chips.
-- Buttons: `Edit inputs`, `Re-run`, `View flags`.
+- Buttons: `Re-run`, `View flags`.
 
 ### User Actions
 
 - Scan board by side, room, nurse, and bed.
 - Filter to flags, unassigned beds, or red beds.
 - Open flag details.
-- Edit nurses, load limits, patient info, or acuity.
 - Re-run local assignment after edits.
 
 ### Navigation Targets
 
-- `Edit inputs` opens the relevant setup choice or returns to Shift Setup.
 - `Re-run` goes to Assignment Review or runs again after validation.
 - `View flags` goes to Flags.
 - Back returns to Local Workspace.
@@ -522,7 +520,6 @@ Show the active shift floor board after assignment, with enough detail for a cha
 - Nurse over side-based limit: nurse workload row shows warning chip.
 - Nurse over max load should show critical styling if it ever appears.
 - Red bed assigned to LPN should never be generated; if detected, show critical flag.
-- Changed inputs after assignment show `Needs re-run`.
 
 ## 11. Flags
 

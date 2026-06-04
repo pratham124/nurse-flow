@@ -126,9 +126,15 @@ function AssignmentReviewListHeader({
             value={`${occupiedBedCount}/${totalBedCount}`}
             label="Occupied"
           />
-          <SummaryTile value={nurseCount.toString()} label="Nurses" />
+          <SummaryTile
+            value={nurseCount.toString()}
+            label={getCountLabel(nurseCount, "Nurse", "Nurses")}
+          />
           <SummaryTile value={totalNurseCapacity.toString()} label="Capacity" />
-          <SummaryTile value={redBedCount.toString()} label="Red beds" />
+          <SummaryTile
+            value={redBedCount.toString()}
+            label={getCountLabel(redBedCount, "Red bed", "Red beds")}
+          />
           <SummaryTile value={admittingSideName} label="Admitting" />
         </SummaryTileGrid>
       </WorkflowSection>
@@ -213,7 +219,7 @@ export default function AssignmentReviewScreen() {
       onPrimaryPress={handlePrimaryPress}
       primaryDisabled={!validation.canRunAssignment}
       primaryLabel="Run local assignment"
-      subtitle="Assignment review"
+      subtitle=""
       title={activeShift?.floorName ?? "Assignment review"}
     >
       <AssignmentReviewListHeader

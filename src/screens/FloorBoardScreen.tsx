@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { router } from "expo-router";
-import { FlatList, StyleSheet, Text, View } from "react-native";
+import { FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import {
   BedChip,
@@ -213,7 +213,12 @@ function InlineFlagList({ flags }: { flags: InlineFlagViewModel[] }) {
   }
 
   return (
-    <View style={styles.inlineFlagList}>
+    <ScrollView
+      contentContainerStyle={styles.inlineFlagListContent}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.inlineFlagList}
+    >
       {flags.map((flag) => (
         <SeverityBadge
           key={flag.id}
@@ -221,7 +226,7 @@ function InlineFlagList({ flags }: { flags: InlineFlagViewModel[] }) {
           tone={flag.severity}
         />
       ))}
-    </View>
+    </ScrollView>
   );
 }
 
@@ -643,9 +648,12 @@ const styles = StyleSheet.create({
     gap: spacing.cardGap,
   },
   inlineFlagList: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    maxWidth: "100%",
+  },
+  inlineFlagListContent: {
+    alignItems: "center",
     gap: spacing.xs,
+    paddingRight: spacing.sm,
   },
   emptyWorkloadText: {
     color: colors.neutral.textSecondary,
