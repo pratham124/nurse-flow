@@ -54,6 +54,25 @@ Use this order:
 8. Implementation
 9. Manual testing
 10. Refactor
+11. Understanding checkpoint
+
+## Understanding Checkpoint
+
+After finishing each task, add a short teaching checkpoint before considering the work done. Use `$teaching-checkpoint` when that skill is available.
+
+Use `docs/understanding-checklist.md` as the running checklist of what the human should understand. Keep it incremental and tied to the task just completed.
+
+For each completed task, verify understanding in three layers:
+
+- Problem: what problem existed, why it existed, and what branches or alternatives were considered.
+- Solution: what changed, why that solution was chosen, key design decisions, and important edge cases.
+- Broader context: why the change matters, what it affects now, and what future work it may influence.
+
+Before explaining everything, ask the human to restate her current understanding first. Then fill in gaps, answer questions, and adjust the explanation level when requested, such as ELI5, ELI14, or intern-level.
+
+Use short open-ended or multiple-choice questions to check understanding. If an `AskUserQuestion` tool is available, use it for quizzes and do not reveal the answer until after the human responds. If that tool is unavailable, ask concise questions directly in chat.
+
+The session should not end until the human has demonstrated understanding of the checklist items for the completed task.
 
 ## Scope Control
 
@@ -149,3 +168,4 @@ A task is done only when:
 - The implementation stays within the current phase.
 - I can explain the changed code myself.
 - The relevant task tracking document is updated with a done marker for the completed task.
+- The understanding checkpoint is completed and `docs/understanding-checklist.md` is updated.
