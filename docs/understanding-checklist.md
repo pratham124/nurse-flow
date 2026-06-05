@@ -63,6 +63,28 @@ For each task, add a dated section with:
   - [x] Quiz or walkthrough completed.
 - Status: verified
 
+### 2026-06-05 - Complete Phase 2 Setup Tasks
+
+- Task: Complete Phase 2 setup tasks 0.1 and 0.2 by documenting local-persistence scope guardrails and Phase 1 compatibility.
+- Problem understanding:
+  - [ ] Phase 2 needs a clear boundary before feature code starts.
+  - [ ] Persistence should save durable product data, not temporary setup/edit UI state.
+  - [ ] Phase 1 assignment behavior should remain unchanged while persistence is added around it.
+- Solution understanding:
+  - [ ] `docs/phase-2/setup-notes.md` records Phase 2 included and excluded scope.
+  - [ ] The setup note identifies current persisted candidates: floor templates, active shift, assignment result, flags, and future previous-shift snapshots.
+  - [ ] The setup note identifies temporary state: draft floor template and active-shift-template edit mode.
+  - [ ] `docs/phase-2/tasks.md` marks setup tasks 0.1 and 0.2 done.
+- Broader context:
+  - [ ] These setup tasks reduce the chance of accidentally adding backend, auth, sync, or future nurse flows during persistence work.
+  - [ ] Separating persisted state from temporary UI state will make the storage boundary easier to implement and explain.
+  - [ ] Preserving assignment behavior keeps Phase 2 focused on reuse, not algorithm changes.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
 ### 2026-06-05 - Add Room Delete Swipe Cue
 
 - Task: Make hidden room deletion more discoverable on the Rooms and Beds screen.

@@ -24,32 +24,33 @@ Status legend:
 
 ## Setup Tasks
 
-### Task 0.1: Confirm Phase 2 Scope Guardrails
+### Done Task 0.1: Confirm Phase 2 Scope Guardrails
 
 Story coverage: US8
 
 Build:
 
-- Add a short implementation note in the working task or PR description that Phase 2 is local persistence only.
-- Confirm the app has no planned screens for login, backend, sync status, invite links, regular nurse join, notifications, offline queue, AI, breaks, drag-and-drop, board sharing, or tablet layout.
+- Added `docs/phase-2/setup-notes.md` with a short implementation note that Phase 2 is local persistence only.
+- Confirmed the current app routes remain Phase 1 charge nurse routes and have no planned screens for login, backend, sync status, invite links, regular nurse join, notifications, offline queue, AI, breaks, drag-and-drop, board sharing, or tablet layout.
 
 Validation check:
 
-- You can point to `docs/phases.md` and explain what Phase 2 includes and excludes before writing feature code.
+- You can point to `docs/phases.md` and `docs/phase-2/setup-notes.md` and explain what Phase 2 includes and excludes before writing feature code.
 
-### Task 0.2: Confirm Phase 1 Compatibility
+### Done Task 0.2: Confirm Phase 1 Compatibility
 
 Story coverage: US8
 
 Build:
 
-- Review the existing Phase 1 local data model and screens.
-- Identify which Phase 1 state needs to become persisted: floor templates, active shift, assignment result, and flags.
-- Do not change assignment rules.
+- Reviewed the existing Phase 1 local data model and screens.
+- Identified which Phase 1 state needs to become persisted: floor templates, active shift, assignment result, and flags.
+- Documented that `draftFloorTemplate` and `isEditingActiveShiftTemplate` should stay temporary workflow state.
+- Confirmed Phase 2 persistence should not change assignment rules.
 
 Validation check:
 
-- You can explain which Phase 1 behaviors should work the same after persistence is added.
+- You can explain which Phase 1 behaviors should work the same after persistence is added, using `docs/phase-2/setup-notes.md`.
 
 ## Local Storage Foundation
 
