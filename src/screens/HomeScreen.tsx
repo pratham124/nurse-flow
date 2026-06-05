@@ -148,6 +148,8 @@ export default function Index() {
   const { localState, setLocalState } = useLocalState();
   const [floorTemplateToDelete, setFloorTemplateToDelete] =
     useState<FloorTemplate>();
+  const [endShiftConfirmationVisible, setEndShiftConfirmationVisible] =
+    useState(false);
   const floorTemplateCount = localState.floorTemplates.length;
 
   const activeShift = localState.activeShift;
@@ -222,6 +224,17 @@ export default function Index() {
     router.push("/start-shift");
   }
 
+  function handleConfirmEndActiveShift() {
+    setLocalState((currentState) => ({
+      ...currentState,
+      activeShift: undefined,
+      draftFloorTemplate: undefined,
+      isEditingActiveShiftTemplate: false,
+    }));
+    setEndShiftConfirmationVisible(false);
+    router.replace("/");
+  }
+
   function handleResumeActiveShift() {
     if (!activeShift) return;
     if (activeShift.status === "assigned") {
@@ -265,6 +278,7 @@ export default function Index() {
               {activeShiftPatientsCount === 1 ? "patient" : "patients"}
             </Text>
             <Pressable
+              accessibilityRole="button"
               onPress={handleResumeActiveShift}
               style={({ pressed }) => [
                 styles.resumeButton,
@@ -273,6 +287,17 @@ export default function Index() {
             >
               <Text style={styles.resumeButtonText}>Resume Active Shift</Text>
               <ChevronRightIcon color={colors.neutral.surface} size={14} />
+            </Pressable>
+            <Pressable
+              accessibilityHint="Clears the current local shift but keeps saved floor templates."
+              accessibilityRole="button"
+              onPress={() => setEndShiftConfirmationVisible(true)}
+              style={({ pressed }) => [
+                styles.endShiftButton,
+                pressed && styles.endShiftButtonPressed,
+              ]}
+            >
+              <Text style={styles.endShiftButtonText}>End shift</Text>
             </Pressable>
           </View>
         )}
@@ -335,6 +360,15 @@ export default function Index() {
         onConfirm={handleConfirmDeleteFloor}
         title="Delete floor?"
         visible={Boolean(floorTemplateToDelete)}
+      />
+      <ConfirmationDialog
+        confirmLabel="End shift"
+        confirmTone="danger"
+        message={`${activeShiftFloorName} shift data will be cleared from this local session. Saved floor templates will stay available.`}
+        onCancel={() => setEndShiftConfirmationVisible(false)}
+        onConfirm={handleConfirmEndActiveShift}
+        title="End active shift?"
+        visible={endShiftConfirmationVisible}
       />
     </SafeAreaView>
   );
@@ -465,6 +499,24 @@ const styles = StyleSheet.create({
   },
   resumeButtonText: {
     color: colors.neutral.surface,
+    fontSize: textSize.action,
+    fontWeight: fontWeight.semibold,
+  },
+  endShiftButton: {
+    alignItems: "center",
+    borderColor: colors.status.red700,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    justifyContent: "center",
+    minHeight: 44,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+  },
+  endShiftButtonPressed: {
+    backgroundColor: colors.status.red50,
+  },
+  endShiftButtonText: {
+    color: colors.status.red700,
     fontSize: textSize.action,
     fontWeight: fontWeight.semibold,
   },

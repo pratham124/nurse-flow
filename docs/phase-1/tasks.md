@@ -372,6 +372,22 @@ Validation check:
 - Changing admitting-side or non-admitting-side limits updates active shift state.
 - Values below 1 or above the Phase 1 limit show validation.
 
+### ✅ Task 4.5: End Active Shift Locally
+
+Build:
+
+- Add a local-only action to end the active shift.
+- Confirm before clearing shift data.
+- Clear the active shift working state.
+- Keep saved floor templates available.
+- Return to Local Workspace.
+
+Validation check:
+
+- Ending a shift removes the active shift card.
+- Saved floor templates remain on Local Workspace.
+- No backend, history, archive, sync, or persistence behavior is added.
+
 ### ✅ Task 5.1: US9 Add Nurse
 
 Build:

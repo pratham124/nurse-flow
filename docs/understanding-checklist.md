@@ -39,6 +39,51 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-05 - Add Room Delete Swipe Cue
+
+- Task: Make hidden room deletion more discoverable on the Rooms and Beds screen.
+- Problem understanding:
+  - [ ] Room deletion already existed behind a swipe gesture.
+  - [ ] The UI did not clearly hint that the room row could be swiped to reveal delete.
+  - [ ] Hidden gestures are easy to miss, especially in a beginner-tested mobile prototype.
+- Solution understanding:
+  - [ ] Each room row now shows a small visual cue with a chevron and trash icon.
+  - [ ] The cue points toward the existing right-swipe gesture that reveals the left-side remove action.
+  - [ ] The existing `SwipeRevealAction` behavior stayed unchanged.
+  - [ ] No new library or future-phase interaction pattern was added.
+- Broader context:
+  - [ ] This improves discoverability without making delete the main room action.
+  - [ ] It keeps destructive behavior guarded by the existing swipe reveal pattern.
+  - [ ] It supports Phase 1 manual testing because testers can notice how room removal works.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
+### 2026-06-05 - Add Local End Shift Action
+
+- Task: Add a confirmed local-only way to end the active shift.
+- Problem understanding:
+  - [ ] Phase 1 had a way to start and resume an active shift, but no deliberate way to clear it.
+  - [ ] Restarting the app should not be the only way to leave an active-shift state.
+  - [ ] Ending a shift in Phase 1 should not imply history, archiving, backend persistence, or sync.
+- Solution understanding:
+  - [ ] Local Workspace now shows an `End shift` action when an active shift exists.
+  - [ ] The action opens a confirmation dialog before clearing shift data.
+  - [ ] Confirming clears `activeShift`, `draftFloorTemplate`, and `isEditingActiveShiftTemplate`.
+  - [ ] Saved `floorTemplates` are preserved so the user can start another shift from the same template.
+  - [ ] `docs/phase-1/tasks.md` now includes completed Task 4.5.
+- Broader context:
+  - [ ] This closes a basic lifecycle gap in the local prototype.
+  - [ ] It keeps the behavior Phase 1-sized: local cleanup, not shift history.
+  - [ ] The active shift is temporary working state; the floor template is reusable setup data.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
 ### 2026-06-05 - Complete Phase 1 Task 9.x Manual Pass
 
 - Task: Verify and mark Phase 1 tasks 9.1 through 9.5 complete.
