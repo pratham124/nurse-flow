@@ -54,15 +54,15 @@ Validation check:
 
 ## Local Storage Foundation
 
-### Task 1.1: Add Phase 2 Persisted State Types
+### Done Task 1.1: Add Phase 2 Persisted State Types
 
 Story coverage: US1, US4, US5, US8
 
 Build:
 
-- Add TypeScript types for `PersistedLocalAppState`, `PreviousShiftSnapshot`, `NurseCarryOverSuggestion`, and `PatientCarryOverSuggestion`.
-- Reuse Phase 1 types for templates, shifts, nurses, patients, acuity, assignment results, and flags.
-- Add a simple `storageVersion`.
+- Added TypeScript types for `PersistedLocalAppState`, `PreviousShiftSnapshot`, `NurseCarryOverSuggestion`, and `PatientCarryOverSuggestion`.
+- Reused Phase 1 types for templates, shifts, nurses, patients, acuity, assignment results, and flags.
+- Added a simple `storageVersion`.
 
 Validation check:
 

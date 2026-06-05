@@ -10,6 +10,8 @@ export type Sex = "female" | "male" | "other" | "unknown";
 
 export type ShiftStatus = "setup" | "assigned";
 
+export type LocalStorageVersion = 1;
+
 export type FlagSeverity = "info" | "warning" | "critical";
 
 export type FlagType =
@@ -133,9 +135,40 @@ export interface Flag {
   teamId?: LocalId;
 }
 
+export interface NurseCarryOverSuggestion {
+  id: LocalId;
+  previousNurseId: LocalId;
+  name: string;
+  licenseType: LicenseType;
+  experienceLevel: ExperienceLevel;
+}
+
+export interface PatientCarryOverSuggestion {
+  id: LocalId;
+  previousBedId: LocalId;
+  previousBedLabel: string;
+  patient: Patient;
+  acuity?: Acuity;
+}
+
+export interface PreviousShiftSnapshot {
+  id: LocalId;
+  floorTemplateId: LocalId;
+  completedAt: string;
+  nurseSuggestions: NurseCarryOverSuggestion[];
+  patientSuggestions: PatientCarryOverSuggestion[];
+}
+
 export interface LocalAppState {
   floorTemplates: FloorTemplate[];
   draftFloorTemplate?: FloorTemplate;
   isEditingActiveShiftTemplate?: boolean;
   activeShift?: Shift;
+}
+
+export interface PersistedLocalAppState {
+  storageVersion: LocalStorageVersion;
+  floorTemplates: FloorTemplate[];
+  activeShift?: Shift;
+  previousShiftSnapshots: PreviousShiftSnapshot[];
 }

@@ -85,6 +85,30 @@ For each task, add a dated section with:
   - [x] Quiz or walkthrough completed.
 - Status: verified
 
+### 2026-06-05 - Add Phase 2 Persisted State Types
+
+- Task: Add the Phase 2 TypeScript types for persisted local app state and carry-over snapshots.
+- Problem understanding:
+  - [ ] `LocalAppState` is live app state and can include temporary UI workflow data.
+  - [ ] Phase 2 needs a separate saved-state shape for durable local storage data.
+  - [ ] Carry-over suggestions need a previous-shift snapshot without adding backend, auth, sync, or invite concepts.
+- Solution understanding:
+  - [ ] `src/types/models.ts` now defines `LocalStorageVersion`.
+  - [ ] `src/types/models.ts` now defines nurse and patient carry-over suggestion types.
+  - [ ] `src/types/models.ts` now defines `PreviousShiftSnapshot`.
+  - [ ] `src/types/models.ts` now defines `PersistedLocalAppState`.
+  - [ ] `LocalAppState` was left unchanged so Task 1.1 does not implement storage behavior early.
+  - [ ] `docs/phase-2/tasks.md` marks Task 1.1 done.
+- Broader context:
+  - [ ] These types create the contract Task 1.2 can use for a local storage repository.
+  - [ ] Separating persisted state from live UI state helps prevent unfinished drafts from being restored as saved data.
+  - [ ] The change keeps Phase 2 local-only and does not change assignment behavior.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
 ### 2026-06-05 - Add Room Delete Swipe Cue
 
 - Task: Make hidden room deletion more discoverable on the Rooms and Beds screen.
