@@ -39,6 +39,30 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-05 - Plan Phase 2 Local Persistence
+
+- Task: Create Phase 2 planning docs for local persistence, saved template reuse, active shift restore, and previous-shift carry-over suggestions.
+- Problem understanding:
+  - [ ] Phase 1 proved the local charge nurse workflow, but its work needs to become reusable across app launches and shifts.
+  - [ ] Phase 2 should add persistence without introducing backend, auth, realtime sync, invite links, offline queues, or other later-phase infrastructure.
+  - [ ] Carry-over suggestions should speed setup while still requiring the charge nurse to review nurses and patients from the most recent shift that used the same floor template.
+- Solution understanding:
+  - [ ] `docs/phase-2/user-stories.md` defines the Phase 2 charge nurse stories and acceptance criteria.
+  - [ ] `docs/phase-2/data-model.md` documents persisted local app state, previous-shift snapshots keyed by floor template, and carry-over suggestion records.
+  - [ ] `docs/phase-2/mobile-design.md` documents the local-only UI direction and carry-over review design.
+  - [ ] `docs/phase-2/screens.md` maps the Phase 2 screen changes and new Carry-Over Review screen.
+  - [ ] `docs/phase-2/tasks.md` orders small implementation tasks with manual validation checks.
+  - [ ] The plan preserves Phase 1 assignment behavior and keeps future-phase features out of Phase 2.
+- Broader context:
+  - [ ] Phase 2 creates the bridge between a one-session prototype and a reusable local workflow.
+  - [ ] The storage boundary should make persistence understandable before server persistence arrives in a later phase.
+  - [ ] Previous-shift snapshots support next-shift setup for the same floor template without becoming full shift history or analytics.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
 ### 2026-06-05 - Add Room Delete Swipe Cue
 
 - Task: Make hidden room deletion more discoverable on the Rooms and Beds screen.
