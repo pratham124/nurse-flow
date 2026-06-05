@@ -4,6 +4,9 @@ export const LOCAL_APP_STATE_STORAGE_KEY = "nurseflow.localAppState.v1";
 
 export const CURRENT_LOCAL_STORAGE_VERSION = 1;
 
+export const LOCAL_STORAGE_RECOVERY_MESSAGE =
+  "Saved local data could not be loaded, so NurseFlow started with empty local state.";
+
 export interface LocalStorageAdapter {
   getItem(key: string): Promise<string | null>;
   setItem(key: string, value: string): Promise<void>;
@@ -24,18 +27,60 @@ export function createEmptyPersistedLocalAppState(): PersistedLocalAppState {
   };
 }
 
+export function isPersistedLocalAppState(
+  value: unknown,
+): value is PersistedLocalAppState {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const maybeState = value as Partial<PersistedLocalAppState>;
+
+  return (
+    maybeState.storageVersion === CURRENT_LOCAL_STORAGE_VERSION &&
+    Array.isArray(maybeState.floorTemplates) &&
+    Array.isArray(maybeState.previousShiftSnapshots) &&
+    (!("activeShift" in maybeState) ||
+      maybeState.activeShift === undefined ||
+      (typeof maybeState.activeShift === "object" &&
+        maybeState.activeShift !== null))
+  );
+}
+
+export function parsePersistedLocalAppState(
+  storedState: string,
+): PersistedLocalAppState {
+  try {
+    const parsedState = JSON.parse(storedState) as unknown;
+
+    if (isPersistedLocalAppState(parsedState)) {
+      return parsedState;
+    }
+  } catch {
+    return createEmptyPersistedLocalAppState();
+  }
+
+  return createEmptyPersistedLocalAppState();
+}
+
 export function createLocalStorageRepository(
   storage: LocalStorageAdapter,
 ): LocalStorageRepository {
   return {
     async loadAppState() {
-      const storedState = await storage.getItem(LOCAL_APP_STATE_STORAGE_KEY);
+      let storedState: string | null;
+
+      try {
+        storedState = await storage.getItem(LOCAL_APP_STATE_STORAGE_KEY);
+      } catch {
+        return createEmptyPersistedLocalAppState();
+      }
 
       if (!storedState) {
         return createEmptyPersistedLocalAppState();
       }
 
-      return JSON.parse(storedState) as PersistedLocalAppState;
+      return parsePersistedLocalAppState(storedState);
     },
 
     async saveAppState(state) {

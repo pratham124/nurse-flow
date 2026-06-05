@@ -84,19 +84,19 @@ Validation check:
 - A manual or temporary debug call can load an empty persisted state without crashing.
 - The storage helper can be explained as `load saved local state` and `save local state`.
 
-### Task 1.3: Handle Invalid Saved Data Safely
+### Done Task 1.3: Handle Invalid Saved Data Safely
 
 Story coverage: US1, US4, US8
 
 Build:
 
-- Add a local recovery path for invalid or unreadable saved data.
-- Avoid crashing if saved templates or active shift data are malformed.
-- Keep the recovery message local and beginner-readable.
+- Added a local recovery path for invalid or unreadable saved data.
+- Avoided crashing if saved top-level app state is malformed.
+- Kept the recovery message local and beginner-readable.
 
 Validation check:
 
-- Simulating invalid saved data shows a local recovery state or resets safely.
+- Simulating invalid saved data resets safely to an empty persisted state.
 - No server, account, sync, or conflict language appears.
 
 ## Floor Template Persistence

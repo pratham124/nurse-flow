@@ -133,6 +133,29 @@ For each task, add a dated section with:
   - [x] Quiz or walkthrough completed.
 - Status: verified
 
+### 2026-06-05 - Handle Invalid Saved Data Safely
+
+- Task: Update the local storage repository so invalid or unreadable saved app state does not crash the app.
+- Problem understanding:
+  - [ ] Saved local data can be missing, malformed JSON, the wrong version, or the wrong top-level shape.
+  - [ ] The app should recover locally instead of crashing during load.
+  - [ ] Task 1.3 should not add backend, account, sync, conflict-resolution, or full recovery-screen behavior.
+- Solution understanding:
+  - [ ] `src/services/localStorageRepository.ts` now has a small persisted-state type guard.
+  - [ ] `src/services/localStorageRepository.ts` now parses saved JSON through `parsePersistedLocalAppState`.
+  - [ ] Invalid JSON, wrong top-level shape, wrong storage version, or storage read errors return an empty persisted state.
+  - [ ] The repository keeps a local, beginner-readable recovery message constant for future UI use.
+  - [ ] `docs/phase-2/tasks.md` marks Task 1.3 done.
+- Broader context:
+  - [ ] This makes the storage boundary safer before the app starts using it on launch.
+  - [ ] Returning an empty persisted state keeps Phase 2 local-first and understandable.
+  - [ ] Deeper validation can be added later when specific persisted entities are wired into screens.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
 ### 2026-06-05 - Add Room Delete Swipe Cue
 
 - Task: Make hidden room deletion more discoverable on the Rooms and Beds screen.
