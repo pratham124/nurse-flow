@@ -638,7 +638,7 @@ Future direction:
 
 ## Full Manual Testing Pass
 
-### Task 9.1: Happy Path Test
+### ✅ Task 9.1: Happy Path Test
 
 Build:
 
@@ -658,7 +658,7 @@ Validation check:
 - Run assignment.
 - View floor board and flags.
 
-### Task 9.2: Validation Test
+### ✅ Task 9.2: Validation Test
 
 Build:
 
@@ -669,7 +669,7 @@ Validation check:
 
 - Blank floor name, duplicate floor name, duplicate room, missing doctor side, missing nurse max load, invalid patient age, and missing acuity all show clear validation.
 
-### Task 9.3: Assignment Edge Case Test
+### ✅ Task 9.3: Assignment Edge Case Test
 
 Build:
 
@@ -682,7 +682,7 @@ Validation check:
 - A room with multiple occupied beds can split patients across nurses.
 - A low total nurse capacity creates understaffed or unassigned flags.
 
-### Task 9.4: Local-Only Scope Test
+### ✅ Task 9.4: Local-Only Scope Test
 
 Build:
 
@@ -693,7 +693,7 @@ Validation check:
 
 - There are no Phase 1 screens or dependencies for backend, auth, realtime, push notifications, deep links, invite links, drag-and-drop, offline sync, AI, breaks, board sharing, regular nurse devices, or tablet layout.
 
-### Task 9.5: Beginner Readability Pass
+### ✅ Task 9.5: Beginner Readability Pass
 
 Build:
 

@@ -375,7 +375,6 @@ function BedPatientForm({
 }: BedPatientFormProps) {
   const patient = bedRow.bedState?.patient;
   const occupied = isOccupiedBedState(bedRow.bedState);
-  const hasPatientInfo = Boolean(patient);
   const acuityColor = getAcuityColor(bedRow.bedState?.acuity);
 
   return (

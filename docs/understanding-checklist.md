@@ -35,9 +35,32 @@ For each task, add a dated section with:
   - [ ] Human restated understanding first.
   - [ ] Gaps were explained.
   - [ ] Quiz or walkthrough completed.
-- Status: pending
+- Status: in progress
 
 ## Running Items
+
+### 2026-06-05 - Complete Phase 1 Task 9.x Manual Pass
+
+- Task: Verify and mark Phase 1 tasks 9.1 through 9.5 complete.
+- Problem understanding:
+  - [ ] The 9.x tasks are not new feature tasks; they prove the existing Phase 1 workflow works end to end.
+  - [ ] A passing typecheck alone would not prove the app can be manually used from empty state to floor board.
+  - [ ] Scope leaks can exist in config or dependencies even when screen code looks local-only.
+- Solution understanding:
+  - [ ] The happy path was tested through the exported web app in the browser.
+  - [ ] Validation cases were checked for blank floor name, duplicate floor name, duplicate room, missing doctor side, invalid nurse max load, invalid patient age, and missing acuity.
+  - [ ] Assignment edge cases were checked against the real assignment utilities with crafted local shifts.
+  - [ ] Unused `expo-linking`, `expo-web-browser`, app scheme config, and a dead `hasPatientInfo` variable were removed.
+  - [ ] `docs/phase-1/tasks.md` now marks tasks 9.1 through 9.5 done.
+- Broader context:
+  - [ ] Phase 1 is now validated as a local charge nurse prototype rather than only a collection of implemented screens.
+  - [ ] Removing scope leaks keeps future-phase concepts from silently entering Phase 1.
+  - [ ] The readability cleanup makes the patient/acuity screen easier for a beginner to explain.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
 
 ### 2026-06-05 - Add Understanding Checkpoint Skill And Workflow
 
