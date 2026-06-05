@@ -69,15 +69,15 @@ Validation check:
 - The app compiles with the new types.
 - No backend, auth, sync, invite, or notification fields are introduced.
 
-### Task 1.2: Add Local Storage Repository
+### Done Task 1.2: Add Local Storage Repository
 
 Story coverage: US1, US4, US8
 
 Build:
 
-- Add one small storage boundary for loading and saving persisted app state.
-- Keep serialization and parsing inside this boundary.
-- Return a safe empty state when no saved data exists.
+- Added one small storage boundary for loading and saving persisted app state.
+- Kept serialization and parsing inside this boundary.
+- Returned a safe empty state when no saved data exists.
 
 Validation check:
 

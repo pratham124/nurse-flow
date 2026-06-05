@@ -109,6 +109,30 @@ For each task, add a dated section with:
   - [x] Quiz or walkthrough completed.
 - Status: verified
 
+### 2026-06-05 - Add Local Storage Repository
+
+- Task: Add the Phase 2 local storage repository boundary for persisted app state.
+- Problem understanding:
+  - [ ] Screens should not each handle storage keys, JSON strings, or empty-storage defaults.
+  - [ ] Task 1.2 needs a storage boundary, not full app startup restore or template persistence yet.
+  - [ ] The repository should save `PersistedLocalAppState`, not temporary `LocalAppState` draft fields.
+- Solution understanding:
+  - [ ] `src/services/localStorageRepository.ts` defines a `LocalStorageAdapter` interface.
+  - [ ] `src/services/localStorageRepository.ts` defines a `LocalStorageRepository` with load, save, and clear methods.
+  - [ ] The repository serializes with `JSON.stringify` and parses with `JSON.parse`.
+  - [ ] Missing saved data returns an empty persisted state with storage version, empty templates, and empty previous-shift snapshots.
+  - [ ] A memory adapter exists for simple manual/debug validation without adding a storage library yet.
+  - [ ] `docs/phase-2/tasks.md` marks Task 1.2 done.
+- Broader context:
+  - [ ] Later tasks can plug this boundary into app startup and saved template behavior.
+  - [ ] Keeping storage behind one service makes persistence easier to explain and change.
+  - [ ] The change remains local-only and does not add backend, auth, sync, or invite behavior.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
 ### 2026-06-05 - Add Room Delete Swipe Cue
 
 - Task: Make hidden room deletion more discoverable on the Rooms and Beds screen.
