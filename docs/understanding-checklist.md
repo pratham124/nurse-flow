@@ -156,6 +156,29 @@ For each task, add a dated section with:
   - [x] Quiz or walkthrough completed.
 - Status: verified
 
+### 2026-06-06 - Save Completed Floor Templates
+
+- Task: Persist completed floor templates after the existing Template Review save validation passes.
+- Problem understanding:
+  - [ ] Completed templates were added to React state, but React state alone disappears when the app closes.
+  - [ ] Task 2.1 should save reusable floor structure without adding startup restore, active-shift persistence, backend, auth, sync, or future-phase behavior.
+  - [ ] The main branch considered was where to save: inside the screen versus through the existing local storage boundary.
+- Solution understanding:
+  - [ ] `src/services/localStorageAdapters.ts` provides a small adapter for browser localStorage on web and Expo FileSystem document storage on native.
+  - [ ] `src/store/LocalStateContext.tsx` exposes `saveFloorTemplates`, which writes only the template list into `PersistedLocalAppState`.
+  - [ ] `src/screens/TemplateReviewScreen.tsx` now saves the completed template list before updating the in-memory workspace and returning home.
+  - [ ] The saved templates contain floor name, doctor sides, rooms, and beds, not patients, nurses, acuity, assignments, or flags.
+  - [ ] `docs/phase-2/tasks.md` marks Task 2.1 done.
+- Broader context:
+  - [ ] This is the write side of template persistence; loading saved templates on app start stays reserved for Task 2.2.
+  - [ ] Keeping persistence behind the repository makes later active-shift and carry-over storage easier to explain.
+  - [ ] The change stays local-only and does not alter Phase 1 validation or assignment rules.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
 ### 2026-06-05 - Add Room Delete Swipe Cue
 
 - Task: Make hidden room deletion more discoverable on the Rooms and Beds screen.

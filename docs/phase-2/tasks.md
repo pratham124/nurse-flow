@@ -101,7 +101,7 @@ Validation check:
 
 ## Floor Template Persistence
 
-### Task 2.1: Save Completed Floor Templates
+### Done Task 2.1: Save Completed Floor Templates
 
 Story coverage: US1
 

@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useMemo,
   useState,
@@ -8,28 +9,56 @@ import {
   type SetStateAction,
 } from "react";
 
-import type { LocalAppState } from "../types/models";
+import { createDeviceLocalStorageAdapter } from "../services/localStorageAdapters";
+import {
+  createLocalStorageRepository,
+  type LocalStorageRepository,
+} from "../services/localStorageRepository";
+import type { FloorTemplate, LocalAppState } from "../types/models";
 
 const emptyLocalState: LocalAppState = {
   floorTemplates: [],
 };
 
+const localStorageRepository = createLocalStorageRepository(
+  createDeviceLocalStorageAdapter(),
+);
+
 interface LocalStateContextValue {
   localState: LocalAppState;
   setLocalState: Dispatch<SetStateAction<LocalAppState>>;
+  saveFloorTemplates: (floorTemplates: FloorTemplate[]) => Promise<void>;
 }
 
 const LocalStateContext = createContext<LocalStateContextValue | undefined>(
   undefined,
 );
 
-export function LocalStateProvider({ children }: PropsWithChildren) {
+type LocalStateProviderProps = PropsWithChildren<{
+  storageRepository?: LocalStorageRepository;
+}>;
+
+export function LocalStateProvider({
+  children,
+  storageRepository = localStorageRepository,
+}: LocalStateProviderProps) {
   const [localState, setLocalState] =
     useState<LocalAppState>(emptyLocalState);
+  const saveFloorTemplates = useCallback(
+    async (floorTemplates: FloorTemplate[]) => {
+      const savedState = await storageRepository.loadAppState();
+
+      await storageRepository.saveAppState({
+        ...savedState,
+        floorTemplates,
+      });
+    },
+    [storageRepository],
+  );
 
   const value = useMemo(
-    () => ({ localState, setLocalState }),
-    [localState, setLocalState],
+    () => ({ localState, saveFloorTemplates, setLocalState }),
+    [localState, saveFloorTemplates, setLocalState],
   );
 
   return (

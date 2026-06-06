@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -112,7 +112,9 @@ function getCountLabel(
   return count === 1 ? singularLabel : pluralLabel;
 }
 
-function isCompletedFloorTemplate(floorTemplate?: FloorTemplate) {
+function isCompletedFloorTemplate(
+  floorTemplate?: FloorTemplate,
+): floorTemplate is FloorTemplate {
   if (!floorTemplate) {
     return false;
   }
@@ -199,7 +201,8 @@ function getShiftSyncedWithTemplate(
 }
 
 export default function TemplateReviewScreen() {
-  const { localState, setLocalState } = useLocalState();
+  const { localState, saveFloorTemplates, setLocalState } = useLocalState();
+  const [saveErrorText, setSaveErrorText] = useState("");
   const draftTemplate = localState.draftFloorTemplate;
   const activeShift = localState.activeShift;
   const activeShiftTemplate = getFloorTemplateFromActiveShift(activeShift);
@@ -213,11 +216,12 @@ export default function TemplateReviewScreen() {
   const canSaveTemplate = isCompletedFloorTemplate(draftTemplate);
   const actionErrorText = isReviewingActiveShiftTemplate
     ? ""
-    : draftTemplate
-      ? canSaveTemplate
-        ? ""
-        : invalidTemplateMessage
-      : "Create a floor template before saving.";
+    : saveErrorText ||
+      (draftTemplate
+        ? canSaveTemplate
+          ? ""
+          : invalidTemplateMessage
+        : "Create a floor template before saving.");
 
   useEffect(() => {
     if (!activeShift) {
@@ -252,7 +256,9 @@ export default function TemplateReviewScreen() {
     });
   }, [activeShift, setLocalState]);
 
-  function handleSaveTemplate() {
+  async function handleSaveTemplate() {
+    setSaveErrorText("");
+
     if (isReviewingActiveShiftTemplate) {
       if (draftTemplate) {
         setLocalState((currentState) => ({
@@ -276,12 +282,25 @@ export default function TemplateReviewScreen() {
       return;
     }
 
+    const completedDraft = draftTemplate;
+    const nextFloorTemplates = [
+      ...localState.floorTemplates.filter(
+        (floorTemplate) => floorTemplate.id !== completedDraft.id,
+      ),
+      completedDraft,
+    ];
+
+    try {
+      await saveFloorTemplates(nextFloorTemplates);
+    } catch {
+      setSaveErrorText("Template could not be saved to this device. Try again.");
+      return;
+    }
+
     setLocalState((currentState) => {
       if (!currentState.draftFloorTemplate) {
         return currentState;
       }
-
-      const completedDraft = currentState.draftFloorTemplate;
 
       return {
         ...currentState,
@@ -294,12 +313,7 @@ export default function TemplateReviewScreen() {
             : currentState.activeShift,
         draftFloorTemplate: undefined,
         isEditingActiveShiftTemplate: false,
-        floorTemplates: [
-          ...currentState.floorTemplates.filter(
-            (floorTemplate) => floorTemplate.id !== completedDraft.id,
-          ),
-          completedDraft,
-        ],
+        floorTemplates: nextFloorTemplates,
       };
     });
 
