@@ -131,7 +131,7 @@ Validation check:
 - Reopening the app shows saved templates.
 - A fresh install or cleared local data still shows `No local floor yet`.
 
-### Task 2.3: Prevent Duplicate Names Against Saved Templates
+### Done Task 2.3: Prevent Duplicate Names Against Saved Templates
 
 Story coverage: US1
 

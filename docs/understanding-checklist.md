@@ -202,6 +202,28 @@ For each task, add a dated section with:
   - [ ] Quiz or walkthrough completed.
 - Status: pending
 
+### 2026-06-06 - Prevent Duplicate Saved Template Names
+
+- Task: Validate new floor names against saved floor template names.
+- Problem understanding:
+  - [ ] Once saved templates load on app start, new floor creation must not allow a duplicate saved template name.
+  - [ ] The duplicate check should compare the typed name after trimming extra spaces.
+  - [ ] Task 2.3 should not add edit flows, backend validation, auth, sync, or future-phase behavior.
+- Solution understanding:
+  - [ ] `src/screens/FloorDetailsScreen.tsx` now uses `hasSavedFloorTemplateWithName` for duplicate template-name validation.
+  - [ ] The helper compares the trimmed typed name to each saved template name after trimming.
+  - [ ] The current draft id is ignored so continuing through the same draft does not block itself.
+  - [ ] `docs/phase-2/tasks.md` marks Task 2.3 done.
+- Broader context:
+  - [ ] Saved templates are now treated like the real local workspace list for new floor validation.
+  - [ ] Preventing duplicates keeps later template reuse and editing easier to reason about.
+  - [ ] This completes the small Phase 2 floor-template persistence group before template reuse tasks begin.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
 ### 2026-06-05 - Add Room Delete Swipe Cue
 
 - Task: Make hidden room deletion more discoverable on the Rooms and Beds screen.

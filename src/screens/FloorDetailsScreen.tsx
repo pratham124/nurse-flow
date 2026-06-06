@@ -8,9 +8,22 @@ import {
 } from "../components/workflow";
 import { createLocalId } from "../helpers/localId";
 import { useLocalState } from "../store/LocalStateContext";
+import type { FloorTemplate, LocalId } from "../types/models";
 
 const requiredFloorNameMessage = "Floor name is required.";
 const duplicateFloorNameMessage = "A floor with this name already exists.";
+
+function hasSavedFloorTemplateWithName(
+  floorTemplates: FloorTemplate[],
+  trimmedFloorName: string,
+  currentDraftId?: LocalId,
+) {
+  return floorTemplates.some(
+    (floorTemplate) =>
+      floorTemplate.id !== currentDraftId &&
+      floorTemplate.name.trim() === trimmedFloorName,
+  );
+}
 
 export default function FloorDetailsScreen() {
   const { localState, setLocalState } = useLocalState();
@@ -41,10 +54,10 @@ export default function FloorDetailsScreen() {
     }
 
     const currentDraftId = localState.draftFloorTemplate?.id;
-    const hasDuplicateFloorName = localState.floorTemplates.some(
-      (floorTemplate) =>
-        floorTemplate.id !== currentDraftId &&
-        floorTemplate.name.trim() === trimmedFloorName,
+    const hasDuplicateFloorName = hasSavedFloorTemplateWithName(
+      localState.floorTemplates,
+      trimmedFloorName,
+      currentDraftId,
     );
 
     if (hasDuplicateFloorName) {
