@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type Dispatch,
@@ -42,8 +43,31 @@ export function LocalStateProvider({
   children,
   storageRepository = localStorageRepository,
 }: LocalStateProviderProps) {
-  const [localState, setLocalState] =
-    useState<LocalAppState>(emptyLocalState);
+  const [localState, setLocalState] = useState<LocalAppState>(emptyLocalState);
+
+  useEffect(() => {
+    let shouldUpdateState = true;
+
+    async function loadSavedFloorTemplates() {
+      const savedState = await storageRepository.loadAppState();
+
+      if (!shouldUpdateState) {
+        return;
+      }
+
+      setLocalState((currentState) => ({
+        ...currentState,
+        floorTemplates: savedState.floorTemplates,
+      }));
+    }
+
+    void loadSavedFloorTemplates();
+
+    return () => {
+      shouldUpdateState = false;
+    };
+  }, [storageRepository]);
+
   const saveFloorTemplates = useCallback(
     async (floorTemplates: FloorTemplate[]) => {
       const savedState = await storageRepository.loadAppState();

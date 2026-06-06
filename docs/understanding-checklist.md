@@ -179,6 +179,29 @@ For each task, add a dated section with:
   - [x] Quiz or walkthrough completed.
 - Status: verified
 
+### 2026-06-06 - Load Saved Templates on App Start
+
+- Task: Load saved floor templates into Local Workspace when the app starts.
+- Problem understanding:
+  - [ ] Task 2.1 saved templates to persisted storage, but the app still started from empty React state.
+  - [ ] Task 2.2 should restore templates only, not active shifts, carry-over snapshots, backend data, auth, sync, or future-phase behavior.
+  - [ ] A fresh install or cleared local data should still produce the normal empty template list.
+- Solution understanding:
+  - [ ] `src/store/LocalStateContext.tsx` now loads persisted app state once when `LocalStateProvider` mounts.
+  - [ ] The provider copies `savedState.floorTemplates` into `localState.floorTemplates`.
+  - [ ] Draft template state, active-shift state, and previous-shift snapshots are left alone for later tasks.
+  - [ ] The effect avoids updating state after the provider unmounts.
+  - [ ] `docs/phase-2/tasks.md` marks Task 2.2 done.
+- Broader context:
+  - [ ] Tasks 2.1 and 2.2 together complete the first save-and-restore loop for floor templates.
+  - [ ] Loading through the provider keeps screens focused on UI instead of storage details.
+  - [ ] Active shift restore remains a later Phase 2 task with its own acceptance criteria.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
 ### 2026-06-05 - Add Room Delete Swipe Cue
 
 - Task: Make hidden room deletion more discoverable on the Rooms and Beds screen.

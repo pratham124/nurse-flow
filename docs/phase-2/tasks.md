@@ -116,7 +116,7 @@ Validation check:
 - Create floor `4 North`, close and reopen the app, and confirm the template is still visible.
 - Patient, nurse, acuity, assignment, and flag data are not stored on the template.
 
-### Task 2.2: Load Saved Templates on App Start
+### Done Task 2.2: Load Saved Templates on App Start
 
 Story coverage: US1
 
