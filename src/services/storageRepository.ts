@@ -13,7 +13,7 @@ export interface LocalStorageAdapter {
   removeItem(key: string): Promise<void>;
 }
 
-export interface LocalStorageRepository {
+export interface StorageRepository {
   loadAppState(): Promise<PersistedLocalAppState>;
   saveAppState(state: PersistedLocalAppState): Promise<void>;
   clearAppState(): Promise<void>;
@@ -63,9 +63,9 @@ export function parsePersistedLocalAppState(
   return createEmptyPersistedLocalAppState();
 }
 
-export function createLocalStorageRepository(
+export function createStorageRepository(
   storage: LocalStorageAdapter,
-): LocalStorageRepository {
+): StorageRepository {
   return {
     async loadAppState() {
       let storedState: string | null;

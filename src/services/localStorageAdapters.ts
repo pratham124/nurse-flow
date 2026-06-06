@@ -1,7 +1,7 @@
 import * as FileSystem from "expo-file-system/legacy";
 import { Platform } from "react-native";
 
-import type { LocalStorageAdapter } from "./localStorageRepository";
+import type { LocalStorageAdapter } from "./storageRepository";
 
 type BrowserLocalStorage = {
   getItem(key: string): string | null;

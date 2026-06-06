@@ -117,8 +117,8 @@ For each task, add a dated section with:
   - [ ] Task 1.2 needs a storage boundary, not full app startup restore or template persistence yet.
   - [ ] The repository should save `PersistedLocalAppState`, not temporary `LocalAppState` draft fields.
 - Solution understanding:
-  - [ ] `src/services/localStorageRepository.ts` defines a `LocalStorageAdapter` interface.
-  - [ ] `src/services/localStorageRepository.ts` defines a `LocalStorageRepository` with load, save, and clear methods.
+  - [ ] `src/services/storageRepository.ts` defines a `LocalStorageAdapter` interface.
+  - [ ] `src/services/storageRepository.ts` defines a `StorageRepository` with load, save, and clear methods.
   - [ ] The repository serializes with `JSON.stringify` and parses with `JSON.parse`.
   - [ ] Missing saved data returns an empty persisted state with storage version, empty templates, and empty previous-shift snapshots.
   - [ ] A memory adapter exists for simple manual/debug validation without adding a storage library yet.
@@ -141,8 +141,8 @@ For each task, add a dated section with:
   - [ ] The app should recover locally instead of crashing during load.
   - [ ] Task 1.3 should not add backend, account, sync, conflict-resolution, or full recovery-screen behavior.
 - Solution understanding:
-  - [ ] `src/services/localStorageRepository.ts` now has a small persisted-state type guard.
-  - [ ] `src/services/localStorageRepository.ts` now parses saved JSON through `parsePersistedLocalAppState`.
+  - [ ] `src/services/storageRepository.ts` now has a small persisted-state type guard.
+  - [ ] `src/services/storageRepository.ts` now parses saved JSON through `parsePersistedLocalAppState`.
   - [ ] Invalid JSON, wrong top-level shape, wrong storage version, or storage read errors return an empty persisted state.
   - [ ] The repository keeps a local, beginner-readable recovery message constant for future UI use.
   - [ ] `docs/phase-2/tasks.md` marks Task 1.3 done.
@@ -197,10 +197,10 @@ For each task, add a dated section with:
   - [ ] Loading through the provider keeps screens focused on UI instead of storage details.
   - [ ] Active shift restore remains a later Phase 2 task with its own acceptance criteria.
 - Verification:
-  - [ ] Human restated understanding first.
-  - [ ] Gaps were explained.
-  - [ ] Quiz or walkthrough completed.
-- Status: pending
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
 
 ### 2026-06-06 - Prevent Duplicate Saved Template Names
 
@@ -219,10 +219,10 @@ For each task, add a dated section with:
   - [ ] Preventing duplicates keeps later template reuse and editing easier to reason about.
   - [ ] This completes the small Phase 2 floor-template persistence group before template reuse tasks begin.
 - Verification:
-  - [ ] Human restated understanding first.
-  - [ ] Gaps were explained.
-  - [ ] Quiz or walkthrough completed.
-- Status: pending
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
 
 ### 2026-06-05 - Add Room Delete Swipe Cue
 

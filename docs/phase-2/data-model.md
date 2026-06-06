@@ -203,7 +203,7 @@ interface CarryOverReviewItem {
 Phase 2 should introduce one beginner-friendly storage boundary:
 
 ```ts
-interface LocalStorageRepository {
+interface StorageRepository {
   loadAppState(): Promise<PersistedLocalAppState>;
   saveAppState(state: PersistedLocalAppState): Promise<void>;
   clearAppState(): Promise<void>;

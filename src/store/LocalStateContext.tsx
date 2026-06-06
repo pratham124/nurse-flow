@@ -12,16 +12,16 @@ import {
 
 import { createDeviceLocalStorageAdapter } from "../services/localStorageAdapters";
 import {
-  createLocalStorageRepository,
-  type LocalStorageRepository,
-} from "../services/localStorageRepository";
+  createStorageRepository,
+  type StorageRepository,
+} from "../services/storageRepository";
 import type { FloorTemplate, LocalAppState } from "../types/models";
 
 const emptyLocalState: LocalAppState = {
   floorTemplates: [],
 };
 
-const localStorageRepository = createLocalStorageRepository(
+const storageRepository = createStorageRepository(
   createDeviceLocalStorageAdapter(),
 );
 
@@ -36,12 +36,12 @@ const LocalStateContext = createContext<LocalStateContextValue | undefined>(
 );
 
 type LocalStateProviderProps = PropsWithChildren<{
-  storageRepository?: LocalStorageRepository;
+  storageRepository?: StorageRepository;
 }>;
 
 export function LocalStateProvider({
   children,
-  storageRepository = localStorageRepository,
+  storageRepository: appStorageRepository = storageRepository,
 }: LocalStateProviderProps) {
   const [localState, setLocalState] = useState<LocalAppState>(emptyLocalState);
 
@@ -49,7 +49,7 @@ export function LocalStateProvider({
     let shouldUpdateState = true;
 
     async function loadSavedFloorTemplates() {
-      const savedState = await storageRepository.loadAppState();
+      const savedState = await appStorageRepository.loadAppState();
 
       if (!shouldUpdateState) {
         return;
@@ -66,18 +66,18 @@ export function LocalStateProvider({
     return () => {
       shouldUpdateState = false;
     };
-  }, [storageRepository]);
+  }, [appStorageRepository]);
 
   const saveFloorTemplates = useCallback(
     async (floorTemplates: FloorTemplate[]) => {
-      const savedState = await storageRepository.loadAppState();
+      const savedState = await appStorageRepository.loadAppState();
 
-      await storageRepository.saveAppState({
+      await appStorageRepository.saveAppState({
         ...savedState,
         floorTemplates,
       });
     },
-    [storageRepository],
+    [appStorageRepository],
   );
 
   const value = useMemo(
