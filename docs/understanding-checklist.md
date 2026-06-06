@@ -117,7 +117,7 @@ For each task, add a dated section with:
   - [ ] Task 1.2 needs a storage boundary, not full app startup restore or template persistence yet.
   - [ ] The repository should save `PersistedLocalAppState`, not temporary `LocalAppState` draft fields.
 - Solution understanding:
-  - [ ] `src/services/storageRepository.ts` defines a `LocalStorageAdapter` interface.
+  - [ ] `src/services/storageRepository.ts` defines a `StorageAdapter` interface.
   - [ ] `src/services/storageRepository.ts` defines a `StorageRepository` with load, save, and clear methods.
   - [ ] The repository serializes with `JSON.stringify` and parses with `JSON.parse`.
   - [ ] Missing saved data returns an empty persisted state with storage version, empty templates, and empty previous-shift snapshots.

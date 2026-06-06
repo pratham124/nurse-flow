@@ -1,7 +1,7 @@
 import * as FileSystem from "expo-file-system/legacy";
 import { Platform } from "react-native";
 
-import type { LocalStorageAdapter } from "./storageRepository";
+import type { StorageAdapter } from "./storageRepository";
 
 type BrowserLocalStorage = {
   getItem(key: string): string | null;
@@ -21,7 +21,7 @@ function getLocalAppStateFileUri(key: string) {
   return `${FileSystem.documentDirectory}${key}.json`;
 }
 
-export function createDeviceLocalStorageAdapter(): LocalStorageAdapter {
+export function createDeviceLocalStorageAdapter(): StorageAdapter {
   return {
     async getItem(key) {
       if (Platform.OS === "web") {

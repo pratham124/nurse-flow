@@ -7,7 +7,7 @@ export const CURRENT_LOCAL_STORAGE_VERSION = 1;
 export const LOCAL_STORAGE_RECOVERY_MESSAGE =
   "Saved local data could not be loaded, so NurseFlow started with empty local state.";
 
-export interface LocalStorageAdapter {
+export interface StorageAdapter {
   getItem(key: string): Promise<string | null>;
   setItem(key: string, value: string): Promise<void>;
   removeItem(key: string): Promise<void>;
@@ -64,7 +64,7 @@ export function parsePersistedLocalAppState(
 }
 
 export function createStorageRepository(
-  storage: LocalStorageAdapter,
+  storage: StorageAdapter,
 ): StorageRepository {
   return {
     async loadAppState() {
@@ -95,7 +95,7 @@ export function createStorageRepository(
 
 export function createMemoryStorageAdapter(
   initialValues: Record<string, string> = {},
-): LocalStorageAdapter {
+): StorageAdapter {
   const values = new Map(Object.entries(initialValues));
 
   return {
