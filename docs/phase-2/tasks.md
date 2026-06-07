@@ -248,7 +248,7 @@ Validation check:
 
 - Simulating a missing template shows a clear recovery path.
 
-### Task 4.4: Keep End Shift Local While Preserving Templates
+### Done Task 4.4: Keep End Shift Local While Preserving Templates
 
 Story coverage: US5
 
@@ -265,7 +265,7 @@ Validation check:
 
 ## Previous Shift Snapshot
 
-### Task 5.1: Create Previous-Shift Snapshot on End Shift
+### Done Task 5.1: Create Previous-Shift Snapshot on End Shift
 
 Story coverage: US5
 
@@ -280,7 +280,7 @@ Validation check:
 - End a shift with nurses and occupied beds.
 - Inspect the next shift setup and confirm suggestions are available only for the same template.
 
-### Task 5.2: Keep One Snapshot Per Template
+### Done Task 5.2: Keep One Snapshot Per Template
 
 Story coverage: US5
 
@@ -295,7 +295,7 @@ Validation check:
 - End two shifts from the same template and confirm only the latest shift feeds carry-over suggestions.
 - Start a shift from a different template and confirm it does not show those suggestions.
 
-### Task 5.3: Allow Empty Previous-Shift Snapshots
+### Done Task 5.3: Allow Empty Previous-Shift Snapshots
 
 Story coverage: US5
 

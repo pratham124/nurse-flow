@@ -391,19 +391,68 @@ For each task, add a dated section with:
 
 - Task: Show a local recovery message when a restored active shift references a missing floor template.
 - Problem understanding:
-  - [ ] Saved local data can become inconsistent if an active shift points to a template id that is no longer saved.
-  - [ ] Task 4.3 should show a local recovery path, not add backend sync, conflict handling, or shift history.
-  - [ ] Normal template deletion already clears matching active shift state, so this handles unusual restored-data mismatch.
+  - [x] Saved local data can become inconsistent if an active shift points to a template id that is no longer saved.
+  - [x] Task 4.3 should show a local recovery path, not add backend sync, conflict handling, or shift history.
+  - [x] Normal template deletion already clears matching active shift state, so this handles unusual restored-data mismatch.
 - Solution understanding:
-  - [ ] `src/screens/HomeScreen.tsx` detects `activeShiftMissingTemplate` from `localState.activeShift` and `localState.floorTemplates`.
-  - [ ] Home shows a warning on the active shift card when the saved template is missing.
-  - [ ] The existing `Resume` and `End shift` actions remain the recovery choices.
-  - [ ] Existing valid active shift and saved template behavior is unchanged.
-  - [ ] `docs/phase-2/tasks.md` marks Task 4.3 done.
+  - [x] `src/screens/HomeScreen.tsx` detects `activeShiftMissingTemplate` from `localState.activeShift` and `localState.floorTemplates`.
+  - [x] Home shows a warning on the active shift card when the saved template is missing.
+  - [x] The existing `Resume` and `End shift` actions remain the recovery choices.
+  - [x] Existing valid active shift and saved template behavior is unchanged.
+  - [x] `docs/phase-2/tasks.md` marks Task 4.3 done.
 - Broader context:
-  - [ ] This keeps restored local data from feeling broken or mysterious.
-  - [ ] Missing-template recovery is separate from Task 4.4 end-shift cleanup.
-  - [ ] The app remains local-only and does not add future-phase sync concepts.
+  - [x] This keeps restored local data from feeling broken or mysterious.
+  - [x] Missing-template recovery is separate from Task 4.4 end-shift cleanup.
+  - [x] The app remains local-only and does not add future-phase sync concepts.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+### 2026-06-07 - Keep End Shift Local While Preserving Templates
+
+- Task: Confirm ending a shift clears the active shift locally while saved templates remain available.
+- Problem understanding:
+  - [x] Active shift data and saved floor templates are different pieces of local state.
+  - [x] Task 4.4 should clear the current shift only, not create previous-shift snapshots or carry-over suggestions.
+  - [x] Ending a shift must stay local and should not introduce backend, sync, history, or archive concepts.
+- Solution understanding:
+  - [x] `src/screens/HomeScreen.tsx` already clears `activeShift`, `draftFloorTemplate`, and `isEditingActiveShiftTemplate` in `handleConfirmEndActiveShift`.
+  - [x] `src/store/LocalStateContext.tsx` persists the cleared `activeShift` as `undefined`.
+  - [x] Saved `floorTemplates` are preserved because the active-shift save path spreads the existing persisted state and only changes `activeShift`.
+  - [x] No app code change was needed for this task because the existing Phase 1 end-shift action plus Tasks 4.1 and 4.2 already met the behavior.
+  - [x] `docs/phase-2/tasks.md` marks Task 4.4 done.
+- Broader context:
+  - [x] This completes the active-shift persistence group.
+  - [x] Previous-shift snapshots begin in Task 5.1, not Task 4.4.
+  - [x] The app remains local-only and preserves saved reusable floor templates.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+### 2026-06-07 - Store Previous-Shift Snapshots
+
+- Task: Create a local previous-shift snapshot when ending a shift, keep one snapshot per template, and allow empty snapshots.
+- Problem understanding:
+  - [ ] Carry-over suggestions need a small record of the ended shift before `activeShift` is cleared.
+  - [ ] Phase 2 should store only the latest snapshot per floor template, not a shift history list.
+  - [ ] Empty ended shifts should still produce a valid empty snapshot instead of crashing or inventing fake suggestions.
+- Solution understanding:
+  - [ ] `src/screens/HomeScreen.tsx` builds a `PreviousShiftSnapshot` from the active shift before clearing it.
+  - [ ] Nurse suggestions store stable nurse profile fields, not max load or assignment teams.
+  - [ ] Patient suggestions store occupied patients with previous bed id, previous bed label, and acuity.
+  - [ ] `src/store/LocalStateContext.tsx` saves the snapshot through the local storage boundary.
+  - [ ] Saving a snapshot replaces any existing snapshot with the same `floorTemplateId`.
+  - [ ] Tasks 5.1, 5.2, and 5.3 are marked done in `docs/phase-2/tasks.md`.
+- Broader context:
+  - [ ] This stores data for later carry-over review tasks without showing suggestion UI yet.
+  - [ ] The app remains local-only and does not add backend, sync, history, or analytics.
+  - [ ] Later tasks can read these snapshots when starting a new shift from the same template.
 - Verification:
   - [ ] Human restated understanding first.
   - [ ] Code-specific question or walkthrough completed.

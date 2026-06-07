@@ -12,10 +12,10 @@ import {
   BedIcon,
   RoomIcon,
 } from "../components/workflow";
+import { createLocalId } from "../helpers/localId";
 import { useLocalState } from "../store/LocalStateContext";
 import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
-import type { FloorTemplate, Shift } from "../types/models";
-import { createLocalId } from "../helpers/localId";
+import type { FloorTemplate, PreviousShiftSnapshot, Shift } from "../types/models";
 
 type FloorTemplateRowProps = {
   floorTemplate: FloorTemplate;
@@ -156,8 +156,43 @@ function copyFloorTemplate(floorTemplate: FloorTemplate): FloorTemplate {
   };
 }
 
+function createPreviousShiftSnapshot(activeShift: Shift): PreviousShiftSnapshot {
+  return {
+    id: createLocalId("previous-shift"),
+    floorTemplateId: activeShift.floorTemplateId,
+    completedAt: new Date().toISOString(),
+    nurseSuggestions: activeShift.nurses.map((nurse) => ({
+      id: createLocalId("nurse-suggestion"),
+      previousNurseId: nurse.id,
+      name: nurse.name,
+      licenseType: nurse.licenseType,
+      experienceLevel: nurse.experienceLevel,
+    })),
+    patientSuggestions: activeShift.bedStates.flatMap((bedState) => {
+      if (!bedState.patient?.initials.trim()) {
+        return [];
+      }
+
+      const previousBed = activeShift.beds.find(
+        (bed) => bed.id === bedState.bedId,
+      );
+
+      return [
+        {
+          id: createLocalId("patient-suggestion"),
+          previousBedId: bedState.bedId,
+          previousBedLabel: previousBed?.label ?? "Unknown bed",
+          patient: { ...bedState.patient },
+          acuity: bedState.acuity,
+        },
+      ];
+    }),
+  };
+}
+
 export default function Index() {
-  const { localState, setLocalState } = useLocalState();
+  const { localState, savePreviousShiftSnapshot, setLocalState } =
+    useLocalState();
   const [floorTemplateToDelete, setFloorTemplateToDelete] =
     useState<FloorTemplate>();
   const [endShiftConfirmationVisible, setEndShiftConfirmationVisible] =
@@ -260,7 +295,15 @@ export default function Index() {
     router.push("/start-shift");
   }
 
-  function handleConfirmEndActiveShift() {
+  async function handleConfirmEndActiveShift() {
+    if (activeShift) {
+      try {
+        await savePreviousShiftSnapshot(createPreviousShiftSnapshot(activeShift));
+      } catch {
+        // Ending the shift should still work if local snapshot saving fails.
+      }
+    }
+
     setLocalState((currentState) => ({
       ...currentState,
       activeShift: undefined,

@@ -16,7 +16,12 @@ import {
   createStorageRepository,
   type StorageRepository,
 } from "../services/storageRepository";
-import type { FloorTemplate, LocalAppState, Shift } from "../types/models";
+import type {
+  FloorTemplate,
+  LocalAppState,
+  PreviousShiftSnapshot,
+  Shift,
+} from "../types/models";
 
 const emptyLocalState: LocalAppState = {
   floorTemplates: [],
@@ -30,6 +35,9 @@ interface LocalStateContextValue {
   localState: LocalAppState;
   setLocalState: Dispatch<SetStateAction<LocalAppState>>;
   saveFloorTemplates: (floorTemplates: FloorTemplate[]) => Promise<void>;
+  savePreviousShiftSnapshot: (
+    snapshot: PreviousShiftSnapshot,
+  ) => Promise<void>;
 }
 
 const LocalStateContext = createContext<LocalStateContextValue | undefined>(
@@ -95,6 +103,22 @@ export function LocalStateProvider({
     [appStorageRepository],
   );
 
+  const savePreviousShiftSnapshot = useCallback(
+    async (snapshot: PreviousShiftSnapshot) => {
+      const savedState = await appStorageRepository.loadAppState();
+      const nextSnapshots = savedState.previousShiftSnapshots.filter(
+        (savedSnapshot) =>
+          savedSnapshot.floorTemplateId !== snapshot.floorTemplateId,
+      );
+
+      await appStorageRepository.saveAppState({
+        ...savedState,
+        previousShiftSnapshots: [...nextSnapshots, snapshot],
+      });
+    },
+    [appStorageRepository],
+  );
+
   useEffect(() => {
     if (localState.activeShift) {
       hasSavedActiveShiftInSession.current = true;
@@ -108,8 +132,13 @@ export function LocalStateProvider({
   }, [localState.activeShift, saveActiveShift]);
 
   const value = useMemo(
-    () => ({ localState, saveFloorTemplates, setLocalState }),
-    [localState, saveFloorTemplates, setLocalState],
+    () => ({
+      localState,
+      saveFloorTemplates,
+      savePreviousShiftSnapshot,
+      setLocalState,
+    }),
+    [localState, saveFloorTemplates, savePreviousShiftSnapshot, setLocalState],
   );
 
   return (
