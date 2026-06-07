@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type Dispatch,
   type PropsWithChildren,
@@ -15,7 +16,7 @@ import {
   createStorageRepository,
   type StorageRepository,
 } from "../services/storageRepository";
-import type { FloorTemplate, LocalAppState } from "../types/models";
+import type { FloorTemplate, LocalAppState, Shift } from "../types/models";
 
 const emptyLocalState: LocalAppState = {
   floorTemplates: [],
@@ -44,6 +45,7 @@ export function LocalStateProvider({
   storageRepository: appStorageRepository = storageRepository,
 }: LocalStateProviderProps) {
   const [localState, setLocalState] = useState<LocalAppState>(emptyLocalState);
+  const hasSavedActiveShiftInSession = useRef(false);
 
   useEffect(() => {
     let shouldUpdateState = true;
@@ -79,6 +81,30 @@ export function LocalStateProvider({
     },
     [appStorageRepository],
   );
+
+  const saveActiveShift = useCallback(
+    async (activeShift?: Shift) => {
+      const savedState = await appStorageRepository.loadAppState();
+
+      await appStorageRepository.saveAppState({
+        ...savedState,
+        activeShift,
+      });
+    },
+    [appStorageRepository],
+  );
+
+  useEffect(() => {
+    if (localState.activeShift) {
+      hasSavedActiveShiftInSession.current = true;
+      void saveActiveShift(localState.activeShift);
+      return;
+    }
+
+    if (hasSavedActiveShiftInSession.current) {
+      void saveActiveShift(undefined);
+    }
+  }, [localState.activeShift, saveActiveShift]);
 
   const value = useMemo(
     () => ({ localState, saveFloorTemplates, setLocalState }),

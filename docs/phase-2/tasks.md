@@ -206,7 +206,7 @@ Validation check:
 
 ## Active Shift Persistence
 
-### Task 4.1: Save Active Shift Changes
+### Done Task 4.1: Save Active Shift Changes
 
 Story coverage: US4
 

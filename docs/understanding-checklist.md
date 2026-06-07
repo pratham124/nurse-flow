@@ -339,6 +339,30 @@ For each task, add a dated section with:
   - [x] Quiz or walkthrough completed.
 - Status: verified
 
+### 2026-06-07 - Save Active Shift Changes
+
+- Task: Save active shift changes into local persisted state.
+- Problem understanding:
+  - [x] React state keeps the active shift usable during the current app session, but it is not durable storage.
+  - [x] Task 4.1 should write active shift changes only; restoring them on app start belongs to Task 4.2.
+  - [x] The main branch considered was whether each screen should save manually or the provider should observe `activeShift` changes in one place.
+- Solution understanding:
+  - [x] `src/store/LocalStateContext.tsx` keeps `saveActiveShift` private to the provider.
+  - [x] The provider watches `localState.activeShift` and saves it when it changes.
+  - [x] The saved `Shift` includes status, admitting side, side load limits, nurses, bed states, assignment result, and flags because those fields already live on `activeShift`.
+  - [x] The provider avoids clearing persisted active shift on initial app load before Task 4.2 restore exists.
+  - [x] `docs/phase-2/tasks.md` marks Task 4.1 done.
+- Broader context:
+  - [x] This is the write side of active shift persistence.
+  - [x] Keeping the save in the provider avoids spreading storage code across setup and board screens.
+  - [x] Later restore and recovery tasks can read from the same local storage boundary.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
 ### 2026-06-05 - Add Room Delete Swipe Cue
 
 - Task: Make hidden room deletion more discoverable on the Rooms and Beds screen.
