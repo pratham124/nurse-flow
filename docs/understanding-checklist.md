@@ -363,6 +363,54 @@ For each task, add a dated section with:
   - [x] Quiz or walkthrough completed.
 - Status: verified
 
+### 2026-06-07 - Restore Active Shift on App Start
+
+- Task: Restore the saved active shift into local app state when NurseFlow opens.
+- Problem understanding:
+  - [x] Task 4.1 saved active shift data, but React state still started empty after a reload.
+  - [x] Task 4.2 should restore the one saved local active shift, not add history, backend sync, or recovery flows.
+  - [x] The main branch considered was whether Home should load storage itself or the provider should keep startup restore in one place.
+- Solution understanding:
+  - [x] `src/store/LocalStateContext.tsx` now loads `savedState.activeShift` with saved floor templates.
+  - [x] The existing Home active shift card appears because `localState.activeShift` is restored.
+  - [x] The existing resume button routes setup shifts to `/start-shift` and assigned shifts to `/floor-board`.
+  - [x] `draftFloorTemplate` and edit-mode state are still temporary and are not restored.
+  - [x] `docs/phase-2/tasks.md` marks Task 4.2 done.
+- Broader context:
+  - [x] Active shift persistence now has both halves: save on change and restore on app start.
+  - [x] Later missing-template recovery remains separate in Task 4.3.
+  - [x] Later end-shift behavior remains separate in Task 4.4.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+### 2026-06-07 - Handle Missing Template for Restored Shift
+
+- Task: Show a local recovery message when a restored active shift references a missing floor template.
+- Problem understanding:
+  - [ ] Saved local data can become inconsistent if an active shift points to a template id that is no longer saved.
+  - [ ] Task 4.3 should show a local recovery path, not add backend sync, conflict handling, or shift history.
+  - [ ] Normal template deletion already clears matching active shift state, so this handles unusual restored-data mismatch.
+- Solution understanding:
+  - [ ] `src/screens/HomeScreen.tsx` detects `activeShiftMissingTemplate` from `localState.activeShift` and `localState.floorTemplates`.
+  - [ ] Home shows a warning on the active shift card when the saved template is missing.
+  - [ ] The existing `Resume` and `End shift` actions remain the recovery choices.
+  - [ ] Existing valid active shift and saved template behavior is unchanged.
+  - [ ] `docs/phase-2/tasks.md` marks Task 4.3 done.
+- Broader context:
+  - [ ] This keeps restored local data from feeling broken or mysterious.
+  - [ ] Missing-template recovery is separate from Task 4.4 end-shift cleanup.
+  - [ ] The app remains local-only and does not add future-phase sync concepts.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Gaps were explained.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
 ### 2026-06-05 - Add Room Delete Swipe Cue
 
 - Task: Make hidden room deletion more discoverable on the Rooms and Beds screen.

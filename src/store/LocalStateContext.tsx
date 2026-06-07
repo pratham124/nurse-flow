@@ -50,7 +50,7 @@ export function LocalStateProvider({
   useEffect(() => {
     let shouldUpdateState = true;
 
-    async function loadSavedFloorTemplates() {
+    async function loadSavedLocalState() {
       const savedState = await appStorageRepository.loadAppState();
 
       if (!shouldUpdateState) {
@@ -59,11 +59,12 @@ export function LocalStateProvider({
 
       setLocalState((currentState) => ({
         ...currentState,
+        activeShift: savedState.activeShift,
         floorTemplates: savedState.floorTemplates,
       }));
     }
 
-    void loadSavedFloorTemplates();
+    void loadSavedLocalState();
 
     return () => {
       shouldUpdateState = false;

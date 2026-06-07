@@ -171,6 +171,7 @@ export default function Index() {
         (t) => t.id === activeShift.floorTemplateId,
       )
     : null;
+  const activeShiftMissingTemplate = Boolean(activeShift && !activeShiftTemplate);
   const activeShiftFloorName =
     activeShift?.floorName ?? activeShiftTemplate?.name ?? "Active Floor";
   const activeShiftNursesCount = activeShift?.nurses?.length ?? 0;
@@ -313,6 +314,12 @@ export default function Index() {
               {activeShiftPatientsCount}{" "}
               {activeShiftPatientsCount === 1 ? "patient" : "patients"}
             </Text>
+            {activeShiftMissingTemplate ? (
+              <Text accessibilityRole="alert" style={styles.activeShiftWarning}>
+                Saved floor template is missing. Resume this local shift or end
+                it to clear the recovered shift.
+              </Text>
+            ) : null}
             <View style={styles.activeShiftActions}>
               <Pressable
                 accessibilityLabel="Resume active shift"
@@ -526,6 +533,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginBottom: spacing.xs,
     fontWeight: fontWeight.medium,
+  },
+  activeShiftWarning: {
+    color: colors.status.red700,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.medium,
+    lineHeight: 18,
   },
   activeShiftActions: {
     flexDirection: "row",

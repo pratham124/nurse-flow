@@ -220,7 +220,7 @@ Validation check:
 
 - Start a shift, add nurses and patients, close and reopen the app, and confirm the active shift is still available.
 
-### Task 4.2: Restore Active Shift on App Start
+### Done Task 4.2: Restore Active Shift on App Start
 
 Story coverage: US4
 
@@ -235,7 +235,7 @@ Validation check:
 - Reopening during setup resumes setup.
 - Reopening after assignment resumes the board with assignment results visible.
 
-### Task 4.3: Handle Missing Template for Restored Shift
+### Done Task 4.3: Handle Missing Template for Restored Shift
 
 Story coverage: US4, US8
 
