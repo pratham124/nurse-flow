@@ -690,19 +690,20 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.medium,
   },
   startShiftButton: {
-    backgroundColor: colors.brand.burgundy,
-    borderRadius: radius.md,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    ...shadows.sm,
+    backgroundColor: colors.brand.burgundy10,
+    borderColor: colors.brand.burgundy15,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
   },
   startShiftButtonPressed: {
-    opacity: 0.85,
+    backgroundColor: colors.brand.burgundy15,
   },
   startShiftButtonText: {
-    color: colors.neutral.surface,
+    color: colors.brand.burgundy,
     fontSize: 12,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.semibold,
   },
   actionBar: {
     backgroundColor: colors.neutral.backgroundPrimary,
