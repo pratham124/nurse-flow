@@ -325,7 +325,7 @@ Validation check:
 - Starting a new shift from a template with its own previous snapshot shows Carry-Over Review.
 - Starting from a template with no snapshot skips Carry-Over Review or shows a small empty state.
 
-### Task 6.2: Accept and Dismiss Nurse Suggestions
+### Done Task 6.2: Accept and Dismiss Nurse Suggestions
 
 Story coverage: US6
 
@@ -341,7 +341,7 @@ Validation check:
 - Only the accepted nurse appears on Nurses.
 - The accepted nurse still needs max patient load before assignment.
 
-### Task 6.3: Accept and Dismiss Patient Suggestions
+### Done Task 6.3: Accept and Dismiss Patient Suggestions
 
 Story coverage: US7
 

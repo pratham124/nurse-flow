@@ -318,6 +318,9 @@ export default function Index() {
     }));
     setTemplateEditMessage("");
     setEndShiftConfirmationVisible(false);
+    if (router.canDismiss()) {
+      router.dismissAll();
+    }
     router.replace("/");
   }
 

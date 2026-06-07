@@ -35,6 +35,7 @@ const censusFilters = [
 const sexOptions = ["F", "M", "Other"];
 const acuityOptions: Acuity[] = ["green", "yellow", "red"];
 const wholeNumberAgeMessage = "Age must be a whole number.";
+const acuityRequiredMessage = "Select an acuity level for all occupied beds.";
 
 type PatientField = "initials" | "age" | "sex" | "diagnosis";
 type CensusFilter = (typeof censusFilters)[number]["value"];
@@ -542,6 +543,11 @@ export default function PatientsAndAcuityScreen() {
       return !isWholeNumberText(ageText);
     }) ?? false;
 
+  const hasMissingAcuity =
+    activeShift?.bedStates.some((bedState) => {
+      return isOccupiedBedState(bedState) && !bedState.acuity;
+    }) ?? false;
+
   function handleUpdatePatientField(
     bedId: string,
     field: PatientField,
@@ -656,13 +662,27 @@ export default function PatientsAndAcuityScreen() {
   }
 
   function handleContinue() {
+    console.log("handleContinue called");
+    console.log("activeShift:", !!activeShift);
     if (!activeShift) {
-      router.replace("/start-shift");
+      router.replace("/");
       return;
     }
 
-    if (!hasInvalidAge) {
+    console.log("bedStates:", activeShift.bedStates.map(b => ({
+      bedId: b.bedId,
+      initials: b.patient?.initials,
+      acuity: b.acuity,
+      isOccupied: isOccupiedBedState(b)
+    })));
+    console.log("hasInvalidAge:", hasInvalidAge);
+    console.log("hasMissingAcuity:", hasMissingAcuity);
+
+    if (!hasInvalidAge && !hasMissingAcuity) {
+      console.log("Navigating to /assignment-review");
       router.push("/assignment-review");
+    } else {
+      console.log("Navigation blocked");
     }
   }
 
@@ -685,7 +705,9 @@ export default function PatientsAndAcuityScreen() {
         activeShift
           ? hasInvalidAge
             ? wholeNumberAgeMessage
-            : ""
+            : hasMissingAcuity
+              ? acuityRequiredMessage
+              : ""
           : "Start a shift before adding patients."
       }
       data={filteredRoomGroups}

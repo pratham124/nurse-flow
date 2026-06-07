@@ -172,13 +172,13 @@ export default function AssignmentReviewScreen() {
 
   useEffect(() => {
     if (!activeShift) {
-      router.replace("/start-shift");
+      router.replace("/");
     }
   }, [activeShift]);
 
   function handlePrimaryPress() {
     if (!activeShift) {
-      router.replace("/start-shift");
+      router.replace("/");
       return;
     }
 

@@ -60,6 +60,30 @@ For each task, add a dated section with:
   - [ ] Quiz or walkthrough completed.
 - Status: pending
 
+### 2026-06-07 - Accept and Dismiss Nurse Suggestions (Task 6.2)
+
+- Task: Make nurse carry-over suggestions interactive with accept, dismiss, and undo actions.
+- Problem understanding:
+  - [ ] The Carry-Over Review screen showed nurse suggestions as static "Pending review" badges with no way to act on them.
+  - [ ] Accepted nurses need to join the active shift's nurse list so they appear on the Nurses screen.
+  - [ ] Max patient load should NOT carry over because staffing limits change between shifts.
+- Solution understanding:
+  - [ ] `src/screens/CarryOverReviewScreen.tsx` tracks review decisions in local `useState` as a `Record<suggestionId, NurseReviewEntry>`.
+  - [ ] Accept, dismiss, and undo only change local component state — no shift mutation happens until Continue.
+  - [ ] `handleContinue` collects all accepted suggestions and adds them to `activeShift.nurses` in one `setLocalState` call, with `maxPatientLoad` defaulting to `sideLoadLimits.admitting.max`.
+  - [ ] Duplicate prevention checks name + licenseType + experienceLevel before adding.
+  - [ ] `SuggestionStatusBadge` now takes a `variant` prop for accepted (green), dismissed (gray), and pending (amber) styles.
+- Broader context:
+  - [ ] This fulfills US6 acceptance criteria for nurse carry-over.
+  - [ ] Patient carry-over (Task 6.3) follows the same pattern but modifies `bedStates` instead of `nurses`.
+  - [ ] The manual add flow on NursesScreen remains unchanged.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Gaps were explained.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
 ### 2026-06-05 - Plan Phase 2 Local Persistence
 
 - Task: Create Phase 2 planning docs for local persistence, saved template reuse, active shift restore, and previous-shift carry-over suggestions.
