@@ -12,10 +12,15 @@ import {
   BedIcon,
   RoomIcon,
 } from "../components/workflow";
-import { createLocalId } from "../helpers/localId";
 import { useLocalState } from "../store/LocalStateContext";
 import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
-import type { FloorTemplate, PreviousShiftSnapshot, Shift } from "../types/models";
+import type { FloorTemplate } from "../types/models";
+import {
+  isCompletedFloorTemplate,
+  createShiftFromTemplate,
+  copyFloorTemplate,
+  createPreviousShiftSnapshot,
+} from "../helpers/shiftHelpers";
 
 type FloorTemplateRowProps = {
   floorTemplate: FloorTemplate;
@@ -92,103 +97,7 @@ function FloorTemplateRow({
   );
 }
 
-function isCompletedFloorTemplate(floorTemplate: FloorTemplate) {
-  const doctorSideIds = floorTemplate.doctorSides.map(
-    (doctorSide) => doctorSide.id,
-  );
-  const hasNamedDoctorSides =
-    floorTemplate.doctorSides.length === 2 &&
-    floorTemplate.doctorSides.every((doctorSide) => doctorSide.name.trim());
-  const hasRooms = floorTemplate.rooms.length > 0;
-  const hasValidRooms = floorTemplate.rooms.every(
-    (room) =>
-      room.label.trim() &&
-      room.bedCount > 0 &&
-      doctorSideIds.includes(room.doctorSideId),
-  );
-  const hasBedsForEveryRoom = floorTemplate.rooms.every((room) =>
-    floorTemplate.beds.some((bed) => bed.roomId === room.id),
-  );
 
-  return (
-    Boolean(floorTemplate.name.trim()) &&
-    hasNamedDoctorSides &&
-    hasRooms &&
-    hasValidRooms &&
-    hasBedsForEveryRoom
-  );
-}
-
-function createShiftFromTemplate(floorTemplate: FloorTemplate): Shift {
-  return {
-    id: createLocalId("shift"),
-    floorTemplateId: floorTemplate.id,
-    floorName: floorTemplate.name,
-    status: "setup",
-    admittingDoctorSideId: "",
-    doctorSides: floorTemplate.doctorSides.map((doctorSide) => ({
-      ...doctorSide,
-    })),
-    rooms: floorTemplate.rooms.map((room) => ({ ...room })),
-    beds: floorTemplate.beds.map((bed) => ({ ...bed })),
-    sideLoadLimits: {
-      admitting: { min: 4, max: 5 },
-      nonAdmitting: { min: 6, max: 7 },
-    },
-    nurses: [],
-    bedStates: floorTemplate.beds.map((bed) => ({
-      id: createLocalId("bed-state"),
-      bedId: bed.id,
-    })),
-    flags: [],
-  };
-}
-
-function copyFloorTemplate(floorTemplate: FloorTemplate): FloorTemplate {
-  return {
-    id: floorTemplate.id,
-    name: floorTemplate.name,
-    doctorSides: floorTemplate.doctorSides.map((doctorSide) => ({
-      ...doctorSide,
-    })),
-    rooms: floorTemplate.rooms.map((room) => ({ ...room })),
-    beds: floorTemplate.beds.map((bed) => ({ ...bed })),
-  };
-}
-
-function createPreviousShiftSnapshot(activeShift: Shift): PreviousShiftSnapshot {
-  return {
-    id: createLocalId("previous-shift"),
-    floorTemplateId: activeShift.floorTemplateId,
-    completedAt: new Date().toISOString(),
-    nurseSuggestions: activeShift.nurses.map((nurse) => ({
-      id: createLocalId("nurse-suggestion"),
-      previousNurseId: nurse.id,
-      name: nurse.name,
-      licenseType: nurse.licenseType,
-      experienceLevel: nurse.experienceLevel,
-    })),
-    patientSuggestions: activeShift.bedStates.flatMap((bedState) => {
-      if (!bedState.patient?.initials.trim()) {
-        return [];
-      }
-
-      const previousBed = activeShift.beds.find(
-        (bed) => bed.id === bedState.bedId,
-      );
-
-      return [
-        {
-          id: createLocalId("patient-suggestion"),
-          previousBedId: bedState.bedId,
-          previousBedLabel: previousBed?.label ?? "Unknown bed",
-          patient: { ...bedState.patient },
-          acuity: bedState.acuity,
-        },
-      ];
-    }),
-  };
-}
 
 export default function Index() {
   const { localState, savePreviousShiftSnapshot, setLocalState } =
@@ -541,11 +450,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: spacing.lg,
     gap: spacing.sm,
-    shadowColor: colors.status.greenIcon || "#3b6d11",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    boxShadow: [{
+      offsetX: 0,
+      offsetY: 4,
+      blurRadius: 8,
+      color: "rgba(59, 109, 17, 0.1)",
+    }],
   },
   activeShiftHeader: {
     flexDirection: "row",

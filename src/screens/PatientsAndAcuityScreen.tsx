@@ -662,27 +662,13 @@ export default function PatientsAndAcuityScreen() {
   }
 
   function handleContinue() {
-    console.log("handleContinue called");
-    console.log("activeShift:", !!activeShift);
     if (!activeShift) {
       router.replace("/");
       return;
     }
 
-    console.log("bedStates:", activeShift.bedStates.map(b => ({
-      bedId: b.bedId,
-      initials: b.patient?.initials,
-      acuity: b.acuity,
-      isOccupied: isOccupiedBedState(b)
-    })));
-    console.log("hasInvalidAge:", hasInvalidAge);
-    console.log("hasMissingAcuity:", hasMissingAcuity);
-
     if (!hasInvalidAge && !hasMissingAcuity) {
-      console.log("Navigating to /assignment-review");
       router.push("/assignment-review");
-    } else {
-      console.log("Navigation blocked");
     }
   }
 

@@ -153,7 +153,10 @@ export default function CarryOverReviewScreen() {
     : undefined;
 
   const nurseSuggestions = previousShiftSnapshot?.nurseSuggestions ?? [];
-  const patientSuggestions = previousShiftSnapshot?.patientSuggestions ?? [];
+  const patientSuggestions = (previousShiftSnapshot?.patientSuggestions ?? []).filter(
+    (suggestion) =>
+      activeShift?.beds.some((b) => b.id === suggestion.previousBedId),
+  );
   const canContinue = Boolean(activeShift);
 
   // Track which suggestions are toggled on (will be added to the shift).

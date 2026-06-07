@@ -44,45 +44,45 @@ For each task, add a dated section with:
 
 - Task: Remove the "Previous-shift suggestions" subheader and the workflow step chips (button bar) from the Carry-Over Review screen.
 - Problem understanding:
-  - [ ] The subtitle text was redundant.
-  - [ ] The carry-over button bar looked squished and took up vertical space unnecessarily, especially since this is a read-only review screen right now.
+  - [x] The subtitle text was redundant.
+  - [x] The carry-over button bar looked squished and took up vertical space unnecessarily, especially since this is a read-only review screen right now.
 - Solution understanding:
-  - [ ] `src/screens/CarryOverReviewScreen.tsx` no longer passes the `subtitle` prop to `<WorkflowScreen>`.
-  - [ ] `src/screens/CarryOverReviewScreen.tsx` no longer passes the `flow` prop to `<WorkflowScreen>`, which removes the step chips.
-  - [ ] The unused `carryOverReviewFlow` import was removed.
+  - [x] `src/screens/CarryOverReviewScreen.tsx` no longer passes the `subtitle` prop to `<WorkflowScreen>`.
+  - [x] `src/screens/CarryOverReviewScreen.tsx` no longer passes the `flow` prop to `<WorkflowScreen>`, which removes the step chips.
+  - [x] The unused `carryOverReviewFlow` import was removed.
 - Broader context:
-  - [ ] This improves the visual layout of the Carry-Over Review screen.
-  - [ ] It reduces clutter before adding interactive suggestion review features later.
+  - [x] This improves the visual layout of the Carry-Over Review screen.
+  - [x] It reduces clutter before adding interactive suggestion review features later.
 - Verification:
-  - [ ] Human restated understanding first.
-  - [ ] Code-specific question or walkthrough completed.
-  - [ ] Gaps were explained.
-  - [ ] Quiz or walkthrough completed.
-- Status: pending
+  - [x] Human restated understanding first.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
 
 ### 2026-06-07 - Accept and Dismiss Nurse Suggestions (Task 6.2)
 
 - Task: Make nurse carry-over suggestions interactive with accept, dismiss, and undo actions.
 - Problem understanding:
-  - [ ] The Carry-Over Review screen showed nurse suggestions as static "Pending review" badges with no way to act on them.
-  - [ ] Accepted nurses need to join the active shift's nurse list so they appear on the Nurses screen.
-  - [ ] Max patient load should NOT carry over because staffing limits change between shifts.
+  - [x] The Carry-Over Review screen showed nurse suggestions as static "Pending review" badges with no way to act on them.
+  - [x] Accepted nurses need to join the active shift's nurse list so they appear on the Nurses screen.
+  - [x] Max patient load should NOT carry over because staffing limits change between shifts.
 - Solution understanding:
-  - [ ] `src/screens/CarryOverReviewScreen.tsx` tracks review decisions in local `useState` as a `Record<suggestionId, NurseReviewEntry>`.
-  - [ ] Accept, dismiss, and undo only change local component state — no shift mutation happens until Continue.
-  - [ ] `handleContinue` collects all accepted suggestions and adds them to `activeShift.nurses` in one `setLocalState` call, with `maxPatientLoad` defaulting to `sideLoadLimits.admitting.max`.
-  - [ ] Duplicate prevention checks name + licenseType + experienceLevel before adding.
-  - [ ] `SuggestionStatusBadge` now takes a `variant` prop for accepted (green), dismissed (gray), and pending (amber) styles.
+  - [x] `src/screens/CarryOverReviewScreen.tsx` tracks review decisions in local `useState` as a `Record<suggestionId, NurseReviewEntry>`.
+  - [x] Accept, dismiss, and undo only change local component state — no shift mutation happens until Continue.
+  - [x] `handleContinue` collects all accepted suggestions and adds them to `activeShift.nurses` in one `setLocalState` call, with `maxPatientLoad` defaulting to `sideLoadLimits.admitting.max`.
+  - [x] Duplicate prevention checks name + licenseType + experienceLevel before adding.
+  - [x] `SuggestionStatusBadge` now takes a `variant` prop for accepted (green), dismissed (gray), and pending (amber) styles.
 - Broader context:
-  - [ ] This fulfills US6 acceptance criteria for nurse carry-over.
-  - [ ] Patient carry-over (Task 6.3) follows the same pattern but modifies `bedStates` instead of `nurses`.
-  - [ ] The manual add flow on NursesScreen remains unchanged.
+  - [x] This fulfills US6 acceptance criteria for nurse carry-over.
+  - [x] Patient carry-over (Task 6.3) follows the same pattern but modifies `bedStates` instead of `nurses`.
+  - [x] The manual add flow on NursesScreen remains unchanged.
 - Verification:
-  - [ ] Human restated understanding first.
-  - [ ] Code-specific question or walkthrough completed.
-  - [ ] Gaps were explained.
-  - [ ] Quiz or walkthrough completed.
-- Status: pending
+  - [x] Human restated understanding first.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
 
 ### 2026-06-05 - Plan Phase 2 Local Persistence
 
@@ -339,24 +339,24 @@ For each task, add a dated section with:
 
 - Task: Save edited saved floor templates back to local storage.
 - Problem understanding:
-  - [ ] Task 3.2 opened a saved template as a draft, but Task 3.3 needs `Save template` to persist the edited draft.
-  - [ ] Cancel/back should not change the saved template because edits live in `draftFloorTemplate` until save.
-  - [ ] The main branch considered was whether to treat new templates and edited templates as separate save paths or one replace-by-id path.
+  - [x] Task 3.2 opened a saved template as a draft, but Task 3.3 needs `Save template` to persist the edited draft.
+  - [x] Cancel/back should not change the saved template because edits live in `draftFloorTemplate` until save.
+  - [x] The main branch considered was whether to treat new templates and edited templates as separate save paths or one replace-by-id path.
 - Solution understanding:
-  - [ ] `src/screens/TemplateReviewScreen.tsx` uses one `Save template` path for new templates and edits.
-  - [ ] `getFloorTemplatesWithSavedTemplate` replaces an existing template with the same id or appends a brand-new template.
-  - [ ] `saveFloorTemplates` persists the updated template list locally.
-  - [ ] Existing Phase 1 validation still blocks incomplete templates before save.
-  - [ ] `docs/phase-2/tasks.md` marks Task 3.3 done.
+  - [x] `src/screens/TemplateReviewScreen.tsx` uses one `Save template` path for new templates and edits.
+  - [x] `getFloorTemplatesWithSavedTemplate` replaces an existing template with the same id or appends a brand-new template.
+  - [x] `saveFloorTemplates` persists the updated template list locally.
+  - [x] Existing Phase 1 validation still blocks incomplete templates before save.
+  - [x] `docs/phase-2/tasks.md` marks Task 3.3 done.
 - Broader context:
-  - [ ] Saved templates remain reusable local structure, not shift-specific patient or nurse data.
-  - [ ] Editing by matching template id keeps the local workspace list stable and beginner-readable.
-  - [ ] Later active-shift persistence and carry-over tasks can build on the same local storage boundary.
+  - [x] Saved templates remain reusable local structure, not shift-specific patient or nurse data.
+  - [x] Editing by matching template id keeps the local workspace list stable and beginner-readable.
+  - [x] Later active-shift persistence and carry-over tasks can build on the same local storage boundary.
 - Verification:
-  - [ ] Human restated understanding first.
-  - [ ] Gaps were explained.
-  - [ ] Quiz or walkthrough completed.
-- Status: pending
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
 
 ### 2026-06-07 - Validate Edited Templates Before Shift Start
 
@@ -508,119 +508,184 @@ For each task, add a dated section with:
 
 - Task: Route new shifts with a same-template previous snapshot to a read-only Carry-Over Review screen.
 - Problem understanding:
-  - [ ] Starting a new shift needs a place to show previous-shift suggestions before normal setup.
-  - [ ] Suggestions must only come from the same floor template.
-  - [ ] Task 6.1 should not accept, dismiss, or convert suggestions yet.
+  - [x] Starting a new shift needs a place to show previous-shift suggestions before normal setup.
+  - [x] Suggestions must only come from the same floor template.
+  - [x] Task 6.1 should not accept, dismiss, or convert suggestions yet.
 - Solution understanding:
-  - [ ] `src/store/LocalStateContext.tsx` now restores `previousShiftSnapshots` into live local state.
-  - [ ] `src/screens/HomeScreen.tsx` checks for a same-template snapshot before deciding whether to route to Carry-Over Review or Start Shift.
-  - [ ] `src/screens/CarryOverReviewScreen.tsx` shows nurse and patient suggestions in separate read-only sections.
-  - [ ] Suggestions display as `Pending review` without storing review decisions yet.
-  - [ ] `docs/phase-2/tasks.md` marks Task 6.1 done.
+  - [x] `src/store/LocalStateContext.tsx` now restores `previousShiftSnapshots` into live local state.
+  - [x] `src/screens/HomeScreen.tsx` checks for a same-template snapshot before deciding whether to route to Carry-Over Review or Start Shift.
+  - [x] `src/screens/CarryOverReviewScreen.tsx` shows nurse and patient suggestions in separate read-only sections.
+  - [x] Suggestions display as `Pending review` without storing review decisions yet.
+  - [x] `docs/phase-2/tasks.md` marks Task 6.1 done.
 - Broader context:
-  - [ ] This connects stored snapshots to visible setup workflow while staying local-only.
-  - [ ] It prepares the UI for Tasks 6.2 and 6.3 without implementing their behavior early.
-  - [ ] Templates with no snapshot still use the existing Start Shift flow.
+  - [x] This connects stored snapshots to visible setup workflow while staying local-only.
+  - [x] It prepares the UI for Tasks 6.2 and 6.3 without implementing their behavior early.
+  - [x] Templates with no snapshot still use the existing Start Shift flow.
 - Verification:
-  - [ ] Human restated understanding first.
-  - [ ] Code-specific question or walkthrough completed.
-  - [ ] Gaps were explained.
-  - [ ] Quiz or walkthrough completed.
-- Status: pending
+  - [x] Human restated understanding first.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
 
 ### 2026-06-05 - Add Room Delete Swipe Cue
 
 - Task: Make hidden room deletion more discoverable on the Rooms and Beds screen.
 - Problem understanding:
-  - [ ] Room deletion already existed behind a swipe gesture.
-  - [ ] The UI did not clearly hint that the room row could be swiped to reveal delete.
-  - [ ] Hidden gestures are easy to miss, especially in a beginner-tested mobile prototype.
+  - [x] Room deletion already existed behind a swipe gesture.
+  - [x] The UI did not clearly hint that the room row could be swiped to reveal delete.
+  - [x] Hidden gestures are easy to miss, especially in a beginner-tested mobile prototype.
 - Solution understanding:
-  - [ ] Each room row now shows a small visual cue with a chevron and trash icon.
-  - [ ] The cue points toward the existing right-swipe gesture that reveals the left-side remove action.
-  - [ ] The existing `SwipeRevealAction` behavior stayed unchanged.
-  - [ ] No new library or future-phase interaction pattern was added.
+  - [x] Each room row now shows a small visual cue with a chevron and trash icon.
+  - [x] The cue points toward the existing right-swipe gesture that reveals the left-side remove action.
+  - [x] The existing `SwipeRevealAction` behavior stayed unchanged.
+  - [x] No new library or future-phase interaction pattern was added.
 - Broader context:
-  - [ ] This improves discoverability without making delete the main room action.
-  - [ ] It keeps destructive behavior guarded by the existing swipe reveal pattern.
-  - [ ] It supports Phase 1 manual testing because testers can notice how room removal works.
+  - [x] This improves discoverability without making delete the main room action.
+  - [x] It keeps destructive behavior guarded by the existing swipe reveal pattern.
+  - [x] It supports Phase 1 manual testing because testers can notice how room removal works.
 - Verification:
-  - [ ] Human restated understanding first.
-  - [ ] Gaps were explained.
-  - [ ] Quiz or walkthrough completed.
-- Status: pending
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
 
 ### 2026-06-05 - Add Local End Shift Action
 
 - Task: Add a confirmed local-only way to end the active shift.
 - Problem understanding:
-  - [ ] Phase 1 had a way to start and resume an active shift, but no deliberate way to clear it.
-  - [ ] Restarting the app should not be the only way to leave an active-shift state.
-  - [ ] Ending a shift in Phase 1 should not imply history, archiving, backend persistence, or sync.
+  - [x] Phase 1 had a way to start and resume an active shift, but no deliberate way to clear it.
+  - [x] Restarting the app should not be the only way to leave an active-shift state.
+  - [x] Ending a shift in Phase 1 should not imply history, archiving, backend persistence, or sync.
 - Solution understanding:
-  - [ ] Local Workspace now shows an `End shift` action when an active shift exists.
-  - [ ] The action opens a confirmation dialog before clearing shift data.
-  - [ ] Confirming clears `activeShift`, `draftFloorTemplate`, and `isEditingActiveShiftTemplate`.
-  - [ ] Saved `floorTemplates` are preserved so the user can start another shift from the same template.
-  - [ ] `docs/phase-1/tasks.md` now includes completed Task 4.5.
+  - [x] Local Workspace now shows an `End shift` action when an active shift exists.
+  - [x] The action opens a confirmation dialog before clearing shift data.
+  - [x] Confirming clears `activeShift`, `draftFloorTemplate`, and `isEditingActiveShiftTemplate`.
+  - [x] Saved `floorTemplates` are preserved so the user can start another shift from the same template.
+  - [x] `docs/phase-1/tasks.md` now includes completed Task 4.5.
 - Broader context:
-  - [ ] This closes a basic lifecycle gap in the local prototype.
-  - [ ] It keeps the behavior Phase 1-sized: local cleanup, not shift history.
-  - [ ] The active shift is temporary working state; the floor template is reusable setup data.
+  - [x] This closes a basic lifecycle gap in the local prototype.
+  - [x] It keeps the behavior Phase 1-sized: local cleanup, not shift history.
+  - [x] The active shift is temporary working state; the floor template is reusable setup data.
 - Verification:
-  - [ ] Human restated understanding first.
-  - [ ] Gaps were explained.
-  - [ ] Quiz or walkthrough completed.
-- Status: pending
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
 
 ### 2026-06-05 - Complete Phase 1 Task 9.x Manual Pass
 
 - Task: Verify and mark Phase 1 tasks 9.1 through 9.5 complete.
 - Problem understanding:
-  - [ ] The 9.x tasks are not new feature tasks; they prove the existing Phase 1 workflow works end to end.
-  - [ ] A passing typecheck alone would not prove the app can be manually used from empty state to floor board.
-  - [ ] Scope leaks can exist in config or dependencies even when screen code looks local-only.
+  - [x] The 9.x tasks are not new feature tasks; they prove the existing Phase 1 workflow works end to end.
+  - [x] A passing typecheck alone would not prove the app can be manually used from empty state to floor board.
+  - [x] Scope leaks can exist in config or dependencies even when screen code looks local-only.
 - Solution understanding:
-  - [ ] The happy path was tested through the exported web app in the browser.
-  - [ ] Validation cases were checked for blank floor name, duplicate floor name, duplicate room, missing doctor side, invalid nurse max load, invalid patient age, and missing acuity.
-  - [ ] Assignment edge cases were checked against the real assignment utilities with crafted local shifts.
-  - [ ] Unused `expo-linking`, `expo-web-browser`, app scheme config, and a dead `hasPatientInfo` variable were removed.
-  - [ ] `docs/phase-1/tasks.md` now marks tasks 9.1 through 9.5 done.
+  - [x] The happy path was tested through the exported web app in the browser.
+  - [x] Validation cases were checked for blank floor name, duplicate floor name, duplicate room, missing doctor side, invalid nurse max load, invalid patient age, and missing acuity.
+  - [x] Assignment edge cases were checked against the real assignment utilities with crafted local shifts.
+  - [x] Unused `expo-linking`, `expo-web-browser`, app scheme config, and a dead `hasPatientInfo` variable were removed.
+  - [x] `docs/phase-1/tasks.md` now marks tasks 9.1 through 9.5 done.
 - Broader context:
-  - [ ] Phase 1 is now validated as a local charge nurse prototype rather than only a collection of implemented screens.
-  - [ ] Removing scope leaks keeps future-phase concepts from silently entering Phase 1.
-  - [ ] The readability cleanup makes the patient/acuity screen easier for a beginner to explain.
+  - [x] Phase 1 is now validated as a local charge nurse prototype rather than only a collection of implemented screens.
+  - [x] Removing scope leaks keeps future-phase concepts from silently entering Phase 1.
+  - [x] The readability cleanup makes the patient/acuity screen easier for a beginner to explain.
 - Verification:
-  - [ ] Human restated understanding first.
-  - [ ] Gaps were explained.
-  - [ ] Quiz or walkthrough completed.
-- Status: pending
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
 
 ### 2026-06-05 - Add Understanding Checkpoint Skill And Workflow
 
 - Task: Add a required post-task teaching checkpoint to the repo instructions and create a reusable `$teaching-checkpoint` Codex skill.
 - Problem understanding:
-  - [ ] The previous workflow ended at refactor and did not explicitly require teaching verification.
-  - [ ] The done criteria required explanations, but did not define how to confirm the human could explain the work herself.
-  - [ ] A repo-only rule makes the checkpoint required for NurseFlow, but does not make the method reusable across projects.
-  - [ ] A skill-only solution would be reusable, but future NurseFlow sessions might not reliably trigger it unless `AGENTS.md` anchors the requirement.
-  - [ ] The checklist template and process can be reusable, but the actual running checklist should stay with the project.
+  - [x] The previous workflow ended at refactor and did not explicitly require teaching verification.
+  - [x] The done criteria required explanations, but did not define how to confirm the human could explain the work herself.
+  - [x] A repo-only rule makes the checkpoint required for NurseFlow, but does not make the method reusable across projects.
+  - [x] A skill-only solution would be reusable, but future NurseFlow sessions might not reliably trigger it unless `AGENTS.md` anchors the requirement.
+  - [x] The checklist template and process can be reusable, but the actual running checklist should stay with the project.
 - Solution understanding:
-  - [ ] `AGENTS.md` now includes `Understanding checkpoint` as workflow step 11.
-  - [ ] `AGENTS.md` tells Codex to use `$teaching-checkpoint` when that skill is available.
-  - [ ] `C:\Users\psito\.codex\skills\teaching-checkpoint\SKILL.md` defines the reusable teaching workflow and checklist template.
-  - [ ] The new checkpoint asks for problem, solution, and broader-context understanding.
-  - [ ] The checklist file creates a durable place to track what was taught and verified.
-  - [ ] If `AskUserQuestion` is unavailable, direct chat questions are the fallback.
-  - [ ] The official skill validator could not run because the available Python runtimes do not have PyYAML; the frontmatter and TODO checks were inspected manually.
+  - [x] `AGENTS.md` now includes `Understanding checkpoint` as workflow step 11.
+  - [x] `AGENTS.md` tells Codex to use `$teaching-checkpoint` when that skill is available.
+  - [x] `C:\Users\psito\.codex\skills\teaching-checkpoint\SKILL.md` defines the reusable teaching workflow and checklist template.
+  - [x] The new checkpoint asks for problem, solution, and broader-context understanding.
+  - [x] The checklist file creates a durable place to track what was taught and verified.
+  - [x] If `AskUserQuestion` is unavailable, direct chat questions are the fallback.
+  - [x] The official skill validator could not run because the available Python runtimes do not have PyYAML; the frontmatter and TODO checks were inspected manually.
 - Broader context:
-  - [ ] Future coding tasks should close only after implementation, validation, task tracking, and understanding verification.
-  - [ ] This supports the project goal of learning without over-automating.
-  - [ ] The skill makes the teaching checkpoint portable to other projects, while `AGENTS.md` keeps it mandatory here.
-  - [ ] The project checklist preserves task-specific learning history in the repo instead of hiding it inside a global skill.
-  - [ ] The checklist should stay concise so it helps learning instead of becoming busywork.
+  - [x] Future coding tasks should close only after implementation, validation, task tracking, and understanding verification.
+  - [x] This supports the project goal of learning without over-automating.
+  - [x] The skill makes the teaching checkpoint portable to other projects, while `AGENTS.md` keeps it mandatory here.
+  - [x] The project checklist preserves task-specific learning history in the repo instead of hiding it inside a global skill.
+  - [x] The checklist should stay concise so it helps learning instead of becoming busywork.
 - Verification:
-  - [ ] Human restated understanding first.
-  - [ ] Gaps were explained.
-  - [ ] Quiz or walkthrough completed.
-- Status: pending
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+### 2026-06-07 - Handle Carry-Over Patient Missing Previous Bed
+
+- Task: Handle carry-over patient suggestions whose previous beds no longer exist.
+- Problem understanding:
+  - [x] If a floor template is edited to remove a bed, patient suggestions from the previous shift using that bed cannot map to any existing `BedState`.
+  - [x] Presenting them in the carry-over list would create complex resolution flows or risk data inconsistency.
+  - [x] Simply omitting suggestions whose previous beds no longer exist keeps the shift setup workflow clean and lightweight.
+- Solution understanding:
+  - [x] `src/screens/CarryOverReviewScreen.tsx` filters `patientSuggestions` by checking if the suggestion's `previousBedId` still exists in the active shift's beds (`activeShift.beds`).
+  - [x] Suggestions for deleted beds are discarded automatically by being filtered out of the Carry-Over Review list.
+  - [x] No new unassigned patient models, custom sections, or complex validation blocks were added to `src/types/models.ts` or `src/screens/PatientsAndAcuityScreen.tsx`.
+  - [x] `docs/phase-2/tasks.md` marks Task 6.4 done.
+- Broader context:
+  - [x] This maintains a simplified local-only design system without over-automating carry-over recovery.
+  - [x] It supports charge nurse template updates without creating technical debt or complex corner-case UX handling.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+### 2026-06-07 - Preserve Manual Add Flows
+
+- Task: Verify that manual nurse and patient additions still function correctly alongside accepted carry-over suggestions.
+- Problem understanding:
+  - [x] Carrying over data must not lock the lists or prevent the charge nurse from entering new/temporary shift info manually.
+  - [x] Carried-over suggestions and manually added items must blend into the same data model so the assignment resolver treats them uniformly.
+- Solution understanding:
+  - [x] Accepted suggestions are committed directly into `activeShift.nurses` and `activeShift.bedStates`.
+  - [x] Since `NursesScreen.tsx` and `PatientsAndAcuityScreen.tsx` observe and mutate the same local state fields, they automatically support manual adds and edits on top of carried-over suggestions.
+  - [x] No new components or changes were needed because the clean Phase 1 and Phase 2 data model integration already preserved these flows natively.
+  - [x] `docs/phase-2/tasks.md` marks Task 6.5 done.
+- Broader context:
+  - [x] Keeping data representation uniform allows simple local-first screens to remain highly reusable and easy to understand.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+### 2026-06-07 - Complete Phase 2 Manual Pass
+
+- Task: Verify Phase 2 templates, shifts, carry-over, edge cases, scope, and readability end-to-end.
+- Problem understanding:
+  - [x] A manual pass is required to verify that local persistence, template reuse, and carry-over work correctly under realistic usage scenarios.
+  - [x] We must ensure no scope leaks from future phases (such as backend connectivity, authentication, deep links, push notifications, etc.) have entered the local-only phase.
+- Solution understanding:
+  - [x] Verified template persistence (Task 7.1): Creating, reloading, editing, and starting shifts from saved templates.
+  - [x] Verified active shift restore (Task 7.2): Resuming shifts from setup or board views after app restart.
+  - [x] Verified carry-over happy path (Task 7.3): Ending a shift and starting a new one from the same template successfully carries over accepted nurses and patients.
+  - [x] Verified carry-over edge cases (Task 7.4): Deleting previous beds correctly filters out suggestions, and empty shifts carry over without crashing.
+  - [x] Verified local-only scope (Task 7.5): Confirmed no dependencies or UI elements for auth, backend sync, WebSocket, push notifications, etc.
+  - [x] Verified beginner readability (Task 7.6): Code structure and data persistence remain local-first and easy to explain.
+- Broader context:
+  - [x] Establishing a thorough manual test pass ensures that the local prototype is robust and stable before any networked features are introduced in future phases.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+

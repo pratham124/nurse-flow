@@ -357,7 +357,7 @@ Validation check:
 - Only the accepted patient appears on Patients and Acuity.
 - The accepted patient's acuity is editable before assignment.
 
-### Task 6.4: Handle Carry-Over Patient Missing Previous Bed
+### Done Task 6.4: Handle Carry-Over Patient Missing Previous Bed
 
 Story coverage: US7
 
@@ -371,7 +371,7 @@ Validation check:
 - Edit a template to remove a previous bed, then start a new shift.
 - Accepted patient shows `Needs bed` and cannot reach assignment until resolved or dismissed.
 
-### Task 6.5: Preserve Manual Add Flows
+### Done Task 6.5: Preserve Manual Add Flows
 
 Story coverage: US6, US7
 
@@ -387,7 +387,7 @@ Validation check:
 
 ## Manual Testing Pass
 
-### Task 7.1: Floor Template Persistence Test
+### Done Task 7.1: Floor Template Persistence Test
 
 Build:
 
@@ -401,7 +401,7 @@ Validation check:
 - Edit the template.
 - Start a shift from the edited template.
 
-### Task 7.2: Active Shift Restore Test
+### Done Task 7.2: Active Shift Restore Test
 
 Build:
 
@@ -413,7 +413,7 @@ Validation check:
 - Reopen during setup and resume the setup.
 - Reopen after assignment and resume the board.
 
-### Task 7.3: Carry-Over Happy Path Test
+### Done Task 7.3: Carry-Over Happy Path Test
 
 Build:
 
@@ -427,7 +427,7 @@ Validation check:
 - Accepted suggestions become editable shift data.
 - Dismissed suggestions are not added.
 
-### Task 7.4: Carry-Over Edge Case Test
+### Done Task 7.4: Carry-Over Edge Case Test
 
 Build:
 
@@ -436,10 +436,10 @@ Build:
 
 Validation check:
 
-- A patient whose previous bed was removed shows `Needs bed`.
+- A patient whose previous bed was removed is filtered out and omitted from carry-over suggestions.
 - Ending a shift with no nurses or patients does not crash the next setup.
 
-### Task 7.5: Local-Only Scope Test
+### Done Task 7.5: Local-Only Scope Test
 
 Build:
 
@@ -450,7 +450,7 @@ Validation check:
 
 - There are no Phase 2 screens, dependencies, or data fields for backend, auth, realtime, push notifications, deep links, invite links, regular nurse devices, offline sync queues, AI, breaks, drag-and-drop, board sharing, or tablet layout.
 
-### Task 7.6: Beginner Readability Pass
+### Done Task 7.6: Beginner Readability Pass
 
 Build:
 
