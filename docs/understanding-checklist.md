@@ -285,6 +285,29 @@ For each task, add a dated section with:
   - [ ] This improves scanability of the Local Workspace without changing shift behavior.
   - [ ] The destructive `End shift` action remains visually separate through the red outline.
 - Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+### 2026-06-07 - Save Template Edits Locally
+
+- Task: Save edited saved floor templates back to local storage.
+- Problem understanding:
+  - [ ] Task 3.2 opened a saved template as a draft, but Task 3.3 needs `Save template` to persist the edited draft.
+  - [ ] Cancel/back should not change the saved template because edits live in `draftFloorTemplate` until save.
+  - [ ] The main branch considered was whether to treat new templates and edited templates as separate save paths or one replace-by-id path.
+- Solution understanding:
+  - [ ] `src/screens/TemplateReviewScreen.tsx` uses one `Save template` path for new templates and edits.
+  - [ ] `getFloorTemplatesWithSavedTemplate` replaces an existing template with the same id or appends a brand-new template.
+  - [ ] `saveFloorTemplates` persists the updated template list locally.
+  - [ ] Existing Phase 1 validation still blocks incomplete templates before save.
+  - [ ] `docs/phase-2/tasks.md` marks Task 3.3 done.
+- Broader context:
+  - [ ] Saved templates remain reusable local structure, not shift-specific patient or nurse data.
+  - [ ] Editing by matching template id keeps the local workspace list stable and beginner-readable.
+  - [ ] Later active-shift persistence and carry-over tasks can build on the same local storage boundary.
+- Verification:
   - [ ] Human restated understanding first.
   - [ ] Gaps were explained.
   - [ ] Quiz or walkthrough completed.

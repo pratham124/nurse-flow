@@ -200,6 +200,23 @@ function getShiftSyncedWithTemplate(
   };
 }
 
+function getFloorTemplatesWithSavedTemplate(
+  floorTemplates: FloorTemplate[],
+  savedTemplate: FloorTemplate,
+) {
+  const existingTemplate = floorTemplates.find(
+    (floorTemplate) => floorTemplate.id === savedTemplate.id,
+  );
+
+  if (!existingTemplate) {
+    return [...floorTemplates, savedTemplate];
+  }
+
+  return floorTemplates.map((floorTemplate) =>
+    floorTemplate.id === savedTemplate.id ? savedTemplate : floorTemplate,
+  );
+}
+
 export default function TemplateReviewScreen() {
   const { localState, saveFloorTemplates, setLocalState } = useLocalState();
   const [saveErrorText, setSaveErrorText] = useState("");
@@ -283,12 +300,10 @@ export default function TemplateReviewScreen() {
     }
 
     const completedDraft = draftTemplate;
-    const nextFloorTemplates = [
-      ...localState.floorTemplates.filter(
-        (floorTemplate) => floorTemplate.id !== completedDraft.id,
-      ),
+    const nextFloorTemplates = getFloorTemplatesWithSavedTemplate(
+      localState.floorTemplates,
       completedDraft,
-    ];
+    );
 
     try {
       await saveFloorTemplates(nextFloorTemplates);

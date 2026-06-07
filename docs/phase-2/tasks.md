@@ -176,7 +176,7 @@ Validation check:
 - With no active shift, a saved template can be opened for editing.
 - With an active shift, editing is blocked with `End the active shift before editing templates.`
 
-### Task 3.3: Save Template Edits Locally
+### Done Task 3.3: Save Template Edits Locally
 
 Story coverage: US3
 
