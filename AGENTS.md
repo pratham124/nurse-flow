@@ -70,7 +70,7 @@ For each completed task, verify understanding in three layers:
 
 Before explaining everything, ask the human to restate her current understanding first. Then fill in gaps, answer questions, and adjust the explanation level when requested, such as ELI5, ELI14, or intern-level.
 
-Use short open-ended or multiple-choice questions to check understanding. If an `AskUserQuestion` tool is available, use it for quizzes and do not reveal the answer until after the human responds. If that tool is unavailable, ask concise questions directly in chat.
+Use short open-ended or multiple-choice questions to check understanding. Include at least one code-specific question that references the changed file, function, state field, or helper, and asks the human to read or predict code behavior. If an `AskUserQuestion` tool is available, use it for quizzes and do not reveal the answer until after the human responds. If that tool is unavailable, ask concise questions directly in chat.
 
 The session should not end until the human has demonstrated understanding of the checklist items for the completed task.
 

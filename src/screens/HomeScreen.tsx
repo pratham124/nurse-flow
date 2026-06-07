@@ -231,7 +231,21 @@ export default function Index() {
   }
 
   function handleStartShift(floorTemplate: FloorTemplate) {
+    if (activeShift) {
+      setTemplateEditMessage("End the active shift before starting another shift.");
+      return;
+    }
+
     if (!isCompletedFloorTemplate(floorTemplate)) {
+      setLocalState((currentState) => ({
+        ...currentState,
+        draftFloorTemplate: copyFloorTemplate(floorTemplate),
+        isEditingActiveShiftTemplate: false,
+      }));
+      setTemplateEditMessage(
+        "This saved floor needs review before it can start a shift.",
+      );
+      router.push("/template-review");
       return;
     }
 

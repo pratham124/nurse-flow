@@ -191,7 +191,7 @@ Validation check:
 - Rename a template, reopen the app, and confirm the new name persists.
 - Cancel an edit and confirm the old template remains unchanged.
 
-### Task 3.4: Validate Edited Templates Before Shift Start
+### Done Task 3.4: Validate Edited Templates Before Shift Start
 
 Story coverage: US2, US3
 

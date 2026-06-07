@@ -34,6 +34,7 @@ For each task, add a dated section with:
 - Verification:
   - [ ] Human restated understanding first.
   - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
   - [ ] Quiz or walkthrough completed.
 - Status: in progress
 
@@ -312,6 +313,31 @@ For each task, add a dated section with:
   - [ ] Gaps were explained.
   - [ ] Quiz or walkthrough completed.
 - Status: pending
+
+### 2026-06-07 - Validate Edited Templates Before Shift Start
+
+- Task: Block shift start from incomplete saved templates and route the user to review/fix when possible.
+- Problem understanding:
+  - [ ] A saved template can become invalid after editing, such as having no rooms or missing room-to-side assignments.
+  - [ ] Starting a shift from invalid structure would create broken shift state with missing beds or doctor-side mappings.
+  - [ ] The main branch considered was whether to silently block, show only a message, or open the existing Template Review/edit path.
+- Solution understanding:
+  - [ ] `src/screens/HomeScreen.tsx` keeps the existing valid-template start-shift path unchanged.
+  - [ ] `handleStartShift` blocks starting any saved template while another active shift exists.
+  - [ ] If `isCompletedFloorTemplate` fails and no shift is active, `handleStartShift` copies the saved template into `draftFloorTemplate` and routes to Template Review.
+  - [ ] If an active shift exists, it shows `End the active shift before starting another shift.`
+  - [ ] Template Review already shows the existing incomplete-template validation message and step chips for fixing the template.
+  - [ ] `docs/phase-2/tasks.md` marks Task 3.4 done.
+- Broader context:
+  - [ ] This protects active shift creation from bad saved template structure.
+  - [ ] The fix path reuses Phase 1 template setup screens instead of adding recovery screens or future-phase infrastructure.
+  - [ ] Later tasks can rely on started shifts having valid room, bed, and doctor-side structure.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
 
 ### 2026-06-05 - Add Room Delete Swipe Cue
 
