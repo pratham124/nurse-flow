@@ -144,12 +144,25 @@ function createShiftFromTemplate(floorTemplate: FloorTemplate): Shift {
   };
 }
 
+function copyFloorTemplate(floorTemplate: FloorTemplate): FloorTemplate {
+  return {
+    id: floorTemplate.id,
+    name: floorTemplate.name,
+    doctorSides: floorTemplate.doctorSides.map((doctorSide) => ({
+      ...doctorSide,
+    })),
+    rooms: floorTemplate.rooms.map((room) => ({ ...room })),
+    beds: floorTemplate.beds.map((bed) => ({ ...bed })),
+  };
+}
+
 export default function Index() {
   const { localState, setLocalState } = useLocalState();
   const [floorTemplateToDelete, setFloorTemplateToDelete] =
     useState<FloorTemplate>();
   const [endShiftConfirmationVisible, setEndShiftConfirmationVisible] =
     useState(false);
+  const [templateEditMessage, setTemplateEditMessage] = useState("");
   const floorTemplateCount = localState.floorTemplates.length;
 
   const activeShift = localState.activeShift;
@@ -172,6 +185,7 @@ export default function Index() {
       draftFloorTemplate: undefined,
       isEditingActiveShiftTemplate: false,
     }));
+    setTemplateEditMessage("");
 
     router.push("/floor-details");
   }
@@ -202,11 +216,17 @@ export default function Index() {
   }
 
   function handleSelectTemplate(floorTemplate: FloorTemplate) {
+    if (activeShift) {
+      setTemplateEditMessage("End the active shift before editing templates.");
+      return;
+    }
+
     setLocalState((currentState) => ({
       ...currentState,
-      draftFloorTemplate: floorTemplate,
+      draftFloorTemplate: copyFloorTemplate(floorTemplate),
       isEditingActiveShiftTemplate: false,
     }));
+    setTemplateEditMessage("");
     router.push("/template-review");
   }
 
@@ -221,6 +241,7 @@ export default function Index() {
       isEditingActiveShiftTemplate: false,
       activeShift: createShiftFromTemplate(floorTemplate),
     }));
+    setTemplateEditMessage("");
     router.push("/start-shift");
   }
 
@@ -231,6 +252,7 @@ export default function Index() {
       draftFloorTemplate: undefined,
       isEditingActiveShiftTemplate: false,
     }));
+    setTemplateEditMessage("");
     setEndShiftConfirmationVisible(false);
     router.replace("/");
   }
@@ -277,28 +299,31 @@ export default function Index() {
               {activeShiftPatientsCount}{" "}
               {activeShiftPatientsCount === 1 ? "patient" : "patients"}
             </Text>
-            <Pressable
-              accessibilityRole="button"
-              onPress={handleResumeActiveShift}
-              style={({ pressed }) => [
-                styles.resumeButton,
-                pressed && styles.resumeButtonPressed,
-              ]}
-            >
-              <Text style={styles.resumeButtonText}>Resume Active Shift</Text>
-              <ChevronRightIcon color={colors.neutral.surface} size={14} />
-            </Pressable>
-            <Pressable
-              accessibilityHint="Clears the current local shift but keeps saved floor templates."
-              accessibilityRole="button"
-              onPress={() => setEndShiftConfirmationVisible(true)}
-              style={({ pressed }) => [
-                styles.endShiftButton,
-                pressed && styles.endShiftButtonPressed,
-              ]}
-            >
-              <Text style={styles.endShiftButtonText}>End shift</Text>
-            </Pressable>
+            <View style={styles.activeShiftActions}>
+              <Pressable
+                accessibilityLabel="Resume active shift"
+                accessibilityRole="button"
+                onPress={handleResumeActiveShift}
+                style={({ pressed }) => [
+                  styles.resumeButton,
+                  pressed && styles.resumeButtonPressed,
+                ]}
+              >
+                <Text style={styles.resumeButtonText}>Resume</Text>
+                <ChevronRightIcon color={colors.neutral.surface} size={14} />
+              </Pressable>
+              <Pressable
+                accessibilityHint="Clears the current local shift but keeps saved floor templates."
+                accessibilityRole="button"
+                onPress={() => setEndShiftConfirmationVisible(true)}
+                style={({ pressed }) => [
+                  styles.endShiftButton,
+                  pressed && styles.endShiftButtonPressed,
+                ]}
+              >
+                <Text style={styles.endShiftButtonText}>End shift</Text>
+              </Pressable>
+            </View>
           </View>
         )}
 
@@ -307,6 +332,11 @@ export default function Index() {
           <Text style={styles.sectionTitle}>Floor Templates</Text>
           <Text style={styles.sectionCount}>{floorTemplateCount}</Text>
         </View>
+        {templateEditMessage ? (
+          <Text accessibilityRole="alert" style={styles.templateEditMessage}>
+            {templateEditMessage}
+          </Text>
+        ) : null}
 
         {floorTemplateCount ? (
           <View style={styles.templateList}>
@@ -483,6 +513,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
     fontWeight: fontWeight.medium,
   },
+  activeShiftActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
   resumeButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -490,8 +525,10 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     backgroundColor: colors.status.greenIcon || "#3b6d11",
     borderRadius: radius.lg,
-    paddingVertical: 12,
-    marginTop: spacing.xs,
+    flex: 1,
+    minHeight: 44,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     ...shadows.sm,
   },
   resumeButtonPressed: {
@@ -507,9 +544,10 @@ const styles = StyleSheet.create({
     borderColor: colors.status.red700,
     borderRadius: radius.lg,
     borderWidth: 0.5,
+    flex: 1,
     justifyContent: "center",
     minHeight: 44,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
   endShiftButtonPressed: {
@@ -553,6 +591,12 @@ const styles = StyleSheet.create({
   },
   templateList: {
     gap: spacing.cardGap,
+  },
+  templateEditMessage: {
+    color: colors.status.red700,
+    fontSize: textSize.sm,
+    lineHeight: 18,
+    textAlign: "center",
   },
   templateRow: {
     alignItems: "center",

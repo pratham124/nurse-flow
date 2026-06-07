@@ -161,13 +161,13 @@ Validation check:
 - Starting a shift from `4 North` creates bed states for its saved beds.
 - Editing patients or acuity in the shift does not change the saved template.
 
-### Task 3.2: Add Template Edit Entry Point
+### Done Task 3.2: Add Template Edit Entry Point
 
 Story coverage: US3
 
 Build:
 
-- Add an `Edit` action on saved template rows.
+- Use saved template row selection as the edit entry point.
 - Hide or disable editing while an active shift exists.
 - Route to existing Phase 1 template setup screens in edit mode.
 

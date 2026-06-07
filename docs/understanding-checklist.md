@@ -247,6 +247,49 @@ For each task, add a dated section with:
   - [x] Quiz or walkthrough completed.
 - Status: verified
 
+### 2026-06-07 - Add Template Edit Entry Point
+
+- Task: Use saved template row selection as the edit entry point and block template editing while an active shift exists.
+- Problem understanding:
+  - [ ] Saved templates need a clear edit doorway, but editing should not be available during an active shift.
+  - [ ] Task 3.2 should add the entry point only, not the saved-edit persistence from Task 3.3.
+  - [ ] The main branch considered was whether to add a separate `Edit` button or reuse the existing row tap plus Template Review step navigation.
+- Solution understanding:
+  - [ ] `src/screens/HomeScreen.tsx` uses the existing saved template row tap as the edit entry point.
+  - [ ] Pressing a saved template row with no active shift copies the saved template into `draftFloorTemplate` and opens Template Review, whose step chips can route back to the setup screens.
+  - [ ] Pressing a saved template row while an active shift exists shows `End the active shift before editing templates.`
+  - [ ] Template Review uses the same `Save template` path for new templates and saved-template edits.
+  - [ ] `docs/phase-2/tasks.md` marks Task 3.2 done.
+- Broader context:
+  - [ ] This keeps saved template editing separate from active shift work.
+  - [ ] Copying the saved template into draft state protects the saved template from accidental mutation.
+  - [ ] Later Task 3.3 can add local persistence for saved template edits without changing the entry point again.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+### 2026-06-07 - Compact Active Shift Actions
+
+- Task: Make the active shift card actions smaller and place `Resume` and `End shift` in one row.
+- Problem understanding:
+  - [ ] The two full-width buttons made the active shift card taller than necessary.
+  - [ ] The buttons should still communicate primary action versus destructive action.
+  - [ ] The main branch considered was whether to keep full labels or shorten the primary label so both buttons fit cleanly.
+- Solution understanding:
+  - [ ] `src/screens/HomeScreen.tsx` wraps the active shift actions in one horizontal row.
+  - [ ] `Resume Active Shift` became `Resume` with an accessibility label that still says `Resume active shift`.
+  - [ ] Both buttons keep a 44px minimum touch target while using less vertical space.
+- Broader context:
+  - [ ] This improves scanability of the Local Workspace without changing shift behavior.
+  - [ ] The destructive `End shift` action remains visually separate through the red outline.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
 ### 2026-06-05 - Add Room Delete Swipe Cue
 
 - Task: Make hidden room deletion more discoverable on the Rooms and Beds screen.
