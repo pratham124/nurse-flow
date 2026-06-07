@@ -217,8 +217,8 @@ export default function Index() {
 
     setLocalState((currentState) => ({
       ...currentState,
-      draftFloorTemplate: floorTemplate,
-      isEditingActiveShiftTemplate: true,
+      draftFloorTemplate: undefined,
+      isEditingActiveShiftTemplate: false,
       activeShift: createShiftFromTemplate(floorTemplate),
     }));
     router.push("/start-shift");

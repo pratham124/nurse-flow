@@ -224,6 +224,29 @@ For each task, add a dated section with:
   - [x] Quiz or walkthrough completed.
 - Status: verified
 
+### 2026-06-07 - Start Shift From a Saved Template
+
+- Task: Start a new active shift from a saved floor template without changing the saved template.
+- Problem understanding:
+  - [ ] A saved floor template is reusable structure, while an active shift is today's working copy.
+  - [ ] Task 3.1 should reuse saved templates without adding template editing, active-shift persistence, carry-over review, backend, auth, sync, or future-phase behavior.
+  - [ ] The main branch considered was whether to keep the selected template in `draftFloorTemplate` or keep the copied shift structure only on `activeShift`.
+- Solution understanding:
+  - [ ] `src/screens/HomeScreen.tsx` still creates a fresh `Shift` from the selected saved `FloorTemplate`.
+  - [ ] The helper copies doctor sides, rooms, and beds into the active shift and creates one empty `BedState` for each saved bed.
+  - [ ] Starting the shift now clears `draftFloorTemplate` and `isEditingActiveShiftTemplate` so the saved template is not treated as an editable draft for this task.
+  - [ ] Patient, acuity, nurse, load limit, assignment, and flag changes stay on `activeShift`, not on the saved template.
+  - [ ] `docs/phase-2/tasks.md` marks Task 3.1 done.
+- Broader context:
+  - [ ] This starts the Phase 2 template reuse group while preserving the existing Phase 1 setup flow.
+  - [ ] The saved template remains the blueprint, and each shift gets its own editable local state.
+  - [ ] Later tasks can add saved-template editing and active-shift persistence separately.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
 ### 2026-06-05 - Add Room Delete Swipe Cue
 
 - Task: Make hidden room deletion more discoverable on the Rooms and Beds screen.

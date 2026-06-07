@@ -146,7 +146,7 @@ Validation check:
 
 ## Template Reuse and Editing
 
-### Task 3.1: Start Shift From a Saved Template
+### Done Task 3.1: Start Shift From a Saved Template
 
 Story coverage: US2
 
