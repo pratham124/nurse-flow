@@ -285,6 +285,10 @@ export default function Index() {
       return;
     }
 
+    const hasPreviousShiftSnapshot = localState.previousShiftSnapshots.some(
+      (snapshot) => snapshot.floorTemplateId === floorTemplate.id,
+    );
+
     setLocalState((currentState) => ({
       ...currentState,
       draftFloorTemplate: undefined,
@@ -292,7 +296,9 @@ export default function Index() {
       activeShift: createShiftFromTemplate(floorTemplate),
     }));
     setTemplateEditMessage("");
-    router.push("/start-shift");
+    router.push(
+      hasPreviousShiftSnapshot ? "/carry-over-review" : "/start-shift",
+    );
   }
 
   async function handleConfirmEndActiveShift() {

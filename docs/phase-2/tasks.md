@@ -310,7 +310,7 @@ Validation check:
 
 ## Carry-Over Review
 
-### Task 6.1: Add Carry-Over Review Screen
+### Done Task 6.1: Add Carry-Over Review Screen
 
 Story coverage: US6, US7
 

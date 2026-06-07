@@ -25,6 +25,7 @@ import type {
 
 const emptyLocalState: LocalAppState = {
   floorTemplates: [],
+  previousShiftSnapshots: [],
 };
 
 const storageRepository = createStorageRepository(
@@ -69,6 +70,7 @@ export function LocalStateProvider({
         ...currentState,
         activeShift: savedState.activeShift,
         floorTemplates: savedState.floorTemplates,
+        previousShiftSnapshots: savedState.previousShiftSnapshots,
       }));
     }
 
@@ -110,11 +112,17 @@ export function LocalStateProvider({
         (savedSnapshot) =>
           savedSnapshot.floorTemplateId !== snapshot.floorTemplateId,
       );
+      const previousShiftSnapshots = [...nextSnapshots, snapshot];
 
       await appStorageRepository.saveAppState({
         ...savedState,
-        previousShiftSnapshots: [...nextSnapshots, snapshot],
+        previousShiftSnapshots,
       });
+
+      setLocalState((currentState) => ({
+        ...currentState,
+        previousShiftSnapshots,
+      }));
     },
     [appStorageRepository],
   );

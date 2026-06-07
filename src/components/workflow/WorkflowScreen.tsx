@@ -11,11 +11,12 @@ import type { WorkflowStep } from "./types";
 
 type WorkflowScreenProps = {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   headerActionLabel?: string;
   onHeaderActionPress?: () => void;
   activeStep: WorkflowStep;
   flow?: WorkflowFlowStep[];
+  hideStepIndicator?: boolean;
   children: ReactNode;
   primaryLabel: string;
   onPrimaryPress: () => void;
@@ -31,11 +32,12 @@ type SegmentedProgressProps = {
 
 export function WorkflowScreen({
   title,
-  subtitle,
+  subtitle = "",
   headerActionLabel,
   onHeaderActionPress,
   activeStep,
   flow = floorTemplateFlow,
+  hideStepIndicator = false,
   children,
   primaryLabel,
   onPrimaryPress,
@@ -82,7 +84,7 @@ export function WorkflowScreen({
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-          <StepIndicator activeStep={activeStep} flow={flow} />
+          {hideStepIndicator ? null : <StepIndicator activeStep={activeStep} flow={flow} />}
           {children}
         </ScrollView>
       )}

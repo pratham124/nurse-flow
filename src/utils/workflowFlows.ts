@@ -6,6 +6,7 @@ export type WorkflowRoute =
   | "/rooms-and-beds"
   | "/doctor-sides"
   | "/template-review"
+  | "/carry-over-review"
   | "/start-shift"
   | "/nurses"
   | "/patients-and-acuity"
@@ -27,6 +28,14 @@ export const floorTemplateFlow: WorkflowFlowStep[] = [
 
 export const shiftSetupFlow: WorkflowFlowStep[] = [
   { step: "Review", route: "/template-review" },
+  { step: "Shift", route: "/start-shift" },
+  { step: "Nurses", route: "/nurses" },
+  { step: "Patients", route: "/patients-and-acuity" },
+];
+
+export const carryOverReviewFlow: WorkflowFlowStep[] = [
+  { step: "Review", route: "/template-review" },
+  { step: "Carry-over", route: "/carry-over-review" },
   { step: "Shift", route: "/start-shift" },
   { step: "Nurses", route: "/nurses" },
   { step: "Patients", route: "/patients-and-acuity" },

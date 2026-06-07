@@ -40,6 +40,26 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-07 - Remove Carry-Over Review Subheader and Button Bar
+
+- Task: Remove the "Previous-shift suggestions" subheader and the workflow step chips (button bar) from the Carry-Over Review screen.
+- Problem understanding:
+  - [ ] The subtitle text was redundant.
+  - [ ] The carry-over button bar looked squished and took up vertical space unnecessarily, especially since this is a read-only review screen right now.
+- Solution understanding:
+  - [ ] `src/screens/CarryOverReviewScreen.tsx` no longer passes the `subtitle` prop to `<WorkflowScreen>`.
+  - [ ] `src/screens/CarryOverReviewScreen.tsx` no longer passes the `flow` prop to `<WorkflowScreen>`, which removes the step chips.
+  - [ ] The unused `carryOverReviewFlow` import was removed.
+- Broader context:
+  - [ ] This improves the visual layout of the Carry-Over Review screen.
+  - [ ] It reduces clutter before adding interactive suggestion review features later.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Gaps were explained.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
 ### 2026-06-05 - Plan Phase 2 Local Persistence
 
 - Task: Create Phase 2 planning docs for local persistence, saved template reuse, active shift restore, and previous-shift carry-over suggestions.
@@ -439,20 +459,44 @@ For each task, add a dated section with:
 
 - Task: Create a local previous-shift snapshot when ending a shift, keep one snapshot per template, and allow empty snapshots.
 - Problem understanding:
-  - [ ] Carry-over suggestions need a small record of the ended shift before `activeShift` is cleared.
-  - [ ] Phase 2 should store only the latest snapshot per floor template, not a shift history list.
-  - [ ] Empty ended shifts should still produce a valid empty snapshot instead of crashing or inventing fake suggestions.
+  - [x] Carry-over suggestions need a small record of the ended shift before `activeShift` is cleared.
+  - [x] Phase 2 should store only the latest snapshot per floor template, not a shift history list.
+  - [x] Empty ended shifts should still produce a valid empty snapshot instead of crashing or inventing fake suggestions.
 - Solution understanding:
-  - [ ] `src/screens/HomeScreen.tsx` builds a `PreviousShiftSnapshot` from the active shift before clearing it.
-  - [ ] Nurse suggestions store stable nurse profile fields, not max load or assignment teams.
-  - [ ] Patient suggestions store occupied patients with previous bed id, previous bed label, and acuity.
-  - [ ] `src/store/LocalStateContext.tsx` saves the snapshot through the local storage boundary.
-  - [ ] Saving a snapshot replaces any existing snapshot with the same `floorTemplateId`.
-  - [ ] Tasks 5.1, 5.2, and 5.3 are marked done in `docs/phase-2/tasks.md`.
+  - [x] `src/screens/HomeScreen.tsx` builds a `PreviousShiftSnapshot` from the active shift before clearing it.
+  - [x] Nurse suggestions store stable nurse profile fields, not max load or assignment teams.
+  - [x] Patient suggestions store occupied patients with previous bed id, previous bed label, and acuity.
+  - [x] `src/store/LocalStateContext.tsx` saves the snapshot through the local storage boundary.
+  - [x] Saving a snapshot replaces any existing snapshot with the same `floorTemplateId`.
+  - [x] Tasks 5.1, 5.2, and 5.3 are marked done in `docs/phase-2/tasks.md`.
 - Broader context:
-  - [ ] This stores data for later carry-over review tasks without showing suggestion UI yet.
-  - [ ] The app remains local-only and does not add backend, sync, history, or analytics.
-  - [ ] Later tasks can read these snapshots when starting a new shift from the same template.
+  - [x] This stores data for later carry-over review tasks without showing suggestion UI yet.
+  - [x] The app remains local-only and does not add backend, sync, history, or analytics.
+  - [x] Later tasks can read these snapshots when starting a new shift from the same template.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+### 2026-06-07 - Add Carry-Over Review Screen
+
+- Task: Route new shifts with a same-template previous snapshot to a read-only Carry-Over Review screen.
+- Problem understanding:
+  - [ ] Starting a new shift needs a place to show previous-shift suggestions before normal setup.
+  - [ ] Suggestions must only come from the same floor template.
+  - [ ] Task 6.1 should not accept, dismiss, or convert suggestions yet.
+- Solution understanding:
+  - [ ] `src/store/LocalStateContext.tsx` now restores `previousShiftSnapshots` into live local state.
+  - [ ] `src/screens/HomeScreen.tsx` checks for a same-template snapshot before deciding whether to route to Carry-Over Review or Start Shift.
+  - [ ] `src/screens/CarryOverReviewScreen.tsx` shows nurse and patient suggestions in separate read-only sections.
+  - [ ] Suggestions display as `Pending review` without storing review decisions yet.
+  - [ ] `docs/phase-2/tasks.md` marks Task 6.1 done.
+- Broader context:
+  - [ ] This connects stored snapshots to visible setup workflow while staying local-only.
+  - [ ] It prepares the UI for Tasks 6.2 and 6.3 without implementing their behavior early.
+  - [ ] Templates with no snapshot still use the existing Start Shift flow.
 - Verification:
   - [ ] Human restated understanding first.
   - [ ] Code-specific question or walkthrough completed.
