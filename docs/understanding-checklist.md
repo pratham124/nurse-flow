@@ -910,6 +910,30 @@ For each task, add a dated section with:
   - [ ] This preserves local persistence behavior without adding server IDs or future-phase infrastructure.
   - [ ] The same helper protects both issue and swap request creation.
 - Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+### 2026-06-08 - Show Local Requests on Flags Screen
+
+- Task: Complete Phase 3 Tasks 7.1 and 7.2.
+- Problem understanding:
+  - [ ] Charge nurse review needs to show both assignment-generated flags and local nurse requests.
+  - [ ] Mock nurse requests should not replace imbalance, unassigned-bed, or other assignment flags.
+  - [ ] This task should stay read-only and not add accept, decline, detail screens, reassignment, or future infrastructure.
+- Solution understanding:
+  - [ ] `src/screens/FlagsScreen.tsx` now builds list items for assignment flags, section headers, local request rows, and empty rows.
+  - [ ] Assignment flags and local nurse requests appear in separate sections.
+  - [ ] Local request filters show all requests, only mock issues, or only mock swaps without changing assignment flag filtering.
+  - [ ] Local request rows show mock type, status, requester, bed context, timestamp, message, and `Local only`.
+  - [ ] The combined empty state says `No flags or local requests yet` only when both assignment flags and local requests are empty.
+- Broader context:
+  - [ ] This lets the charge nurse see mock issue and swap requests before decision actions exist.
+  - [ ] Keeping requests read-only preserves the Phase 3 build order for later accept/decline tasks.
+  - [ ] The screen still uses the active shift as the local source of truth.
+- Verification:
   - [ ] Human restated understanding first.
   - [ ] Gaps were explained.
   - [ ] Code-specific question or walkthrough completed.

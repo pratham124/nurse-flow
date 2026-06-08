@@ -311,7 +311,7 @@ Validation check:
 
 ## Charge Nurse Request Review
 
-### Task 7.1: Update Flags Screen for Local Requests
+### Done Task 7.1: Update Flags Screen for Local Requests
 
 Story coverage: US3, US4, US5
 
@@ -326,7 +326,7 @@ Validation check:
 - Existing imbalance and unassigned-bed flags still appear.
 - Mock issue and swap requests appear without replacing existing flags.
 
-### Task 7.2: Add Request Empty States
+### Done Task 7.2: Add Request Empty States
 
 Story coverage: US5
 
