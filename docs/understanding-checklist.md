@@ -754,3 +754,48 @@ For each task, add a dated section with:
   - [ ] Gaps were explained.
   - [ ] Quiz or walkthrough completed.
 - Status: pending
+
+### 2026-06-08 - Add Phase 3 Simulated Nurse Picker
+
+- Task: Complete Phase 3 Tasks 2.1 and 2.2.
+- Problem understanding:
+  - [ ] Phase 3 needs a picker so the tester can choose one active-shift nurse for local simulation.
+  - [ ] The picker should not build the nurse assignment detail screen yet.
+  - [ ] The picker needs clear local empty states when the app is not ready for nurse simulation.
+- Solution understanding:
+  - [ ] `src/app/simulated-nurse-picker.tsx` adds the Expo Router route.
+  - [ ] `src/screens/SimulatedNursePickerScreen.tsx` lists active-shift nurses with license, experience, assigned-bed count, and room coverage.
+  - [ ] Selecting a nurse updates temporary `simulatedSessionState.selectedNurseId`.
+  - [ ] `src/screens/FloorBoardScreen.tsx` now routes `View as nurse` to the picker.
+  - [ ] `docs/phase-3/tasks.md` marks only Tasks 2.1 and 2.2 done.
+- Broader context:
+  - [ ] This prepares Task 3 by choosing the nurse whose assignment will later be derived from active shift data.
+  - [ ] Keeping assignment details out of this task prevents jumping ahead.
+  - [ ] The picker still uses local-only language and does not introduce accounts or invite links.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
+### 2026-06-08 - Separate Template Editing From Active Shift Setup
+
+- Task: Remove active-shift template editing behavior and make Carry Over part of shift setup headers.
+- Problem understanding:
+  - [ ] Saved floor templates should be edited from the floor template flow only.
+  - [ ] Active shifts should use their own copied floor structure and should not be silently synced when a saved template changes.
+  - [ ] The active shift setup header should not show the floor-template `Review` step.
+- Solution understanding:
+  - [ ] `src/screens/TemplateReviewScreen.tsx` now saves only `draftFloorTemplate` to saved templates.
+  - [ ] Active shift template sync helpers were removed.
+  - [ ] `isEditingActiveShiftTemplate` was removed from live local state.
+  - [ ] `shiftSetupFlow` no longer includes `Review`.
+  - [ ] `carryOverReviewFlow` shows `Carry Over`, then `Shift`, `Nurses`, and `Patients`.
+- Broader context:
+  - [ ] This keeps reusable template edits separate from per-shift setup and patient assignment work.
+  - [ ] It reduces accidental state coupling before future nurse-facing Phase 3 screens build on active shift data.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending

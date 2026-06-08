@@ -45,7 +45,7 @@ Build:
 
 - Reviewed the existing Phase 1 local data model and screens.
 - Identified which Phase 1 state needs to become persisted: floor templates, active shift, assignment result, and flags.
-- Documented that `draftFloorTemplate` and `isEditingActiveShiftTemplate` should stay temporary workflow state.
+- Documented that `draftFloorTemplate` should stay temporary workflow state.
 - Confirmed Phase 2 persistence should not change assignment rules.
 
 Validation check:

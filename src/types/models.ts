@@ -165,7 +165,6 @@ export interface LocalAppState {
   floorTemplates: FloorTemplate[];
   previousShiftSnapshots: PreviousShiftSnapshot[];
   draftFloorTemplate?: FloorTemplate;
-  isEditingActiveShiftTemplate?: boolean;
   activeShift?: Shift;
 }
 

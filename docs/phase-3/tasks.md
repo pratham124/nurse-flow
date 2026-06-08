@@ -106,22 +106,23 @@ Validation check:
 
 ## Simulated Nurse Picker
 
-### Task 2.1: Add Simulated Nurse Picker Screen
+### Done Task 2.1: Add Simulated Nurse Picker Screen
 
 Story coverage: US1, US2
 
 Build:
 
-- Add a screen listing active-shift nurses.
+- Added a screen listing active-shift nurses.
 - Show nurse name, license type, experience, assigned bed count, and room coverage summary.
 - Let the tester select one nurse to simulate.
+- Kept the actual nurse assignment detail view for the next Phase 3 task.
 
 Validation check:
 
 - A shift with two nurses shows both nurses.
-- Selecting one nurse opens that nurse's simulated assignment view.
+- Selecting one nurse marks that nurse as selected for local simulation.
 
-### Task 2.2: Handle Picker Empty States
+### Done Task 2.2: Handle Picker Empty States
 
 Story coverage: US1, US2
 

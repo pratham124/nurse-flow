@@ -3,7 +3,7 @@ export type WorkflowStep =
   | "Rooms"
   | "Sides"
   | "Review"
-  | "Carry-over"
+  | "Carry Over"
   | "Shift"
   | "Nurses"
   | "Patients"

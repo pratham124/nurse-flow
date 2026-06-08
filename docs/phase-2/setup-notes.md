@@ -37,7 +37,6 @@ The current app already has a Phase 1 local state shape in `src/types/models.ts`
 
 - `floorTemplates`
 - `draftFloorTemplate`
-- `isEditingActiveShiftTemplate`
 - `activeShift`
 
 For Phase 2 persistence, the state that should be saved is:
@@ -51,7 +50,6 @@ For Phase 2 persistence, the state that should be saved is:
 The state that should stay temporary is:
 
 - `draftFloorTemplate`, because it is an in-progress editing object
-- `isEditingActiveShiftTemplate`, because it is UI workflow state rather than saved product data
 
 The current app routes in `src/app` are still the Phase 1 charge nurse screens:
 

@@ -12,6 +12,7 @@ export type WorkflowRoute =
   | "/patients-and-acuity"
   | "/assignment-review"
   | "/floor-board"
+  | "/simulated-nurse-picker"
   | "/flags";
 
 export type WorkflowFlowStep = {
@@ -27,15 +28,13 @@ export const floorTemplateFlow: WorkflowFlowStep[] = [
 ];
 
 export const shiftSetupFlow: WorkflowFlowStep[] = [
-  { step: "Review", route: "/template-review" },
   { step: "Shift", route: "/start-shift" },
   { step: "Nurses", route: "/nurses" },
   { step: "Patients", route: "/patients-and-acuity" },
 ];
 
 export const carryOverReviewFlow: WorkflowFlowStep[] = [
-  { step: "Review", route: "/template-review" },
-  { step: "Carry-over", route: "/carry-over-review" },
+  { step: "Carry Over", route: "/carry-over-review" },
   { step: "Shift", route: "/start-shift" },
   { step: "Nurses", route: "/nurses" },
   { step: "Patients", route: "/patients-and-acuity" },

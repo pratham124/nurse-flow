@@ -128,7 +128,6 @@ export default function Index() {
     setLocalState((currentState) => ({
       ...currentState,
       draftFloorTemplate: undefined,
-      isEditingActiveShiftTemplate: false,
     }));
     setTemplateEditMessage("");
 
@@ -149,9 +148,6 @@ export default function Index() {
         activeShift: shouldClearActiveShift
           ? undefined
           : currentState.activeShift,
-        isEditingActiveShiftTemplate: shouldClearActiveShift
-          ? false
-          : currentState.isEditingActiveShiftTemplate,
         floorTemplates: currentState.floorTemplates.filter(
           (floorTemplate) => floorTemplate.id !== floorTemplateToDelete.id,
         ),
@@ -169,7 +165,6 @@ export default function Index() {
     setLocalState((currentState) => ({
       ...currentState,
       draftFloorTemplate: copyFloorTemplate(floorTemplate),
-      isEditingActiveShiftTemplate: false,
     }));
     setTemplateEditMessage("");
     router.push("/template-review");
@@ -185,7 +180,6 @@ export default function Index() {
       setLocalState((currentState) => ({
         ...currentState,
         draftFloorTemplate: copyFloorTemplate(floorTemplate),
-        isEditingActiveShiftTemplate: false,
       }));
       setTemplateEditMessage(
         "This saved floor needs review before it can start a shift.",
@@ -201,7 +195,6 @@ export default function Index() {
     setLocalState((currentState) => ({
       ...currentState,
       draftFloorTemplate: undefined,
-      isEditingActiveShiftTemplate: false,
       activeShift: createShiftFromTemplate(floorTemplate),
     }));
     setTemplateEditMessage("");
@@ -223,7 +216,6 @@ export default function Index() {
       ...currentState,
       activeShift: undefined,
       draftFloorTemplate: undefined,
-      isEditingActiveShiftTemplate: false,
     }));
     setTemplateEditMessage("");
     setEndShiftConfirmationVisible(false);

@@ -218,13 +218,12 @@ export default function CarryOverReviewScreen() {
 
   return (
     <WorkflowScreen
-      activeStep="Carry-over"
+      activeStep="Carry Over"
       actionErrorText={
         canContinue ? "" : "Start a shift before reviewing carry-over."
       }
       flow={carryOverReviewFlow}
       headerActionLabel="Floors"
-      hideStepIndicator
       onHeaderActionPress={() => router.push("/")}
       onPrimaryPress={handleContinue}
       primaryLabel={canContinue ? "Continue setup" : "Back to floors"}

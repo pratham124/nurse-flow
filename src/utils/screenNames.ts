@@ -9,6 +9,7 @@ export const APP_SCREEN_NAMES = [
   "Patients and Acuity",
   "Assignment Review",
   "Floor Board",
+  "Simulated Nurse Picker",
   "Flags",
 ] as const;
 

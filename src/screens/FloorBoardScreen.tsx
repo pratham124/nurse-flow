@@ -103,6 +103,7 @@ type FloorBoardListHeaderProps = {
   occupiedBedCount: number;
   roleSimulationMessage: string;
   selectedFilter: BoardFilter;
+  selectedNurseName?: string;
   totalBedCount: number;
 };
 
@@ -118,6 +119,7 @@ function FloorBoardListHeader({
   occupiedBedCount,
   roleSimulationMessage,
   selectedFilter,
+  selectedNurseName,
   totalBedCount,
 }: FloorBoardListHeaderProps) {
   return (
@@ -150,7 +152,9 @@ function FloorBoardListHeader({
           </View>
           <Text style={styles.roleSimulationText}>
             {isRegularNurseSimulation
-              ? "Regular nurse mode is selected locally. Nurse selection is the next Phase 3 task."
+              ? selectedNurseName
+                ? `${selectedNurseName} is selected for local nurse simulation. Assignment details come next.`
+                : "Regular nurse mode is selected locally. Choose a nurse from the picker to continue."
               : roleSimulationMessage}
           </Text>
           <PlaceholderButton
@@ -601,6 +605,9 @@ export default function FloorBoardScreen() {
       activeShift.assignmentResult &&
       activeShift.nurses.length,
   );
+  const selectedNurseName = activeShift?.nurses.find(
+    (nurse) => nurse.id === simulatedSessionState.selectedNurseId,
+  )?.name;
 
   return (
     <WorkflowListScreen
@@ -622,12 +629,14 @@ export default function FloorBoardScreen() {
           onReturnToChargeView={() =>
             setSimulatedSessionState({ role: "charge" })
           }
-          onViewAsNurse={() =>
-            setSimulatedSessionState({ role: "regular_nurse" })
-          }
+          onViewAsNurse={() => {
+            setSimulatedSessionState({ role: "regular_nurse" });
+            router.push("/simulated-nurse-picker");
+          }}
           occupiedBedCount={occupiedBedCount}
           roleSimulationMessage={getRoleSimulationMessage(activeShift)}
           selectedFilter={selectedFilter}
+          selectedNurseName={selectedNurseName}
           totalBedCount={totalBedCount}
         />
       }

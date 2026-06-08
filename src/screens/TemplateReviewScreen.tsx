@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -11,16 +11,13 @@ import {
   WorkflowSection,
   WorkflowScreen,
 } from "../components/workflow";
-import { createLocalId } from "../helpers/localId";
 import { useLocalState } from "../store/LocalStateContext";
 import { colors, radius, spacing, textSize, fontWeight } from "../theme/tokens";
 import type {
   Bed,
-  BedState,
   DoctorSide,
   FloorTemplate,
   Room,
-  Shift,
 } from "../types/models";
 
 type ReviewRoomRowProps = {
@@ -145,61 +142,6 @@ function isCompletedFloorTemplate(
   );
 }
 
-function getFloorTemplateFromActiveShift(
-  activeShift?: Shift,
-): FloorTemplate | undefined {
-  if (!activeShift) {
-    return undefined;
-  }
-
-  return {
-    id: activeShift.floorTemplateId,
-    name: activeShift.floorName,
-    doctorSides: activeShift.doctorSides,
-    rooms: activeShift.rooms,
-    beds: activeShift.beds,
-  };
-}
-
-function getSyncedBedStates(shift: Shift, floorTemplate: FloorTemplate) {
-  const templateBedIds = floorTemplate.beds.map((bed) => bed.id);
-  const bedStatesForBedsStillInTemplate = shift.bedStates.filter((bedState) =>
-    templateBedIds.includes(bedState.bedId),
-  );
-  const bedIdsWithExistingShiftState = bedStatesForBedsStillInTemplate.map(
-    (bedState) => bedState.bedId,
-  );
-  const bedStatesForNewTemplateBeds: BedState[] = floorTemplate.beds
-    .filter((bed) => !bedIdsWithExistingShiftState.includes(bed.id))
-    .map((bed) => ({
-      id: createLocalId("bed-state"),
-      bedId: bed.id,
-    }));
-
-  return [...bedStatesForBedsStillInTemplate, ...bedStatesForNewTemplateBeds];
-}
-
-function getShiftSyncedWithTemplate(
-  shift: Shift,
-  floorTemplate: FloorTemplate,
-) {
-  const hasCurrentAdmittingSide = floorTemplate.doctorSides.some(
-    (doctorSide) => doctorSide.id === shift.admittingDoctorSideId,
-  );
-
-  return {
-    ...shift,
-    floorName: floorTemplate.name,
-    doctorSides: floorTemplate.doctorSides,
-    rooms: floorTemplate.rooms,
-    beds: floorTemplate.beds,
-    bedStates: getSyncedBedStates(shift, floorTemplate),
-    admittingDoctorSideId: hasCurrentAdmittingSide
-      ? shift.admittingDoctorSideId
-      : "",
-  };
-}
-
 function getFloorTemplatesWithSavedTemplate(
   floorTemplates: FloorTemplate[],
   savedTemplate: FloorTemplate,
@@ -221,79 +163,22 @@ export default function TemplateReviewScreen() {
   const { localState, saveFloorTemplates, setLocalState } = useLocalState();
   const [saveErrorText, setSaveErrorText] = useState("");
   const draftTemplate = localState.draftFloorTemplate;
-  const activeShift = localState.activeShift;
-  const activeShiftTemplate = getFloorTemplateFromActiveShift(activeShift);
-  const reviewTemplate = draftTemplate ?? activeShiftTemplate;
-  const isReviewingActiveShiftTemplate =
-    Boolean(reviewTemplate) && Boolean(localState.isEditingActiveShiftTemplate);
+  const reviewTemplate = draftTemplate;
   const screenTitle = reviewTemplate?.name ?? "Review floor";
   const roomCount = reviewTemplate?.rooms.length ?? 0;
   const bedCount = reviewTemplate?.beds.length ?? 0;
   const doctorSideCount = reviewTemplate?.doctorSides.length ?? 0;
   const canSaveTemplate = isCompletedFloorTemplate(draftTemplate);
-  const actionErrorText = isReviewingActiveShiftTemplate
-    ? ""
-    : saveErrorText ||
-      (draftTemplate
-        ? canSaveTemplate
-          ? ""
-          : invalidTemplateMessage
-        : "Create a floor template before saving.");
-
-  useEffect(() => {
-    if (!activeShift) {
-      return;
-    }
-
-    setLocalState((currentState) => {
-      if (!currentState.activeShift) {
-        return currentState;
-      }
-
-      const shouldEditActiveShiftTemplate =
-        Boolean(currentState.isEditingActiveShiftTemplate) ||
-        !currentState.draftFloorTemplate;
-      const draftTemplateForActiveShiftEdit =
-        currentState.draftFloorTemplate ??
-        getFloorTemplateFromActiveShift(currentState.activeShift);
-
-      if (
-        currentState.draftFloorTemplate &&
-        currentState.isEditingActiveShiftTemplate ===
-          shouldEditActiveShiftTemplate
-      ) {
-        return currentState;
-      }
-
-      return {
-        ...currentState,
-        draftFloorTemplate: draftTemplateForActiveShiftEdit,
-        isEditingActiveShiftTemplate: shouldEditActiveShiftTemplate,
-      };
-    });
-  }, [activeShift, setLocalState]);
+  const actionErrorText =
+    saveErrorText ||
+    (draftTemplate
+      ? canSaveTemplate
+        ? ""
+        : invalidTemplateMessage
+      : "Create a floor template before saving.");
 
   async function handleSaveTemplate() {
     setSaveErrorText("");
-
-    if (isReviewingActiveShiftTemplate) {
-      if (draftTemplate) {
-        setLocalState((currentState) => ({
-          ...currentState,
-          isEditingActiveShiftTemplate: true,
-          activeShift:
-            currentState.activeShift?.floorTemplateId === draftTemplate.id
-              ? getShiftSyncedWithTemplate(
-                  currentState.activeShift,
-                  draftTemplate,
-                )
-              : currentState.activeShift,
-        }));
-      }
-
-      router.push("/start-shift");
-      return;
-    }
 
     if (!isCompletedFloorTemplate(draftTemplate)) {
       return;
@@ -319,15 +204,7 @@ export default function TemplateReviewScreen() {
 
       return {
         ...currentState,
-        activeShift:
-          currentState.activeShift?.floorTemplateId === completedDraft.id
-            ? getShiftSyncedWithTemplate(
-                currentState.activeShift,
-                completedDraft,
-              )
-            : currentState.activeShift,
         draftFloorTemplate: undefined,
-        isEditingActiveShiftTemplate: false,
         floorTemplates: nextFloorTemplates,
       };
     });
@@ -342,9 +219,7 @@ export default function TemplateReviewScreen() {
       headerActionLabel="Floors"
       onHeaderActionPress={() => router.push("/")}
       onPrimaryPress={handleSaveTemplate}
-      primaryLabel={
-        isReviewingActiveShiftTemplate ? "Back to shift" : "Save template"
-      }
+      primaryLabel="Save template"
       subtitle="Step 4 of 4"
       title={screenTitle}
     >
