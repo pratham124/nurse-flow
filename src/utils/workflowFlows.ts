@@ -16,6 +16,7 @@ export type WorkflowRoute =
   | "/simulated-nurse-assignment"
   | "/simulated-nurse-issue"
   | "/simulated-nurse-swap"
+  | "/local-request-detail"
   | "/flags";
 
 export type WorkflowFlowStep = {

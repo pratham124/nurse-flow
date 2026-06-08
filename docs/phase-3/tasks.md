@@ -340,7 +340,7 @@ Validation check:
 - A clean assigned shift with no flags or requests shows the empty state.
 - No notification, invite, sync, or server language appears.
 
-### Task 7.3: Add Request Detail View If Needed
+### Done Task 7.3: Add Request Detail View If Needed
 
 Story coverage: US5, US6
 

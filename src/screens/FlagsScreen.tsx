@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { router } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import {
   FilterChip,
@@ -14,8 +14,11 @@ import {
 } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
 import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
-import type { Flag, FlagSeverity, NurseRequest, Shift } from "../types/models";
-import { getShiftNurseRequests } from "../utils/nurseRequests";
+import type { Flag, FlagSeverity, Shift } from "../types/models";
+import {
+  getNurseRequestDisplays,
+  type NurseRequestDisplay,
+} from "../utils/nurseRequestDisplay";
 import { assignmentFlow } from "../utils/workflowFlows";
 
 const flagFilters = ["All", "Critical", "Warning", "Info"] as const;
@@ -30,17 +33,6 @@ type FlagRowViewModel = {
   severity: FlagSeverity;
   severityLabel: string;
   target: string;
-};
-
-type NurseRequestRowViewModel = {
-  bedContext: string;
-  createdAtText: string;
-  id: string;
-  message: string;
-  requestType: NurseRequest["type"];
-  requesterName: string;
-  statusLabel: string;
-  typeLabel: string;
 };
 
 type FlagsListHeaderProps = {
@@ -68,13 +60,14 @@ type SectionHeaderRowProps = {
 };
 
 type NurseRequestRowProps = {
-  request: NurseRequestRowViewModel;
+  onOpen: (requestId: string) => void;
+  request: NurseRequestDisplay;
 };
 
 type FlagListItem =
   | { type: "section"; id: string; subtitle?: string; title: string }
   | { type: "flag"; flag: FlagRowViewModel }
-  | { type: "request"; request: NurseRequestRowViewModel }
+  | { type: "request"; request: NurseRequestDisplay }
   | { type: "empty"; id: string; message: string };
 
 function FlagsListHeader({
@@ -194,57 +187,6 @@ function getFlagRows(activeShift?: Shift): FlagRowViewModel[] {
   }));
 }
 
-function getRequestTypeLabel(request: NurseRequest) {
-  return request.type === "swap" ? "Mock swap" : "Mock issue";
-}
-
-function getRequestStatusLabel(request: NurseRequest) {
-  return request.status.charAt(0).toUpperCase() + request.status.slice(1);
-}
-
-function getRequestCreatedText(request: NurseRequest) {
-  return new Date(request.createdAt).toLocaleString();
-}
-
-function getRequestBedContext(activeShift: Shift, request: NurseRequest) {
-  if (!request.sourceBedId) {
-    return request.type === "swap" ? "Bed no longer available" : "No bed context";
-  }
-
-  const bed = activeShift.beds.find(
-    (shiftBed) => shiftBed.id === request.sourceBedId,
-  );
-
-  if (!bed) {
-    return "Bed no longer available";
-  }
-
-  const room = activeShift.rooms.find(
-    (shiftRoom) => shiftRoom.id === bed.roomId,
-  );
-
-  return room
-    ? `Room ${room.label} - Bed ${bed.label}`
-    : `Bed ${bed.label}`;
-}
-
-function getNurseRequestRows(activeShift?: Shift): NurseRequestRowViewModel[] {
-  if (!activeShift) {
-    return [];
-  }
-
-  return getShiftNurseRequests(activeShift).map((request) => ({
-    bedContext: getRequestBedContext(activeShift, request),
-    createdAtText: getRequestCreatedText(request),
-    id: request.id,
-    message: request.message,
-    requestType: request.type,
-    requesterName: request.requestingNurseName,
-    statusLabel: getRequestStatusLabel(request),
-    typeLabel: getRequestTypeLabel(request),
-  }));
-}
-
 function filterFlagRows(
   flags: FlagRowViewModel[],
   selectedFilter: FlagFilter,
@@ -257,7 +199,7 @@ function filterFlagRows(
 }
 
 function filterNurseRequestRows(
-  requests: NurseRequestRowViewModel[],
+  requests: NurseRequestDisplay[],
   selectedRequestFilter: RequestFilter,
 ) {
   if (selectedRequestFilter === "All") {
@@ -283,7 +225,7 @@ function getEmptyRequestMessage(selectedRequestFilter: RequestFilter) {
 
 function getFlagListItems(
   flags: FlagRowViewModel[],
-  requests: NurseRequestRowViewModel[],
+  requests: NurseRequestDisplay[],
   selectedFilter: FlagFilter,
   selectedRequestFilter: RequestFilter,
 ): FlagListItem[] {
@@ -356,6 +298,10 @@ function getFlagItemKey(item: FlagListItem) {
   return item.id;
 }
 
+function openRequestDetail(requestId: string) {
+  router.push(`/local-request-detail?requestId=${encodeURIComponent(requestId)}`);
+}
+
 function renderFlagItem({ item }: { item: FlagListItem }) {
   if (item.type === "section") {
     return <SectionHeaderRow subtitle={item.subtitle} title={item.title} />;
@@ -366,7 +312,7 @@ function renderFlagItem({ item }: { item: FlagListItem }) {
   }
 
   if (item.type === "request") {
-    return <NurseRequestRow request={item.request} />;
+    return <NurseRequestRow onOpen={openRequestDetail} request={item.request} />;
   }
 
   return <FlagRow flag={item.flag} />;
@@ -378,7 +324,7 @@ export default function FlagsScreen() {
   const [selectedRequestFilter, setSelectedRequestFilter] =
     useState<RequestFilter>("All");
   const flags = getFlagRows(localState.activeShift);
-  const requests = getNurseRequestRows(localState.activeShift);
+  const requests = getNurseRequestDisplays(localState.activeShift);
   const filteredFlags = filterFlagRows(flags, selectedFilter);
   const filteredRequests = filterNurseRequestRows(
     requests,
@@ -461,9 +407,16 @@ function SectionHeaderRow({ subtitle, title }: SectionHeaderRowProps) {
   );
 }
 
-function NurseRequestRow({ request }: NurseRequestRowProps) {
+function NurseRequestRow({ onOpen, request }: NurseRequestRowProps) {
   return (
-    <View style={styles.requestRow}>
+    <Pressable
+      accessibilityRole="button"
+      onPress={() => onOpen(request.id)}
+      style={({ pressed }) => [
+        styles.requestRow,
+        pressed ? styles.requestRowPressed : null,
+      ]}
+    >
       <View style={styles.requestTopRow}>
         <View style={styles.requestChipRow}>
           <SummaryChip label={request.typeLabel} />
@@ -475,7 +428,7 @@ function NurseRequestRow({ request }: NurseRequestRowProps) {
       <Text style={styles.requestRequester}>{request.requesterName}</Text>
       <Text style={styles.requestTarget}>{request.bedContext}</Text>
       <Text style={styles.message}>{request.message}</Text>
-    </View>
+    </Pressable>
   );
 }
 
@@ -547,6 +500,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     ...shadows.sm,
+  },
+  requestRowPressed: {
+    opacity: 0.82,
   },
   requestTopRow: {
     alignItems: "flex-start",

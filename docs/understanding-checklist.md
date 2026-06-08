@@ -934,6 +934,30 @@ For each task, add a dated section with:
   - [ ] Keeping requests read-only preserves the Phase 3 build order for later accept/decline tasks.
   - [ ] The screen still uses the active shift as the local source of truth.
 - Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+### 2026-06-08 - Add Local Request Detail View
+
+- Task: Complete Phase 3 Task 7.3.
+- Problem understanding:
+  - [ ] Local request rows can get dense once they show requester, bed context, message, timestamp, type, and status.
+  - [ ] The charge nurse needs more room to read one request without changing request status yet.
+  - [ ] Accept, decline, reassignment, backend, notification, and sync behavior must stay out of this task.
+- Solution understanding:
+  - [ ] `src/screens/LocalRequestDetailScreen.tsx` shows a read-only detail view for one local request.
+  - [ ] `src/screens/FlagsScreen.tsx` makes local request rows tappable and routes by request ID.
+  - [ ] `src/utils/nurseRequestDisplay.ts` centralizes request labels, timestamps, and bed context so list rows and detail view stay consistent.
+  - [ ] Missing or stale request IDs show a safe recovery state.
+  - [ ] No active decision controls are shown for resolved requests or pending swaps in this task.
+- Broader context:
+  - [ ] This improves charge nurse review before local accept/decline actions are added later.
+  - [ ] Keeping the detail view read-only preserves the Phase 3 build order.
+  - [ ] The active shift remains the local source of truth for request data.
+- Verification:
   - [ ] Human restated understanding first.
   - [ ] Gaps were explained.
   - [ ] Code-specific question or walkthrough completed.
