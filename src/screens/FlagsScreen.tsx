@@ -23,9 +23,11 @@ import { assignmentFlow } from "../utils/workflowFlows";
 
 const flagFilters = ["All", "Critical", "Warning", "Info"] as const;
 const requestFilters = ["All", "Issues", "Swaps"] as const;
+const requestStatusFilters = ["All", "Pending", "Accepted", "Declined"] as const;
 
 type FlagFilter = (typeof flagFilters)[number];
 type RequestFilter = (typeof requestFilters)[number];
+type RequestStatusFilter = (typeof requestStatusFilters)[number];
 
 type FlagRowViewModel = {
   id: string;
@@ -41,8 +43,10 @@ type FlagsListHeaderProps = {
   requestCount: number;
   onFilterPress: (filter: FlagFilter) => void;
   onRequestFilterPress: (filter: RequestFilter) => void;
+  onRequestStatusFilterPress: (filter: RequestStatusFilter) => void;
   selectedFilter: FlagFilter;
   selectedRequestFilter: RequestFilter;
+  selectedRequestStatusFilter: RequestStatusFilter;
   warningCount: number;
 };
 
@@ -76,8 +80,10 @@ function FlagsListHeader({
   requestCount,
   onFilterPress,
   onRequestFilterPress,
+  onRequestStatusFilterPress,
   selectedFilter,
   selectedRequestFilter,
+  selectedRequestStatusFilter,
   warningCount,
 }: FlagsListHeaderProps) {
   return (
@@ -112,6 +118,19 @@ function FlagsListHeader({
               label={filter}
               onPress={() => onRequestFilterPress(filter)}
               selected={filter === selectedRequestFilter}
+            />
+          ))}
+        </FilterChipRow>
+      </WorkflowSection>
+
+      <WorkflowSection title="Request status filters">
+        <FilterChipRow>
+          {requestStatusFilters.map((filter) => (
+            <FilterChip
+              key={filter}
+              label={filter}
+              onPress={() => onRequestStatusFilterPress(filter)}
+              selected={filter === selectedRequestStatusFilter}
             />
           ))}
         </FilterChipRow>
@@ -201,26 +220,39 @@ function filterFlagRows(
 function filterNurseRequestRows(
   requests: NurseRequestDisplay[],
   selectedRequestFilter: RequestFilter,
+  selectedRequestStatusFilter: RequestStatusFilter,
 ) {
-  if (selectedRequestFilter === "All") {
-    return requests;
-  }
+  return requests.filter((request) => {
+    const matchesType =
+      selectedRequestFilter === "All" ||
+      request.requestType ===
+        (selectedRequestFilter === "Issues" ? "issue" : "swap");
+    const matchesStatus =
+      selectedRequestStatusFilter === "All" ||
+      request.requestStatus === selectedRequestStatusFilter.toLowerCase();
 
-  const requestType = selectedRequestFilter === "Issues" ? "issue" : "swap";
-
-  return requests.filter((request) => request.requestType === requestType);
+    return matchesType && matchesStatus;
+  });
 }
 
-function getEmptyRequestMessage(selectedRequestFilter: RequestFilter) {
+function getEmptyRequestMessage(
+  selectedRequestFilter: RequestFilter,
+  selectedRequestStatusFilter: RequestStatusFilter,
+) {
+  const statusText =
+    selectedRequestStatusFilter === "All"
+      ? ""
+      : `${selectedRequestStatusFilter.toLowerCase()} `;
+
   if (selectedRequestFilter === "Issues") {
-    return "No local issue requests yet.";
+    return `No ${statusText}local issue requests yet.`;
   }
 
   if (selectedRequestFilter === "Swaps") {
-    return "No local swap requests yet.";
+    return `No ${statusText}local swap requests yet.`;
   }
 
-  return "No local requests yet.";
+  return `No ${statusText}local requests yet.`;
 }
 
 function getFlagListItems(
@@ -228,12 +260,14 @@ function getFlagListItems(
   requests: NurseRequestDisplay[],
   selectedFilter: FlagFilter,
   selectedRequestFilter: RequestFilter,
+  selectedRequestStatusFilter: RequestStatusFilter,
 ): FlagListItem[] {
   if (
     !flags.length &&
     !requests.length &&
     selectedFilter === "All" &&
-    selectedRequestFilter === "All"
+    selectedRequestFilter === "All" &&
+    selectedRequestStatusFilter === "All"
   ) {
     return [
       {
@@ -278,7 +312,10 @@ function getFlagListItems(
         : [
             {
               id: "empty-local-requests",
-              message: getEmptyRequestMessage(selectedRequestFilter),
+              message: getEmptyRequestMessage(
+                selectedRequestFilter,
+                selectedRequestStatusFilter,
+              ),
               type: "empty" as const,
             },
           ]
@@ -323,12 +360,15 @@ export default function FlagsScreen() {
   const [selectedFilter, setSelectedFilter] = useState<FlagFilter>("All");
   const [selectedRequestFilter, setSelectedRequestFilter] =
     useState<RequestFilter>("All");
+  const [selectedRequestStatusFilter, setSelectedRequestStatusFilter] =
+    useState<RequestStatusFilter>("All");
   const flags = getFlagRows(localState.activeShift);
   const requests = getNurseRequestDisplays(localState.activeShift);
   const filteredFlags = filterFlagRows(flags, selectedFilter);
   const filteredRequests = filterNurseRequestRows(
     requests,
     selectedRequestFilter,
+    selectedRequestStatusFilter,
   );
   const criticalCount = flags.filter(
     (flag) => flag.severity === "critical",
@@ -346,6 +386,7 @@ export default function FlagsScreen() {
         filteredRequests,
         selectedFilter,
         selectedRequestFilter,
+        selectedRequestStatusFilter,
       )}
       flow={assignmentFlow}
       headerActionLabel="Floors"
@@ -357,8 +398,10 @@ export default function FlagsScreen() {
           requestCount={requests.length}
           onFilterPress={setSelectedFilter}
           onRequestFilterPress={setSelectedRequestFilter}
+          onRequestStatusFilterPress={setSelectedRequestStatusFilter}
           selectedFilter={selectedFilter}
           selectedRequestFilter={selectedRequestFilter}
+          selectedRequestStatusFilter={selectedRequestStatusFilter}
           warningCount={warningCount}
         />
       }

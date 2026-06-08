@@ -6,6 +6,7 @@ export type NurseRequestDisplay = {
   createdAtText: string;
   id: string;
   message: string;
+  requestStatus: NurseRequest["status"];
   requestType: NurseRequest["type"];
   requesterName: string;
   resolvedAtText?: string;
@@ -57,6 +58,7 @@ function getNurseRequestDisplay(
     createdAtText: new Date(request.createdAt).toLocaleString(),
     id: request.id,
     message: request.message,
+    requestStatus: request.status,
     requestType: request.type,
     requesterName: request.requestingNurseName,
     resolvedAtText: request.resolvedAt

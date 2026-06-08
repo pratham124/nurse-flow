@@ -958,8 +958,53 @@ For each task, add a dated section with:
   - [ ] Keeping the detail view read-only preserves the Phase 3 build order.
   - [ ] The active shift remains the local source of truth for request data.
 - Verification:
-  - [ ] Human restated understanding first.
-  - [ ] Gaps were explained.
-  - [ ] Code-specific question or walkthrough completed.
-  - [ ] Quiz or walkthrough completed.
-- Status: pending
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+### 2026-06-08 - Resolve Mock Swap Requests Locally
+
+- Task: Complete Phase 3 Tasks 8.1, 8.2, and 8.3.
+- Problem understanding:
+  - [ ] Pending mock swap requests need a local outcome so the simulated nurse can see whether charge accepted or declined the request.
+  - [ ] Accepting a swap request in this phase should not move patients, beds, or assignment rows.
+  - [ ] Already accepted or declined requests should not show active decision controls again.
+- Solution understanding:
+  - [ ] `src/utils/nurseRequests.ts` updates only pending swap requests to `accepted` or `declined`.
+  - [ ] `src/screens/LocalRequestDetailScreen.tsx` shows Accept and Decline only for pending mock swaps.
+  - [ ] Resolving a swap stores `resolvedAt` and a short local `resolutionNote`.
+  - [ ] `src/screens/SimulatedNurseAssignmentScreen.tsx` already reads request status from the active shift, so the selected nurse sees accepted, declined, and pending statuses from the same request list.
+  - [ ] Bed assignments stay unchanged.
+- Broader context:
+  - [ ] This completes the local request outcome loop before the manual Phase 3 test pass.
+  - [ ] The feature remains local-first and avoids backend, sync, notification, invite, and drag-and-drop behavior.
+  - [ ] Future reassignment behavior can be considered separately without hiding today's status-only decision.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+### 2026-06-08 - Add Local Request Status Filters
+
+- Task: Add pending, accepted, and declined filters for local nurse requests on the Flags screen.
+- Problem understanding:
+  - [ ] Once swap requests can be accepted or declined, charge review needs a quick way to find requests by status.
+  - [ ] Request status filters should not affect assignment-generated flags.
+  - [ ] Status filtering should stay local-only and should not add new decision behavior.
+- Solution understanding:
+  - [ ] `src/screens/FlagsScreen.tsx` adds `All`, `Pending`, `Accepted`, and `Declined` request status filters.
+  - [ ] Request type filters and request status filters combine, so the user can filter to examples like pending swaps.
+  - [ ] Assignment severity filters still apply only to assignment flags.
+- Broader context:
+  - [ ] This makes the charge nurse review screen easier to scan after local swap decisions exist.
+  - [ ] The filter reads request state but does not mutate request or assignment data.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified

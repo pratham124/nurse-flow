@@ -357,7 +357,7 @@ Validation check:
 
 ## Mock Swap Decisions
 
-### Task 8.1: Decline Mock Swap Request
+### Done Task 8.1: Decline Mock Swap Request
 
 Story coverage: US6
 
@@ -372,7 +372,7 @@ Validation check:
 - Declining a pending swap updates the status to declined.
 - Declined requests cannot be declined again.
 
-### Task 8.2: Accept Mock Swap Request Without Reassignment
+### Done Task 8.2: Accept Mock Swap Request Without Reassignment
 
 Story coverage: US6, US7
 
@@ -388,7 +388,7 @@ Validation check:
 - Accepting a pending swap updates the status to accepted.
 - Bed assignments remain unchanged and understandable.
 
-### Task 8.3: Show Request Status to Simulated Nurse
+### Done Task 8.3: Show Request Status to Simulated Nurse
 
 Story coverage: US6
 
@@ -509,6 +509,7 @@ Save these for future phases:
 - Push notifications.
 - Offline sync queue.
 - Drag-and-drop assignment override.
+- Actual swap or reassignment logic after request approval, including same-team limits, target nurse workload capacity, RN requirement for red-acuity beds, side-load balance, and checks that the move does not create new assignment flags.
 - Board snapshot sharing.
 - Tablet layout.
 - AI or external assignment services.

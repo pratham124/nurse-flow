@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import {
   SummaryChip,
@@ -9,6 +9,7 @@ import {
 import { useLocalState } from "../store/LocalStateContext";
 import { colors, fontWeight, radius, shadows, spacing, textSize } from "../theme/tokens";
 import { getNurseRequestDisplayById } from "../utils/nurseRequestDisplay";
+import { resolvePendingSwapRequest } from "../utils/nurseRequests";
 import { assignmentFlow } from "../utils/workflowFlows";
 
 type DetailRowProps = {
@@ -30,14 +31,40 @@ function DetailRow({ label, value }: DetailRowProps) {
 }
 
 export default function LocalRequestDetailScreen() {
-  const { localState } = useLocalState();
+  const { localState, setLocalState } = useLocalState();
   const { requestId } = useLocalSearchParams<{
     requestId?: string | string[];
   }>();
+  const selectedRequestId = getParamValue(requestId);
   const request = getNurseRequestDisplayById(
     localState.activeShift,
-    getParamValue(requestId),
+    selectedRequestId,
   );
+  const showSwapActions =
+    Boolean(request) &&
+    request?.requestType === "swap" &&
+    request.requestStatus === "pending";
+
+  function handleResolveSwap(nextStatus: "accepted" | "declined") {
+    if (!selectedRequestId) {
+      return;
+    }
+
+    setLocalState((currentState) => {
+      if (!currentState.activeShift) {
+        return currentState;
+      }
+
+      return {
+        ...currentState,
+        activeShift: resolvePendingSwapRequest(
+          currentState.activeShift,
+          selectedRequestId,
+          nextStatus,
+        ),
+      };
+    });
+  }
 
   return (
     <WorkflowScreen
@@ -74,6 +101,39 @@ export default function LocalRequestDetailScreen() {
               <Text style={styles.messageText}>{request.message}</Text>
             </View>
           </WorkflowSection>
+
+          {showSwapActions ? (
+            <WorkflowSection title="Swap decision">
+              <View style={styles.decisionCard}>
+                <Text style={styles.decisionText}>
+                  Update this local request status. Bed assignments stay
+                  unchanged.
+                </Text>
+                <View style={styles.decisionButtonRow}>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => handleResolveSwap("declined")}
+                    style={({ pressed }) => [
+                      styles.secondaryButton,
+                      pressed ? styles.buttonPressed : null,
+                    ]}
+                  >
+                    <Text style={styles.secondaryButtonText}>Decline</Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => handleResolveSwap("accepted")}
+                    style={({ pressed }) => [
+                      styles.primaryButton,
+                      pressed ? styles.buttonPressed : null,
+                    ]}
+                  >
+                    <Text style={styles.primaryButtonText}>Accept</Text>
+                  </Pressable>
+                </View>
+              </View>
+            </WorkflowSection>
+          ) : null}
         </View>
       ) : (
         <View style={styles.emptyCard}>
@@ -134,6 +194,62 @@ const styles = StyleSheet.create({
     fontSize: textSize.md,
     fontWeight: fontWeight.medium,
     lineHeight: 20,
+  },
+  decisionCard: {
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    gap: spacing.md,
+    padding: spacing.md,
+    ...shadows.sm,
+  },
+  decisionText: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.medium,
+    lineHeight: 18,
+  },
+  decisionButtonRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  secondaryButton: {
+    alignItems: "center",
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.md,
+    borderWidth: 0.5,
+    flex: 1,
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: spacing.md,
+    ...shadows.sm,
+  },
+  primaryButton: {
+    alignItems: "center",
+    backgroundColor: colors.brand.burgundy,
+    borderColor: colors.brand.burgundy,
+    borderRadius: radius.md,
+    borderWidth: 0.5,
+    flex: 1,
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: spacing.md,
+    ...shadows.sm,
+  },
+  buttonPressed: {
+    opacity: 0.82,
+  },
+  secondaryButtonText: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.action,
+    fontWeight: fontWeight.semibold,
+  },
+  primaryButtonText: {
+    color: colors.neutral.surface,
+    fontSize: textSize.action,
+    fontWeight: fontWeight.semibold,
   },
   emptyCard: {
     backgroundColor: colors.neutral.surface,
