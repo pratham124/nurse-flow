@@ -13,7 +13,7 @@ import {
 } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
 import { colors, fontWeight, radius, shadows, spacing, textSize } from "../theme/tokens";
-import type { Acuity, ExperienceLevel, Sex } from "../types/models";
+import type { Acuity, ExperienceLevel, NurseRequest, Sex } from "../types/models";
 import {
   getSelectedNurseAssignmentView,
   type NurseAssignedBedView,
@@ -27,6 +27,7 @@ type NurseAssignmentListItem =
   | { type: "empty"; id: string; message: string; title: string };
 
 type NurseAssignmentHeaderProps = {
+  onFlagIssue: () => void;
   view: NurseAssignmentView;
 };
 
@@ -37,6 +38,16 @@ type NurseAssignedBedRowProps = {
 type EmptyAssignmentRowProps = {
   message: string;
   title: string;
+};
+
+type IssueHistorySectionProps = {
+  requests: NurseRequest[];
+  view: NurseAssignmentView;
+};
+
+type IssueRequestRowProps = {
+  request: NurseRequest;
+  view: NurseAssignmentView;
 };
 
 function getExperienceLabel(experienceLevel: ExperienceLevel) {
@@ -150,6 +161,24 @@ function getReadyListItems(view: NurseAssignmentView): NurseAssignmentListItem[]
   }));
 }
 
+function getIssueSourceText(view: NurseAssignmentView, request: NurseRequest) {
+  if (!request.sourceBedId) {
+    return "No bed context";
+  }
+
+  const assignedBed = view.assignedBeds.find(
+    (bedView) => bedView.bed.id === request.sourceBedId,
+  );
+
+  return assignedBed
+    ? `Room ${assignedBed.room.label} - Bed ${assignedBed.bed.label}`
+    : "Assigned bed unavailable";
+}
+
+function getRequestCreatedText(request: NurseRequest) {
+  return new Date(request.createdAt).toLocaleString();
+}
+
 function getRecoveryListItems(
   result: NurseAssignmentViewResult,
 ): NurseAssignmentListItem[] {
@@ -171,7 +200,9 @@ function getAssignmentItemKey(item: NurseAssignmentListItem) {
   return item.type === "bed" ? item.assignedBed.bed.id : item.id;
 }
 
-function NurseAssignmentHeader({ view }: NurseAssignmentHeaderProps) {
+function NurseAssignmentHeader({ onFlagIssue, view }: NurseAssignmentHeaderProps) {
+  const issueRequests = view.requests.filter((request) => request.type === "issue");
+
   return (
     <View style={styles.headerContent}>
       <WorkflowSection title="Local simulation">
@@ -216,13 +247,53 @@ function NurseAssignmentHeader({ view }: NurseAssignmentHeaderProps) {
 
       <WorkflowSection title="Nurse actions">
         <View style={styles.actionRow}>
-          <PlaceholderButton label="Flag issue" />
+          <PlaceholderButton label="Flag issue" onPress={onFlagIssue} />
           <PlaceholderButton label="Request swap" />
         </View>
         <Text style={styles.actionHelper}>
-          Mock issue and swap forms are planned for later Phase 3 tasks.
+          Issue notes are local mock requests. Swap requests are planned for a
+          later Phase 3 task.
         </Text>
       </WorkflowSection>
+
+      <IssueHistorySection requests={issueRequests} view={view} />
+    </View>
+  );
+}
+
+function IssueHistorySection({ requests, view }: IssueHistorySectionProps) {
+  return (
+    <WorkflowSection title="Local issue history">
+      <View style={styles.issueHistoryCard}>
+        {requests.length ? (
+          requests.map((request) => (
+            <IssueRequestRow
+              key={request.id}
+              request={request}
+              view={view}
+            />
+          ))
+        ) : (
+          <Text style={styles.issueHistoryEmpty}>No local issues yet.</Text>
+        )}
+      </View>
+    </WorkflowSection>
+  );
+}
+
+function IssueRequestRow({ request, view }: IssueRequestRowProps) {
+  return (
+    <View style={styles.issueRequestRow}>
+      <View style={styles.issueRequestTopRow}>
+        <Text style={styles.issueRequestLabel}>Pending issue</Text>
+        <Text style={styles.issueRequestTime}>
+          {getRequestCreatedText(request)}
+        </Text>
+      </View>
+      <Text style={styles.issueRequestSource}>
+        {getIssueSourceText(view, request)}
+      </Text>
+      <Text style={styles.issueRequestMessage}>{request.message}</Text>
     </View>
   );
 }
@@ -294,7 +365,14 @@ export default function SimulatedNurseAssignmentScreen() {
       flow={assignmentFlow}
       headerActionLabel="Floors"
       keyExtractor={getAssignmentItemKey}
-      listHeader={readyView ? <NurseAssignmentHeader view={readyView} /> : undefined}
+      listHeader={
+        readyView ? (
+          <NurseAssignmentHeader
+            onFlagIssue={() => router.push("/simulated-nurse-issue")}
+            view={readyView}
+          />
+        ) : undefined
+      }
       onHeaderActionPress={() => router.push("/")}
       onPrimaryPress={() => router.push("/simulated-nurse-picker")}
       primaryLabel="Choose nurse"
@@ -367,6 +445,63 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.medium,
     lineHeight: 18,
   },
+  issueHistoryCard: {
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    gap: spacing.sm,
+    padding: spacing.md,
+    ...shadows.sm,
+  },
+  issueHistoryEmpty: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.medium,
+    lineHeight: 18,
+  },
+  issueRequestRow: {
+    backgroundColor: colors.status.amber50,
+    borderColor: colors.neutral.borderTertiary,
+    borderLeftColor: colors.status.amber800,
+    borderLeftWidth: 4,
+    borderRadius: radius.md,
+    borderWidth: 0.5,
+    gap: spacing.xs,
+    padding: spacing.md,
+  },
+  issueRequestTopRow: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: spacing.sm,
+    justifyContent: "space-between",
+  },
+  issueRequestLabel: {
+    color: colors.status.amber800,
+    flex: 1,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.bold,
+    lineHeight: 18,
+  },
+  issueRequestTime: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.xs,
+    fontWeight: fontWeight.medium,
+    lineHeight: 16,
+    textAlign: "right",
+  },
+  issueRequestSource: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
+    lineHeight: 18,
+  },
+  issueRequestMessage: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.medium,
+    lineHeight: 18,
+  },
   bedRow: {
     backgroundColor: colors.neutral.surface,
     borderColor: colors.neutral.borderTertiary,
@@ -432,4 +567,3 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 });
-

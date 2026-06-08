@@ -220,44 +220,45 @@ Validation check:
 
 ## Mock Issue Flags
 
-### Task 5.1: Add Mock Issue Form
+### Done Task 5.1: Add Mock Issue Form
 
 Story coverage: US3
 
 Build:
 
-- Add a form for selected nurse issue messages.
-- Allow optional bed context from that nurse's assigned beds.
-- Block blank messages.
+- Added a form for selected nurse issue messages.
+- Allowed optional bed context from that nurse's assigned beds.
+- Blocked blank messages with `Add a short issue description.`
 
 Validation check:
 
 - Submitting an issue with a message succeeds.
 - Blank message shows `Add a short issue description.`
 
-### Task 5.2: Save Mock Issue Requests Locally
+### Done Task 5.2: Save Mock Issue Requests Locally
 
 Story coverage: US3, US5
 
 Build:
 
-- Convert submitted issue forms into local nurse request records with `type: 'issue'`.
-- Store requesting nurse ID, requester name, message, timestamp, status, and optional source bed.
-- Return to the simulated nurse assignment screen after submit.
+- Converted submitted issue forms into local nurse request records with `type: 'issue'`.
+- Stored requesting nurse ID, requester name, message, timestamp, status, and optional source bed.
+- Returned to the simulated nurse assignment screen after submit.
+- Added selected nurse local issue history on the simulated nurse assignment screen.
 
 Validation check:
 
 - Submit an issue from one nurse.
 - Return to the same nurse view and confirm the request appears in local request history.
 
-### Task 5.3: Prevent Issue Requests for Other Nurses' Beds
+### Done Task 5.3: Prevent Issue Requests for Other Nurses' Beds
 
 Story coverage: US3, US7
 
 Build:
 
-- Limit issue bed selection to the selected nurse's assigned beds.
-- Validate the selected bed before saving.
+- Limited issue bed selection to the selected nurse's assigned beds.
+- Validated the selected bed before saving.
 
 Validation check:
 

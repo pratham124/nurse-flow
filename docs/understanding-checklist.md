@@ -845,3 +845,27 @@ For each task, add a dated section with:
   - [x] Code-specific question or walkthrough completed.
   - [x] Quiz or walkthrough completed.
 - Status: verified
+
+### 2026-06-08 - Add Phase 3 Mock Issue Submission
+
+- Task: Complete Phase 3 Tasks 5.1, 5.2, and 5.3.
+- Problem understanding:
+  - [x] The simulated nurse needed a local way to flag an issue without adding real messaging, notifications, backend, or charge-nurse review actions yet.
+  - [x] Blank issue messages should not create request records.
+  - [x] Optional bed context must come only from the selected nurse's assigned beds.
+- Solution understanding:
+  - [x] `src/screens/SimulatedNurseIssueScreen.tsx` adds the local mock issue form.
+  - [x] The form saves a `NurseRequest` with `type: "issue"` and `status: "pending"` onto `activeShift.nurseRequests`.
+  - [x] `src/screens/SimulatedNurseAssignmentScreen.tsx` opens the issue form and shows the selected nurse's local issue history.
+  - [x] The issue screen uses `getSelectedNurseAssignmentView` so bed options come from the same derived nurse assignment data as the nurse view.
+  - [x] Swap requests, charge-nurse review, accept/decline, notifications, and backend behavior were not added.
+- Broader context:
+  - [x] This proves the local nurse-to-charge request write path before adding swap requests or charge review.
+  - [x] Keeping request records on `activeShift` preserves one source of truth for local request state.
+  - [x] The active shift persistence path can restore submitted issues because they are part of the active shift.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
