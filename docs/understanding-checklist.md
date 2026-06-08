@@ -869,3 +869,49 @@ For each task, add a dated section with:
   - [x] Code-specific question or walkthrough completed.
   - [x] Quiz or walkthrough completed.
 - Status: verified
+
+### 2026-06-08 - Add Phase 3 Mock Swap Submission
+
+- Task: Complete Phase 3 Tasks 6.1, 6.2, and 6.3.
+- Problem understanding:
+  - [ ] The simulated nurse needed a local way to request a swap without moving assignments or adding real messaging infrastructure.
+  - [ ] A swap request must have a source bed, unlike an issue request where bed context can be optional.
+  - [ ] The source bed must come from the selected nurse's assigned beds.
+- Solution understanding:
+  - [ ] `src/screens/SimulatedNurseSwapScreen.tsx` adds the local mock swap form.
+  - [ ] The form saves a `NurseRequest` with `type: "swap"` and `status: "pending"` onto `activeShift.nurseRequests`.
+  - [ ] `src/screens/SimulatedNurseAssignmentScreen.tsx` opens the swap form and shows issue and swap records in local request history.
+  - [ ] The swap screen validates missing source bed, blank reason, and stale or invalid source-bed IDs before saving.
+  - [ ] Charge-nurse review, accept/decline, reassignment, notifications, and backend behavior were not added.
+- Broader context:
+  - [ ] This completes the nurse-side local request creation path for Phase 3.
+  - [ ] Keeping swaps as request records preserves assignment results until a later explicit decision task.
+  - [ ] The same `activeShift.nurseRequests` list can support the upcoming charge-nurse request review tasks.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+### 2026-06-08 - Fix Duplicate Nurse Request IDs
+
+- Task: Fix the duplicate `nurse-request-1` key error after submitting local nurse requests.
+- Problem understanding:
+  - [ ] React list keys must be unique so rows keep stable identity across renders.
+  - [ ] The in-memory `createLocalId` counter can reset after reload or Fast Refresh while saved requests remain on the active shift.
+  - [ ] Saved request IDs should be checked against existing active-shift requests before creating another one.
+- Solution understanding:
+  - [ ] `src/utils/nurseRequests.ts` now creates the next unused nurse request ID from `activeShift.nurseRequests`.
+  - [ ] Existing duplicate request IDs are repaired when request lists are read for display or saving.
+  - [ ] `src/screens/SimulatedNurseIssueScreen.tsx` and `src/screens/SimulatedNurseSwapScreen.tsx` create request IDs inside the state update using the freshest active shift.
+  - [ ] Request history can keep using `request.id` as the React key because the saved IDs are now unique.
+- Broader context:
+  - [ ] This preserves local persistence behavior without adding server IDs or future-phase infrastructure.
+  - [ ] The same helper protects both issue and swap request creation.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending

@@ -28,6 +28,7 @@ type NurseAssignmentListItem =
 
 type NurseAssignmentHeaderProps = {
   onFlagIssue: () => void;
+  onRequestSwap: () => void;
   view: NurseAssignmentView;
 };
 
@@ -40,12 +41,12 @@ type EmptyAssignmentRowProps = {
   title: string;
 };
 
-type IssueHistorySectionProps = {
+type RequestHistorySectionProps = {
   requests: NurseRequest[];
   view: NurseAssignmentView;
 };
 
-type IssueRequestRowProps = {
+type RequestHistoryRowProps = {
   request: NurseRequest;
   view: NurseAssignmentView;
 };
@@ -161,7 +162,7 @@ function getReadyListItems(view: NurseAssignmentView): NurseAssignmentListItem[]
   }));
 }
 
-function getIssueSourceText(view: NurseAssignmentView, request: NurseRequest) {
+function getRequestSourceText(view: NurseAssignmentView, request: NurseRequest) {
   if (!request.sourceBedId) {
     return "No bed context";
   }
@@ -177,6 +178,17 @@ function getIssueSourceText(view: NurseAssignmentView, request: NurseRequest) {
 
 function getRequestCreatedText(request: NurseRequest) {
   return new Date(request.createdAt).toLocaleString();
+}
+
+function getRequestTypeLabel(request: NurseRequest) {
+  return request.type === "swap" ? "swap" : "issue";
+}
+
+function getRequestStatusLabel(request: NurseRequest) {
+  const statusLabel =
+    request.status.charAt(0).toUpperCase() + request.status.slice(1);
+
+  return `${statusLabel} ${getRequestTypeLabel(request)}`;
 }
 
 function getRecoveryListItems(
@@ -200,9 +212,11 @@ function getAssignmentItemKey(item: NurseAssignmentListItem) {
   return item.type === "bed" ? item.assignedBed.bed.id : item.id;
 }
 
-function NurseAssignmentHeader({ onFlagIssue, view }: NurseAssignmentHeaderProps) {
-  const issueRequests = view.requests.filter((request) => request.type === "issue");
-
+function NurseAssignmentHeader({
+  onFlagIssue,
+  onRequestSwap,
+  view,
+}: NurseAssignmentHeaderProps) {
   return (
     <View style={styles.headerContent}>
       <WorkflowSection title="Local simulation">
@@ -248,50 +262,64 @@ function NurseAssignmentHeader({ onFlagIssue, view }: NurseAssignmentHeaderProps
       <WorkflowSection title="Nurse actions">
         <View style={styles.actionRow}>
           <PlaceholderButton label="Flag issue" onPress={onFlagIssue} />
-          <PlaceholderButton label="Request swap" />
+          <PlaceholderButton label="Request swap" onPress={onRequestSwap} />
         </View>
         <Text style={styles.actionHelper}>
-          Issue notes are local mock requests. Swap requests are planned for a
-          later Phase 3 task.
+          Issue notes and swap requests are local mock requests for this active
+          shift.
         </Text>
       </WorkflowSection>
 
-      <IssueHistorySection requests={issueRequests} view={view} />
+      <RequestHistorySection requests={view.requests} view={view} />
     </View>
   );
 }
 
-function IssueHistorySection({ requests, view }: IssueHistorySectionProps) {
+function RequestHistorySection({ requests, view }: RequestHistorySectionProps) {
   return (
-    <WorkflowSection title="Local issue history">
+    <WorkflowSection title="Local request history">
       <View style={styles.issueHistoryCard}>
         {requests.length ? (
           requests.map((request) => (
-            <IssueRequestRow
+            <RequestHistoryRow
               key={request.id}
               request={request}
               view={view}
             />
           ))
         ) : (
-          <Text style={styles.issueHistoryEmpty}>No local issues yet.</Text>
+          <Text style={styles.issueHistoryEmpty}>No local requests yet.</Text>
         )}
       </View>
     </WorkflowSection>
   );
 }
 
-function IssueRequestRow({ request, view }: IssueRequestRowProps) {
+function RequestHistoryRow({ request, view }: RequestHistoryRowProps) {
+  const isSwap = request.type === "swap";
+
   return (
-    <View style={styles.issueRequestRow}>
+    <View
+      style={[
+        styles.issueRequestRow,
+        isSwap ? styles.swapRequestRow : null,
+      ]}
+    >
       <View style={styles.issueRequestTopRow}>
-        <Text style={styles.issueRequestLabel}>Pending issue</Text>
+        <Text
+          style={[
+            styles.issueRequestLabel,
+            isSwap ? styles.swapRequestLabel : null,
+          ]}
+        >
+          {getRequestStatusLabel(request)}
+        </Text>
         <Text style={styles.issueRequestTime}>
           {getRequestCreatedText(request)}
         </Text>
       </View>
       <Text style={styles.issueRequestSource}>
-        {getIssueSourceText(view, request)}
+        {getRequestSourceText(view, request)}
       </Text>
       <Text style={styles.issueRequestMessage}>{request.message}</Text>
     </View>
@@ -369,6 +397,7 @@ export default function SimulatedNurseAssignmentScreen() {
         readyView ? (
           <NurseAssignmentHeader
             onFlagIssue={() => router.push("/simulated-nurse-issue")}
+            onRequestSwap={() => router.push("/simulated-nurse-swap")}
             view={readyView}
           />
         ) : undefined
@@ -482,6 +511,13 @@ const styles = StyleSheet.create({
     fontSize: textSize.sm,
     fontWeight: fontWeight.bold,
     lineHeight: 18,
+  },
+  swapRequestRow: {
+    backgroundColor: colors.status.blue50,
+    borderLeftColor: colors.status.blue800,
+  },
+  swapRequestLabel: {
+    color: colors.status.blue800,
   },
   issueRequestTime: {
     color: colors.neutral.textSecondary,

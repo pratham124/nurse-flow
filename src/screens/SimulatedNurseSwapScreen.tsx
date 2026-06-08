@@ -22,28 +22,29 @@ import {
 } from "../utils/nurseRequests";
 import { assignmentFlow } from "../utils/workflowFlows";
 
-const blankIssueMessage = "Add a short issue description.";
-const invalidBedMessage = "Choose one of your assigned beds.";
+const missingSourceBedMessage = "Choose the bed you want to swap.";
+const blankReasonMessage = "Add a short reason for the request.";
+const invalidSourceBedMessage = "Choose one of your assigned beds.";
 
-type IssueBedOption = {
-  bedId?: LocalId;
+type SwapBedOption = {
+  bedId: LocalId;
   detail: string;
   label: string;
 };
 
-type IssueFormContentProps = {
-  message: string;
-  messageError: string;
-  onMessageChange: (message: string) => void;
-  onSelectBed: (bedId?: LocalId) => void;
-  selectedBedId?: LocalId;
+type SwapFormContentProps = {
+  onReasonChange: (reason: string) => void;
+  onSelectSourceBed: (bedId: LocalId) => void;
+  reason: string;
+  reasonError: string;
+  selectedSourceBedId?: LocalId;
   view: NurseAssignmentView;
 };
 
-type IssueBedOptionRowProps = {
+type SwapBedOptionRowProps = {
   isSelected: boolean;
   onSelect: () => void;
-  option: IssueBedOption;
+  option: SwapBedOption;
 };
 
 function getBedOptionLabel(assignedBed: NurseAssignedBedView) {
@@ -57,25 +58,19 @@ function getBedOptionDetail(assignedBed: NurseAssignedBedView) {
   return `Room ${assignedBed.room.label}${patientText}`;
 }
 
-function getIssueBedOptions(view: NurseAssignmentView): IssueBedOption[] {
-  return [
-    {
-      detail: "Use this when the issue is not tied to one bed.",
-      label: "No bed context",
-    },
-    ...view.assignedBeds.map((assignedBed) => ({
-      bedId: assignedBed.bed.id,
-      detail: getBedOptionDetail(assignedBed),
-      label: getBedOptionLabel(assignedBed),
-    })),
-  ];
+function getSwapBedOptions(view: NurseAssignmentView): SwapBedOption[] {
+  return view.assignedBeds.map((assignedBed) => ({
+    bedId: assignedBed.bed.id,
+    detail: getBedOptionDetail(assignedBed),
+    label: getBedOptionLabel(assignedBed),
+  }));
 }
 
-function IssueBedOptionRow({
+function SwapBedOptionRow({
   isSelected,
   onSelect,
   option,
-}: IssueBedOptionRowProps) {
+}: SwapBedOptionRowProps) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -91,86 +86,97 @@ function IssueBedOptionRow({
         <Text style={styles.bedOptionLabel}>{option.label}</Text>
         <Text style={styles.bedOptionDetail}>{option.detail}</Text>
       </View>
-      {option.bedId ? <BedChip label={option.label.replace("Bed ", "")} /> : null}
+      <BedChip label={option.label.replace("Bed ", "")} />
     </Pressable>
   );
 }
 
-function IssueFormContent({
-  message,
-  messageError,
-  onMessageChange,
-  onSelectBed,
-  selectedBedId,
+function SwapFormContent({
+  onReasonChange,
+  onSelectSourceBed,
+  reason,
+  reasonError,
+  selectedSourceBedId,
   view,
-}: IssueFormContentProps) {
-  const bedOptions = getIssueBedOptions(view);
+}: SwapFormContentProps) {
+  const bedOptions = getSwapBedOptions(view);
 
   return (
     <View style={styles.content}>
-      <WorkflowSection title="Local issue">
+      <WorkflowSection title="Local swap request">
         <View style={styles.summaryCard}>
           <View style={styles.chipRow}>
             <SummaryChip label={view.nurse.name} />
-            <SummaryChip label="Mock issue" />
+            <SummaryChip label="Mock swap" />
             <SummaryChip label="Local only" />
           </View>
           <Text style={styles.summaryText}>
-            This saves a local note for the charge nurse review later. It does
-            not send a notification or contact another device.
+            This saves a pending local request for charge nurse review later. It
+            does not move assignments or contact another device.
           </Text>
         </View>
       </WorkflowSection>
 
-      <WorkflowSection title="Issue message">
+      <WorkflowSection title="Source bed">
+        {bedOptions.length ? (
+          <View style={styles.bedOptions}>
+            {bedOptions.map((option) => (
+              <SwapBedOptionRow
+                key={option.bedId}
+                isSelected={option.bedId === selectedSourceBedId}
+                onSelect={() => onSelectSourceBed(option.bedId)}
+                option={option}
+              />
+            ))}
+          </View>
+        ) : (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyTitle}>No assigned beds</Text>
+            <Text style={styles.emptyMessage}>
+              No assigned beds available for swap requests.
+            </Text>
+          </View>
+        )}
+      </WorkflowSection>
+
+      <WorkflowSection title="Reason">
         <View style={styles.field}>
-          <Text style={styles.label}>What should charge know?</Text>
+          <Text style={styles.label}>Why are you requesting a swap?</Text>
           <TextInput
             multiline
-            onChangeText={onMessageChange}
-            placeholder="Patient needs reassessment before next round."
+            onChangeText={onReasonChange}
+            placeholder="Acuity balance feels uneven after admission."
             placeholderTextColor={colors.neutral.textTertiary}
             style={[
-              styles.messageInput,
-              messageError ? styles.messageInputError : null,
+              styles.reasonInput,
+              reasonError ? styles.reasonInputError : null,
             ]}
             textAlignVertical="top"
-            value={message}
+            value={reason}
           />
-          {messageError ? (
+          {reasonError ? (
             <Text accessibilityRole="alert" style={styles.fieldError}>
-              {messageError}
+              {reasonError}
             </Text>
           ) : (
             <Text style={styles.fieldHelper}>
-              Keep it short. This is stored only on the active shift.
+              Keep it short. This request stays on the active shift.
             </Text>
           )}
-        </View>
-      </WorkflowSection>
-
-      <WorkflowSection title="Bed context">
-        <View style={styles.bedOptions}>
-          {bedOptions.map((option) => (
-            <IssueBedOptionRow
-              key={option.bedId ?? "no-bed-context"}
-              isSelected={option.bedId === selectedBedId}
-              onSelect={() => onSelectBed(option.bedId)}
-              option={option}
-            />
-          ))}
         </View>
       </WorkflowSection>
     </View>
   );
 }
 
-export default function SimulatedNurseIssueScreen() {
+export default function SimulatedNurseSwapScreen() {
   const { localState, setLocalState, simulatedSessionState } = useLocalState();
-  const [message, setMessage] = useState("");
-  const [messageError, setMessageError] = useState("");
+  const [reason, setReason] = useState("");
+  const [reasonError, setReasonError] = useState("");
   const [formError, setFormError] = useState("");
-  const [selectedBedId, setSelectedBedId] = useState<LocalId | undefined>();
+  const [selectedSourceBedId, setSelectedSourceBedId] = useState<
+    LocalId | undefined
+  >();
   const assignmentResult = getSelectedNurseAssignmentView(
     localState.activeShift,
     simulatedSessionState.selectedNurseId,
@@ -180,27 +186,20 @@ export default function SimulatedNurseIssueScreen() {
   const recoveryResult =
     assignmentResult.status === "ready" ? undefined : assignmentResult;
 
-  function handleMessageChange(nextMessage: string) {
-    setMessage(nextMessage);
-    setMessageError("");
+  function handleReasonChange(nextReason: string) {
+    setReason(nextReason);
+    setReasonError("");
     setFormError("");
   }
 
-  function handleSelectBed(bedId?: LocalId) {
-    setSelectedBedId(bedId);
+  function handleSelectSourceBed(bedId: LocalId) {
+    setSelectedSourceBedId(bedId);
     setFormError("");
   }
 
-  function handleSubmitIssue() {
+  function handleSubmitSwap() {
     if (!readyView) {
       setFormError(recoveryResult?.message ?? "Choose a nurse before submitting.");
-      return;
-    }
-
-    const trimmedMessage = message.trim();
-
-    if (!trimmedMessage) {
-      setMessageError(blankIssueMessage);
       return;
     }
 
@@ -208,8 +207,20 @@ export default function SimulatedNurseIssueScreen() {
       (assignedBed) => assignedBed.bed.id,
     );
 
-    if (selectedBedId && !assignedBedIds.includes(selectedBedId)) {
-      setFormError(invalidBedMessage);
+    if (!selectedSourceBedId) {
+      setFormError(missingSourceBedMessage);
+      return;
+    }
+
+    if (!assignedBedIds.includes(selectedSourceBedId)) {
+      setFormError(invalidSourceBedMessage);
+      return;
+    }
+
+    const trimmedReason = reason.trim();
+
+    if (!trimmedReason) {
+      setReasonError(blankReasonMessage);
       return;
     }
 
@@ -218,15 +229,15 @@ export default function SimulatedNurseIssueScreen() {
         return currentState;
       }
 
-      const issueRequest: NurseRequest = {
+      const swapRequest: NurseRequest = {
         id: createNurseRequestId(currentState.activeShift),
         createdAt: new Date().toISOString(),
-        message: trimmedMessage,
+        message: trimmedReason,
         requestingNurseId: readyView.nurse.id,
         requestingNurseName: readyView.nurse.name,
-        sourceBedId: selectedBedId,
+        sourceBedId: selectedSourceBedId,
         status: "pending",
-        type: "issue",
+        type: "swap",
       };
 
       return {
@@ -235,7 +246,7 @@ export default function SimulatedNurseIssueScreen() {
           ...currentState.activeShift,
           nurseRequests: [
             ...getShiftNurseRequests(currentState.activeShift),
-            issueRequest,
+            swapRequest,
           ],
         },
       };
@@ -251,18 +262,18 @@ export default function SimulatedNurseIssueScreen() {
       flow={assignmentFlow}
       headerActionLabel="Floors"
       onHeaderActionPress={() => router.push("/")}
-      onPrimaryPress={handleSubmitIssue}
-      primaryLabel="Submit issue"
+      onPrimaryPress={handleSubmitSwap}
+      primaryLabel="Submit swap"
       subtitle=""
-      title={readyView ? `Issue for ${readyView.nurse.name}` : "Flag issue"}
+      title={readyView ? `Swap for ${readyView.nurse.name}` : "Request swap"}
     >
       {readyView ? (
-        <IssueFormContent
-          message={message}
-          messageError={messageError}
-          onMessageChange={handleMessageChange}
-          onSelectBed={handleSelectBed}
-          selectedBedId={selectedBedId}
+        <SwapFormContent
+          onReasonChange={handleReasonChange}
+          onSelectSourceBed={handleSelectSourceBed}
+          reason={reason}
+          reasonError={reasonError}
+          selectedSourceBedId={selectedSourceBedId}
           view={readyView}
         />
       ) : (
@@ -308,7 +319,7 @@ const styles = StyleSheet.create({
     fontSize: textSize.md,
     fontWeight: fontWeight.medium,
   },
-  messageInput: {
+  reasonInput: {
     backgroundColor: colors.neutral.surface,
     borderColor: colors.neutral.borderTertiary,
     borderRadius: radius.md,
@@ -319,7 +330,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
-  messageInputError: {
+  reasonInputError: {
     borderColor: colors.status.red700,
   },
   fieldHelper: {

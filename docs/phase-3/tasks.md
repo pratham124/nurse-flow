@@ -266,7 +266,7 @@ Validation check:
 
 ## Mock Swap Requests
 
-### Task 6.1: Add Mock Swap Form
+### Done Task 6.1: Add Mock Swap Form
 
 Story coverage: US4
 
@@ -282,7 +282,7 @@ Validation check:
 - Missing source bed shows `Choose the bed you want to swap.`
 - Blank reason shows `Add a short reason for the request.`
 
-### Task 6.2: Save Mock Swap Requests Locally
+### Done Task 6.2: Save Mock Swap Requests Locally
 
 Story coverage: US4, US5
 
@@ -296,7 +296,7 @@ Validation check:
 
 - Submit a swap request and confirm it appears as pending in the nurse's local request history.
 
-### Task 6.3: Prevent Swap Requests for Other Nurses' Beds
+### Done Task 6.3: Prevent Swap Requests for Other Nurses' Beds
 
 Story coverage: US4, US7
 
