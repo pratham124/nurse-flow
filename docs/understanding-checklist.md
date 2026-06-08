@@ -799,3 +799,25 @@ For each task, add a dated section with:
   - [ ] Gaps were explained.
   - [ ] Quiz or walkthrough completed.
 - Status: pending
+
+### 2026-06-08 - Add Phase 3 Simulated Nurse Assignment View
+
+- Task: Complete Phase 3 Tasks 3.1, 3.2, and 3.3.
+- Problem understanding:
+  - [ ] The simulated nurse assignment view should show one nurse's assignment without duplicating active shift data.
+  - [ ] The screen should handle missing shift, missing assignment, missing nurse, and invalid assignment references safely.
+  - [ ] Mock issue and swap forms should not be implemented yet.
+- Solution understanding:
+  - [ ] `src/utils/nurseAssignmentView.ts` derives the selected nurse's assignment from active shift data.
+  - [ ] `src/screens/SimulatedNurseAssignmentScreen.tsx` displays the selected nurse summary, room coverage, assigned beds, patient info, and acuity.
+  - [ ] `src/app/simulated-nurse-assignment.tsx` adds the route.
+  - [ ] `src/screens/SimulatedNursePickerScreen.tsx` now opens the assignment view after nurse selection.
+  - [ ] `docs/phase-3/tasks.md` marks only Tasks 3.1, 3.2, and 3.3 done.
+- Broader context:
+  - [ ] Deriving the nurse view from `activeShift.assignmentResult` keeps the charge board and nurse simulation consistent.
+  - [ ] Disabled issue/swap buttons preserve the planned workflow without jumping ahead to request forms.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending

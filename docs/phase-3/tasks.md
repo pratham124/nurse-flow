@@ -138,46 +138,46 @@ Validation check:
 
 ## Simulated Nurse Assignment
 
-### Task 3.1: Derive Selected Nurse Assignment Data
+### Done Task 3.1: Derive Selected Nurse Assignment Data
 
 Story coverage: US2, US7
 
 Build:
 
-- Add a small helper or selector that derives the selected nurse's view from active shift data.
-- Filter `assignmentResult.bedAssignments` by selected nurse ID.
-- Join assigned beds to rooms, doctor sides, bed states, patient info, and acuity.
-- Derive room coverage from `assignmentResult.roomCoverage`.
+- Added a small helper that derives the selected nurse's view from active shift data.
+- Filtered `assignmentResult.bedAssignments` by selected nurse ID.
+- Joined assigned beds to rooms, doctor sides, bed states, patient info, and acuity.
+- Derived room coverage from `assignmentResult.roomCoverage`.
 
 Validation check:
 
 - For a known assignment, the selected nurse sees only their own assigned beds.
 - Other nurses' assigned beds are not shown.
 
-### Task 3.2: Add Simulated Nurse Assignment Screen
+### Done Task 3.2: Add Simulated Nurse Assignment Screen
 
 Story coverage: US2
 
 Build:
 
-- Add the regular nurse assignment screen.
+- Added the regular nurse assignment screen.
 - Show selected nurse summary, room coverage, assigned beds, patient info, and acuity.
-- Include actions for `Flag issue` and `Request swap`.
+- Included disabled `Flag issue` and `Request swap` actions as placeholders for later Phase 3 request-form tasks.
 
 Validation check:
 
 - Select a nurse and confirm the screen shows name, license, experience, rooms, beds, patient info, and acuity.
 - Empty assigned beds display safely as empty.
 
-### Task 3.3: Add Nurse Assignment Empty and Recovery States
+### Done Task 3.3: Add Nurse Assignment Empty and Recovery States
 
 Story coverage: US2, US7
 
 Build:
 
-- Handle selected nurse with no assigned beds.
-- Handle missing assignment result.
-- Skip invalid bed references safely.
+- Handled selected nurse with no assigned beds.
+- Handled missing active shift, missing assignment result, and missing selected nurse.
+- Skipped invalid bed references safely and surfaced a local warning count.
 
 Validation check:
 

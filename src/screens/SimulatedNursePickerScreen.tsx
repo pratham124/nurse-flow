@@ -155,8 +155,8 @@ function NursePickerHeader({
             <SummaryChip label="Local only" />
           </View>
           <Text style={styles.summaryText}>
-            Choose one nurse from the active shift. The assignment detail view is
-            planned for the next Phase 3 task.
+            Choose one nurse from the active shift to see their local
+            assignment view.
           </Text>
         </View>
       </WorkflowSection>
@@ -245,6 +245,7 @@ export default function SimulatedNursePickerScreen() {
       role: "regular_nurse",
       selectedNurseId: nurseId,
     });
+    router.push("/simulated-nurse-assignment");
   }
 
   return (
