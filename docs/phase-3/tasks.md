@@ -40,20 +40,21 @@ Validation check:
 
 - You can point to `docs/phases.md` and `docs/phase-3/` and explain what Phase 3 includes and excludes before writing feature code.
 
-### Task 0.2: Confirm Current App Compatibility
+### Done Task 0.2: Confirm Current App Compatibility
 
 Story coverage: US7
 
 Build:
 
-- Review current Phase 1 and Phase 2 routes, state, storage, and flag screens.
-- Identify where simulated nurse screens can connect without changing assignment rules.
-- Confirm whether request records should live on `activeShift.nurseRequests` or a small adjacent local state field.
+- Reviewed current Phase 1 and Phase 2 routes, state, storage, and flag screens.
+- Identified where simulated nurse screens can connect without changing assignment rules.
+- Confirmed mock issue and swap request records should live on optional `activeShift.nurseRequests` in a later task.
+- Added `docs/phase-3/setup-notes.md` with compatibility notes and likely future file touchpoints.
 
 Validation check:
 
-- You can explain which existing files will likely change before implementation starts.
-- No implementation code is written in this task.
+- You can explain which existing files will likely change before implementation starts, using `docs/phase-3/setup-notes.md`.
+- No implementation code was written in this task.
 
 ## Local Role Simulation
 
@@ -506,4 +507,3 @@ Save these for future phases:
 - Board snapshot sharing.
 - Tablet layout.
 - AI or external assignment services.
-
