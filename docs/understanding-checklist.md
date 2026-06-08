@@ -688,4 +688,24 @@ For each task, add a dated section with:
   - [x] Quiz or walkthrough completed.
 - Status: verified
 
+### 2026-06-08 - Create Phase 3 Planning Docs
 
+- Task: Create Phase 3 planning docs for local nurse view simulation.
+- Problem understanding:
+  - [x] Phase 3 needs to plan the regular nurse experience without adding real accounts, invite links, backend, realtime, push notifications, or multi-device behavior.
+  - [x] The plan must preserve Phase 1 assignment behavior and Phase 2 local persistence/carry-over behavior.
+  - [x] The implementation tasks need to stay small enough for one focused session each.
+- Solution understanding:
+  - [x] `docs/phase-3/user-stories.md` defines local role switching, nurse assignment visibility, mock issue flags, mock swap requests, charge nurse review, local decisions, and compatibility.
+  - [x] `docs/phase-3/data-model.md` documents simulated role state, optional active-shift `nurseRequests`, request statuses, and derived nurse assignment view data.
+  - [x] `docs/phase-3/mobile-design.md` and `docs/phase-3/screens.md` describe the phone-first UI changes without future-phase infrastructure.
+  - [x] `docs/phase-3/tasks.md` orders the work into small, independently testable tasks with manual validation checks.
+- Broader context:
+  - [x] Planning the simulated nurse flow locally helps prove the product behavior before real auth, invite links, and realtime collaboration are introduced later.
+  - [x] Keeping nurse assignment display derived from existing active-shift assignment data avoids duplicating patient or acuity state.
+  - [x] Mock request status updates teach the future communication flow without overbuilding infrastructure.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
