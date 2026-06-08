@@ -804,20 +804,44 @@ For each task, add a dated section with:
 
 - Task: Complete Phase 3 Tasks 3.1, 3.2, and 3.3.
 - Problem understanding:
-  - [ ] The simulated nurse assignment view should show one nurse's assignment without duplicating active shift data.
-  - [ ] The screen should handle missing shift, missing assignment, missing nurse, and invalid assignment references safely.
-  - [ ] Mock issue and swap forms should not be implemented yet.
+  - [x] The simulated nurse assignment view should show one nurse's assignment without duplicating active shift data.
+  - [x] The screen should handle missing shift, missing assignment, missing nurse, and invalid assignment references safely.
+  - [x] Mock issue and swap forms should not be implemented yet.
 - Solution understanding:
-  - [ ] `src/utils/nurseAssignmentView.ts` derives the selected nurse's assignment from active shift data.
-  - [ ] `src/screens/SimulatedNurseAssignmentScreen.tsx` displays the selected nurse summary, room coverage, assigned beds, patient info, and acuity.
-  - [ ] `src/app/simulated-nurse-assignment.tsx` adds the route.
-  - [ ] `src/screens/SimulatedNursePickerScreen.tsx` now opens the assignment view after nurse selection.
-  - [ ] `docs/phase-3/tasks.md` marks only Tasks 3.1, 3.2, and 3.3 done.
+  - [x] `src/utils/nurseAssignmentView.ts` derives the selected nurse's assignment from active shift data.
+  - [x] `src/screens/SimulatedNurseAssignmentScreen.tsx` displays the selected nurse summary, room coverage, assigned beds, patient info, and acuity.
+  - [x] `src/app/simulated-nurse-assignment.tsx` adds the route.
+  - [x] `src/screens/SimulatedNursePickerScreen.tsx` now opens the assignment view after nurse selection.
+  - [x] `docs/phase-3/tasks.md` marks only Tasks 3.1, 3.2, and 3.3 done.
 - Broader context:
-  - [ ] Deriving the nurse view from `activeShift.assignmentResult` keeps the charge board and nurse simulation consistent.
-  - [ ] Disabled issue/swap buttons preserve the planned workflow without jumping ahead to request forms.
+  - [x] Deriving the nurse view from `activeShift.assignmentResult` keeps the charge board and nurse simulation consistent.
+  - [x] Disabled issue/swap buttons preserve the planned workflow without jumping ahead to request forms.
 - Verification:
-  - [ ] Human restated understanding first.
-  - [ ] Gaps were explained.
-  - [ ] Quiz or walkthrough completed.
-- Status: pending
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+### 2026-06-08 - Add Phase 3 Local Nurse Request Model
+
+- Task: Complete Phase 3 Tasks 4.1 and 4.2.
+- Problem understanding:
+  - [x] Phase 3 needs a local data shape for mock issue flags and swap requests before request forms exist.
+  - [x] Request records should live on the active shift as the single source of truth for today's local request state.
+  - [x] Old Phase 2 active shifts may not have a `nurseRequests` field, so missing arrays must be handled safely.
+- Solution understanding:
+  - [x] `src/types/models.ts` defines local request status, request type, and `NurseRequest`.
+  - [x] `Shift` now has optional `nurseRequests?: NurseRequest[]`.
+  - [x] `src/helpers/shiftHelpers.ts` initializes new active shifts with `nurseRequests: []`.
+  - [x] `src/utils/nurseRequests.ts` returns `[]` for shifts that do not have request data yet.
+  - [x] No auth, invite, push, server, sync, or offline queue fields were added.
+- Broader context:
+  - [x] Future mock issue and swap forms can save records to one active-shift location.
+  - [x] Active shift persistence can save and restore these records through the existing local JSON path.
+  - [x] Previous-shift snapshots and saved floor templates remain separate from nurse request history.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified

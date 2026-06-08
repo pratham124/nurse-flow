@@ -14,6 +14,10 @@ export type LocalStorageVersion = 1;
 
 export type SimulatedRole = "charge" | "regular_nurse";
 
+export type NurseRequestStatus = "pending" | "accepted" | "declined";
+
+export type NurseRequestType = "issue" | "swap";
+
 export type FlagSeverity = "info" | "warning" | "critical";
 
 export type FlagType =
@@ -67,6 +71,7 @@ export interface Shift {
   bedStates: BedState[];
   assignmentResult?: AssignmentResult;
   flags: Flag[];
+  nurseRequests?: NurseRequest[];
 }
 
 export interface SideLoadLimits {
@@ -135,6 +140,21 @@ export interface Flag {
   roomId?: LocalId;
   bedId?: LocalId;
   teamId?: LocalId;
+}
+
+export interface NurseRequest {
+  id: LocalId;
+  type: NurseRequestType;
+  status: NurseRequestStatus;
+  requestingNurseId: LocalId;
+  requestingNurseName: string;
+  message: string;
+  createdAt: string;
+  sourceBedId?: LocalId;
+  targetNurseId?: LocalId;
+  targetBedId?: LocalId;
+  resolvedAt?: string;
+  resolutionNote?: string;
 }
 
 export interface NurseCarryOverSuggestion {

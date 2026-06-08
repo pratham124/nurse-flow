@@ -2,10 +2,12 @@ import type {
   Bed,
   BedState,
   DoctorSide,
+  NurseRequest,
   Nurse,
   Room,
   Shift,
 } from "../types/models";
+import { getNurseRequestsForNurse } from "./nurseRequests";
 
 export type NurseAssignedBedView = {
   bed: Bed;
@@ -19,6 +21,7 @@ export type NurseAssignmentView = {
   coveredRooms: Room[];
   invalidAssignmentCount: number;
   nurse: Nurse;
+  requests: NurseRequest[];
 };
 
 export type NurseAssignmentViewResult =
@@ -135,7 +138,7 @@ export function getSelectedNurseAssignmentView(
       coveredRooms: getCoveredRooms(activeShift, nurse.id),
       invalidAssignmentCount: assignedBedIds.length - assignedBeds.length,
       nurse,
+      requests: getNurseRequestsForNurse(activeShift, nurse.id),
     },
   };
 }
-

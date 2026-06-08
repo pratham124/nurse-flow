@@ -50,6 +50,7 @@ export function createShiftFromTemplate(floorTemplate: FloorTemplate): Shift {
       bedId: bed.id,
     })),
     flags: [],
+    nurseRequests: [],
   };
 }
 

@@ -186,30 +186,32 @@ Validation check:
 
 ## Local Request Model
 
-### Task 4.1: Add Local Nurse Request Types
+### Done Task 4.1: Add Local Nurse Request Types
 
 Story coverage: US3, US4, US5, US6, US7
 
 Build:
 
-- Add TypeScript types for request status, request type, and nurse request records.
-- Keep request records local and serializable.
-- Store requester ID, requester name, message, created timestamp, status, and optional bed context.
+- Added TypeScript types for request status, request type, and nurse request records.
+- Kept request records local and serializable.
+- Stored requester ID, requester name, message, created timestamp, status, and optional bed context.
+- Avoided account IDs, invite tokens, push tokens, server IDs, sync metadata, and offline queue fields.
 
 Validation check:
 
 - TypeScript compiles.
 - No account IDs, invite tokens, push tokens, server IDs, sync metadata, or offline queue fields are added.
 
-### Task 4.2: Store Nurse Requests on Active Shift
+### Done Task 4.2: Store Nurse Requests on Active Shift
 
 Story coverage: US3, US4, US5, US7
 
 Build:
 
-- Add an optional nurse requests array to active shift state.
-- Default missing request arrays to empty in helper logic.
-- Ensure active shift persistence continues to save and restore cleanly.
+- Added an optional nurse requests array to active shift state.
+- Defaulted missing request arrays to empty in helper logic.
+- Initialized new active shifts with an empty local request list.
+- Kept active shift persistence on the existing local JSON save and restore path.
 
 Validation check:
 
