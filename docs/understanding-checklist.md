@@ -40,6 +40,28 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-08 - Confirm Phase 4 App Compatibility
+
+- Task: Complete Phase 4 setup Task 0.2 without writing feature code.
+- Problem understanding:
+  - [ ] Phase 4 break scheduling needs to build on the existing local active-shift workflow.
+  - [ ] Setup work should identify touchpoints before adding model, route, screen, or generation code.
+  - [ ] Break scheduling must stay local-only and avoid future-phase backend, auth, realtime, notification, sync, drag-and-drop, tablet, and AI work.
+- Solution understanding:
+  - [ ] `docs/phase-4/setup-notes.md` records the current compatibility review.
+  - [ ] Break schedule state should attach to optional `activeShift.breakSchedule`, not saved floor templates or previous-shift snapshots.
+  - [ ] Existing active-shift persistence can carry a plain JSON optional field without a storage version change.
+  - [ ] `docs/phase-4/tasks.md` marks only setup Task 0.2 done.
+- Broader context:
+  - [ ] This protects Phase 1 assignment, Phase 2 persistence, and Phase 3 nurse simulation behavior before Phase 4 feature code starts.
+  - [ ] The next task can add types with a clear source-of-truth decision.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
 ### 2026-06-07 - Remove Carry-Over Review Subheader and Button Bar
 
 - Task: Remove the "Previous-shift suggestions" subheader and the workflow step chips (button bar) from the Carry-Over Review screen.

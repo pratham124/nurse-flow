@@ -42,16 +42,16 @@ Validation check:
 
 - You can point to `docs/phases.md` and `docs/phase-4/` and explain what Phase 4 includes and excludes before writing feature code.
 
-### Task 0.2: Confirm Current App Compatibility
+### Done Task 0.2: Confirm Current App Compatibility
 
 Story coverage: US6
 
 Build:
 
-- Review current Phase 3 routes, state, storage, floor board, simulated nurse view, and local request code.
-- Identify likely implementation file touchpoints before writing feature code.
-- Confirm where break schedule state should attach to `activeShift`.
-- Confirm how existing active-shift persistence will handle an optional `breakSchedule` field.
+- Reviewed current Phase 3 routes, state, storage, floor board, simulated nurse view, and local request code.
+- Identified likely implementation file touchpoints before writing feature code in `docs/phase-4/setup-notes.md`.
+- Confirmed break schedule state should attach to `activeShift`.
+- Confirmed existing active-shift persistence can handle an optional plain JSON `breakSchedule` field.
 
 Validation check:
 
