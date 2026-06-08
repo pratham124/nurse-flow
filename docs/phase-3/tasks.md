@@ -404,7 +404,7 @@ Validation check:
 
 ## Manual Testing Pass
 
-### Task 9.1: Role Switching Test
+### Done Task 9.1: Role Switching Test
 
 Build:
 
@@ -418,7 +418,7 @@ Validation check:
 - Select a nurse.
 - Return to charge nurse view.
 
-### Task 9.2: Nurse Assignment Visibility Test
+### Done Task 9.2: Nurse Assignment Visibility Test
 
 Build:
 
@@ -431,7 +431,7 @@ Validation check:
 - Confirm Nurse A cannot see Nurse B's assigned beds.
 - Confirm Nurse B cannot see Nurse A's assigned beds.
 
-### Task 9.3: Mock Issue Test
+### Done Task 9.3: Mock Issue Test
 
 Build:
 
@@ -444,7 +444,7 @@ Validation check:
 - Return to charge nurse view.
 - Confirm the issue appears in local request review.
 
-### Task 9.4: Mock Swap Request Test
+### Done Task 9.4: Mock Swap Request Test
 
 Build:
 
@@ -457,7 +457,7 @@ Validation check:
 - Accept one swap request and confirm status changes to accepted.
 - Submit another swap request, decline it, and confirm status changes to declined.
 
-### Task 9.5: Previous Phase Compatibility Test
+### Done Task 9.5: Previous Phase Compatibility Test
 
 Build:
 
@@ -473,7 +473,7 @@ Validation check:
 - View Floor Board and existing assignment flags.
 - End shift and confirm local persistence behavior still works.
 
-### Task 9.6: Local-Only Scope Test
+### Done Task 9.6: Local-Only Scope Test
 
 Build:
 
@@ -484,7 +484,7 @@ Validation check:
 
 - There are no Phase 3 screens, dependencies, or data fields for auth, backend, realtime, push notifications, deep links, invite links, multi-device joins, offline sync queues, AI, breaks, drag-and-drop, board sharing, or tablet layout.
 
-### Task 9.7: Beginner Readability Pass
+### Done Task 9.7: Beginner Readability Pass
 
 Build:
 

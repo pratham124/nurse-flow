@@ -1008,3 +1008,49 @@ For each task, add a dated section with:
   - [x] Code-specific question or walkthrough completed.
   - [x] Quiz or walkthrough completed.
 - Status: verified
+
+### 2026-06-08 - Complete Phase 3 Manual Pass
+
+- Task: Complete Phase 3 Tasks 9.1 through 9.7.
+- Problem understanding:
+  - [x] The final Phase 3 task block is a validation pass, not another feature build.
+  - [x] The pass needs to prove local nurse simulation works while preserving Phase 1 and Phase 2 behavior.
+  - [x] Any missing real-world swap constraints belong in later phases, not Phase 3.
+- Solution understanding:
+  - [x] `docs/phase-3/tasks.md` now marks Tasks 9.1 through 9.7 done.
+  - [x] No feature code was added for Task 9 because the acceptance criteria are about manual validation, scope review, and readability.
+  - [x] The reviewed code keeps role simulation local, derives nurse assignment visibility from the active assignment result, stores mock requests on the active shift, and updates swap request status without moving beds.
+  - [x] Validation checks confirmed the app compiles, lints, exports for web, and starts without build errors.
+- Broader context:
+  - [x] This closes the local Phase 3 simulation before future backend, real roles, realtime, notification, or reassignment work.
+  - [x] Keeping this pass small makes it easier to explain what Phase 3 proves and what it intentionally leaves for later.
+- Verification:
+  - [x] Human approved marking the checkpoint done.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+### 2026-06-08 - Plan Phase 4 Local Break Scheduling
+
+- Task: Create Phase 4 planning docs for local break scheduling.
+- Problem understanding:
+  - [ ] Phase 4 should follow `docs/phases.md`, where Phase 4 is Break Scheduling.
+  - [ ] The older `AGENTS.md` future-phase summary names backend/auth as Phase 4, but backend/auth belongs to Phase 5 in `docs/phases.md`.
+  - [ ] Break scheduling should build on assigned local shift data without adding backend, auth, realtime, deep links, push notifications, offline sync, drag-and-drop, tablet layout, or AI.
+- Solution understanding:
+  - [ ] `docs/phase-4/user-stories.md` defines local break scheduling stories and acceptance criteria.
+  - [ ] `docs/phase-4/data-model.md` documents optional active-shift break schedule state, entries, warnings, and derived views.
+  - [ ] `docs/phase-4/mobile-design.md` documents the phone-first UI direction for break inputs, schedule review, warnings, floor board badges, and simulated nurse break display.
+  - [ ] `docs/phase-4/screens.md` maps the Floor Board, Break Schedule, and Simulated Nurse Assignment changes.
+  - [ ] `docs/phase-4/tasks.md` orders small implementation tasks with manual validation checks and marks only planning Task 0.1 done.
+- Broader context:
+  - [ ] Phase 4 connects staffing assignments to practical break planning while staying local-first.
+  - [ ] Break schedule state belongs to the active shift, not saved floor templates.
+  - [ ] Phase 4 should preserve Phase 1 assignment, Phase 2 persistence, and Phase 3 simulated nurse request behavior.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
