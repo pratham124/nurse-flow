@@ -731,3 +731,26 @@ For each task, add a dated section with:
   - [x] Gaps were explained.
   - [x] Quiz or walkthrough completed.
 - Status: verified
+
+### 2026-06-08 - Add Phase 3 Local Role Simulation State
+
+- Task: Complete Phase 3 Tasks 1.1, 1.2, and 1.3.
+- Problem understanding:
+  - [ ] Phase 3 needs a local way to switch between charge view and regular nurse simulation before nurse screens exist.
+  - [ ] Simulated role state must not become auth, accounts, invite links, backend state, or persisted user state.
+  - [ ] The Floor Board should expose the simulation entry only when the current local shift can support it.
+- Solution understanding:
+  - [ ] `src/types/models.ts` defines `SimulatedRole` and `SimulatedSessionState`.
+  - [ ] `src/store/LocalStateContext.tsx` stores temporary simulation state beside local app state, but does not persist it.
+  - [ ] `LocalStateProvider` clears invalid regular-nurse simulation state when the active shift is missing, has no nurses, or the selected nurse no longer exists.
+  - [ ] `src/screens/FloorBoardScreen.tsx` adds the local role simulation card with `View as nurse` and `Back to charge view`.
+  - [ ] `docs/phase-3/tasks.md` marks only Tasks 1.1, 1.2, and 1.3 done.
+- Broader context:
+  - [ ] This sets up the next Phase 3 task, the simulated nurse picker, without building it early.
+  - [ ] Keeping role simulation temporary protects the app from looking like it has real nurse accounts.
+  - [ ] The existing assignment result remains the future source of truth for nurse-facing data.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending

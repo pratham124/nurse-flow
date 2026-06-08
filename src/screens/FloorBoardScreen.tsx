@@ -6,8 +6,10 @@ import {
   BedChip,
   FilterChip,
   FilterChipRow,
+  PlaceholderButton,
   SeverityBadge,
   StatusPill,
+  SummaryChip,
   SummaryTile,
   SummaryTileGrid,
   WorkflowListScreen,
@@ -91,20 +93,30 @@ type BoardBedProps = BoardBedViewModel;
 
 type FloorBoardListHeaderProps = {
   admittingSideName: string;
+  canEnterNurseSimulation: boolean;
   flagCount: number;
+  isRegularNurseSimulation: boolean;
   nurseWorkloads: NurseWorkloadViewModel[];
   onFilterPress: (filter: BoardFilter) => void;
+  onReturnToChargeView: () => void;
+  onViewAsNurse: () => void;
   occupiedBedCount: number;
+  roleSimulationMessage: string;
   selectedFilter: BoardFilter;
   totalBedCount: number;
 };
 
 function FloorBoardListHeader({
   admittingSideName,
+  canEnterNurseSimulation,
   flagCount,
+  isRegularNurseSimulation,
   nurseWorkloads,
   onFilterPress,
+  onReturnToChargeView,
+  onViewAsNurse,
   occupiedBedCount,
+  roleSimulationMessage,
   selectedFilter,
   totalBedCount,
 }: FloorBoardListHeaderProps) {
@@ -122,6 +134,38 @@ function FloorBoardListHeader({
             label={flagCount === 1 ? "Flag" : "Flags"}
           />
         </SummaryTileGrid>
+      </WorkflowSection>
+
+      <WorkflowSection title="Local role simulation">
+        <View style={styles.roleSimulationCard}>
+          <View style={styles.roleSimulationTopRow}>
+            <SummaryChip
+              label={
+                isRegularNurseSimulation
+                  ? "Regular nurse simulation"
+                  : "Charge nurse view"
+              }
+            />
+            <SummaryChip label="Local only" />
+          </View>
+          <Text style={styles.roleSimulationText}>
+            {isRegularNurseSimulation
+              ? "Regular nurse mode is selected locally. Nurse selection is the next Phase 3 task."
+              : roleSimulationMessage}
+          </Text>
+          <PlaceholderButton
+            label={
+              isRegularNurseSimulation ? "Back to charge view" : "View as nurse"
+            }
+            onPress={
+              isRegularNurseSimulation
+                ? onReturnToChargeView
+                : canEnterNurseSimulation
+                  ? onViewAsNurse
+                  : undefined
+            }
+          />
+        </View>
       </WorkflowSection>
 
       <NurseWorkloadSection nurseWorkloads={nurseWorkloads} />
@@ -519,8 +563,25 @@ function EmptyBoardMessage({ selectedFilter }: { selectedFilter: BoardFilter }) 
   );
 }
 
+function getRoleSimulationMessage(activeShift?: Shift) {
+  if (!activeShift) {
+    return "Start a shift and run assignment before opening nurse simulation.";
+  }
+
+  if (activeShift.status !== "assigned" || !activeShift.assignmentResult) {
+    return "Run assignment before opening nurse view.";
+  }
+
+  if (!activeShift.nurses.length) {
+    return "Add nurses before opening nurse view.";
+  }
+
+  return "Use this to preview the future nurse-facing flow on this device.";
+}
+
 export default function FloorBoardScreen() {
-  const { localState } = useLocalState();
+  const { localState, setSimulatedSessionState, simulatedSessionState } =
+    useLocalState();
   const [selectedFilter, setSelectedFilter] = useState<BoardFilter>("All");
   const activeShift = localState.activeShift;
   const { occupiedBedCount, totalBedCount } = getShiftCensus(activeShift);
@@ -535,6 +596,11 @@ export default function FloorBoardScreen() {
     type: "side",
     side,
   }));
+  const canEnterNurseSimulation = Boolean(
+    activeShift?.status === "assigned" &&
+      activeShift.assignmentResult &&
+      activeShift.nurses.length,
+  );
 
   return (
     <WorkflowListScreen
@@ -546,10 +612,21 @@ export default function FloorBoardScreen() {
       listHeader={
         <FloorBoardListHeader
           admittingSideName={admittingDoctorSide?.name ?? "-"}
+          canEnterNurseSimulation={canEnterNurseSimulation}
           flagCount={activeShift?.flags.length ?? 0}
+          isRegularNurseSimulation={
+            simulatedSessionState.role === "regular_nurse"
+          }
           nurseWorkloads={getNurseWorkloads(activeShift)}
           onFilterPress={setSelectedFilter}
+          onReturnToChargeView={() =>
+            setSimulatedSessionState({ role: "charge" })
+          }
+          onViewAsNurse={() =>
+            setSimulatedSessionState({ role: "regular_nurse" })
+          }
           occupiedBedCount={occupiedBedCount}
+          roleSimulationMessage={getRoleSimulationMessage(activeShift)}
           selectedFilter={selectedFilter}
           totalBedCount={totalBedCount}
         />
@@ -665,6 +742,27 @@ function getAcuityColor(acuity: string) {
 const styles = StyleSheet.create({
   headerContent: {
     gap: spacing.cardGap,
+  },
+  roleSimulationCard: {
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    gap: spacing.md,
+    padding: spacing.md,
+    ...shadows.sm,
+  },
+  roleSimulationTopRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  roleSimulationText: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.medium,
+    lineHeight: 18,
   },
   inlineFlagList: {
     maxWidth: "100%",

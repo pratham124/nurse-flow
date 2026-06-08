@@ -12,6 +12,8 @@ export type ShiftStatus = "setup" | "assigned";
 
 export type LocalStorageVersion = 1;
 
+export type SimulatedRole = "charge" | "regular_nurse";
+
 export type FlagSeverity = "info" | "warning" | "critical";
 
 export type FlagType =
@@ -165,6 +167,11 @@ export interface LocalAppState {
   draftFloorTemplate?: FloorTemplate;
   isEditingActiveShiftTemplate?: boolean;
   activeShift?: Shift;
+}
+
+export interface SimulatedSessionState {
+  role: SimulatedRole;
+  selectedNurseId?: LocalId;
 }
 
 export interface PersistedLocalAppState {

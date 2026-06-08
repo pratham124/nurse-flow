@@ -58,15 +58,15 @@ Validation check:
 
 ## Local Role Simulation
 
-### Task 1.1: Add Simulated Role State
+### Done Task 1.1: Add Simulated Role State
 
 Story coverage: US1, US7
 
 Build:
 
-- Add local state for the current simulated role: charge nurse or regular nurse.
-- Add local state for selected simulated nurse ID.
-- Keep this state separate from real auth or persisted user accounts.
+- Added local state for the current simulated role: charge nurse or regular nurse.
+- Added local state for selected simulated nurse ID.
+- Kept this state separate from real auth and persisted user accounts.
 
 Validation check:
 
@@ -74,7 +74,7 @@ Validation check:
 - Selecting regular nurse mode does not require login or invite links.
 - Clearing the selected nurse returns to charge nurse mode or nurse selection.
 
-### Task 1.2: Clear Invalid Simulated Nurse Selection
+### Done Task 1.2: Clear Invalid Simulated Nurse Selection
 
 Story coverage: US1, US7
 
@@ -82,26 +82,27 @@ Build:
 
 - Detect when the selected simulated nurse no longer exists in the active shift.
 - Clear the selection safely.
-- Show a local message or return to nurse selection.
+- Return to charge view when the active shift no longer supports regular nurse simulation, or keep regular nurse mode ready for the future nurse picker when only the selected nurse is invalid.
 
 Validation check:
 
-- Select a nurse, remove that nurse from setup if the app allows it, and confirm the app does not crash.
+- Simulated nurse state clears safely if the active shift is missing or has no nurses.
+- Invalid selected nurse IDs are cleared without crashing.
 
-### Task 1.3: Add Floor Board Role Switch Entry
+### Done Task 1.3: Add Floor Board Role Switch Entry
 
 Story coverage: US1
 
 Build:
 
-- Add a compact `View as nurse` entry from the charge nurse Floor Board.
-- Show the entry only when an active assigned shift exists.
-- Use local simulation language.
+- Added a compact `View as nurse` entry from the charge nurse Floor Board.
+- Enabled it only when an active assigned shift has assignment results and nurses.
+- Used local simulation language.
 
 Validation check:
 
-- On an assigned shift, `View as nurse` is visible.
-- During setup or before assignment, `View as nurse` is hidden or disabled with a clear local message.
+- On an assigned shift, `View as nurse` is available.
+- During setup or before assignment, `View as nurse` is disabled with a clear local message.
 
 ## Simulated Nurse Picker
 

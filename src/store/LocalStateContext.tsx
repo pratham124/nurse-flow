@@ -20,6 +20,7 @@ import type {
   FloorTemplate,
   LocalAppState,
   PreviousShiftSnapshot,
+  SimulatedSessionState,
   Shift,
 } from "../types/models";
 
@@ -28,17 +29,23 @@ const emptyLocalState: LocalAppState = {
   previousShiftSnapshots: [],
 };
 
+const chargeNurseSessionState: SimulatedSessionState = {
+  role: "charge",
+};
+
 const storageRepository = createStorageRepository(
   createDeviceLocalStorageAdapter(),
 );
 
 interface LocalStateContextValue {
   localState: LocalAppState;
+  setSimulatedSessionState: Dispatch<SetStateAction<SimulatedSessionState>>;
   setLocalState: Dispatch<SetStateAction<LocalAppState>>;
   saveFloorTemplates: (floorTemplates: FloorTemplate[]) => Promise<void>;
   savePreviousShiftSnapshot: (
     snapshot: PreviousShiftSnapshot,
   ) => Promise<void>;
+  simulatedSessionState: SimulatedSessionState;
 }
 
 const LocalStateContext = createContext<LocalStateContextValue | undefined>(
@@ -54,6 +61,8 @@ export function LocalStateProvider({
   storageRepository: appStorageRepository = storageRepository,
 }: LocalStateProviderProps) {
   const [localState, setLocalState] = useState<LocalAppState>(emptyLocalState);
+  const [simulatedSessionState, setSimulatedSessionState] =
+    useState<SimulatedSessionState>(chargeNurseSessionState);
   const hasSavedActiveShiftInSession = useRef(false);
 
   useEffect(() => {
@@ -139,14 +148,42 @@ export function LocalStateProvider({
     }
   }, [localState.activeShift, saveActiveShift]);
 
+  useEffect(() => {
+    if (simulatedSessionState.role === "charge") {
+      return;
+    }
+
+    if (!localState.activeShift || !localState.activeShift.nurses.length) {
+      setSimulatedSessionState(chargeNurseSessionState);
+      return;
+    }
+
+    const selectedNurseId = simulatedSessionState.selectedNurseId;
+
+    if (
+      selectedNurseId &&
+      !localState.activeShift.nurses.some((nurse) => nurse.id === selectedNurseId)
+    ) {
+      setSimulatedSessionState({ role: "regular_nurse" });
+    }
+  }, [localState.activeShift, simulatedSessionState]);
+
   const value = useMemo(
     () => ({
       localState,
       saveFloorTemplates,
       savePreviousShiftSnapshot,
+      setSimulatedSessionState,
       setLocalState,
+      simulatedSessionState,
     }),
-    [localState, saveFloorTemplates, savePreviousShiftSnapshot, setLocalState],
+    [
+      localState,
+      saveFloorTemplates,
+      savePreviousShiftSnapshot,
+      setLocalState,
+      simulatedSessionState,
+    ],
   );
 
   return (
