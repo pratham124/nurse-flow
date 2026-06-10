@@ -60,7 +60,7 @@ Validation check:
 
 ## Break Schedule Model
 
-### Task 1.1: Add Break Schedule Types
+### Done Task 1.1: Add Break Schedule Types
 
 Story coverage: US1, US2, US3, US4, US5, US6
 
@@ -76,7 +76,7 @@ Validation check:
 - TypeScript compiles.
 - Restored active shifts without `breakSchedule` still load safely.
 
-### Task 1.2: Add Break Schedule Defaults and Selectors
+### Done Task 1.2: Add Break Schedule Defaults and Selectors
 
 Story coverage: US1, US3, US5, US6
 
@@ -92,7 +92,7 @@ Validation check:
 - A shift with no break schedule shows `Break not scheduled yet.`
 - A simulated nurse with no break entry shows a safe missing-break state.
 
-### Task 1.3: Mark Schedule as Needing Refresh When Inputs Change
+### Done Task 1.3: Mark Schedule as Needing Refresh When Inputs Change
 
 Story coverage: US4, US6
 

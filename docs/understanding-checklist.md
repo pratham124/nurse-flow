@@ -40,6 +40,28 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-09 - Add Phase 4 Break Schedule Model and Refresh Marker
+
+- Task: Complete Phase 4 Tasks 1.1, 1.2, and 1.3 only.
+- Problem understanding:
+  - [ ] Phase 4 needs break schedule state on the active shift without changing saved floor templates or previous-shift snapshots.
+  - [ ] Restored shifts from earlier phases may not have `breakSchedule`, so displays need safe defaults.
+  - [ ] Generated break times become stale when the local assignment is rerun, because break scheduling depends on the assignment snapshot.
+- Solution understanding:
+  - [ ] `src/types/models.ts` defines break schedule types and optional `Shift.breakSchedule`.
+  - [ ] `src/utils/breakSchedule.ts` centralizes safe break schedule views, nurse entry lookup, nurse warning lookup, and the missing-break label.
+  - [ ] `markBreakScheduleNeedsRefresh` only changes a generated schedule's status to `needs_refresh`; it preserves entries, inputs, and warnings.
+  - [ ] Local assignment reruns use the helper to mark existing generated schedules stale without changing break times yet.
+- Broader context:
+  - [ ] These helpers prepare the Break Schedule screen, floor board badges, and simulated nurse break display without implementing those future tasks early.
+  - [ ] The change stays local-only and does not add backend, auth, realtime, notification, sync, drag-and-drop, tablet, or AI behavior.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: in progress
+
 ### 2026-06-08 - Confirm Phase 4 App Compatibility
 
 - Task: Complete Phase 4 setup Task 0.2 without writing feature code.
