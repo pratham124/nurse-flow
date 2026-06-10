@@ -75,6 +75,7 @@ export interface Shift {
   id: LocalId;
   floorTemplateId: LocalId;
   floorName: string;
+  startedAt?: string;
   status: ShiftStatus;
   admittingDoctorSideId: LocalId;
   doctorSides: DoctorSide[];

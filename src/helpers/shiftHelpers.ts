@@ -33,6 +33,7 @@ export function createShiftFromTemplate(floorTemplate: FloorTemplate): Shift {
     id: createLocalId("shift"),
     floorTemplateId: floorTemplate.id,
     floorName: floorTemplate.name,
+    startedAt: new Date().toISOString(),
     status: "setup",
     admittingDoctorSideId: "",
     doctorSides: floorTemplate.doctorSides.map((doctorSide) => ({

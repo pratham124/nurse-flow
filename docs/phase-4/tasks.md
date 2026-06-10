@@ -16,8 +16,8 @@ Status legend:
 1. Confirm Phase 4 scope guardrails.
 2. Add break schedule types.
 3. Add break schedule defaults and safe selectors.
-4. Add Break Schedule route and empty states.
-5. Add shift start time and activity level inputs.
+4. Capture automatic shift start time and derive floor activity locally.
+5. Show shift start time and floor activity on the Floor Board.
 6. Add deterministic local break generation.
 7. Show generated break entries and warnings.
 8. Add refresh behavior.
@@ -107,53 +107,55 @@ Validation check:
 - Generate a schedule, then change nurses or rerun assignment.
 - Confirm the schedule shows `Needs refresh` without silently changing break times.
 
-## Break Schedule Screen
+## Break Context Inputs
 
-### Task 2.1: Add Break Schedule Route and Screen Shell
+### Done Task 2.1: Capture Shift Start Time Automatically
 
 Story coverage: US1, US2, US4
 
 Build:
 
-- Add a Break Schedule screen route.
-- Add a header, local schedule chip, sticky summary area, and bottom action area.
-- Show empty states for missing active shift, missing nurses, and missing assignment result.
-- Keep generation controls disabled until the shift is ready.
+- Add a local `startedAt` timestamp when a shift is started from a floor template.
+- Keep the field optional so restored older active shifts still load safely.
+- Use the timestamp as the default shift start time for break scheduling.
+- Do not ask the charge nurse to enter start time manually in Phase 4.
 
 Validation check:
 
-- Opening Break Schedule before assignment shows `Run assignment before scheduling breaks.`
-- Opening Break Schedule with no nurses shows `Add nurses before scheduling breaks.`
+- Starting a shift records a local start timestamp.
+- Restored active shifts without `startedAt` still load safely.
 
-### Task 2.2: Add Shift Start Time Input
+### Done Task 2.2: Derive Floor Activity Locally
 
 Story coverage: US1
 
 Build:
 
-- Add a beginner-friendly shift start time input.
-- Store the value in local break schedule input state.
-- Validate missing or invalid values before generation.
+- Add a simple local helper that derives `low`, `moderate`, or `high` floor activity from current bed-level acuity.
+- Keep the rule deterministic and beginner-readable.
+- Do not call AI, backend services, or network APIs.
+- Document AI-assisted floor acuity as a later-phase idea only.
 
 Validation check:
 
-- Missing shift start time shows `Enter a shift start time.`
-- Invalid shift start time shows `Use a valid time.`
+- Mostly green acuity derives low activity.
+- Red or multiple yellow acuity beds derive moderate or high activity based on the local rule.
 
-### Task 2.3: Add Activity Level Control
+### Done Task 2.3: Show Break Context on Floor Board
 
 Story coverage: US1, US2
 
 Build:
 
-- Add a segmented control or simple chip group for `Low`, `Moderate`, and `High`.
-- Default to `Moderate` unless existing schedule state says otherwise.
-- Store the chosen activity level with the break schedule.
+- Show shift start time in the Floor Board summary.
+- Show locally derived floor activity in the Floor Board summary.
+- Preserve existing occupied bed, admitting side, flag, workload, filter, and local nurse simulation behavior.
+- Do not add break generation, break entries, warnings, refresh behavior, or nurse-facing break display yet.
 
 Validation check:
 
-- Selecting each activity level updates the visible selected state.
-- The selection is preserved while staying on the Break Schedule screen.
+- After assignment, the Floor Board shows the shift start time.
+- The Floor Board shows low, moderate, or high floor activity from current acuity.
 
 ## Break Generation
 
@@ -461,3 +463,4 @@ Save these for future phases:
 - Board snapshot sharing.
 - Tablet layout.
 - AI-generated schedules.
+- AI-assisted floor acuity detection from richer clinical context.

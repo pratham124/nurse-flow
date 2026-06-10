@@ -1,4 +1,5 @@
 import type {
+  Acuity,
   BreakSchedule,
   BreakScheduleEntry,
   BreakScheduleWarning,
@@ -33,13 +34,73 @@ const defaultBreakScheduleView: ChargeBreakScheduleView = {
   emptyMessage: missingBreakLabel,
 };
 
+const activityLabels: Record<FloorActivityLevel, string> = {
+  low: "Low",
+  moderate: "Moderate",
+  high: "High",
+};
+
+function getAcuityCounts(activeShift?: Shift) {
+  return (
+    activeShift?.bedStates.reduce(
+      (counts, bedState) => {
+        if (bedState.acuity) {
+          counts[bedState.acuity] += 1;
+        }
+
+        return counts;
+      },
+      { green: 0, yellow: 0, red: 0 } satisfies Record<Acuity, number>,
+    ) ?? { green: 0, yellow: 0, red: 0 }
+  );
+}
+
+export function deriveFloorActivityLevel(activeShift?: Shift): FloorActivityLevel {
+  const acuityCounts = getAcuityCounts(activeShift);
+
+  if (acuityCounts.red >= 2 || acuityCounts.yellow + acuityCounts.red >= 5) {
+    return "high";
+  }
+
+  if (acuityCounts.red >= 1 || acuityCounts.yellow >= 2) {
+    return "moderate";
+  }
+
+  return "low";
+}
+
+export function getFloorActivityLabel(activityLevel: FloorActivityLevel) {
+  return activityLabels[activityLevel];
+}
+
+export function getShiftStartTimeLabel(activeShift?: Shift) {
+  if (!activeShift?.startedAt) {
+    return "--:--";
+  }
+
+  const startedAt = new Date(activeShift.startedAt);
+
+  if (Number.isNaN(startedAt.getTime())) {
+    return "--:--";
+  }
+
+  return startedAt.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export function getBreakScheduleView(
   activeShift?: Shift,
 ): ChargeBreakScheduleView {
   const breakSchedule = activeShift?.breakSchedule;
 
   if (!breakSchedule) {
-    return defaultBreakScheduleView;
+    return {
+      ...defaultBreakScheduleView,
+      shiftStartTime: getShiftStartTimeLabel(activeShift),
+      activityLevel: deriveFloorActivityLevel(activeShift),
+    };
   }
 
   return {

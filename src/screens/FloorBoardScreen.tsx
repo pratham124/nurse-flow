@@ -16,6 +16,10 @@ import {
   WorkflowSection,
 } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
+import {
+  getBreakScheduleView,
+  getFloorActivityLabel,
+} from "../utils/breakSchedule";
 import { getShiftCensus, isOccupiedBedState } from "../utils/census";
 import { assignmentFlow } from "../utils/workflowFlows";
 import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
@@ -104,6 +108,8 @@ type FloorBoardListHeaderProps = {
   roleSimulationMessage: string;
   selectedFilter: BoardFilter;
   selectedNurseName?: string;
+  shiftStartTimeLabel: string;
+  floorActivityLabel: string;
   totalBedCount: number;
 };
 
@@ -120,6 +126,8 @@ function FloorBoardListHeader({
   roleSimulationMessage,
   selectedFilter,
   selectedNurseName,
+  shiftStartTimeLabel,
+  floorActivityLabel,
   totalBedCount,
 }: FloorBoardListHeaderProps) {
   return (
@@ -135,6 +143,8 @@ function FloorBoardListHeader({
             value={flagCount.toString()}
             label={flagCount === 1 ? "Flag" : "Flags"}
           />
+          <SummaryTile value={shiftStartTimeLabel} label="Shift start" />
+          <SummaryTile value={floorActivityLabel} label="Floor activity" />
         </SummaryTileGrid>
       </WorkflowSection>
 
@@ -608,6 +618,7 @@ export default function FloorBoardScreen() {
   const selectedNurseName = activeShift?.nurses.find(
     (nurse) => nurse.id === simulatedSessionState.selectedNurseId,
   )?.name;
+  const breakScheduleView = getBreakScheduleView(activeShift);
 
   return (
     <WorkflowListScreen
@@ -637,6 +648,10 @@ export default function FloorBoardScreen() {
           roleSimulationMessage={getRoleSimulationMessage(activeShift)}
           selectedFilter={selectedFilter}
           selectedNurseName={selectedNurseName}
+          shiftStartTimeLabel={breakScheduleView.shiftStartTime}
+          floorActivityLabel={getFloorActivityLabel(
+            breakScheduleView.activityLevel,
+          )}
           totalBedCount={totalBedCount}
         />
       }

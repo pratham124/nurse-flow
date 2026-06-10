@@ -40,6 +40,28 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-10 - Add Automatic Break Context on Floor Board
+
+- Task: Revise and complete Phase 4 Tasks 2.1, 2.2, and 2.3 only.
+- Problem understanding:
+  - [x] Shift start time should come from when the local shift starts, not from an extra manual screen.
+  - [x] Floor activity can be derived from existing bed-level acuity for Phase 4.
+  - [x] AI-assisted floor acuity belongs to a later phase, not this local-only task.
+- Solution understanding:
+  - [x] `Shift.startedAt` is optional for old restored shifts and is set for newly started shifts.
+  - [x] `src/utils/breakSchedule.ts` derives floor activity from acuity counts and formats the shift start time.
+  - [x] `src/screens/FloorBoardScreen.tsx` shows shift start and floor activity in the board summary.
+  - [x] The standalone Break Schedule route and manual input screen were removed.
+- Broader context:
+  - [x] Deterministic break generation can use this local context later without adding a separate input step.
+  - [x] The change stays local-only and preserves existing assignment, persistence, flags, and simulated nurse behavior.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
 ### 2026-06-09 - Add Phase 4 Break Schedule Model and Refresh Marker
 
 - Task: Complete Phase 4 Tasks 1.1, 1.2, and 1.3 only.
