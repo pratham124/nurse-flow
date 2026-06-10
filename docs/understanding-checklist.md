@@ -40,6 +40,28 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-10 - Generate Local Break Schedule
+
+- Task: Complete Phase 4 Tasks 3.1, 3.2, 3.3, and 3.4 only.
+- Problem understanding:
+  - [x] Break generation should happen from the local assignment snapshot, not from a separate backend or AI service.
+  - [ ] The first version needs deterministic break slots and simple safety warnings, not a complex scheduler.
+  - [ ] The generated schedule should not change beds, patients, assignment results, local nurse requests, templates, or previous-shift snapshots.
+- Solution understanding:
+  - [ ] `src/utils/breakSchedule.ts` derives staggered slots from shift start time, nurse count, and floor activity.
+  - [ ] The helper creates one local break entry per nurse with covered rooms, doctor sides, and warning links.
+  - [ ] The helper adds local warnings for fully overlapping room coverage and limited experienced-nurse coverage.
+  - [ ] `src/screens/AssignmentReviewScreen.tsx` saves the generated break schedule when local assignment runs.
+- Broader context:
+  - [ ] Later tasks can display the saved entries and warnings without changing the generation rule.
+  - [ ] The schedule remains local, serializable, and tied to the active shift.
+- Verification:
+  - [x] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: in progress
+
 ### 2026-06-10 - Add Automatic Break Context on Floor Board
 
 - Task: Revise and complete Phase 4 Tasks 2.1, 2.2, and 2.3 only.

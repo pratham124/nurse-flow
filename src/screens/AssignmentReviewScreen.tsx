@@ -25,7 +25,7 @@ import {
 } from "../utils/assignmentNeedSummary";
 import { generateAssignmentFlags } from "../utils/assignmentFlags";
 import { generateLocalAssignmentResult } from "../utils/assignmentTeams";
-import { markBreakScheduleNeedsRefresh } from "../utils/breakSchedule";
+import { generateLocalBreakSchedule } from "../utils/breakSchedule";
 
 type AssignmentReviewListHeaderProps = {
   admittingSideName: string;
@@ -198,12 +198,16 @@ export default function AssignmentReviewScreen() {
 
       return {
         ...currentState,
-        activeShift: markBreakScheduleNeedsRefresh({
+        activeShift: {
           ...currentShift,
           assignmentResult,
+          breakSchedule: generateLocalBreakSchedule(
+            currentShift,
+            assignmentResult,
+          ),
           flags: generateAssignmentFlags(currentShift, assignmentResult),
           status: "assigned",
-        }),
+        },
       };
     });
 

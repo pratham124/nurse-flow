@@ -159,7 +159,7 @@ Validation check:
 
 ## Break Generation
 
-### Task 3.1: Add Deterministic Break Slot Helper
+### Done Task 3.1: Add Deterministic Break Slot Helper
 
 Story coverage: US2
 
@@ -174,7 +174,7 @@ Validation check:
 - The same shift start time, activity level, and nurse count produce the same break slots.
 - Low, moderate, and high activity can produce different spacing if the rule remains easy to explain.
 
-### Task 3.2: Add Room-Zone Overlap Checks
+### Done Task 3.2: Add Room-Zone Overlap Checks
 
 Story coverage: US2
 
@@ -189,7 +189,7 @@ Validation check:
 - Two nurses covering the same room zone are not scheduled at the same time when another option exists.
 - If every nurse overlaps, the schedule still generates and shows a warning.
 
-### Task 3.3: Add Experienced-Nurse Coverage Checks
+### Done Task 3.3: Add Experienced-Nurse Coverage Checks
 
 Story coverage: US2
 
@@ -204,7 +204,7 @@ Validation check:
 - With two experienced nurses on different sides, breaks keep one experienced nurse active per side when possible.
 - With no experienced nurse on a side, the schedule shows a warning instead of crashing.
 
-### Task 3.4: Save Generated Break Schedule Locally
+### Done Task 3.4: Save Generated Break Schedule Locally
 
 Story coverage: US2, US4, US6
 
@@ -462,5 +462,5 @@ Save these for future phases:
 - Drag-and-drop assignment override.
 - Board snapshot sharing.
 - Tablet layout.
-- AI-generated schedules.
+- AI-generated schedules after `assignmentResult` exists, using the assigned beds, room coverage, nurse experience, and local acuity context as inputs.
 - AI-assisted floor acuity detection from richer clinical context.
