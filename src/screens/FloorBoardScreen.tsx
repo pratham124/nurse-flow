@@ -17,12 +17,22 @@ import {
 } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
 import {
+  type ChargeBreakScheduleView,
+  getBreakEntryForNurse,
+  getBreakWarningsForNurse,
   getBreakScheduleView,
   getFloorActivityLabel,
 } from "../utils/breakSchedule";
 import { getShiftCensus, isOccupiedBedState } from "../utils/census";
 import { assignmentFlow } from "../utils/workflowFlows";
-import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
+import {
+  colors,
+  radius,
+  spacing,
+  textSize,
+  fontWeight,
+  shadows,
+} from "../theme/tokens";
 import type {
   Acuity,
   ExperienceLevel,
@@ -84,6 +94,8 @@ type NurseWorkloadViewModel = {
   experience: string;
   team: string;
   roomCoverage: string;
+  breakLabel: string;
+  hasBreakWarning: boolean;
   currentLoad: number;
   flags: InlineFlagViewModel[];
   maxLoad: number;
@@ -97,10 +109,16 @@ type BoardBedProps = BoardBedViewModel;
 
 type FloorBoardListHeaderProps = {
   admittingSideName: string;
+  breakActionLabel: string;
+  breakActionMessage: string;
+  breakScheduleStatusLabel: string;
+  breakWarningCount: number;
   canEnterNurseSimulation: boolean;
+  canOpenBreakSchedule: boolean;
   flagCount: number;
   isRegularNurseSimulation: boolean;
   nurseWorkloads: NurseWorkloadViewModel[];
+  onBreakSchedulePress: () => void;
   onFilterPress: (filter: BoardFilter) => void;
   onReturnToChargeView: () => void;
   onViewAsNurse: () => void;
@@ -115,10 +133,16 @@ type FloorBoardListHeaderProps = {
 
 function FloorBoardListHeader({
   admittingSideName,
+  breakActionLabel,
+  breakActionMessage,
+  breakScheduleStatusLabel,
+  breakWarningCount,
   canEnterNurseSimulation,
+  canOpenBreakSchedule,
   flagCount,
   isRegularNurseSimulation,
   nurseWorkloads,
+  onBreakSchedulePress,
   onFilterPress,
   onReturnToChargeView,
   onViewAsNurse,
@@ -145,7 +169,37 @@ function FloorBoardListHeader({
           />
           <SummaryTile value={shiftStartTimeLabel} label="Shift start" />
           <SummaryTile value={floorActivityLabel} label="Floor activity" />
+          <SummaryTile value={breakScheduleStatusLabel} label="Breaks" />
+          {breakWarningCount > 0 ? (
+            <SummaryTile
+              value={breakWarningCount.toString()}
+              label={
+                breakWarningCount === 1 ? "Break warning" : "Break warnings"
+              }
+            />
+          ) : null}
         </SummaryTileGrid>
+      </WorkflowSection>
+
+      <WorkflowSection title="Break schedule">
+        <View style={styles.breakScheduleCard}>
+          <View style={styles.breakScheduleTopRow}>
+            <SummaryChip label={breakScheduleStatusLabel} />
+            {breakWarningCount > 0 ? (
+              <SeverityBadge
+                label={`${breakWarningCount} warning${
+                  breakWarningCount === 1 ? "" : "s"
+                }`}
+                tone="warning"
+              />
+            ) : null}
+          </View>
+          <Text style={styles.breakScheduleText}>{breakActionMessage}</Text>
+          <PlaceholderButton
+            label={breakActionLabel}
+            onPress={canOpenBreakSchedule ? onBreakSchedulePress : undefined}
+          />
+        </View>
       </WorkflowSection>
 
       <WorkflowSection title="Local role simulation">
@@ -208,9 +262,7 @@ type NurseWorkloadRowProps = {
   nurseWorkload: NurseWorkloadViewModel;
 };
 
-function NurseWorkloadSection({
-  nurseWorkloads,
-}: NurseWorkloadSectionProps) {
+function NurseWorkloadSection({ nurseWorkloads }: NurseWorkloadSectionProps) {
   return (
     <WorkflowSection title="Nurse workload">
       {nurseWorkloads.length ? (
@@ -229,11 +281,7 @@ function NurseWorkloadSection({
   );
 }
 
-function renderNurseWorkloadItem({
-  item,
-}: {
-  item: NurseWorkloadViewModel;
-}) {
+function renderNurseWorkloadItem({ item }: { item: NurseWorkloadViewModel }) {
   return <NurseWorkloadRow nurseWorkload={item} />;
 }
 
@@ -260,6 +308,12 @@ function NurseWorkloadRow({ nurseWorkload }: NurseWorkloadRowProps) {
       <Text style={styles.nurseWorkloadMeta}>
         Rooms: {nurseWorkload.roomCoverage}
       </Text>
+      <View style={styles.breakBadgeRow}>
+        <SummaryChip label={nurseWorkload.breakLabel} />
+        {nurseWorkload.hasBreakWarning ? (
+          <SeverityBadge label="Break warning" tone="warning" />
+        ) : null}
+      </View>
       <InlineFlagList flags={nurseWorkload.flags} />
     </View>
   );
@@ -278,11 +332,7 @@ function InlineFlagList({ flags }: { flags: InlineFlagViewModel[] }) {
       style={styles.inlineFlagList}
     >
       {flags.map((flag) => (
-        <SeverityBadge
-          key={flag.id}
-          label={flag.label}
-          tone={flag.severity}
-        />
+        <SeverityBadge key={flag.id} label={flag.label} tone={flag.severity} />
       ))}
     </ScrollView>
   );
@@ -380,6 +430,56 @@ function getInlineFlag(flag: Flag): InlineFlagViewModel {
   };
 }
 
+function getBreakScheduleStatusLabel(
+  status: ChargeBreakScheduleView["status"],
+) {
+  if (status === "generated") {
+    return "Break scheduled";
+  }
+
+  if (status === "needs_refresh") {
+    return "Needs refresh";
+  }
+
+  return "Not scheduled";
+}
+
+function getBreakScheduleActionLabel(activeShift?: Shift) {
+  return activeShift?.breakSchedule ? "View breaks" : "Schedule breaks";
+}
+
+function canOpenBreakSchedule(activeShift?: Shift) {
+  return Boolean(
+    activeShift?.status === "assigned" &&
+    activeShift.assignmentResult &&
+    activeShift.nurses.length,
+  );
+}
+
+function getBreakScheduleActionMessage(activeShift?: Shift) {
+  if (!activeShift) {
+    return "Start a shift before scheduling breaks.";
+  }
+
+  if (!activeShift.nurses.length) {
+    return "Add nurses before scheduling breaks.";
+  }
+
+  if (activeShift.status !== "assigned" || !activeShift.assignmentResult) {
+    return "Run assignment before scheduling breaks.";
+  }
+
+  if (activeShift.breakSchedule?.status === "needs_refresh") {
+    return "Break schedule needs refresh after assignment changes.";
+  }
+
+  if (activeShift.breakSchedule) {
+    return "Review the generated local break schedule.";
+  }
+
+  return "Open Break Schedule to review local break planning.";
+}
+
 function getBedInlineFlags(activeShift: Shift, bedId: string) {
   return activeShift.flags
     .filter((flag) => flag.bedId === bedId)
@@ -419,10 +519,7 @@ function getBoardSides(activeShift?: Shift): BoardSide[] {
     rooms: activeShift.rooms
       .filter((room) => room.doctorSideId === doctorSide.id)
       .map((room) => {
-        const coverageNurseIds = getRoomCoverageNurseIds(
-          activeShift,
-          room.id,
-        );
+        const coverageNurseIds = getRoomCoverageNurseIds(activeShift, room.id);
         const roomFlags = getRoomInlineFlags(activeShift, room.id);
         const beds = activeShift.beds
           .filter((bed) => bed.roomId === room.id)
@@ -471,8 +568,7 @@ function getBoardSides(activeShift?: Shift): BoardSide[] {
           beds,
           flags: roomFlags,
           hasFlag:
-            roomFlags.length > 0 ||
-            beds.some((bed) => bed.flags.length > 0),
+            roomFlags.length > 0 || beds.some((bed) => bed.flags.length > 0),
           hasRnCoverage: roomHasRnCoverage(activeShift, coverageNurseIds),
           roomHasFlag: roomFlags.length > 0,
         };
@@ -540,6 +636,8 @@ function getNurseWorkloads(activeShift?: Shift): NurseWorkloadViewModel[] {
       activeShift.assignmentResult?.bedAssignments.filter(
         (assignment) => assignment.nurseId === nurse.id,
       ).length ?? 0;
+    const breakEntry = getBreakEntryForNurse(activeShift, nurse.id);
+    const breakWarnings = getBreakWarningsForNurse(activeShift, nurse.id);
 
     return {
       id: nurse.id,
@@ -550,6 +648,10 @@ function getNurseWorkloads(activeShift?: Shift): NurseWorkloadViewModel[] {
       roomCoverage: coveredRoomLabels.length
         ? coveredRoomLabels.join(", ")
         : "No rooms",
+      breakLabel: breakEntry
+        ? `Break ${breakEntry.startTime}`
+        : "Break not scheduled",
+      hasBreakWarning: breakWarnings.length > 0,
       currentLoad,
       flags: getNurseInlineFlags(activeShift, nurse.id),
       maxLoad: nurse.maxPatientLoad,
@@ -557,7 +659,11 @@ function getNurseWorkloads(activeShift?: Shift): NurseWorkloadViewModel[] {
   });
 }
 
-function EmptyBoardMessage({ selectedFilter }: { selectedFilter: BoardFilter }) {
+function EmptyBoardMessage({
+  selectedFilter,
+}: {
+  selectedFilter: BoardFilter;
+}) {
   const message =
     selectedFilter === "Flags"
       ? "There are no active flags on this shift board."
@@ -612,13 +718,14 @@ export default function FloorBoardScreen() {
   }));
   const canEnterNurseSimulation = Boolean(
     activeShift?.status === "assigned" &&
-      activeShift.assignmentResult &&
-      activeShift.nurses.length,
+    activeShift.assignmentResult &&
+    activeShift.nurses.length,
   );
   const selectedNurseName = activeShift?.nurses.find(
     (nurse) => nurse.id === simulatedSessionState.selectedNurseId,
   )?.name;
   const breakScheduleView = getBreakScheduleView(activeShift);
+  const canOpenBreaks = canOpenBreakSchedule(activeShift);
 
   return (
     <WorkflowListScreen
@@ -630,12 +737,20 @@ export default function FloorBoardScreen() {
       listHeader={
         <FloorBoardListHeader
           admittingSideName={admittingDoctorSide?.name ?? "-"}
+          breakActionLabel={getBreakScheduleActionLabel(activeShift)}
+          breakActionMessage={getBreakScheduleActionMessage(activeShift)}
+          breakScheduleStatusLabel={getBreakScheduleStatusLabel(
+            breakScheduleView.status,
+          )}
+          breakWarningCount={breakScheduleView.warnings.length}
           canEnterNurseSimulation={canEnterNurseSimulation}
+          canOpenBreakSchedule={canOpenBreaks}
           flagCount={activeShift?.flags.length ?? 0}
           isRegularNurseSimulation={
             simulatedSessionState.role === "regular_nurse"
           }
           nurseWorkloads={getNurseWorkloads(activeShift)}
+          onBreakSchedulePress={() => router.push("/break-schedule")}
           onFilterPress={setSelectedFilter}
           onReturnToChargeView={() =>
             setSimulatedSessionState({ role: "charge" })
@@ -776,6 +891,27 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     ...shadows.sm,
   },
+  breakScheduleCard: {
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    gap: spacing.md,
+    padding: spacing.md,
+    ...shadows.sm,
+  },
+  breakScheduleTopRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  breakScheduleText: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.medium,
+    lineHeight: 18,
+  },
   roleSimulationTopRow: {
     alignItems: "center",
     flexDirection: "row",
@@ -836,6 +972,12 @@ const styles = StyleSheet.create({
     fontSize: textSize.sm,
     lineHeight: 18,
     fontWeight: fontWeight.semibold,
+  },
+  breakBadgeRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
   },
   nurseWorkloadLoad: {
     color: colors.brand.burgundy,

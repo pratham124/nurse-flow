@@ -268,7 +268,7 @@ Validation check:
 
 ## Floor Board Integration
 
-### Task 5.1: Add Break Schedule Entry Point to Floor Board
+### Done Task 5.1: Add Break Schedule Entry Point to Floor Board
 
 Story coverage: US3
 
@@ -283,7 +283,7 @@ Validation check:
 - Before assignment, break scheduling is unavailable with a clear message.
 - After assignment, the action opens Break Schedule.
 
-### Task 5.2: Add Break Badges to Nurse Cards
+### Done Task 5.2: Add Break Badges to Nurse Cards
 
 Story coverage: US3
 
@@ -298,7 +298,7 @@ Validation check:
 - Generate breaks and confirm each nurse card shows the correct break time.
 - Existing load, max load, acuity, assignment flags, and local request indicators still appear.
 
-### Task 5.3: Show Break Status in Board Summary
+### Done Task 5.3: Show Break Status in Board Summary
 
 Story coverage: US3, US4
 

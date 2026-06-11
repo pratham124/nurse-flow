@@ -40,6 +40,28 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-11 - Add Floor Board Break Integration
+
+- Task: Complete Phase 4 Tasks 5.1, 5.2, and 5.3 only.
+- Problem understanding:
+  - [ ] The Floor Board needs a clear way to open Break Schedule after assignment is ready.
+  - [ ] Nurse workload cards should show break timing without hiding load, room coverage, or flags.
+  - [ ] Board summary should show whether breaks are scheduled, stale, or not scheduled.
+- Solution understanding:
+  - [ ] `src/screens/FloorBoardScreen.tsx` adds a Break schedule section with `Schedule breaks` or `View breaks`.
+  - [ ] The break action is disabled with a clear message before assignment is ready.
+  - [ ] Nurse workload cards use saved break entries to show `Break HH:MM`, `Break not scheduled`, and `Break warning`.
+  - [ ] Board summary uses `breakSchedule.status` to show `Not scheduled`, `Break scheduled`, or `Needs refresh`.
+- Broader context:
+  - [ ] The Floor Board now summarizes break state without regenerating schedules itself.
+  - [ ] Existing assignment flags, acuity, load, max load, room coverage, and local nurse simulation behavior are preserved.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: in progress
+
 ### 2026-06-11 - Review Generated Break Schedule
 
 - Task: Complete Phase 4 Tasks 4.1, 4.2, and 4.3 only.
