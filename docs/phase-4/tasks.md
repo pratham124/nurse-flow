@@ -221,7 +221,7 @@ Validation check:
 
 ## Break Schedule Review
 
-### Task 4.1: Show Generated Break Entries
+### Done Task 4.1: Show Generated Break Entries
 
 Story coverage: US2, US4
 
@@ -236,7 +236,7 @@ Validation check:
 - A shift with at least three nurses shows three break entries sorted by time.
 - Removing a nurse after generation does not crash the schedule screen.
 
-### Task 4.2: Show Break Warnings
+### Done Task 4.2: Show Break Warnings
 
 Story coverage: US2, US3, US4
 
@@ -251,7 +251,7 @@ Validation check:
 - A schedule with limited experienced coverage shows an experienced-nurse warning.
 - Existing assignment flags still appear only in the Flags flow.
 
-### Task 4.3: Add Refresh Breaks Action
+### Done Task 4.3: Add Refresh Breaks Action
 
 Story coverage: US4
 

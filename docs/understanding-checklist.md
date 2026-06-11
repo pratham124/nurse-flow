@@ -32,13 +32,35 @@ For each task, add a dated section with:
   - [ ] What current behavior does it impact?
   - [ ] What future work could it influence?
 - Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+## Running Items
+
+### 2026-06-11 - Review Generated Break Schedule
+
+- Task: Complete Phase 4 Tasks 4.1, 4.2, and 4.3 only.
+- Problem understanding:
+  - [ ] Charge nurses need to review generated break entries after assignment creates them.
+  - [ ] Break warnings should stay separate from assignment flags and local nurse requests.
+  - [ ] A generated schedule can become stale after nurse or assignment changes, so refresh should be explicit.
+- Solution understanding:
+  - [ ] `src/screens/BreakScheduleScreen.tsx` sorts generated entries by `startTime`.
+  - [ ] Break entry rows resolve current nurse, doctor side, and room labels safely while falling back for stale nurse references.
+  - [ ] Break warning rows show affected nurses, doctor sides, and rooms without changing the Flags flow.
+  - [ ] `Refresh breaks` replaces only `activeShift.breakSchedule` by using the latest active shift and assignment result.
+- Broader context:
+  - [ ] This keeps Phase 4 local-only and avoids backend, auth, realtime, notifications, drag-and-drop, tablet, or AI work.
+  - [ ] Later Floor Board and simulated nurse tasks can link to or summarize the same saved schedule without changing generation.
+- Verification:
   - [ ] Human restated understanding first.
   - [ ] Gaps were explained.
   - [ ] Code-specific question or walkthrough completed.
   - [ ] Quiz or walkthrough completed.
 - Status: in progress
-
-## Running Items
 
 ### 2026-06-10 - Generate Local Break Schedule
 
