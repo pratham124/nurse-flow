@@ -315,7 +315,7 @@ Validation check:
 
 ## Simulated Nurse Integration
 
-### Task 6.1: Show Own Break Time in Simulated Nurse View
+### Done Task 6.1: Show Own Break Time in Simulated Nurse View
 
 Story coverage: US5
 
@@ -330,7 +330,7 @@ Validation check:
 - Select Nurse A and confirm only Nurse A's break appears.
 - Select Nurse B and confirm only Nurse B's break appears.
 
-### Task 6.2: Show Own Break Warning in Simulated Nurse View
+### Done Task 6.2: Show Own Break Warning in Simulated Nurse View
 
 Story coverage: US5
 

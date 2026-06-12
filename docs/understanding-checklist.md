@@ -40,6 +40,28 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-11 - Show Nurse's Own Break
+
+- Task: Complete Phase 4 Tasks 6.1 and 6.2 only.
+- Problem understanding:
+  - [ ] The simulated nurse view should show only the selected nurse's break, not the full charge nurse schedule.
+  - [ ] A nurse-specific warning should appear only when that selected nurse has break warning context.
+  - [ ] Missing schedules and stale nurse entries need safe local display states.
+- Solution understanding:
+  - [ ] `src/screens/SimulatedNurseAssignmentScreen.tsx` uses `getNurseBreakView` with the selected nurse id.
+  - [ ] The Break summary section shows `Break HH:MM`, `Break not scheduled yet.`, or `No break assigned for this nurse yet.`
+  - [ ] The warning message comes from the selected nurse's filtered break warnings, not all schedule warnings.
+  - [ ] Existing assigned beds, room coverage, issue history, and swap history stay unchanged.
+- Broader context:
+  - [ ] This completes the Phase 4 nurse-facing local break visibility without adding real accounts, invites, push notifications, realtime sync, or backend behavior.
+  - [ ] Later manual testing can verify that Nurse A and Nurse B each see only their own break information.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: in progress
+
 ### 2026-06-11 - Add Floor Board Break Integration
 
 - Task: Complete Phase 4 Tasks 5.1, 5.2, and 5.3 only.

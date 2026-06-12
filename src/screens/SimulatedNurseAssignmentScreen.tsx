@@ -15,6 +15,10 @@ import { useLocalState } from "../store/LocalStateContext";
 import { colors, fontWeight, radius, shadows, spacing, textSize } from "../theme/tokens";
 import type { Acuity, ExperienceLevel, NurseRequest, Sex } from "../types/models";
 import {
+  getNurseBreakView,
+  type NurseBreakView,
+} from "../utils/breakSchedule";
+import {
   getSelectedNurseAssignmentView,
   type NurseAssignedBedView,
   type NurseAssignmentView,
@@ -27,6 +31,8 @@ type NurseAssignmentListItem =
   | { type: "empty"; id: string; message: string; title: string };
 
 type NurseAssignmentHeaderProps = {
+  breakView: NurseBreakView;
+  hasBreakSchedule: boolean;
   onFlagIssue: () => void;
   onRequestSwap: () => void;
   view: NurseAssignmentView;
@@ -49,6 +55,11 @@ type RequestHistorySectionProps = {
 type RequestHistoryRowProps = {
   request: NurseRequest;
   view: NurseAssignmentView;
+};
+
+type NurseBreakSummaryProps = {
+  breakView: NurseBreakView;
+  hasBreakSchedule: boolean;
 };
 
 function getExperienceLabel(experienceLevel: ExperienceLevel) {
@@ -144,6 +155,19 @@ function getRoomCoverageText(view: NurseAssignmentView) {
   return view.coveredRooms.map((room) => room.label).join(", ");
 }
 
+function getNurseBreakLabel({
+  breakView,
+  hasBreakSchedule,
+}: NurseBreakSummaryProps) {
+  if (breakView.entry) {
+    return `Break ${breakView.breakTimeLabel}`;
+  }
+
+  return hasBreakSchedule
+    ? "No break assigned for this nurse yet."
+    : breakView.breakTimeLabel;
+}
+
 function getReadyListItems(view: NurseAssignmentView): NurseAssignmentListItem[] {
   if (!view.assignedBeds.length) {
     return [
@@ -213,6 +237,8 @@ function getAssignmentItemKey(item: NurseAssignmentListItem) {
 }
 
 function NurseAssignmentHeader({
+  breakView,
+  hasBreakSchedule,
   onFlagIssue,
   onRequestSwap,
   view,
@@ -247,6 +273,11 @@ function NurseAssignmentHeader({
         </SummaryTileGrid>
       </WorkflowSection>
 
+      <NurseBreakSummary
+        breakView={breakView}
+        hasBreakSchedule={hasBreakSchedule}
+      />
+
       <WorkflowSection title="Room coverage">
         <View style={styles.coverageCard}>
           <Text style={styles.coverageText}>{getRoomCoverageText(view)}</Text>
@@ -272,6 +303,39 @@ function NurseAssignmentHeader({
 
       <RequestHistorySection requests={view.requests} view={view} />
     </View>
+  );
+}
+
+function NurseBreakSummary({
+  breakView,
+  hasBreakSchedule,
+}: NurseBreakSummaryProps) {
+  const warning = breakView.warnings[0];
+
+  return (
+    <WorkflowSection title="Break summary">
+      <View style={styles.breakSummaryCard}>
+        <View style={styles.chipRow}>
+          <SummaryChip
+            label={getNurseBreakLabel({
+              breakView,
+              hasBreakSchedule,
+            })}
+          />
+          {warning ? <SummaryChip label="Local schedule warning" /> : null}
+        </View>
+        {warning ? (
+          <Text accessibilityRole="alert" style={styles.breakWarningText}>
+            {warning.message}
+          </Text>
+        ) : (
+          <Text style={styles.breakSummaryText}>
+            This view only shows {breakView.entry ? "your" : "this nurse's"} local
+            break status.
+          </Text>
+        )}
+      </View>
+    </WorkflowSection>
   );
 }
 
@@ -380,6 +444,10 @@ export default function SimulatedNurseAssignmentScreen() {
   const listItems = getRecoveryListItems(assignmentResult);
   const readyView =
     assignmentResult.status === "ready" ? assignmentResult.view : undefined;
+  const breakView = getNurseBreakView(
+    localState.activeShift,
+    readyView?.nurse.id,
+  );
 
   function returnToChargeView() {
     setSimulatedSessionState({ role: "charge" });
@@ -396,6 +464,8 @@ export default function SimulatedNurseAssignmentScreen() {
       listHeader={
         readyView ? (
           <NurseAssignmentHeader
+            breakView={breakView}
+            hasBreakSchedule={Boolean(localState.activeShift?.breakSchedule)}
             onFlagIssue={() => router.push("/simulated-nurse-issue")}
             onRequestSwap={() => router.push("/simulated-nurse-swap")}
             view={readyView}
@@ -451,6 +521,27 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     padding: spacing.md,
     ...shadows.sm,
+  },
+  breakSummaryCard: {
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    gap: spacing.md,
+    padding: spacing.md,
+    ...shadows.sm,
+  },
+  breakSummaryText: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.medium,
+    lineHeight: 18,
+  },
+  breakWarningText: {
+    color: colors.status.amber800,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
+    lineHeight: 18,
   },
   coverageText: {
     color: colors.neutral.textPrimary,
