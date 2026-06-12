@@ -40,6 +40,27 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-11 - Run Phase 4 Manual Test Pass
+
+- Task: Work through Phase 4 `7.x` validation tasks without adding feature code.
+- Problem understanding:
+  - [ ] The `7.x` tasks are validation tasks, not new behavior tasks.
+  - [ ] Some checks require hands-on app interaction with realistic shift data.
+  - [ ] Task 7.1 no longer matches the current automatic-start/derived-activity implementation.
+- Solution understanding:
+  - [ ] `docs/phase-4/manual-test-pass.md` records what passed automatically, what needs manual click-through, and why.
+  - [ ] `docs/phase-4/tasks.md` marks only 7.7 and 7.8 done because those were completed by code review.
+  - [ ] TypeScript, lint, Expo export, and local-only scope scans provide non-interactive evidence, not full manual acceptance.
+- Broader context:
+  - [ ] This protects Phase 4 from accidental backend/auth/realtime/push/offline/AI scope creep.
+  - [ ] The remaining manual checks should be completed in the running app before claiming all 7.x tasks are done.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: in progress
+
 ### 2026-06-11 - Show Nurse's Own Break
 
 - Task: Complete Phase 4 Tasks 6.1 and 6.2 only.

@@ -426,7 +426,7 @@ Validation check:
 - Generate breaks.
 - End shift and confirm existing local persistence behavior still works.
 
-### Task 7.7: Local-Only Scope Test
+### Done Task 7.7: Local-Only Scope Test
 
 Build:
 
@@ -437,7 +437,7 @@ Validation check:
 
 - There are no Phase 4 screens, dependencies, or data fields for backend, auth, server persistence, realtime collaboration, invite links, deep links, push notifications, offline sync queues, drag-and-drop assignment override, board sharing, tablet layout, or AI.
 
-### Task 7.8: Beginner Readability Pass
+### Done Task 7.8: Beginner Readability Pass
 
 Build:
 
