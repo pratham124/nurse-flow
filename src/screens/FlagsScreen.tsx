@@ -3,12 +3,10 @@ import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import {
-  FilterChip,
-  FilterChipRow,
+  BoardSubTabBar,
+  SegmentedControl,
   SeverityBadge,
   SummaryChip,
-  SummaryTile,
-  SummaryTileGrid,
   WorkflowListScreen,
   WorkflowSection,
 } from "../components/workflow";
@@ -40,7 +38,9 @@ type FlagRowViewModel = {
 type FlagsListHeaderProps = {
   criticalCount: number;
   infoCount: number;
-  requestCount: number;
+  requests: NurseRequestDisplay[];
+  activeReviewTab: "Flags" | "Requests";
+  setActiveReviewTab: (tab: "Flags" | "Requests") => void;
   onFilterPress: (filter: FlagFilter) => void;
   onRequestFilterPress: (filter: RequestFilter) => void;
   onRequestStatusFilterPress: (filter: RequestStatusFilter) => void;
@@ -48,6 +48,18 @@ type FlagsListHeaderProps = {
   selectedRequestFilter: RequestFilter;
   selectedRequestStatusFilter: RequestStatusFilter;
   warningCount: number;
+};
+
+type FlagSummaryCountProps = {
+  label: string;
+  value: number;
+};
+
+type FilterGroupProps<FilterValue extends string> = {
+  filters: readonly FilterValue[];
+  label: string;
+  onFilterPress: (filter: FilterValue) => void;
+  selectedFilter: FilterValue;
 };
 
 type FlagRowProps = {
@@ -77,7 +89,9 @@ type FlagListItem =
 function FlagsListHeader({
   criticalCount,
   infoCount,
-  requestCount,
+  requests,
+  activeReviewTab,
+  setActiveReviewTab,
   onFilterPress,
   onRequestFilterPress,
   onRequestStatusFilterPress,
@@ -86,55 +100,113 @@ function FlagsListHeader({
   selectedRequestStatusFilter,
   warningCount,
 }: FlagsListHeaderProps) {
+  const pendingCount = requests.filter((r) => r.requestStatus === "pending").length;
+  const acceptedCount = requests.filter((r) => r.requestStatus === "accepted").length;
+  const declinedCount = requests.filter((r) => r.requestStatus === "declined").length;
+  const totalFlags = criticalCount + warningCount + infoCount;
+
   return (
     <View style={styles.headerContent}>
-      <WorkflowSection title="Flag summary">
-        <SummaryTileGrid>
-          <SummaryTile value={criticalCount.toString()} label="Critical" />
-          <SummaryTile value={warningCount.toString()} label="Warning" />
-          <SummaryTile value={infoCount.toString()} label="Info" />
-          <SummaryTile value={requestCount.toString()} label="Requests" />
-        </SummaryTileGrid>
-      </WorkflowSection>
+      {activeReviewTab === "Flags" ? (
+        <WorkflowSection title="Flag summary">
+          <View style={styles.flagSummaryCard}>
+            <View style={styles.flagSummaryTopRow}>
+              <View>
+                <Text style={styles.flagSummaryEyebrow}>Active review</Text>
+                <Text style={styles.flagSummaryTitle}>
+                  {totalFlags} assignment flags
+                </Text>
+              </View>
+              <SummaryChip label={`${totalFlags} flags`} />
+            </View>
+            <View style={styles.flagSummaryCounts}>
+              <FlagSummaryCount label="Critical" value={criticalCount} />
+              <FlagSummaryCount label="Warning" value={warningCount} />
+              <FlagSummaryCount label="Info" value={infoCount} />
+            </View>
+          </View>
+        </WorkflowSection>
+      ) : (
+        <WorkflowSection title="Request summary">
+          <View style={styles.flagSummaryCard}>
+            <View style={styles.flagSummaryTopRow}>
+              <View>
+                <Text style={styles.flagSummaryEyebrow}>Active review</Text>
+                <Text style={styles.flagSummaryTitle}>
+                  {requests.length} nurse requests
+                </Text>
+              </View>
+              <SummaryChip label={`${requests.length} requests`} />
+            </View>
+            <View style={styles.flagSummaryCounts}>
+              <FlagSummaryCount label="Pending" value={pendingCount} />
+              <FlagSummaryCount label="Accepted" value={acceptedCount} />
+              <FlagSummaryCount label="Declined" value={declinedCount} />
+            </View>
+          </View>
+        </WorkflowSection>
+      )}
 
-      <WorkflowSection title="Assignment filters">
-        <FilterChipRow>
-          {flagFilters.map((filter) => (
-            <FilterChip
-              key={filter}
-              label={filter}
-              onPress={() => onFilterPress(filter)}
-              selected={filter === selectedFilter}
-            />
-          ))}
-        </FilterChipRow>
-      </WorkflowSection>
+      <SegmentedControl
+        options={["Flags", "Requests"] as const}
+        selectedOption={activeReviewTab}
+        onSelect={setActiveReviewTab}
+      />
 
-      <WorkflowSection title="Local request filters">
-        <FilterChipRow>
-          {requestFilters.map((filter) => (
-            <FilterChip
-              key={filter}
-              label={filter}
-              onPress={() => onRequestFilterPress(filter)}
-              selected={filter === selectedRequestFilter}
+      {activeReviewTab === "Flags" ? (
+        <WorkflowSection title="Flag filters">
+          <FilterGroup
+            filters={flagFilters}
+            label="Severity"
+            onFilterPress={onFilterPress}
+            selectedFilter={selectedFilter}
+          />
+        </WorkflowSection>
+      ) : (
+        <WorkflowSection title="Request filters">
+          <View style={styles.filterPanel}>
+            <FilterGroup
+              filters={requestFilters}
+              label="Type"
+              onFilterPress={onRequestFilterPress}
+              selectedFilter={selectedRequestFilter}
             />
-          ))}
-        </FilterChipRow>
-      </WorkflowSection>
+            <FilterGroup
+              filters={requestStatusFilters}
+              label="Status"
+              onFilterPress={onRequestStatusFilterPress}
+              selectedFilter={selectedRequestStatusFilter}
+            />
+          </View>
+        </WorkflowSection>
+      )}
+    </View>
+  );
+}
 
-      <WorkflowSection title="Request status filters">
-        <FilterChipRow>
-          {requestStatusFilters.map((filter) => (
-            <FilterChip
-              key={filter}
-              label={filter}
-              onPress={() => onRequestStatusFilterPress(filter)}
-              selected={filter === selectedRequestStatusFilter}
-            />
-          ))}
-        </FilterChipRow>
-      </WorkflowSection>
+function FlagSummaryCount({ label, value }: FlagSummaryCountProps) {
+  return (
+    <View style={styles.flagSummaryCount}>
+      <Text style={styles.flagSummaryCountValue}>{value}</Text>
+      <Text style={styles.flagSummaryCountLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function FilterGroup<FilterValue extends string>({
+  filters,
+  label,
+  onFilterPress,
+  selectedFilter,
+}: FilterGroupProps<FilterValue>) {
+  return (
+    <View style={styles.filterGroup}>
+      <Text style={styles.filterGroupLabel}>{label}</Text>
+      <SegmentedControl
+        options={filters}
+        selectedOption={selectedFilter}
+        onSelect={onFilterPress}
+      />
     </View>
   );
 }
@@ -261,66 +333,39 @@ function getFlagListItems(
   selectedFilter: FlagFilter,
   selectedRequestFilter: RequestFilter,
   selectedRequestStatusFilter: RequestStatusFilter,
+  activeReviewTab: "Flags" | "Requests",
 ): FlagListItem[] {
-  if (
-    !flags.length &&
-    !requests.length &&
-    selectedFilter === "All" &&
-    selectedRequestFilter === "All" &&
-    selectedRequestStatusFilter === "All"
-  ) {
-    return [
-      {
-        id: "empty-flags-and-requests",
-        message: "No flags or local requests yet",
-        type: "empty",
-      },
-    ];
-  }
+  if (activeReviewTab === "Flags") {
+    if (!flags.length) {
+      return [
+        {
+          id: "empty-assignment-flags",
+          message:
+            selectedFilter === "All"
+              ? "No assignment flags."
+              : `No ${selectedFilter.toLowerCase()} flags.`,
+          type: "empty",
+        },
+      ];
+    }
 
-  return [
-    {
-      id: "assignment-flags-section",
-      subtitle: "Generated by the local assignment rules.",
-      title: "Assignment flags",
-      type: "section",
-    },
-    ...(
-      flags.length
-        ? flags.map((flag) => ({ flag, type: "flag" as const }))
-        : [
-            {
-              id: "empty-assignment-flags",
-              message:
-                selectedFilter === "All"
-                  ? "No assignment flags."
-                  : `No ${selectedFilter.toLowerCase()} flags.`,
-              type: "empty" as const,
-            },
-          ]
-    ),
-    {
-      id: "local-requests-section",
-      subtitle: "Mock nurse requests saved on this active shift.",
-      title: "Local nurse requests",
-      type: "section",
-    },
-    ...requests.map((request) => ({ request, type: "request" as const })),
-    ...(
-      requests.length
-        ? []
-        : [
-            {
-              id: "empty-local-requests",
-              message: getEmptyRequestMessage(
-                selectedRequestFilter,
-                selectedRequestStatusFilter,
-              ),
-              type: "empty" as const,
-            },
-          ]
-    ),
-  ];
+    return flags.map((flag) => ({ flag, type: "flag" }));
+  } else {
+    if (!requests.length) {
+      return [
+        {
+          id: "empty-local-requests",
+          message: getEmptyRequestMessage(
+            selectedRequestFilter,
+            selectedRequestStatusFilter,
+          ),
+          type: "empty",
+        },
+      ];
+    }
+
+    return requests.map((request) => ({ request, type: "request" }));
+  }
 }
 
 function getFlagItemKey(item: FlagListItem) {
@@ -357,6 +402,7 @@ function renderFlagItem({ item }: { item: FlagListItem }) {
 
 export default function FlagsScreen() {
   const { localState } = useLocalState();
+  const [activeReviewTab, setActiveReviewTab] = useState<"Flags" | "Requests">("Flags");
   const [selectedFilter, setSelectedFilter] = useState<FlagFilter>("All");
   const [selectedRequestFilter, setSelectedRequestFilter] =
     useState<RequestFilter>("All");
@@ -380,13 +426,14 @@ export default function FlagsScreen() {
 
   return (
     <WorkflowListScreen
-      activeStep="Flags"
+      activeStep="Board"
       data={getFlagListItems(
         filteredFlags,
         filteredRequests,
         selectedFilter,
         selectedRequestFilter,
         selectedRequestStatusFilter,
+        activeReviewTab,
       )}
       flow={assignmentFlow}
       headerActionLabel="Floors"
@@ -395,7 +442,9 @@ export default function FlagsScreen() {
         <FlagsListHeader
           criticalCount={criticalCount}
           infoCount={infoCount}
-          requestCount={requests.length}
+          requests={requests}
+          activeReviewTab={activeReviewTab}
+          setActiveReviewTab={setActiveReviewTab}
           onFilterPress={setSelectedFilter}
           onRequestFilterPress={setSelectedRequestFilter}
           onRequestStatusFilterPress={setSelectedRequestStatusFilter}
@@ -406,11 +455,10 @@ export default function FlagsScreen() {
         />
       }
       onHeaderActionPress={() => router.push("/")}
-      onPrimaryPress={() => router.push("/floor-board")}
-      primaryLabel="Return to board"
+      bottomAccessory={<BoardSubTabBar activeTab="flags" />}
       renderItem={renderFlagItem}
       subtitle=""
-      title="Flags and requests"
+      title={localState.activeShift?.floorName ?? "Flags and requests"}
     />
   );
 }
@@ -422,6 +470,8 @@ function FlagRow({ flag }: FlagRowProps) {
       ? `⚠️ ${flag.severityLabel}`
       : `ℹ️ ${flag.severityLabel}`;
 
+  const displaySeverityLabel = flag.severityLabel || emojiLabel;
+
   return (
     <View
       style={[
@@ -431,7 +481,7 @@ function FlagRow({ flag }: FlagRowProps) {
       ]}
     >
       <View style={styles.flagTopRow}>
-        <SeverityBadge label={emojiLabel} tone={flag.severity} />
+        <SeverityBadge label={displaySeverityLabel} tone={flag.severity} />
         <Text style={styles.target}>{flag.target}</Text>
       </View>
       <Text style={styles.message}>{flag.message}</Text>
@@ -486,6 +536,64 @@ function EmptyFlagRow({ message }: EmptyFlagRowProps) {
 const styles = StyleSheet.create({
   headerContent: {
     gap: spacing.cardGap,
+  },
+  flagSummaryCard: {
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.md,
+    borderWidth: 0.5,
+    gap: spacing.md,
+    padding: spacing.md,
+  },
+  flagSummaryTopRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.md,
+    justifyContent: "space-between",
+  },
+  flagSummaryEyebrow: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
+  flagSummaryTitle: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.md,
+    fontWeight: fontWeight.bold,
+    marginTop: spacing.xs,
+  },
+  flagSummaryCounts: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  flagSummaryCount: {
+    backgroundColor: colors.neutral.backgroundTertiary,
+    borderRadius: radius.sm,
+    flex: 1,
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  flagSummaryCountValue: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.md,
+    fontWeight: fontWeight.bold,
+  },
+  flagSummaryCountLabel: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.xs,
+    fontWeight: fontWeight.semibold,
+  },
+  filterPanel: {
+    gap: spacing.md,
+  },
+  filterGroup: {
+    gap: spacing.sm,
+  },
+  filterGroupLabel: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
   },
   sectionHeaderRow: {
     gap: spacing.xs,

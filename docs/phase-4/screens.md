@@ -22,25 +22,23 @@ Keep the charge nurse's full active shift board as the home base and add break s
 
 - Existing sticky top summary with floor name, census, admitting side, assignment status, flag count, and local request count.
 - Existing board grouped by doctor side, nurse, rooms, and beds.
-- Break schedule action: `Schedule breaks` or `View breaks`.
-- Break status chip: `Not scheduled`, `Break scheduled`, or `Needs refresh`.
 - Break warning count when warnings exist.
 - Nurse card break badge when a break exists.
-- Existing actions: `Re-run`, `View flags`, `View as nurse`, `End shift`.
+- Board-context bottom tabs: `Board`, `Breaks`, and `Flags`.
+- Existing actions: `Re-run`, `View as nurse`, `End shift`.
 
 ### Components
 
 - Existing board summary.
 - Existing nurse workload rows.
 - Existing doctor side, room, and bed display.
-- Break status chip.
 - Break warning chip.
 - Nurse card break badge.
-- Button or row action: `Schedule breaks` or `View breaks`.
+- Bottom board sub-tab bar.
 
 ### User Actions
 
-- Open Break Schedule.
+- Open Break Schedule from the `Breaks` bottom sub-tab.
 - Re-run assignment through the existing Phase 1 path.
 - Open flags and local requests through the existing Phase 3 path.
 - Open simulated nurse view through the existing Phase 3 path.
@@ -71,19 +69,16 @@ Let the charge nurse enter break inputs, generate a local schedule, refresh it, 
 ### Layout
 
 - Header: `Breaks`.
-- Local schedule chip.
-- Sticky summary with:
+- Compact summary card with:
   - Schedule status.
   - Shift start time.
   - Activity level.
   - Scheduled nurse count.
   - Warning count.
-- Input panel:
-  - Shift start time field.
-  - Activity level segmented control: `Low`, `Moderate`, `High`.
+- Inline refresh action when the schedule is stale.
 - Break entry list sorted by time.
 - Warning section when warnings exist.
-- Bottom action bar.
+- Board-context bottom sub-tab bar.
 
 ### Components
 
@@ -92,16 +87,13 @@ Let the charge nurse enter break inputs, generate a local schedule, refresh it, 
 - Activity level segmented control.
 - Break entry rows.
 - Break warning rows.
-- Primary button: `Generate breaks` or `Refresh breaks`.
-- Secondary button: `Back`.
+- Inline refresh action when the schedule is stale.
+- Board-context bottom sub-tab bar.
 
 ### User Actions
 
-- Enter or edit shift start time.
-- Choose activity level.
-- Generate the first break schedule.
-- Refresh the break schedule after changes.
-- Return to Floor Board.
+- Refresh the break schedule after changes when the inline refresh action appears.
+- Return to Floor Board from the `Board` bottom sub-tab.
 
 ### Navigation Targets
 

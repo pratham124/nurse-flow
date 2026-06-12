@@ -27,7 +27,7 @@ Break scheduling states should use plain labels:
 
 - `Breaks`
 - `Schedule breaks`
-- `Break scheduled`
+- `Breaks are scheduled`
 - `Break not scheduled yet`
 - `Needs refresh`
 - `Low activity`
@@ -53,6 +53,7 @@ Avoid future-phase labels:
 - Keep warning messages short and tied to the affected nurse, side, or room zone.
 - Use sticky summaries for generated break schedule status and warning count.
 - Show break time on nurse cards without crowding assignment details.
+- Use a board-context bottom sub-tab bar for `Board`, `Breaks`, and `Flags`.
 - Do not add tablet-specific layouts in Phase 4.
 
 ## New or Updated Components
@@ -63,12 +64,13 @@ These are design components, not implementation code.
 
 Purpose:
 
-Let the charge nurse open break scheduling from the floor board after assignment.
+Let the charge nurse open break scheduling from the floor board context after assignment.
 
 Content:
 
-- Action label: `Schedule breaks` or `View breaks`.
-- Status chip: `Not scheduled`, `Break scheduled`, or `Needs refresh`.
+- Bottom tab label: `Breaks`.
+- Compact summary status for whether breaks are scheduled or need refresh.
+- Inline `Refresh` action only when the schedule is stale.
 - Warning count when warnings exist.
 
 Rules:
@@ -231,11 +233,11 @@ Let the charge nurse enter inputs, generate breaks, refresh breaks, and review w
 Layout:
 
 - Header: `Breaks`.
-- Sticky summary for status, shift start time, activity level, scheduled nurse count, and warnings.
+- Compact summary card for status, shift start time, activity level, scheduled nurse count, and warnings.
 - Input panel when no schedule exists or inputs need editing.
 - Break entry list sorted by time.
 - Warning section when warnings exist.
-- Bottom action bar with `Generate breaks`, `Refresh breaks`, and `Back`.
+- Board-context bottom tabs. Do not add a second bottom CTA.
 
 Empty states:
 

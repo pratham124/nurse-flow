@@ -68,7 +68,7 @@ export default function LocalRequestDetailScreen() {
 
   return (
     <WorkflowScreen
-      activeStep="Flags"
+      activeStep="Board"
       flow={assignmentFlow}
       headerActionLabel="Floors"
       onHeaderActionPress={() => router.push("/")}

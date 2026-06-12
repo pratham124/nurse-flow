@@ -40,6 +40,134 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-12 - Show Floor Name in Breaks and Flags Screen Headers
+
+- Task: Update the headers on the Breaks and Flags and requests screens to display the active floor name instead of static screen titles.
+- Problem understanding:
+  - [ ] Navigating between the Floor Board, Breaks, and Flags screens caused the header to switch between the active floor name (on Floor Board) and generic titles ("Breaks", "Flags and requests").
+  - [ ] The header should consistently reference the active floor name across all three board sub-views to keep the context stable.
+  - [ ] If no active floor name exists (e.g. shift not started or template not selected), it should fall back to generic page names.
+- Solution understanding:
+  - [ ] `src/screens/BreakScheduleScreen.tsx` sets `title={activeShift?.floorName ?? "Breaks"}` with `subtitle=""` on `WorkflowScreen`.
+  - [ ] `src/screens/FlagsScreen.tsx` sets `title={localState.activeShift?.floorName ?? "Flags and requests"}` with `subtitle=""` on `WorkflowListScreen`.
+- Broader context:
+  - [ ] This maintains visual consistency across the Floor Board sub-views (Board, Breaks, Flags).
+  - [ ] It aligns with the user's preference of displaying only the floor name in the title, without a subtitle, when the sub-tab bar already clarifies the current view.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: in progress
+
+### 2026-06-12 - Polish Board Workload And Flags UI
+
+- Task: Restyle the nurse workload cards and Flags filter/header area.
+- Problem understanding:
+  - [ ] Nurse workload cards had too many pill-like badges and felt cramped.
+  - [ ] Flags used three separate filter cards, which made the page feel heavier than the content.
+  - [ ] The UI needed clearer grouping without changing filter behavior or board data.
+- Solution understanding:
+  - [ ] `src/screens/FloorBoardScreen.tsx` now shows workload coverage and break status with quieter text and inset rows.
+  - [ ] `src/screens/FlagsScreen.tsx` renders a dynamic summary card: when 'Flags' is selected, it shows the assignment flag count and critical/warning/info breakdown; when 'Requests' is selected, it shows the nurse request count and pending/accepted/declined breakdown.
+  - [ ] A top-level Segmented Control toggles the view between `Flags` (assignment flags) and `Requests` (nurse requests) to prevent stacking.
+  - [ ] Selecting a tab displays only the list items and the filter controls (using the new full-width iOS-style `SegmentedControl` component) relevant to that selection, reducing the stacked filter rows to a single row (for Flags) or two rows (for Requests).
+  - [ ] Summary card badges display their own respective totals (e.g., total flags count on the Flags summary card and total requests count on the Requests summary card) rather than cross-referencing the other tab's count, preventing label confusion.
+- Broader context:
+  - [ ] Board sub-tabs now feel more consistent with each other.
+  - [ ] The change is visual only and preserves assignment flags, local requests, and filters.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: in progress
+
+### 2026-06-12 - Polish Break Entries And Warnings
+
+- Task: Restyle Breaks tab entry rows and warning rows so they are easier to scan.
+- Problem understanding:
+  - [ ] Break entry cards looked like raw data boxes instead of a schedule list.
+  - [ ] Warning cards used too much amber fill and felt more alarming than necessary.
+  - [ ] The UI needed visual hierarchy without changing local scheduling behavior.
+- Solution understanding:
+  - [ ] `src/screens/BreakScheduleScreen.tsx` keeps the same break entry and warning data.
+  - [ ] Break entry rows now show nurse/time first, compact nurse metadata, coverage, and a subtle review note.
+  - [ ] Warning rows now use a lighter surface with an amber left accent and context chips.
+- Broader context:
+  - [ ] This keeps the Breaks tab useful as a board sub-view rather than a noisy report screen.
+  - [ ] The change is presentation-only and does not alter generated break times or warning rules.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: in progress
+
+### 2026-06-12 - Add Board Bottom Sub-Tabs
+
+- Task: Add a board-context bottom tab bar for `Board`, `Breaks`, and `Flags`.
+- Problem understanding:
+  - [ ] Breaks and flags felt disconnected when they lived behind separate action buttons.
+  - [ ] A bottom sub-tab pattern makes these views feel like sibling parts of the active board.
+  - [ ] A full nested navigation refactor would be larger than needed for this UI pass.
+- Solution understanding:
+  - [ ] `src/components/workflow/BoardSubTabBar.tsx` defines the reusable bottom tab bar and its three routes.
+  - [ ] `WorkflowScreen` and `WorkflowListScreen` accept an optional `bottomAccessory`.
+  - [ ] Floor Board, Break Schedule, and Flags each render the same tab bar with their own active tab.
+  - [ ] Board and Flags no longer need duplicate primary buttons for moving between each other.
+- Broader context:
+  - [ ] This keeps the charge nurse's board context stable while preserving existing routes and screen code.
+  - [ ] Future board-adjacent views can reuse the same pattern if they belong in this local board context.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: in progress
+
+### 2026-06-12 - Refine Breaks Tab UI
+
+- Task: Replace the Breaks summary tile grid and bottom `Refresh breaks` CTA with a cleaner summary card.
+- Problem understanding:
+  - [ ] The old Break summary repeated the same raised-tile pattern that made the Board summary hard to scan.
+  - [ ] A large bottom `Refresh breaks` button competed with the Board/Breaks/Flags sub-tab bar.
+  - [ ] Refresh should be available only when it is useful, not always shown as the main screen action.
+- Solution understanding:
+  - [ ] `src/screens/BreakScheduleScreen.tsx` now renders `BreakSummaryCard` instead of `SummaryTileGrid`.
+  - [ ] Refresh moved into a compact inline pill that appears only when the schedule needs refresh and can be refreshed.
+  - [ ] The redundant local schedule/back card was removed because the bottom Board tab handles navigation back.
+- Broader context:
+  - [ ] The Breaks tab now behaves like a board sub-view instead of a separate workflow screen with its own big CTA.
+  - [ ] The underlying local refresh logic still replaces only `activeShift.breakSchedule`.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: in progress
+
+### 2026-06-12 - Refine Floor Board Summary UI
+
+- Task: Make the Floor Board summary easier to scan and remove the confusing `Break scheduled` pill from the summary area.
+- Problem understanding:
+  - [ ] The old summary looked busy because every fact was shown as an equal raised tile.
+  - [ ] `Break scheduled` did not help as a board-summary metric because Breaks now has its own board sub-tab.
+  - [ ] Break warnings still need visibility because they represent something the charge nurse may need to review.
+- Solution understanding:
+  - [ ] `src/screens/FloorBoardScreen.tsx` now uses `BoardSummaryCard` for census, flags, admitting side, activity, and shift start.
+  - [ ] The redundant Break schedule card was removed from the Board tab.
+  - [ ] Break warning count stays visible as a warning strip or warning badge when warnings exist.
+- Broader context:
+  - [ ] This keeps the Floor Board focused on charge nurse scanning instead of treating every status as a KPI.
+  - [ ] The change is visual and local-only; it does not regenerate breaks or change assignment logic.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: in progress
+
 ### 2026-06-11 - Run Phase 4 Manual Test Pass
 
 - Task: Work through Phase 4 `7.x` validation tasks without adding feature code.
@@ -91,10 +219,10 @@ For each task, add a dated section with:
   - [ ] Nurse workload cards should show break timing without hiding load, room coverage, or flags.
   - [ ] Board summary should show whether breaks are scheduled, stale, or not scheduled.
 - Solution understanding:
-  - [ ] `src/screens/FloorBoardScreen.tsx` adds a Break schedule section with `Schedule breaks` or `View breaks`.
-  - [ ] The break action is disabled with a clear message before assignment is ready.
+  - [ ] `src/screens/BreakScheduleScreen.tsx` owns break status, entries, warnings, and inline refresh behavior.
+  - [ ] The Board tab links to Breaks through the board bottom sub-tab instead of a repeated card.
   - [ ] Nurse workload cards use saved break entries to show `Break HH:MM`, `Break not scheduled`, and `Break warning`.
-  - [ ] Board summary uses `breakSchedule.status` to show `Not scheduled`, `Break scheduled`, or `Needs refresh`.
+  - [ ] Break schedule status is communicated in the Breaks sub-tab, while the Board summary stays focused on board facts and warning counts.
 - Broader context:
   - [ ] The Floor Board now summarizes break state without regenerating schedules itself.
   - [ ] Existing assignment flags, acuity, load, max load, room coverage, and local nurse simulation behavior are preserved.

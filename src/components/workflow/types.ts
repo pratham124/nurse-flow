@@ -8,5 +8,4 @@ export type WorkflowStep =
   | "Nurses"
   | "Patients"
   | "Assign"
-  | "Board"
-  | "Flags";
+  | "Board";

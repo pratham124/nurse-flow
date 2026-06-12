@@ -340,3 +340,75 @@ const severityBadgeTextStyles = StyleSheet.create({
     color: colors.status.red800,
   },
 });
+
+type SegmentedControlProps<T extends string> = {
+  options: readonly T[];
+  selectedOption: T;
+  onSelect: (option: T) => void;
+};
+
+export function SegmentedControl<T extends string>({
+  options,
+  selectedOption,
+  onSelect,
+}: SegmentedControlProps<T>) {
+  return (
+    <View style={segmentedStyles.container}>
+      {options.map((option) => {
+        const isSelected = option === selectedOption;
+        return (
+          <Pressable
+            key={option}
+            accessibilityRole="button"
+            accessibilityState={{ selected: isSelected }}
+            onPress={() => onSelect(option)}
+            style={[
+              segmentedStyles.button,
+              isSelected ? segmentedStyles.selectedButton : null,
+            ]}
+          >
+            <Text
+              style={[
+                segmentedStyles.text,
+                isSelected ? segmentedStyles.selectedText : null,
+              ]}
+            >
+              {option}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+const segmentedStyles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderRadius: radius.md,
+    padding: 3,
+    gap: 2,
+  },
+  button: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+    borderRadius: radius.sm,
+  },
+  selectedButton: {
+    backgroundColor: colors.neutral.surface,
+    ...shadows.sm,
+  },
+  text: {
+    color: colors.neutral.textSecondary,
+    fontSize: 13,
+    fontWeight: fontWeight.medium,
+  },
+  selectedText: {
+    color: colors.neutral.textPrimary,
+    fontWeight: fontWeight.bold,
+  },
+});
+

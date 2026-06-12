@@ -4,20 +4,18 @@ import { FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import {
   BedChip,
+  BoardSubTabBar,
   FilterChip,
   FilterChipRow,
   PlaceholderButton,
   SeverityBadge,
   StatusPill,
   SummaryChip,
-  SummaryTile,
-  SummaryTileGrid,
   WorkflowListScreen,
   WorkflowSection,
 } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
 import {
-  type ChargeBreakScheduleView,
   getBreakEntryForNurse,
   getBreakWarningsForNurse,
   getBreakScheduleView,
@@ -109,16 +107,11 @@ type BoardBedProps = BoardBedViewModel;
 
 type FloorBoardListHeaderProps = {
   admittingSideName: string;
-  breakActionLabel: string;
-  breakActionMessage: string;
-  breakScheduleStatusLabel: string;
   breakWarningCount: number;
   canEnterNurseSimulation: boolean;
-  canOpenBreakSchedule: boolean;
   flagCount: number;
   isRegularNurseSimulation: boolean;
   nurseWorkloads: NurseWorkloadViewModel[];
-  onBreakSchedulePress: () => void;
   onFilterPress: (filter: BoardFilter) => void;
   onReturnToChargeView: () => void;
   onViewAsNurse: () => void;
@@ -131,18 +124,23 @@ type FloorBoardListHeaderProps = {
   totalBedCount: number;
 };
 
+type BoardSummaryCardProps = {
+  admittingSideName: string;
+  breakWarningCount: number;
+  flagCount: number;
+  floorActivityLabel: string;
+  occupiedBedCount: number;
+  shiftStartTimeLabel: string;
+  totalBedCount: number;
+};
+
 function FloorBoardListHeader({
   admittingSideName,
-  breakActionLabel,
-  breakActionMessage,
-  breakScheduleStatusLabel,
   breakWarningCount,
   canEnterNurseSimulation,
-  canOpenBreakSchedule,
   flagCount,
   isRegularNurseSimulation,
   nurseWorkloads,
-  onBreakSchedulePress,
   onFilterPress,
   onReturnToChargeView,
   onViewAsNurse,
@@ -157,49 +155,15 @@ function FloorBoardListHeader({
   return (
     <View style={styles.headerContent}>
       <WorkflowSection title="Board summary">
-        <SummaryTileGrid>
-          <SummaryTile
-            value={`${occupiedBedCount}/${totalBedCount}`}
-            label="Occupied"
-          />
-          <SummaryTile value={admittingSideName} label="Admitting" />
-          <SummaryTile
-            value={flagCount.toString()}
-            label={flagCount === 1 ? "Flag" : "Flags"}
-          />
-          <SummaryTile value={shiftStartTimeLabel} label="Shift start" />
-          <SummaryTile value={floorActivityLabel} label="Floor activity" />
-          <SummaryTile value={breakScheduleStatusLabel} label="Breaks" />
-          {breakWarningCount > 0 ? (
-            <SummaryTile
-              value={breakWarningCount.toString()}
-              label={
-                breakWarningCount === 1 ? "Break warning" : "Break warnings"
-              }
-            />
-          ) : null}
-        </SummaryTileGrid>
-      </WorkflowSection>
-
-      <WorkflowSection title="Break schedule">
-        <View style={styles.breakScheduleCard}>
-          <View style={styles.breakScheduleTopRow}>
-            <SummaryChip label={breakScheduleStatusLabel} />
-            {breakWarningCount > 0 ? (
-              <SeverityBadge
-                label={`${breakWarningCount} warning${
-                  breakWarningCount === 1 ? "" : "s"
-                }`}
-                tone="warning"
-              />
-            ) : null}
-          </View>
-          <Text style={styles.breakScheduleText}>{breakActionMessage}</Text>
-          <PlaceholderButton
-            label={breakActionLabel}
-            onPress={canOpenBreakSchedule ? onBreakSchedulePress : undefined}
-          />
-        </View>
+        <BoardSummaryCard
+          admittingSideName={admittingSideName}
+          breakWarningCount={breakWarningCount}
+          flagCount={flagCount}
+          floorActivityLabel={floorActivityLabel}
+          occupiedBedCount={occupiedBedCount}
+          shiftStartTimeLabel={shiftStartTimeLabel}
+          totalBedCount={totalBedCount}
+        />
       </WorkflowSection>
 
       <WorkflowSection title="Local role simulation">
@@ -254,6 +218,68 @@ function FloorBoardListHeader({
   );
 }
 
+function BoardSummaryCard({
+  admittingSideName,
+  breakWarningCount,
+  flagCount,
+  floorActivityLabel,
+  occupiedBedCount,
+  shiftStartTimeLabel,
+  totalBedCount,
+}: BoardSummaryCardProps) {
+  return (
+    <View style={styles.boardSummaryCard}>
+      <View style={styles.boardSummaryTopRow}>
+        <View style={styles.censusGroup}>
+          <Text style={styles.censusValue}>
+            {occupiedBedCount}
+            <Text style={styles.censusTotal}>/{totalBedCount}</Text>
+          </Text>
+          <Text style={styles.censusLabel}>Occupied beds</Text>
+        </View>
+        {flagCount > 0 ? (
+          <SeverityBadge
+            label={`${flagCount} ${flagCount === 1 ? "flag" : "flags"}`}
+            tone="critical"
+          />
+        ) : (
+          <SummaryChip label="No flags" />
+        )}
+      </View>
+
+      <View style={styles.boardSummaryDetails}>
+        <BoardSummaryDetail label="Admitting" value={admittingSideName} />
+        <BoardSummaryDetail label="Activity" value={floorActivityLabel} />
+        <BoardSummaryDetail label="Shift start" value={shiftStartTimeLabel} />
+      </View>
+
+      {breakWarningCount > 0 ? (
+        <View style={styles.breakWarningStrip}>
+          <Text style={styles.breakWarningStripText}>
+            {breakWarningCount}{" "}
+            {breakWarningCount === 1 ? "break warning" : "break warnings"} need
+            review.
+          </Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+type BoardSummaryDetailProps = {
+  label: string;
+  value: string;
+};
+
+function BoardSummaryDetail({ label, value }: BoardSummaryDetailProps) {
+  return (
+    <View style={styles.boardSummaryDetail}>
+      <Text style={styles.boardSummaryDetailLabel}>{label}</Text>
+      <Text style={styles.boardSummaryDetailValue}>{value}</Text>
+    </View>
+  );
+}
+
 type NurseWorkloadSectionProps = {
   nurseWorkloads: NurseWorkloadViewModel[];
 };
@@ -296,7 +322,7 @@ function NurseWorkloadRow({ nurseWorkload }: NurseWorkloadRowProps) {
         <View style={styles.nurseWorkloadNameGroup}>
           <Text style={styles.nurseWorkloadName}>{nurseWorkload.name}</Text>
           <Text style={styles.nurseWorkloadMeta}>
-            {nurseWorkload.licenseType} - {nurseWorkload.experience}
+            {nurseWorkload.licenseType} · {nurseWorkload.experience}
           </Text>
         </View>
         <Text style={styles.nurseWorkloadLoad}>
@@ -304,14 +330,17 @@ function NurseWorkloadRow({ nurseWorkload }: NurseWorkloadRowProps) {
         </Text>
       </View>
 
-      <Text style={styles.nurseWorkloadMeta}>Team: {nurseWorkload.team}</Text>
-      <Text style={styles.nurseWorkloadMeta}>
-        Rooms: {nurseWorkload.roomCoverage}
-      </Text>
-      <View style={styles.breakBadgeRow}>
-        <SummaryChip label={nurseWorkload.breakLabel} />
+      <View style={styles.workloadCoverageBox}>
+        <Text style={styles.workloadCoverageText}>{nurseWorkload.team}</Text>
+        <Text style={styles.workloadCoverageText}>
+          Rooms {nurseWorkload.roomCoverage}
+        </Text>
+      </View>
+
+      <View style={styles.workloadBreakRow}>
+        <Text style={styles.workloadBreakText}>{nurseWorkload.breakLabel}</Text>
         {nurseWorkload.hasBreakWarning ? (
-          <SeverityBadge label="Break warning" tone="warning" />
+          <Text style={styles.workloadWarningText}>Needs review</Text>
         ) : null}
       </View>
       <InlineFlagList flags={nurseWorkload.flags} />
@@ -428,56 +457,6 @@ function getInlineFlag(flag: Flag): InlineFlagViewModel {
     label: getFlagLabel(flag),
     severity: flag.severity,
   };
-}
-
-function getBreakScheduleStatusLabel(
-  status: ChargeBreakScheduleView["status"],
-) {
-  if (status === "generated") {
-    return "Break scheduled";
-  }
-
-  if (status === "needs_refresh") {
-    return "Needs refresh";
-  }
-
-  return "Not scheduled";
-}
-
-function getBreakScheduleActionLabel(activeShift?: Shift) {
-  return activeShift?.breakSchedule ? "View breaks" : "Schedule breaks";
-}
-
-function canOpenBreakSchedule(activeShift?: Shift) {
-  return Boolean(
-    activeShift?.status === "assigned" &&
-    activeShift.assignmentResult &&
-    activeShift.nurses.length,
-  );
-}
-
-function getBreakScheduleActionMessage(activeShift?: Shift) {
-  if (!activeShift) {
-    return "Start a shift before scheduling breaks.";
-  }
-
-  if (!activeShift.nurses.length) {
-    return "Add nurses before scheduling breaks.";
-  }
-
-  if (activeShift.status !== "assigned" || !activeShift.assignmentResult) {
-    return "Run assignment before scheduling breaks.";
-  }
-
-  if (activeShift.breakSchedule?.status === "needs_refresh") {
-    return "Break schedule needs refresh after assignment changes.";
-  }
-
-  if (activeShift.breakSchedule) {
-    return "Review the generated local break schedule.";
-  }
-
-  return "Open Break Schedule to review local break planning.";
 }
 
 function getBedInlineFlags(activeShift: Shift, bedId: string) {
@@ -725,7 +704,6 @@ export default function FloorBoardScreen() {
     (nurse) => nurse.id === simulatedSessionState.selectedNurseId,
   )?.name;
   const breakScheduleView = getBreakScheduleView(activeShift);
-  const canOpenBreaks = canOpenBreakSchedule(activeShift);
 
   return (
     <WorkflowListScreen
@@ -737,20 +715,13 @@ export default function FloorBoardScreen() {
       listHeader={
         <FloorBoardListHeader
           admittingSideName={admittingDoctorSide?.name ?? "-"}
-          breakActionLabel={getBreakScheduleActionLabel(activeShift)}
-          breakActionMessage={getBreakScheduleActionMessage(activeShift)}
-          breakScheduleStatusLabel={getBreakScheduleStatusLabel(
-            breakScheduleView.status,
-          )}
           breakWarningCount={breakScheduleView.warnings.length}
           canEnterNurseSimulation={canEnterNurseSimulation}
-          canOpenBreakSchedule={canOpenBreaks}
           flagCount={activeShift?.flags.length ?? 0}
           isRegularNurseSimulation={
             simulatedSessionState.role === "regular_nurse"
           }
           nurseWorkloads={getNurseWorkloads(activeShift)}
-          onBreakSchedulePress={() => router.push("/break-schedule")}
           onFilterPress={setSelectedFilter}
           onReturnToChargeView={() =>
             setSimulatedSessionState({ role: "charge" })
@@ -771,8 +742,7 @@ export default function FloorBoardScreen() {
         />
       }
       onHeaderActionPress={() => router.push("/")}
-      onPrimaryPress={() => router.push("/flags")}
-      primaryLabel="View flags"
+      bottomAccessory={<BoardSubTabBar activeTab="board" />}
       renderItem={renderFloorBoardItem}
       ListEmptyComponent={<EmptyBoardMessage selectedFilter={selectedFilter} />}
       subtitle=""
@@ -882,6 +852,80 @@ const styles = StyleSheet.create({
   headerContent: {
     gap: spacing.cardGap,
   },
+  boardSummaryCard: {
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    gap: spacing.md,
+    padding: spacing.md,
+  },
+  boardSummaryTopRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.md,
+    justifyContent: "space-between",
+  },
+  censusGroup: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  censusValue: {
+    color: colors.brand.burgundy,
+    fontSize: textSize.xl,
+    fontWeight: fontWeight.heavy,
+    lineHeight: 30,
+  },
+  censusTotal: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.lg,
+    fontWeight: fontWeight.bold,
+  },
+  censusLabel: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
+  boardSummaryDetails: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  boardSummaryDetail: {
+    backgroundColor: colors.neutral.backgroundTertiary,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.sm,
+    borderWidth: 0.5,
+    flex: 1,
+    gap: spacing.xs,
+    minWidth: 96,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  boardSummaryDetailLabel: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.xs,
+    fontWeight: fontWeight.semibold,
+  },
+  boardSummaryDetailValue: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.md,
+    fontWeight: fontWeight.bold,
+  },
+  breakWarningStrip: {
+    backgroundColor: colors.status.amber50,
+    borderColor: colors.status.amber800,
+    borderRadius: radius.sm,
+    borderWidth: 0.5,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  breakWarningStripText: {
+    color: colors.status.amber800,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
+    lineHeight: 18,
+  },
   roleSimulationCard: {
     backgroundColor: colors.neutral.surface,
     borderColor: colors.neutral.borderTertiary,
@@ -890,27 +934,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     padding: spacing.md,
     ...shadows.sm,
-  },
-  breakScheduleCard: {
-    backgroundColor: colors.neutral.surface,
-    borderColor: colors.neutral.borderTertiary,
-    borderRadius: radius.lg,
-    borderWidth: 0.5,
-    gap: spacing.md,
-    padding: spacing.md,
-    ...shadows.sm,
-  },
-  breakScheduleTopRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  breakScheduleText: {
-    color: colors.neutral.textSecondary,
-    fontSize: textSize.sm,
-    fontWeight: fontWeight.medium,
-    lineHeight: 18,
   },
   roleSimulationTopRow: {
     alignItems: "center",
@@ -944,13 +967,12 @@ const styles = StyleSheet.create({
   nurseWorkloadRow: {
     backgroundColor: colors.neutral.surface,
     borderColor: colors.neutral.borderTertiary,
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
     borderWidth: 0.5,
-    gap: spacing.xs,
+    gap: spacing.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    width: 210,
-    ...shadows.sm,
+    width: 220,
   },
   nurseWorkloadTopRow: {
     alignItems: "flex-start",
@@ -971,13 +993,36 @@ const styles = StyleSheet.create({
     color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
     lineHeight: 18,
-    fontWeight: fontWeight.semibold,
+    fontWeight: fontWeight.medium,
   },
-  breakBadgeRow: {
-    alignItems: "center",
+  workloadCoverageBox: {
+    backgroundColor: colors.neutral.backgroundTertiary,
+    borderRadius: radius.sm,
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  workloadCoverageText: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
+    lineHeight: 18,
+  },
+  workloadBreakRow: {
+    alignItems: "flex-start",
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: spacing.xs,
+    gap: spacing.sm,
+  },
+  workloadBreakText: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.bold,
+  },
+  workloadWarningText: {
+    color: colors.status.amber800,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
   },
   nurseWorkloadLoad: {
     color: colors.brand.burgundy,

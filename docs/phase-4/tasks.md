@@ -257,7 +257,7 @@ Story coverage: US4
 
 Build:
 
-- Add a `Refresh breaks` action when a schedule exists.
+- Add a compact inline `Refresh` action when an existing schedule is stale.
 - Use the latest active shift data and existing inputs.
 - Replace the previous generated entries and warnings.
 
@@ -298,20 +298,21 @@ Validation check:
 - Generate breaks and confirm each nurse card shows the correct break time.
 - Existing load, max load, acuity, assignment flags, and local request indicators still appear.
 
-### Done Task 5.3: Show Break Status in Board Summary
+### Done Task 5.3: Show Break Status From Floor Board
 
 Story coverage: US3, US4
 
 Build:
 
-- Show break schedule status in the floor board summary.
+- Show break schedule status from the `Breaks` board sub-tab without crowding the Board tab.
 - Show warning count when warnings exist.
 - Show `Needs refresh` when the schedule is stale.
+- Keep Board, Breaks, and Flags available as bottom sub-tabs inside the board context.
 
 Validation check:
 
-- Generate breaks and confirm the board summary says break scheduling is complete.
-- Change nurse or assignment data and confirm the board summary says `Needs refresh`.
+- Generate breaks and confirm the `Breaks` sub-tab says break scheduling is complete.
+- Change nurse or assignment data and confirm the `Breaks` sub-tab says `Needs refresh`.
 
 ## Simulated Nurse Integration
 

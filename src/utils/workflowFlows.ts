@@ -16,8 +16,7 @@ export type WorkflowRoute =
   | "/simulated-nurse-assignment"
   | "/simulated-nurse-issue"
   | "/simulated-nurse-swap"
-  | "/local-request-detail"
-  | "/flags";
+  | "/local-request-detail";
 
 export type WorkflowFlowStep = {
   step: WorkflowStep;
@@ -48,5 +47,4 @@ export const assignmentFlow: WorkflowFlowStep[] = [
   { step: "Patients", route: "/patients-and-acuity" },
   { step: "Assign", route: "/assignment-review" },
   { step: "Board", route: "/floor-board" },
-  { step: "Flags", route: "/flags" },
 ];

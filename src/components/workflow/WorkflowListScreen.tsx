@@ -20,10 +20,11 @@ type WorkflowListScreenProps<ItemT> = {
   onHeaderActionPress?: () => void;
   activeStep: WorkflowStep;
   flow?: WorkflowFlowStep[];
-  primaryLabel: string;
-  onPrimaryPress: () => void;
+  primaryLabel?: string;
+  onPrimaryPress?: () => void;
   primaryDisabled?: boolean;
   actionErrorText?: string;
+  bottomAccessory?: ReactElement;
   data: ItemT[];
   keyExtractor: (item: ItemT, index: number) => string;
   renderItem: ListRenderItem<ItemT>;
@@ -43,6 +44,7 @@ export function WorkflowListScreen<ItemT>({
   onPrimaryPress,
   primaryDisabled,
   actionErrorText,
+  bottomAccessory,
   data,
   keyExtractor,
   renderItem,
@@ -54,6 +56,7 @@ export function WorkflowListScreen<ItemT>({
     <WorkflowScreen
       activeStep={activeStep}
       actionErrorText={actionErrorText}
+      bottomAccessory={bottomAccessory}
       flow={flow}
       headerActionLabel={headerActionLabel}
       managesOwnScrolling

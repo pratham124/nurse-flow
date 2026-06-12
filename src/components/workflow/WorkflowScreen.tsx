@@ -18,11 +18,12 @@ type WorkflowScreenProps = {
   flow?: WorkflowFlowStep[];
   hideStepIndicator?: boolean;
   children: ReactNode;
-  primaryLabel: string;
-  onPrimaryPress: () => void;
+  primaryLabel?: string;
+  onPrimaryPress?: () => void;
   primaryDisabled?: boolean;
   actionErrorText?: string;
   managesOwnScrolling?: boolean;
+  bottomAccessory?: ReactNode;
 };
 
 type SegmentedProgressProps = {
@@ -44,6 +45,7 @@ export function WorkflowScreen({
   primaryDisabled = false,
   actionErrorText,
   managesOwnScrolling = false,
+  bottomAccessory,
 }: WorkflowScreenProps) {
   const activeStepIndex = flow.findIndex(
     (flowStep) => flowStep.step === activeStep,
@@ -90,26 +92,29 @@ export function WorkflowScreen({
       )}
 
       <View style={styles.actionBar}>
+        {bottomAccessory}
         {actionErrorText ? (
           <Text accessibilityRole="alert" style={styles.actionErrorText}>
             {actionErrorText}
           </Text>
         ) : null}
-        <View style={styles.actionRow}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ disabled: primaryDisabled }}
-            disabled={primaryDisabled}
-            onPress={onPrimaryPress}
-            style={({ pressed }) => [
-              styles.primaryButton,
-              primaryDisabled ? styles.disabledPrimaryButton : null,
-              pressed && !primaryDisabled ? styles.pressedPrimaryButton : null,
-            ]}
-          >
-            <Text style={styles.primaryButtonText}>{primaryLabel}</Text>
-          </Pressable>
-        </View>
+        {primaryLabel && onPrimaryPress ? (
+          <View style={styles.actionRow}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: primaryDisabled }}
+              disabled={primaryDisabled}
+              onPress={onPrimaryPress}
+              style={({ pressed }) => [
+                styles.primaryButton,
+                primaryDisabled ? styles.disabledPrimaryButton : null,
+                pressed && !primaryDisabled ? styles.pressedPrimaryButton : null,
+              ]}
+            >
+              <Text style={styles.primaryButtonText}>{primaryLabel}</Text>
+            </Pressable>
+          </View>
+        ) : null}
       </View>
     </SafeAreaView>
   );

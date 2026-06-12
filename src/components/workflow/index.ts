@@ -8,7 +8,9 @@ export {
   SummaryChip,
   SummaryTile,
   SummaryTileGrid,
+  SegmentedControl,
 } from "./Chips";
+export { BoardSubTabBar } from "./BoardSubTabBar";
 export {
   CheckCircleIcon,
   HomeIcon,
