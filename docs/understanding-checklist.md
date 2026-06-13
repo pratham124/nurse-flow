@@ -40,6 +40,30 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-13 - Plan Phase 5 Backend Auth And Server Persistence
+
+- Task: Create Phase 5 planning docs for backend, auth, and server-side persistence.
+- Problem understanding:
+  - [ ] Phase 5 should follow `docs/phases.md`, where Phase 5 is Backend, Auth, and Server Persistence.
+  - [ ] The older phase summary in `AGENTS.md` differs from `docs/phases.md`, so `docs/phases.md` is the source used for this phase plan.
+  - [ ] Realtime collaboration, nurse invite links, deep links, push notifications, offline sync, drag-and-drop, tablet layout, and AI belong to later phases.
+- Solution understanding:
+  - [ ] `docs/phase-5/user-stories.md` defines account, server persistence, role, authorization, and compatibility stories.
+  - [ ] `docs/phase-5/data-model.md` documents backend-owned `id` fields for profiles, templates, active shifts, snapshots, and nurse access records, with old local IDs limited to optional import helpers.
+  - [ ] `docs/phase-5/mobile-design.md` documents account-backed UI direction without realtime or invite-link language.
+  - [ ] `docs/phase-5/screens.md` maps the auth, workspace, existing workflow, regular nurse, and recovery screens.
+  - [ ] `docs/phase-5/tasks.md` orders small future implementation tasks with manual validation checks and marks only planning Task 0.1 done.
+- Broader context:
+  - [ ] Phase 5 is the bridge from local workflows to server-backed accounts.
+  - [ ] The active shift remains the main source of truth for assignment, requests, and break scheduling.
+  - [ ] Role boundaries prepare the app for Phase 6 collaboration without implementing Phase 6 early.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] File-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
 ### 2026-06-12 - Show Floor Name in Breaks and Flags Screen Headers
 
 - Task: Update the headers on the Breaks and Flags and requests screens to display the active floor name instead of static screen titles.
