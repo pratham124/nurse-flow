@@ -16,14 +16,15 @@ Status legend:
 1. Confirm Phase 5 scope guardrails.
 2. Choose and document backend approach.
 3. Add auth/session model boundaries.
-4. Add signup, login, session restore, and sign out.
-5. Add server profile and role records.
-6. Add server floor template persistence.
-7. Add server active shift persistence.
-8. Add server previous-shift snapshot persistence.
-9. Add role-gated regular nurse access boundary.
-10. Add authorization checks.
-11. Run a full manual Phase 5 test pass.
+4. Add secure Supabase client session storage.
+5. Add signup, login, session restore, and sign out.
+6. Add server profile and role records.
+7. Add server floor template persistence.
+8. Add server active shift persistence.
+9. Add server previous-shift snapshot persistence.
+10. Add role-gated regular nurse access boundary.
+11. Add authorization checks.
+12. Run a full manual Phase 5 test pass.
 
 ## Setup Tasks
 
@@ -42,18 +43,18 @@ Validation check:
 
 - You can point to `docs/phases.md` and `docs/phase-5/` and explain what Phase 5 includes and excludes before writing feature code.
 
-### Task 0.2: Choose Backend Approach
+### Done Task 0.2: Choose Backend Approach
 
 Story coverage: US1
 
 Build:
 
-- Create a short backend decision note for Phase 5.
-- Document the chosen auth and database provider.
-- Document required environment variables.
-- Document why realtime is not enabled yet even if the provider supports it.
-- Document the ID rule: normal backend records use one `id` field, and old local IDs are import-only metadata.
-- Document local setup and reset expectations for beginner-friendly testing.
+- Added `docs/phase-5/backend-decision.md` as the Phase 5 backend decision note.
+- Chose Supabase Auth for email/password auth and Supabase Postgres for server persistence.
+- Documented the required client-safe environment variables.
+- Documented why Supabase Realtime is not enabled in Phase 5.
+- Documented the ID rule: normal backend records use one `id` field, and old local IDs are import-only metadata.
+- Documented local setup and reset expectations for beginner-friendly testing.
 
 Validation check:
 
@@ -61,17 +62,18 @@ Validation check:
 - You can explain which provider features are intentionally deferred to later phases.
 - No app implementation code is written in this task.
 
-### Task 0.3: Confirm Existing App Touchpoints
+### Done Task 0.3: Confirm Existing App Touchpoints
 
 Story coverage: US6
 
 Build:
 
-- Review current routes, screens, state, storage, and helper files before writing Phase 5 feature code.
-- Identify where auth/session state should live.
-- Identify where server service or repository functions should live.
-- Identify which existing local persistence paths will be replaced by server persistence.
-- Identify whether a temporary legacy import helper is needed for old local data.
+- Added `docs/phase-5/app-touchpoints.md`.
+- Reviewed current routes, screens, state, storage, and helper files before writing Phase 5 feature code.
+- Identified where auth/session state should live.
+- Identified where server service or repository functions should live.
+- Identified which existing local persistence paths will be replaced by server persistence.
+- Identified that a temporary legacy import helper is likely needed for old local data.
 
 Validation check:
 
@@ -103,10 +105,14 @@ Story coverage: US2, US5
 Build:
 
 - Add a simple session gate that checks whether a user is signed in.
+- Add the Supabase client setup with secure native session storage.
+- Store Supabase session tokens in Expo SecureStore on native iOS and Android when available.
+- Avoid plain AsyncStorage for native auth tokens unless a documented platform limitation forces a fallback.
 - Route signed-out users to auth screens.
 - Route charge nurse users to the charge nurse workspace.
 - Route regular nurse users to the regular nurse workspace.
 - Show a setup error if backend configuration is missing.
+- Show a safe signed-out or setup-recovery state if secure session storage cannot be read.
 
 Validation check:
 
@@ -114,6 +120,7 @@ Validation check:
 - Signed-in charge nurse state opens the charge nurse workspace.
 - Signed-in regular nurse state opens the regular nurse workspace.
 - Missing setup shows a readable message instead of a crash.
+- Secure storage read failure does not crash the app.
 
 ### Task 1.3: Add Signup Screen
 
@@ -159,13 +166,17 @@ Build:
 - Restore an existing session when the app opens.
 - Keep the user signed in across app restarts.
 - Add sign out from account workspace screens.
+- Delete the stored Supabase session from secure storage on sign out.
 - Clear account-specific in-memory state on sign out.
+- Never store raw passwords, Supabase secret keys, or service role keys in app storage.
 
 Validation check:
 
 - Close and reopen the app after login.
 - Confirm the session restores.
 - Sign out and confirm protected screens return to Login.
+- Sign out, close and reopen the app, and confirm the session does not restore.
+- Review the Supabase client setup and confirm native token storage uses SecureStore, not plain AsyncStorage.
 
 ## Server Workspace
 

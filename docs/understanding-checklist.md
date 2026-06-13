@@ -40,6 +40,55 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-13 - Confirm Phase 5 App Touchpoints
+
+- Task: Map the existing routes, screens, state, storage, and helper files before writing Phase 5 feature code.
+- Problem understanding:
+  - [ ] Phase 5 should not add backend code before identifying the current app boundaries.
+  - [ ] Real auth/session state must stay separate from local app state and simulated nurse role state.
+  - [ ] Existing local persistence should be replaced gradually instead of rewritten all at once.
+- Solution understanding:
+  - [ ] `docs/phase-5/app-touchpoints.md` documents current routes, state, storage, helpers, and future Phase 5 touchpoints.
+  - [ ] Auth/session state should likely live in a new provider near `src/app/_layout.tsx`, not inside individual screens.
+  - [ ] Server repository helpers should likely live in `src/services` so screens do not call Supabase directly.
+  - [ ] Current local persistence paths are `saveFloorTemplates`, active-shift saving, and `savePreviousShiftSnapshot`.
+  - [ ] A temporary legacy import helper is likely needed for `nurseflow.localAppState.v1` data.
+- Broader context:
+  - [ ] This protects Phase 1-4 behavior while preparing for server-backed accounts.
+  - [ ] It makes the likely implementation files explainable before auth code starts.
+  - [ ] Task 0.3 is documentation-only and does not add backend, auth, realtime, invite, deep link, push, offline, drag-and-drop, tablet, or AI behavior.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] File-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+### 2026-06-13 - Choose Phase 5 Backend Approach
+
+- Task: Choose and document the Phase 5 backend approach without adding app implementation code.
+- Problem understanding:
+  - [ ] Phase 5 needs a backend choice before auth, profile, template, or shift persistence code is written.
+  - [ ] The backend must cover email/password auth and server persistence without pulling in later realtime or invite behavior.
+  - [ ] Provider features should be selected by phase scope, not enabled just because they exist.
+- Solution understanding:
+  - [ ] `docs/phase-5/backend-decision.md` chooses Supabase Auth and Supabase Postgres.
+  - [ ] The decision uses only client-safe Expo environment variables: `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+  - [ ] The task list now carries secure session storage into Task 1.2 and Task 1.5 so the auth implementation cannot skip it.
+  - [ ] Supabase Realtime, Broadcast, Presence, nurse invite links, deep links, push notifications, and offline queues are deferred.
+  - [ ] Normal backend records use one `id` field, while old local IDs are import-only metadata.
+  - [ ] `docs/phase-5/tasks.md` marks only Task 0.2 done.
+- Broader context:
+  - [ ] This sets the provider boundary for upcoming auth/session and server persistence tasks.
+  - [ ] Row Level Security will matter later for charge nurse ownership and regular nurse scoped access.
+  - [ ] No current Phase 1-4 app behavior changes because this task is documentation-only.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [ ] File-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: in progress
+
 ### 2026-06-13 - Plan Phase 5 Backend Auth And Server Persistence
 
 - Task: Create Phase 5 planning docs for backend, auth, and server-side persistence.
@@ -62,7 +111,7 @@ For each task, add a dated section with:
   - [ ] Gaps were explained.
   - [ ] File-specific question or walkthrough completed.
   - [ ] Quiz or walkthrough completed.
-- Status: pending
+- Status: in progress
 
 ### 2026-06-12 - Show Floor Name in Breaks and Flags Screen Headers
 
