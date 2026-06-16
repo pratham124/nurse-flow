@@ -40,6 +40,30 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-16 - Add Phase 5 Auth Types And Session Gate
+
+- Task: Add auth/profile/save-status types, Supabase secure session setup, and a root session gate for signed-out, charge nurse, regular nurse, setup-error, and recovery states.
+- Problem understanding:
+  - [ ] Phase 5 needs real account/session state before adding signup, login, or server persistence.
+  - [ ] Auth/session state should not be mixed into local active-shift state.
+  - [ ] Native auth tokens need secure storage instead of plain local app storage.
+- Solution understanding:
+  - [ ] `src/types/models.ts` now defines `AuthStatus`, `UserRole`, `ServerSaveStatus`, `UserProfile`, and `AuthSessionState`.
+  - [ ] `src/services/supabaseClient.ts` creates the Supabase client only when public config exists and uses Expo SecureStore on native platforms.
+  - [ ] `src/store/AuthSessionContext.tsx` checks the saved session, loads the user profile, and returns safe setup or recovery states when needed.
+  - [ ] `src/components/SessionGate.tsx` routes signed-out users to Login, charge nurses to `/`, and regular nurses to `/regular-nurse-workspace`.
+  - [ ] Login and regular nurse screens are intentionally minimal because signup, password login, and nurse access linking are later tasks.
+- Broader context:
+  - [ ] This creates the front door for Phase 5 account work without changing Phase 1-4 floor setup, assignment, requests, or break scheduling.
+  - [ ] Future signup/login tasks can plug into the session provider instead of inventing their own account state.
+  - [ ] Future server persistence tasks can rely on `UserProfile.role` for workspace boundaries.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
 ### 2026-06-13 - Confirm Phase 5 App Touchpoints
 
 - Task: Map the existing routes, screens, state, storage, and helper files before writing Phase 5 feature code.

@@ -82,7 +82,7 @@ Validation check:
 
 ## Auth and Session
 
-### Task 1.1: Add Auth and Profile Types
+### Done Task 1.1: Add Auth and Profile Types
 
 Story coverage: US2, US5
 
@@ -98,7 +98,7 @@ Validation check:
 - TypeScript compiles.
 - Existing local shift, assignment, request, and break schedule types still compile.
 
-### Task 1.2: Add Session Gate
+### Done Task 1.2: Add Session Gate
 
 Story coverage: US2, US5
 

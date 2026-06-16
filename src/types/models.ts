@@ -14,6 +14,17 @@ export type LocalStorageVersion = 1;
 
 export type SimulatedRole = "charge" | "regular_nurse";
 
+export type AuthStatus =
+  | "checking"
+  | "signed_out"
+  | "signed_in"
+  | "setup_error"
+  | "recovery";
+
+export type UserRole = "charge_nurse" | "regular_nurse";
+
+export type ServerSaveStatus = "idle" | "saving" | "saved" | "error";
+
 export type NurseRequestStatus = "pending" | "accepted" | "declined";
 
 export type NurseRequestType = "issue" | "swap";
@@ -237,6 +248,25 @@ export interface SimulatedSessionState {
   role: SimulatedRole;
   selectedNurseId?: LocalId;
 }
+
+export interface UserProfile {
+  id: string;
+  authUserId: string;
+  displayName: string;
+  role: UserRole;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type AuthSessionState =
+  | {
+      errorMessage?: string;
+      status: Exclude<AuthStatus, "signed_in">;
+    }
+  | {
+      profile: UserProfile;
+      status: "signed_in";
+    };
 
 export interface PersistedLocalAppState {
   storageVersion: LocalStorageVersion;
