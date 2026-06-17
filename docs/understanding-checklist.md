@@ -40,6 +40,31 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-16 - Add Signup Login Session Restore And Sign Out
+
+- Task: Add Phase 5 auth actions for charge nurse signup, email/password login, session restore, and local-session sign out.
+- Problem understanding:
+  - [ ] The session gate existed, but users could not yet create an account, sign in, or sign out.
+  - [ ] Supabase Auth users need a matching NurseFlow `profiles` row before the app can route by role.
+  - [ ] The app should restore saved sessions without storing raw passwords or secret keys.
+- Solution understanding:
+  - [ ] `src/services/authRepository.ts` owns signup, login, profile creation, and local sign out calls.
+  - [ ] `src/services/profileRepository.ts` can create or load a `profiles` row.
+  - [ ] `src/screens/AuthFormScreen.tsx` provides beginner-friendly signup and login forms with validation, loading, and error states.
+  - [ ] `src/store/AuthSessionContext.tsx` exposes `signOut()` and still restores sessions through SecureStore-backed Supabase auth.
+  - [ ] Charge and regular nurse workspace screens now include sign-out actions.
+  - [ ] `docs/phase-5/supabase-auth-setup.md` documents the minimal profile table and RLS policies needed for manual testing.
+- Broader context:
+  - [ ] This completes the first account loop before server floor templates, active shifts, previous-shift snapshots, realtime, invite links, push notifications, offline queues, or AI.
+  - [ ] Future server persistence tasks can rely on the signed-in profile and role.
+  - [ ] Signup defaults to `charge_nurse`; regular-nurse linking and invite behavior remain later work.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
 ### 2026-06-16 - Add Phase 5 Auth Types And Session Gate
 
 - Task: Add auth/profile/save-status types, Supabase secure session setup, and a root session gate for signed-out, charge nurse, regular nurse, setup-error, and recovery states.

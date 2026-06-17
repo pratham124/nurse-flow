@@ -9,6 +9,7 @@ import {
 } from "react";
 import type { Session } from "@supabase/supabase-js";
 
+import { signOutCurrentSession } from "../services/authRepository";
 import { loadUserProfile } from "../services/profileRepository";
 import {
   canUseNativeSecureSessionStorage,
@@ -20,6 +21,7 @@ import type { AuthSessionState } from "../types/models";
 type AuthSessionContextValue = {
   authState: AuthSessionState;
   refreshSession: () => Promise<void>;
+  signOut: () => Promise<void>;
 };
 
 type AuthSessionProviderProps = PropsWithChildren;
@@ -27,6 +29,9 @@ type AuthSessionProviderProps = PropsWithChildren;
 const checkingAuthState: AuthSessionState = {
   status: "checking",
 };
+
+const missingProfileMessage =
+  "This signed-in account does not have a NurseFlow profile yet.";
 
 const AuthSessionContext = createContext<AuthSessionContextValue | undefined>(
   undefined,
@@ -57,8 +62,7 @@ async function getStateForSession(
 
   if (!profile) {
     return {
-      errorMessage:
-        "This signed-in account does not have a NurseFlow profile yet.",
+      errorMessage: missingProfileMessage,
       status: "recovery",
     };
   }
@@ -127,6 +131,11 @@ export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
     }
   }, []);
 
+  const signOut = useCallback(async () => {
+    await signOutCurrentSession();
+    setAuthState({ status: "signed_out" });
+  }, []);
+
   useEffect(() => {
     let shouldUpdateState = true;
 
@@ -142,9 +151,18 @@ export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
       };
     }
 
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
       void getStateForSession(session)
         .then((nextState) => {
+          const isSignupProfileStillBeingCreated =
+            event === "SIGNED_IN" &&
+            nextState.status === "recovery" &&
+            nextState.errorMessage === missingProfileMessage;
+
+          if (isSignupProfileStillBeingCreated) {
+            return;
+          }
+
           if (shouldUpdateState) {
             setAuthState(nextState);
           }
@@ -176,8 +194,9 @@ export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
     () => ({
       authState,
       refreshSession,
+      signOut,
     }),
-    [authState, refreshSession],
+    [authState, refreshSession, signOut],
   );
 
   return (

@@ -2,6 +2,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { UserProfile, UserRole } from "../types/models";
 
+type CreateUserProfileInput = {
+  authUserId: string;
+  displayName: string;
+  role: UserRole;
+};
+
 type ProfileRow = {
   auth_user_id: string;
   created_at: string;
@@ -45,4 +51,38 @@ export async function loadUserProfile(
   }
 
   return data ? mapProfileRow(data) : undefined;
+}
+
+export async function createUserProfile(
+  supabase: SupabaseClient,
+  input: CreateUserProfileInput,
+) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .insert({
+      auth_user_id: input.authUserId,
+      display_name: input.displayName,
+      role: input.role,
+    })
+    .select("id, auth_user_id, display_name, role, created_at, updated_at")
+    .single<ProfileRow>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return mapProfileRow(data);
+}
+
+export async function loadOrCreateUserProfile(
+  supabase: SupabaseClient,
+  input: CreateUserProfileInput,
+) {
+  const existingProfile = await loadUserProfile(supabase, input.authUserId);
+
+  if (existingProfile) {
+    return existingProfile;
+  }
+
+  return createUserProfile(supabase, input);
 }

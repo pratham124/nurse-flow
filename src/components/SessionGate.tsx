@@ -10,6 +10,10 @@ import type { AuthSessionState } from "../types/models";
 
 type SessionGateProps = PropsWithChildren;
 
+function isAuthRoute(pathname: string) {
+  return pathname === "/login" || pathname === "/signup";
+}
+
 function getSignedInPath(role: "charge_nurse" | "regular_nurse") {
   return role === "regular_nurse" ? "/regular-nurse-workspace" : "/";
 }
@@ -19,7 +23,7 @@ function getNextPath(
   pathname: string,
 ) {
   if (authState.status === "signed_out") {
-    return "/login";
+    return isAuthRoute(pathname) ? undefined : "/login";
   }
 
   if (authState.status !== "signed_in") {
@@ -28,7 +32,7 @@ function getNextPath(
 
   const signedInPath = getSignedInPath(authState.profile.role);
 
-  if (pathname === "/login") {
+  if (isAuthRoute(pathname)) {
     return signedInPath;
   }
 

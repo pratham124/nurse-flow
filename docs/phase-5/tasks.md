@@ -122,7 +122,7 @@ Validation check:
 - Missing setup shows a readable message instead of a crash.
 - Secure storage read failure does not crash the app.
 
-### Task 1.3: Add Signup Screen
+### Done Task 1.3: Add Signup Screen
 
 Story coverage: US2, US5
 
@@ -140,7 +140,7 @@ Validation check:
 - Invalid email and weak password are handled.
 - A profile record exists after signup.
 
-### Task 1.4: Add Login Screen
+### Done Task 1.4: Add Login Screen
 
 Story coverage: US2
 
@@ -157,7 +157,7 @@ Validation check:
 - Wrong password shows a readable error.
 - The correct workspace opens after login.
 
-### Task 1.5: Add Session Restore and Sign Out
+### Done Task 1.5: Add Session Restore and Sign Out
 
 Story coverage: US2
 

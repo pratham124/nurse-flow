@@ -1,8 +1,21 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuthSession } from "../store/AuthSessionContext";
-import { colors, fontWeight, radius, shadows, spacing, textSize } from "../theme/tokens";
+import {
+  colors,
+  fontWeight,
+  radius,
+  shadows,
+  spacing,
+  textSize,
+} from "../theme/tokens";
 
 type SessionLoadingScreenProps = {
   message?: string;
@@ -21,7 +34,6 @@ export function SessionLoadingScreen({
       <View style={styles.centerCard}>
         <ActivityIndicator color={colors.brand.burgundy} />
         <Text style={styles.title}>NurseFlow</Text>
-        <Text style={styles.message}>{message}</Text>
       </View>
     </SafeAreaView>
   );

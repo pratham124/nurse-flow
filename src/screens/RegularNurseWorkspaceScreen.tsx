@@ -1,13 +1,28 @@
-import { StyleSheet, Text, View } from "react-native";
+import { router } from "expo-router";
+import { useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuthSession } from "../store/AuthSessionContext";
 import { colors, fontWeight, radius, shadows, spacing, textSize } from "../theme/tokens";
 
 export default function RegularNurseWorkspaceScreen() {
-  const { authState } = useAuthSession();
+  const { authState, signOut } = useAuthSession();
+  const [errorMessage, setErrorMessage] = useState("");
   const displayName =
     authState.status === "signed_in" ? authState.profile.displayName : "Nurse";
+
+  async function handleSignOut() {
+    try {
+      await signOut();
+      router.replace("/login");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Sign out failed. Try again.";
+
+      setErrorMessage(message);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -18,6 +33,21 @@ export default function RegularNurseWorkspaceScreen() {
           No shift access yet. Charge nurse invite and linking behavior comes in
           a later phase.
         </Text>
+        {errorMessage ? (
+          <Text accessibilityRole="alert" style={styles.errorText}>
+            {errorMessage}
+          </Text>
+        ) : null}
+        <Pressable
+          accessibilityRole="button"
+          onPress={handleSignOut}
+          style={({ pressed }) => [
+            styles.signOutButton,
+            pressed && styles.signOutButtonPressed,
+          ]}
+        >
+          <Text style={styles.signOutButtonText}>Sign out</Text>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
@@ -54,5 +84,28 @@ const styles = StyleSheet.create({
     fontSize: textSize.md,
     fontWeight: fontWeight.medium,
     lineHeight: 20,
+  },
+  errorText: {
+    color: colors.status.red700,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.medium,
+    lineHeight: 18,
+  },
+  signOutButton: {
+    alignItems: "center",
+    backgroundColor: colors.brand.burgundy,
+    borderRadius: radius.lg,
+    justifyContent: "center",
+    minHeight: 48,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  signOutButtonPressed: {
+    opacity: 0.82,
+  },
+  signOutButtonText: {
+    color: colors.neutral.surface,
+    fontSize: textSize.action,
+    fontWeight: fontWeight.semibold,
   },
 });

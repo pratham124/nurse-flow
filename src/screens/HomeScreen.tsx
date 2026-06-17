@@ -12,6 +12,7 @@ import {
   BedIcon,
   RoomIcon,
 } from "../components/workflow";
+import { useAuthSession } from "../store/AuthSessionContext";
 import { useLocalState } from "../store/LocalStateContext";
 import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
 import type { FloorTemplate } from "../types/models";
@@ -100,6 +101,7 @@ function FloorTemplateRow({
 
 
 export default function Index() {
+  const { authState, signOut } = useAuthSession();
   const { localState, savePreviousShiftSnapshot, setLocalState } =
     useLocalState();
   const [floorTemplateToDelete, setFloorTemplateToDelete] =
@@ -123,6 +125,7 @@ export default function Index() {
     activeShift?.bedStates?.filter((bedState) =>
       bedState.patient?.initials.trim(),
     ).length ?? 0;
+  const profile = authState.status === "signed_in" ? authState.profile : undefined;
 
   function handleCreateFloor() {
     setLocalState((currentState) => ({
@@ -234,11 +237,49 @@ export default function Index() {
     }
   }
 
+  async function handleSignOut() {
+    try {
+      await signOut();
+      setTemplateEditMessage("");
+      router.replace("/login");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Sign out failed. Try again.";
+
+      setTemplateEditMessage(message);
+    }
+  }
+
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.header}>
-        <Text style={styles.title}>NurseFlow</Text>
-        <Text style={styles.subtitle}>Charge Nurse Portal</Text>
+        <View style={styles.headerTitleRow}>
+          <View style={styles.brandCluster}>
+            <View style={styles.brandMark}>
+              <Text style={styles.brandMarkText}>NF</Text>
+            </View>
+            <View style={styles.headerTitleGroup}>
+              <Text style={styles.title}>NurseFlow</Text>
+              <Text style={styles.subtitle}>Charge nurse</Text>
+            </View>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            onPress={handleSignOut}
+            style={({ pressed }) => [
+              styles.signOutButton,
+              pressed && styles.signOutButtonPressed,
+            ]}
+          >
+            <Text style={styles.signOutButtonText}>Sign out</Text>
+          </Pressable>
+        </View>
+        {profile ? (
+          <View style={styles.accountPill}>
+            <View style={styles.accountDot} />
+            <Text style={styles.accountText}>{profile.displayName}</Text>
+          </View>
+        ) : null}
       </View>
 
       <ScrollView
@@ -386,22 +427,90 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: colors.neutral.surface,
     paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xl + 10,
-    paddingBottom: spacing.md,
-    gap: 4,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.lg,
+    gap: spacing.md,
     borderBottomWidth: 0.5,
     borderBottomColor: colors.neutral.borderTertiary,
-    ...shadows.sm,
+  },
+  headerTitleRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.md,
+    justifyContent: "space-between",
+  },
+  brandCluster: {
+    alignItems: "center",
+    flex: 1,
+    flexDirection: "row",
+    gap: spacing.md,
+  },
+  brandMark: {
+    alignItems: "center",
+    backgroundColor: colors.brand.burgundy,
+    borderRadius: radius.md,
+    height: 38,
+    justifyContent: "center",
+    width: 38,
+  },
+  brandMarkText: {
+    color: colors.neutral.surface,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.heavy,
+  },
+  headerTitleGroup: {
+    flex: 1,
+    gap: 2,
   },
   title: {
     color: colors.neutral.textPrimary,
-    fontSize: 30,
+    fontSize: 21,
     fontWeight: fontWeight.heavy,
-    letterSpacing: -0.5,
+    letterSpacing: 0,
   },
   subtitle: {
     color: colors.neutral.textSecondary,
-    fontSize: textSize.md,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
+  accountPill: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderRadius: radius.pill,
+    flexDirection: "row",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  accountDot: {
+    backgroundColor: colors.status.greenIcon,
+    borderRadius: 3,
+    height: 6,
+    width: 6,
+  },
+  accountText: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
+  signOutButton: {
+    alignItems: "center",
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    justifyContent: "center",
+    minHeight: 34,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  signOutButtonPressed: {
+    backgroundColor: colors.neutral.backgroundSecondary,
+  },
+  signOutButtonText: {
+    color: colors.brand.burgundy,
+    fontSize: textSize.sm,
     fontWeight: fontWeight.semibold,
   },
   scroll: {
