@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { router } from "expo-router";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -13,6 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { LoadingState } from "../components/LoadingState";
 import { loginWithEmail, signUpWithEmail } from "../services/authRepository";
 import { useAuthSession } from "../store/AuthSessionContext";
 import {
@@ -223,7 +223,12 @@ export default function AuthFormScreen({ mode }: AuthFormScreenProps) {
               ]}
             >
               {isSubmitting ? (
-                <ActivityIndicator color={colors.neutral.surface} />
+                <LoadingState
+                  color={colors.neutral.surface}
+                  message={isSignup ? "Creating account" : "Signing in"}
+                  showMessage={false}
+                  variant="inline"
+                />
               ) : (
                 <Text style={styles.primaryButtonText}>
                   {isSignup ? "Create account" : "Sign in"}

@@ -180,7 +180,7 @@ Validation check:
 
 ## Server Workspace
 
-### Task 2.1: Add Server Workspace Loader
+### Done Task 2.1: Add Server Workspace Loader
 
 Story coverage: US3, US4, US6
 
@@ -197,7 +197,7 @@ Validation check:
 - A load failure shows retry.
 - Existing local-only helpers are not rewritten.
 
-### Task 2.2: Add Server Floor Template Save
+### Done Task 2.2: Add Server Floor Template Save
 
 Story coverage: US3, US6
 
@@ -214,7 +214,7 @@ Validation check:
 - Edit a template outside an active shift and confirm the server copy updates.
 - Confirm patient, nurse, assignment, request, and break data are not stored on the template.
 
-### Task 2.3: Add Server Floor Template List and Empty State
+### Done Task 2.3: Add Server Floor Template List and Empty State
 
 Story coverage: US3
 

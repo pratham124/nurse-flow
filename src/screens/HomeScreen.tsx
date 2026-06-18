@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { router } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
@@ -12,8 +18,11 @@ import {
   BedIcon,
   RoomIcon,
 } from "../components/workflow";
+import { ErrorState } from "../components/ErrorState";
+import { LoadingState } from "../components/LoadingState";
 import { useAuthSession } from "../store/AuthSessionContext";
 import { useLocalState } from "../store/LocalStateContext";
+import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
 import type { FloorTemplate } from "../types/models";
 import {
@@ -24,6 +33,7 @@ import {
 } from "../helpers/shiftHelpers";
 
 type FloorTemplateRowProps = {
+  canDelete: boolean;
   floorTemplate: FloorTemplate;
   onRequestDelete: (floorTemplate: FloorTemplate) => void;
   onPress: (floorTemplate: FloorTemplate) => void;
@@ -31,6 +41,7 @@ type FloorTemplateRowProps = {
 };
 
 function FloorTemplateRow({
+  canDelete,
   floorTemplate,
   onRequestDelete,
   onPress,
@@ -40,6 +51,60 @@ function FloorTemplateRow({
   const bedCount = floorTemplate.beds.length;
   const floorInitial = floorTemplate.name.trim().charAt(0).toUpperCase() || "F";
 
+  const rowContent = (
+    <Pressable
+      onPress={() => onPress(floorTemplate)}
+      style={({ pressed }) => [
+        styles.templateRow,
+        pressed && styles.templateRowPressed,
+      ]}
+    >
+      <View style={styles.templateAccent} />
+      <View style={styles.templateLeft}>
+        <View style={styles.templateBadge}>
+          <Text style={styles.templateBadgeText}>{floorInitial}</Text>
+        </View>
+        <View style={styles.templateTitleGroup}>
+          <Text style={styles.templateName}>{floorTemplate.name}</Text>
+          <View style={styles.templateMetaRow}>
+            <View style={styles.templateMetaChip}>
+              <RoomIcon size={11} color={colors.neutral.textSecondary} />
+              <Text style={styles.templateMetaChipText}>
+                {roomCount} {roomCount === 1 ? "room" : "rooms"}
+              </Text>
+            </View>
+            <View style={styles.templateMetaChip}>
+              <BedIcon size={11} color={colors.neutral.textSecondary} />
+              <Text style={styles.templateMetaChipText}>
+                {bedCount} {bedCount === 1 ? "bed" : "beds"}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.templateRight}>
+        <Pressable
+          onPress={(e) => {
+            e.stopPropagation();
+            onStartShift(floorTemplate);
+          }}
+          style={({ pressed }) => [
+            styles.startShiftButton,
+            pressed && styles.startShiftButtonPressed,
+          ]}
+        >
+          <Text style={styles.startShiftButtonText}>Start Shift</Text>
+        </Pressable>
+        <ChevronRightIcon color={colors.neutral.textTertiary} size={14} />
+      </View>
+    </Pressable>
+  );
+
+  if (!canDelete) {
+    return rowContent;
+  }
+
   return (
     <SwipeRevealAction
       accessibilityLabel={`Delete ${floorTemplate.name}`}
@@ -47,53 +112,7 @@ function FloorTemplateRow({
       actionLabel="Delete"
       onActionPress={() => onRequestDelete(floorTemplate)}
     >
-      <Pressable
-        onPress={() => onPress(floorTemplate)}
-        style={({ pressed }) => [
-          styles.templateRow,
-          pressed && styles.templateRowPressed,
-        ]}
-      >
-        <View style={styles.templateAccent} />
-        <View style={styles.templateLeft}>
-          <View style={styles.templateBadge}>
-            <Text style={styles.templateBadgeText}>{floorInitial}</Text>
-          </View>
-          <View style={styles.templateTitleGroup}>
-            <Text style={styles.templateName}>{floorTemplate.name}</Text>
-            <View style={styles.templateMetaRow}>
-              <View style={styles.templateMetaChip}>
-                <RoomIcon size={11} color={colors.neutral.textSecondary} />
-                <Text style={styles.templateMetaChipText}>
-                  {roomCount} {roomCount === 1 ? "room" : "rooms"}
-                </Text>
-              </View>
-              <View style={styles.templateMetaChip}>
-                <BedIcon size={11} color={colors.neutral.textSecondary} />
-                <Text style={styles.templateMetaChipText}>
-                  {bedCount} {bedCount === 1 ? "bed" : "beds"}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.templateRight}>
-          <Pressable
-            onPress={(e) => {
-              e.stopPropagation();
-              onStartShift(floorTemplate);
-            }}
-            style={({ pressed }) => [
-              styles.startShiftButton,
-              pressed && styles.startShiftButtonPressed,
-            ]}
-          >
-            <Text style={styles.startShiftButtonText}>Start Shift</Text>
-          </Pressable>
-          <ChevronRightIcon color={colors.neutral.textTertiary} size={14} />
-        </View>
-      </Pressable>
+      {rowContent}
     </SwipeRevealAction>
   );
 }
@@ -104,14 +123,27 @@ export default function Index() {
   const { authState, signOut } = useAuthSession();
   const { localState, savePreviousShiftSnapshot, setLocalState } =
     useLocalState();
+  const { retryLoadWorkspace, workspaceState } = useServerWorkspace();
   const [floorTemplateToDelete, setFloorTemplateToDelete] =
     useState<FloorTemplate>();
   const [endShiftConfirmationVisible, setEndShiftConfirmationVisible] =
     useState(false);
   const [templateEditMessage, setTemplateEditMessage] = useState("");
-  const floorTemplateCount = localState.floorTemplates.length;
+  const isChargeNurseSignedIn =
+    authState.status === "signed_in" && authState.profile.role === "charge_nurse";
+  const isServerWorkspaceLoading =
+    isChargeNurseSignedIn &&
+    (workspaceState.status === "idle" || workspaceState.status === "loading");
+  const serverWorkspaceError =
+    workspaceState.status === "error" ? workspaceState.errorMessage : "";
+  const visibleFloorTemplates = isServerWorkspaceLoading
+    ? []
+    : localState.floorTemplates;
+  const floorTemplateCount = visibleFloorTemplates.length;
 
-  const activeShift = localState.activeShift;
+  const activeShift = isServerWorkspaceLoading
+    ? undefined
+    : localState.activeShift;
   const activeShiftTemplate = activeShift
     ? localState.floorTemplates.find(
         (t) => t.id === activeShift.floorTemplateId,
@@ -353,10 +385,21 @@ export default function Index() {
           </Text>
         ) : null}
 
-        {floorTemplateCount ? (
+        {isServerWorkspaceLoading ? (
+          <View style={styles.emptyState}>
+            <LoadingState />
+          </View>
+        ) : serverWorkspaceError ? (
+          <ErrorState
+            message={serverWorkspaceError}
+            onRetry={retryLoadWorkspace}
+            title="Workspace could not load"
+          />
+        ) : floorTemplateCount ? (
           <View style={styles.templateList}>
-            {localState.floorTemplates.map((floorTemplate) => (
+            {visibleFloorTemplates.map((floorTemplate) => (
               <FloorTemplateRow
+                canDelete={false}
                 floorTemplate={floorTemplate}
                 key={floorTemplate.id}
                 onRequestDelete={setFloorTemplateToDelete}
@@ -372,8 +415,7 @@ export default function Index() {
             </View>
             <Text style={styles.emptyTitle}>No templates created yet</Text>
             <Text style={styles.emptyText}>
-              Create a custom floor layout template on this device to start
-              managing active shifts.
+              Create a custom floor layout template to save it to this account.
             </Text>
           </View>
         )}

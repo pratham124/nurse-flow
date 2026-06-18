@@ -12,6 +12,7 @@ import {
   WorkflowScreen,
 } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
+import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { colors, radius, spacing, textSize, fontWeight } from "../theme/tokens";
 import type {
   Bed,
@@ -160,7 +161,12 @@ function getFloorTemplatesWithSavedTemplate(
 }
 
 export default function TemplateReviewScreen() {
-  const { localState, saveFloorTemplates, setLocalState } = useLocalState();
+  const { localState, setLocalState } = useLocalState();
+  const {
+    saveErrorMessage: serverSaveErrorMessage,
+    saveFloorTemplate,
+    saveStatus,
+  } = useServerWorkspace();
   const [saveErrorText, setSaveErrorText] = useState("");
   const draftTemplate = localState.draftFloorTemplate;
   const reviewTemplate = draftTemplate;
@@ -170,12 +176,14 @@ export default function TemplateReviewScreen() {
   const doctorSideCount = reviewTemplate?.doctorSides.length ?? 0;
   const canSaveTemplate = isCompletedFloorTemplate(draftTemplate);
   const actionErrorText =
+    serverSaveErrorMessage ||
     saveErrorText ||
     (draftTemplate
       ? canSaveTemplate
         ? ""
         : invalidTemplateMessage
       : "Create a floor template before saving.");
+  const isSavingTemplate = saveStatus === "saving";
 
   async function handleSaveTemplate() {
     setSaveErrorText("");
@@ -185,17 +193,26 @@ export default function TemplateReviewScreen() {
     }
 
     const completedDraft = draftTemplate;
-    const nextFloorTemplates = getFloorTemplatesWithSavedTemplate(
-      localState.floorTemplates,
-      completedDraft,
-    );
+    let savedTemplate = completedDraft;
 
     try {
-      await saveFloorTemplates(nextFloorTemplates);
-    } catch {
-      setSaveErrorText("Template could not be saved to this device. Try again.");
+      const savedRecord = await saveFloorTemplate(completedDraft);
+
+      savedTemplate = savedRecord.templateSnapshot;
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Template could not be saved to this account. Try again.";
+
+      setSaveErrorText(message);
       return;
     }
+
+    const nextFloorTemplates = getFloorTemplatesWithSavedTemplate(
+      localState.floorTemplates,
+      savedTemplate,
+    );
 
     setLocalState((currentState) => {
       if (!currentState.draftFloorTemplate) {
@@ -219,7 +236,8 @@ export default function TemplateReviewScreen() {
       headerActionLabel="Floors"
       onHeaderActionPress={() => router.push("/")}
       onPrimaryPress={handleSaveTemplate}
-      primaryLabel="Save template"
+      primaryDisabled={isSavingTemplate}
+      primaryLabel={isSavingTemplate ? "Saving..." : "Save template"}
       subtitle="Step 4 of 4"
       title={screenTitle}
     >

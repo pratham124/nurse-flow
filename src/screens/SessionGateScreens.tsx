@@ -1,12 +1,7 @@
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { LoadingState } from "../components/LoadingState";
 import { useAuthSession } from "../store/AuthSessionContext";
 import {
   colors,
@@ -32,8 +27,7 @@ export function SessionLoadingScreen({
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.centerCard}>
-        <ActivityIndicator color={colors.brand.burgundy} />
-        <Text style={styles.title}>NurseFlow</Text>
+        <LoadingState message={message} />
       </View>
     </SafeAreaView>
   );

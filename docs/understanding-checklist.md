@@ -40,6 +40,94 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-17 - Replace Deprecated Supabase Returns Helper
+
+- Task: Replace deprecated Supabase `.returns<T>()` list query typing in the server workspace repository.
+- Problem understanding:
+  - [x] Supabase marked `.returns<T>()` deprecated, so the IDE showed a deprecation warning.
+  - [x] The warning was about TypeScript result typing, not a runtime database behavior problem.
+  - [x] The list queries still need typed rows so mapper functions receive the expected shape.
+- Solution understanding:
+  - [x] `src/services/serverWorkspaceRepository.ts` now uses `.overrideTypes<T>()` for list query result types.
+  - [x] The fetched columns, table names, filters, and mapper functions stayed the same.
+  - [x] Single-row calls were left alone because the warning was from `.returns<T>()`.
+- Broader context:
+  - [x] Keeping SDK usage current prevents warning noise while preserving the beginner-readable repository boundary.
+  - [x] This is a type cleanup only and does not change floor template or workspace loading behavior.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+### 2026-06-17 - Add Shared Retryable Error State Component
+
+- Task: Create one reusable retryable error component and replace Home's server workspace error block with it.
+- Problem understanding:
+  - [x] Home had a one-off retryable error layout that would likely be repeated by later server screens.
+  - [x] Repeated error blocks can drift in spacing, retry button style, and accessibility behavior.
+  - [x] The generic component should own the layout, while each screen still provides the specific title, message, and retry action.
+- Solution understanding:
+  - [x] `src/components/ErrorState.tsx` owns the shared title, message, optional retry button, and error styling.
+  - [x] `src/screens/HomeScreen.tsx` now renders `ErrorState` for server load failures.
+  - [x] The component is generic and does not know about Supabase, templates, or workspaces.
+- Broader context:
+  - [x] Future Phase 5 server screens can reuse the same retryable error pattern.
+  - [x] This is a UI refactor only and does not change server loading, saving, or retry behavior.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+### 2026-06-17 - Add Shared Loading State Component
+
+- Task: Create one reusable loading component and replace the direct loading spinners in session routing, auth submit, and Home's server load state.
+- Problem understanding:
+  - [x] Multiple screens were hand-rendering loading UI, which makes copy, spacing, color, and accessibility easier to drift.
+  - [x] A shared loading component should stay generic and not know about auth, templates, or workspace data.
+  - [x] Button loading and card loading need slightly different layout while sharing the same primitive.
+- Solution understanding:
+  - [x] `src/components/LoadingState.tsx` owns the shared spinner/message UI.
+  - [x] `variant="card"` is used for full or section loading states.
+  - [x] `variant="inline"` with `showMessage={false}` is used inside the auth submit button.
+  - [x] `src/screens/HomeScreen.tsx`, `src/screens/SessionGateScreens.tsx`, and `src/screens/AuthFormScreen.tsx` no longer import `ActivityIndicator` directly.
+- Broader context:
+  - [x] Future Phase 5 loading states can reuse this component instead of inventing new spinner layouts.
+  - [x] The refactor changes presentation only and does not change auth, server loading, or template save behavior.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+### 2026-06-17 - Add Server Workspace Loader And Template Save
+
+- Task: Complete Phase 5 Tasks 2.1, 2.2, and 2.3 by loading the charge nurse server workspace, saving reusable floor templates to Supabase, and showing the server template list/empty/error states.
+- Problem understanding:
+  - [x] The charge nurse workspace still showed local-only templates and did not load account-owned server templates.
+  - [x] Template save needed to move from device storage to the server without storing patients, nurses, assignments, requests, or breaks on the reusable template.
+  - [x] Regular nurse accounts should not load or manage charge nurse templates.
+- Solution understanding:
+  - [x] `src/services/serverWorkspaceRepository.ts` owns Supabase reads and writes for workspace data and floor templates.
+  - [x] `src/store/ServerWorkspaceContext.tsx` provides one server workspace boundary with loading, empty, error, retry, save, and save-error state.
+  - [x] `src/screens/HomeScreen.tsx` shows server workspace loading, retry, template list, and empty states while keeping active-shift helpers local for now.
+  - [x] `src/screens/TemplateReviewScreen.tsx` saves reusable template structure to the server and updates in-memory state with the fetched backend record.
+  - [x] `docs/phase-5/supabase-auth-setup.md` documents the minimal workspace tables and RLS policies for manual testing.
+- Broader context:
+  - [x] This starts server persistence for reusable floor templates without adding active-shift save, realtime, invite links, push notifications, offline queues, drag-and-drop, tablet layout, or AI.
+  - [x] Future active-shift persistence can reuse the same request-then-refresh pattern.
+  - [x] Existing local-only helpers are preserved until the specific later tasks replace those save paths.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
 ### 2026-06-16 - Add Signup Login Session Restore And Sign Out
 
 - Task: Add Phase 5 auth actions for charge nurse signup, email/password login, session restore, and local-session sign out.

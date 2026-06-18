@@ -258,6 +258,42 @@ export interface UserProfile {
   updatedAt: string;
 }
 
+export interface FloorTemplateRecord {
+  id: string;
+  ownerProfileId: string;
+  name: string;
+  templateSnapshot: FloorTemplate;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ActiveShiftRecord {
+  id: string;
+  chargeProfileId: string;
+  floorTemplateId: string;
+  status: ShiftStatus;
+  shiftSnapshot: Shift;
+  createdAt: string;
+  updatedAt: string;
+  endedAt?: string;
+}
+
+export interface ServerPreviousShiftSnapshot {
+  id: string;
+  chargeProfileId: string;
+  floorTemplateId: string;
+  completedAt: string;
+  nurseSuggestions: NurseCarryOverSuggestion[];
+  patientSuggestions: PatientCarryOverSuggestion[];
+}
+
+export interface ServerWorkspace {
+  profile: UserProfile;
+  floorTemplates: FloorTemplateRecord[];
+  activeShift?: ActiveShiftRecord;
+  previousShiftSnapshots: ServerPreviousShiftSnapshot[];
+}
+
 export type AuthSessionState =
   | {
       errorMessage?: string;
