@@ -35,13 +35,12 @@ function getProfileInputFromUser(user: User, displayName?: string) {
   const metadata = user.user_metadata;
   const metadataDisplayName =
     typeof metadata.display_name === "string" ? metadata.display_name : "";
-  const metadataRole = metadata.role === "regular_nurse" ? metadata.role : defaultSignupRole;
 
   return {
     authUserId: user.id,
     displayName:
       displayName?.trim() || metadataDisplayName.trim() || user.email || "NurseFlow user",
-    role: metadataRole,
+    role: defaultSignupRole,
   };
 }
 

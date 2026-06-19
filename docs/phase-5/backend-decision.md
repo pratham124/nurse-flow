@@ -118,7 +118,7 @@ Local development should stay small:
 1. Create one Supabase project for development.
 2. Copy the project URL and publishable key into local environment variables.
 3. In later tasks, add the minimal tables and Row Level Security policies needed for the current task.
-4. Create test charge nurse and regular nurse accounts manually through the app once auth screens exist.
+4. Create signed-in test accounts through the app once auth screens exist. For joined nurse access testing, link one profile to one shift nurse manually.
 5. Reset test data by deleting test rows and test users from the development Supabase project, or by rerunning the documented development SQL reset once that SQL exists.
 
 Reset expectations:

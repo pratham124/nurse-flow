@@ -21,9 +21,11 @@ export type AuthStatus =
   | "setup_error"
   | "recovery";
 
-export type UserRole = "charge_nurse" | "regular_nurse";
+export type UserRole = "charge_nurse";
 
 export type ServerSaveStatus = "idle" | "saving" | "saved" | "error";
+
+export type ShiftAccessStatus = "pending_link" | "linked" | "removed";
 
 export type NurseRequestStatus = "pending" | "accepted" | "declined";
 
@@ -285,6 +287,35 @@ export interface ServerPreviousShiftSnapshot {
   completedAt: string;
   nurseSuggestions: NurseCarryOverSuggestion[];
   patientSuggestions: PatientCarryOverSuggestion[];
+}
+
+export interface ShiftNurseAccess {
+  id: string;
+  shiftId: string;
+  nurseId: LocalId;
+  nurseName: string;
+  nurseProfileId?: string;
+  nurseEmail?: string;
+  status: ShiftAccessStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface JoinedNurseAssignedBed {
+  bed: Bed;
+  bedState?: BedState;
+  doctorSide: DoctorSide;
+  room: Room;
+}
+
+export interface JoinedNurseAssignmentView {
+  access: ShiftNurseAccess;
+  assignedBeds: JoinedNurseAssignedBed[];
+  breakTimeLabel?: string;
+  floorName: string;
+  nurseName: string;
+  requestHistory: NurseRequest[];
+  shiftId: string;
 }
 
 export interface ServerWorkspace {

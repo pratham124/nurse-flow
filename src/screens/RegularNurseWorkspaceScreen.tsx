@@ -1,16 +1,150 @@
 import { router } from "expo-router";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { ErrorState } from "../components/ErrorState";
+import { LoadingState } from "../components/LoadingState";
+import { loadJoinedNurseAssignmentView } from "../services/serverWorkspaceRepository";
+import { getSupabaseClient } from "../services/supabaseClient";
 import { useAuthSession } from "../store/AuthSessionContext";
-import { colors, fontWeight, radius, shadows, spacing, textSize } from "../theme/tokens";
+import {
+  colors,
+  fontWeight,
+  radius,
+  shadows,
+  spacing,
+  textSize,
+} from "../theme/tokens";
+import type { JoinedNurseAssignmentView } from "../types/models";
+
+type JoinedNurseWorkspaceState =
+  | { status: "loading" }
+  | { status: "empty" }
+  | { status: "ready"; assignmentView: JoinedNurseAssignmentView }
+  | { errorMessage: string; status: "error" };
+
+type AssignmentSummaryProps = {
+  assignmentView: JoinedNurseAssignmentView;
+};
+
+function AssignmentSummary({ assignmentView }: AssignmentSummaryProps) {
+  return (
+    <View style={styles.assignmentPanel}>
+      <Text style={styles.sectionLabel}>Current assignment</Text>
+      <Text style={styles.floorName}>{assignmentView.floorName}</Text>
+
+      <View style={styles.statRow}>
+        <View style={styles.statTile}>
+          <Text style={styles.statValue}>
+            {assignmentView.assignedBeds.length}
+          </Text>
+          <Text style={styles.statLabel}>Beds</Text>
+        </View>
+        <View style={styles.statTile}>
+          <Text style={styles.statValue}>
+            {assignmentView.breakTimeLabel ?? "None"}
+          </Text>
+          <Text style={styles.statLabel}>Break</Text>
+        </View>
+      </View>
+
+      <View style={styles.bedList}>
+        {assignmentView.assignedBeds.length ? (
+          assignmentView.assignedBeds.map((assignedBed) => (
+            <View key={assignedBed.bed.id} style={styles.bedRow}>
+              <Text style={styles.bedTitle}>
+                Room {assignedBed.room.label} - Bed {assignedBed.bed.label}
+              </Text>
+              <Text style={styles.bedDetail}>
+                {assignedBed.doctorSide.name}
+              </Text>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.emptyDetail}>
+            No assigned beds are linked yet.
+          </Text>
+        )}
+      </View>
+
+      <View style={styles.requestList}>
+        <Text style={styles.sectionLabel}>Request history</Text>
+        {assignmentView.requestHistory.length ? (
+          assignmentView.requestHistory.map((request) => (
+            <View key={request.id} style={styles.requestRow}>
+              <Text style={styles.requestTitle}>
+                {request.status} {request.type}
+              </Text>
+              <Text style={styles.bedDetail}>{request.message}</Text>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.emptyDetail}>No request history yet.</Text>
+        )}
+      </View>
+    </View>
+  );
+}
 
 export default function RegularNurseWorkspaceScreen() {
   const { authState, signOut } = useAuthSession();
+  const [workspaceState, setWorkspaceState] =
+    useState<JoinedNurseWorkspaceState>({ status: "loading" });
   const [errorMessage, setErrorMessage] = useState("");
   const displayName =
     authState.status === "signed_in" ? authState.profile.displayName : "Nurse";
+
+  const loadAssignmentView = useCallback(async () => {
+    if (
+      authState.status !== "signed_in"
+    ) {
+      setWorkspaceState({
+        errorMessage: "Sign in before opening joined shift access.",
+        status: "error",
+      });
+      return;
+    }
+
+    const supabase = getSupabaseClient();
+
+    if (!supabase) {
+      setWorkspaceState({
+        errorMessage: "Supabase is not configured yet.",
+        status: "error",
+      });
+      return;
+    }
+
+    setWorkspaceState({ status: "loading" });
+
+    try {
+      const assignmentView = await loadJoinedNurseAssignmentView(
+        supabase,
+        authState.profile,
+      );
+
+      setWorkspaceState(
+        assignmentView
+          ? { assignmentView, status: "ready" }
+          : { status: "empty" },
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Regular nurse workspace could not be loaded.";
+
+      setWorkspaceState({
+        errorMessage: message,
+        status: "error",
+      });
+    }
+  }, [authState]);
+
+  useEffect(() => {
+    void loadAssignmentView();
+  }, [loadAssignmentView]);
 
   async function handleSignOut() {
     try {
@@ -29,10 +163,33 @@ export default function RegularNurseWorkspaceScreen() {
       <View style={styles.card}>
         <Text style={styles.eyebrow}>Regular nurse workspace</Text>
         <Text style={styles.title}>{displayName}</Text>
-        <Text style={styles.message}>
-          No shift access yet. Charge nurse invite and linking behavior comes in
-          a later phase.
-        </Text>
+
+        {workspaceState.status === "loading" ? (
+          <LoadingState message="Checking shift access" />
+        ) : null}
+
+        {workspaceState.status === "empty" ? (
+          <View style={styles.emptyPanel}>
+            <Text style={styles.emptyTitle}>No shift access yet</Text>
+            <Text style={styles.message}>
+              A charge nurse will connect shift access in a later invite or join
+              flow.
+            </Text>
+          </View>
+        ) : null}
+
+        {workspaceState.status === "ready" ? (
+          <AssignmentSummary assignmentView={workspaceState.assignmentView} />
+        ) : null}
+
+        {workspaceState.status === "error" ? (
+          <ErrorState
+            message={workspaceState.errorMessage}
+            onRetry={loadAssignmentView}
+            title="Shift access could not load"
+          />
+        ) : null}
+
         {errorMessage ? (
           <Text accessibilityRole="alert" style={styles.errorText}>
             {errorMessage}
@@ -69,6 +226,55 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     ...shadows.sm,
   },
+  assignmentPanel: {
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    gap: spacing.md,
+    padding: spacing.lg,
+  },
+  bedDetail: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.medium,
+    lineHeight: 18,
+  },
+  bedList: {
+    gap: spacing.sm,
+  },
+  bedRow: {
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.md,
+    borderWidth: 0.5,
+    gap: spacing.xs,
+    padding: spacing.md,
+  },
+  bedTitle: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.md,
+    fontWeight: fontWeight.bold,
+  },
+  emptyDetail: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.medium,
+    lineHeight: 18,
+  },
+  emptyPanel: {
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    gap: spacing.sm,
+    padding: spacing.lg,
+  },
+  emptyTitle: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.lg,
+    fontWeight: fontWeight.bold,
+  },
   eyebrow: {
     color: colors.brand.burgundy,
     fontSize: textSize.sm,
@@ -84,6 +290,56 @@ const styles = StyleSheet.create({
     fontSize: textSize.md,
     fontWeight: fontWeight.medium,
     lineHeight: 20,
+  },
+  floorName: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.lg,
+    fontWeight: fontWeight.heavy,
+  },
+  sectionLabel: {
+    color: colors.brand.burgundy,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.bold,
+  },
+  requestList: {
+    gap: spacing.sm,
+  },
+  requestRow: {
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.md,
+    borderWidth: 0.5,
+    gap: spacing.xs,
+    padding: spacing.md,
+  },
+  requestTitle: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.bold,
+    textTransform: "capitalize",
+  },
+  statLabel: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.xs,
+    fontWeight: fontWeight.semibold,
+  },
+  statRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  statTile: {
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.md,
+    borderWidth: 0.5,
+    flex: 1,
+    gap: spacing.xs,
+    padding: spacing.md,
+  },
+  statValue: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.md,
+    fontWeight: fontWeight.bold,
   },
   errorText: {
     color: colors.status.red700,

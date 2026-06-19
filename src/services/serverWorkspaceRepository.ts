@@ -4,10 +4,13 @@ import type {
   ActiveShiftRecord,
   FloorTemplate,
   FloorTemplateRecord,
+  JoinedNurseAssignedBed,
+  JoinedNurseAssignmentView,
   PreviousShiftSnapshot,
   ServerPreviousShiftSnapshot,
   ServerWorkspace,
   Shift,
+  ShiftAccessStatus,
   ShiftStatus,
   UserProfile,
 } from "../types/models";
@@ -41,6 +44,41 @@ type PreviousShiftSnapshotRow = {
   patient_suggestions: unknown;
 };
 
+type JoinedNurseAssignmentRpcResult = {
+  access: unknown;
+  assignedBeds?: unknown;
+  assigned_beds?: unknown;
+  breakTimeLabel?: string | null;
+  break_time_label?: string | null;
+  floorName?: string;
+  floor_name?: string;
+  nurseName?: string;
+  nurse_name?: string;
+  requestHistory?: unknown;
+  request_history?: unknown;
+  shiftId?: string;
+  shift_id?: string;
+};
+
+type ShiftNurseAccessSnapshot = {
+  createdAt?: string;
+  created_at?: string;
+  id?: string;
+  nurseEmail?: string | null;
+  nurseId?: string;
+  nurseName?: string;
+  nurseProfileId?: string | null;
+  nurse_email?: string | null;
+  nurse_id?: string;
+  nurse_name?: string;
+  nurse_profile_id?: string | null;
+  shiftId?: string;
+  shift_id?: string;
+  status?: string;
+  updatedAt?: string;
+  updated_at?: string;
+};
+
 const templateColumns =
   "id, owner_profile_id, name, template_snapshot, created_at, updated_at";
 const activeShiftColumns =
@@ -52,7 +90,17 @@ const uuidPattern =
 
 function assertChargeNurse(profile: UserProfile) {
   if (profile.role !== "charge_nurse") {
-    throw new Error("Regular nurse accounts cannot manage charge nurse templates.");
+    throw new Error("Sign in with a NurseFlow account to manage charge nurse templates.");
+  }
+}
+
+function assertOwnedRecord(
+  recordProfileId: string,
+  expectedProfileId: string,
+  message: string,
+) {
+  if (recordProfileId !== expectedProfileId) {
+    throw new Error(message);
   }
 }
 
@@ -107,6 +155,12 @@ function isShiftStatus(status: string): status is ShiftStatus {
   return status === "setup" || status === "assigned";
 }
 
+function isShiftAccessStatus(status: string): status is ShiftAccessStatus {
+  return (
+    status === "pending_link" || status === "linked" || status === "removed"
+  );
+}
+
 function mapTemplateRow(row: FloorTemplateRow): FloorTemplateRecord {
   return {
     createdAt: row.created_at,
@@ -153,6 +207,93 @@ function mapPreviousShiftRow(
     nurseSuggestions,
     patientSuggestions,
   } as ServerPreviousShiftSnapshot;
+}
+
+function requireShiftNurseAccess(
+  value: unknown,
+  profile: UserProfile,
+  shiftId: string,
+) {
+  const access = value as ShiftNurseAccessSnapshot | undefined;
+
+  if (!access) {
+    throw new Error("Shift access has an invalid server shape.");
+  }
+
+  const status = access.status ?? "";
+  const nurseProfileId =
+    access.nurseProfileId ?? access.nurse_profile_id ?? undefined;
+
+  if (!isShiftAccessStatus(status)) {
+    throw new Error("Shift access has an unsupported status.");
+  }
+
+  if (status !== "linked") {
+    throw new Error("No shift access yet.");
+  }
+
+  if (nurseProfileId !== profile.id) {
+    throw new Error("This shift access does not belong to this account.");
+  }
+
+  return {
+    createdAt: access.createdAt ?? access.created_at ?? "",
+    id: access.id ?? "",
+    nurseEmail: access.nurseEmail ?? access.nurse_email ?? undefined,
+    nurseId: access.nurseId ?? access.nurse_id ?? "",
+    nurseName: access.nurseName ?? access.nurse_name ?? "",
+    nurseProfileId,
+    shiftId: access.shiftId ?? access.shift_id ?? shiftId,
+    status,
+    updatedAt: access.updatedAt ?? access.updated_at ?? "",
+  };
+}
+
+function requireNurseAssignedBeds(value: unknown): JoinedNurseAssignedBed[] {
+  if (!Array.isArray(value)) {
+    throw new Error("The nurse assignment view has invalid assigned beds.");
+  }
+
+  return value.map((assignedBed) => {
+    const bedView = assignedBed as Partial<JoinedNurseAssignedBed>;
+
+    if (!bedView.bed || !bedView.doctorSide || !bedView.room) {
+      throw new Error("The nurse assignment view has a missing bed, room, or side.");
+    }
+
+    return {
+      bed: { ...bedView.bed },
+      bedState: bedView.bedState ? { ...bedView.bedState } : undefined,
+      doctorSide: { ...bedView.doctorSide },
+      room: { ...bedView.room },
+    };
+  });
+}
+
+function mapJoinedNurseAssignmentView(
+  result: JoinedNurseAssignmentRpcResult,
+  profile: UserProfile,
+): JoinedNurseAssignmentView {
+  const shiftId = result.shiftId ?? result.shift_id ?? "";
+  const floorName = result.floorName ?? result.floor_name ?? "";
+  const nurseName = result.nurseName ?? result.nurse_name ?? "";
+  const assignedBeds = result.assignedBeds ?? result.assigned_beds;
+  const requestHistory = result.requestHistory ?? result.request_history ?? [];
+
+  if (!shiftId || !floorName || !nurseName) {
+    throw new Error("The nurse assignment view has an invalid server shape.");
+  }
+
+  return {
+    access: requireShiftNurseAccess(result.access, profile, shiftId),
+    assignedBeds: requireNurseAssignedBeds(assignedBeds),
+    breakTimeLabel:
+      result.breakTimeLabel ?? result.break_time_label ?? undefined,
+    floorName,
+    nurseName,
+    requestHistory: Array.isArray(requestHistory) ? requestHistory : [],
+    shiftId,
+  };
 }
 
 function toPreviousShiftSnapshot(
@@ -250,12 +391,58 @@ export async function loadServerWorkspace(
       loadPreviousShiftSnapshots(supabase, profile.id),
     ]);
 
+  floorTemplates.forEach((template) => {
+    assertOwnedRecord(
+      template.ownerProfileId,
+      profile.id,
+      "A server template was returned for the wrong account.",
+    );
+  });
+
+  if (activeShift) {
+    assertOwnedRecord(
+      activeShift.chargeProfileId,
+      profile.id,
+      "A server shift was returned for the wrong account.",
+    );
+  }
+
+  previousShiftSnapshots.forEach((snapshot) => {
+    assertOwnedRecord(
+      snapshot.chargeProfileId,
+      profile.id,
+      "A carry-over snapshot was returned for the wrong account.",
+    );
+  });
+
   return {
     activeShift,
     floorTemplates,
     previousShiftSnapshots,
     profile,
   };
+}
+
+export async function loadJoinedNurseAssignmentView(
+  supabase: SupabaseClient,
+  profile: UserProfile,
+) {
+  const { data, error } = await supabase.rpc(
+    "get_joined_nurse_assignment_view",
+  );
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    return undefined;
+  }
+
+  return mapJoinedNurseAssignmentView(
+    data as JoinedNurseAssignmentRpcResult,
+    profile,
+  );
 }
 
 export async function saveServerFloorTemplate(

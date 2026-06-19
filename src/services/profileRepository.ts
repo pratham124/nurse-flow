@@ -18,7 +18,7 @@ type ProfileRow = {
 };
 
 function isUserRole(role: string): role is UserRole {
-  return role === "charge_nurse" || role === "regular_nurse";
+  return role === "charge_nurse";
 }
 
 function mapProfileRow(row: ProfileRow): UserProfile {

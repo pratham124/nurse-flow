@@ -40,6 +40,53 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-19 - Treat Nurse Access As Shift Participation
+
+- Task: Update Phase 5 role/access direction so every signed-in profile is charge-capable, while regular nurse behavior comes from joined shift access.
+- Problem understanding:
+  - [ ] Permanent `regular_nurse` profile roles made manual testing and linking harder to understand.
+  - [ ] A nurse joining a shift should not change the account's global identity.
+  - [ ] One account should not start or join multiple active shift contexts at the same time.
+- Solution understanding:
+  - [ ] `UserRole` is now only `charge_nurse` for Phase 5 profiles.
+  - [ ] `SessionGate` sends signed-in users to Home rather than routing by regular-nurse profile role.
+  - [ ] Joined nurse assignment loading uses `shift_nurse_access` and `get_joined_nurse_assignment_view()`.
+  - [ ] Phase 5 docs describe future `Join active session` code entry without implementing it yet.
+- Broader context:
+  - [ ] Join-code behavior can later create `shift_nurse_access` records.
+  - [ ] Joined nurse access remains nurse-scoped and does not expose the full charge nurse board.
+  - [ ] The one-active-participation rule prevents one account from being in conflicting active shift contexts.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
+### 2026-06-19 - Add Role Boundaries And Authorization Checks
+
+- Task: Complete Phase 5 Tasks 4.1, 4.2, 4.3, and 4.4 by keeping accounts charge-capable, adding joined nurse empty/linked states, documenting shift nurse access records, and adding nurse-scoped server reads.
+- Problem understanding:
+  - [x] Regular nurse accounts needed a real boundary so they could not open charge nurse workspace screens.
+  - [x] A signed-in profile alone should not expose nurse-scoped shift data; it needs a linked access record.
+  - [x] UI routing is not enough protection, so server ownership and nurse-scoped reads also matter.
+- Solution understanding:
+  - [x] `src/components/SessionGate.tsx` routes signed-in users to Home rather than treating nurse access as a permanent profile role.
+  - [x] `src/screens/RegularNurseWorkspaceScreen.tsx` shows loading, `No shift access yet`, linked assignment, and error states for joined nurse access.
+  - [x] `src/services/serverWorkspaceRepository.ts` keeps charge nurse workspace reads owner-scoped and loads joined nurse assignment data through a reduced server RPC.
+  - [x] `docs/phase-5/supabase-auth-setup.md` documents the `shift_nurse_access` table and `get_joined_nurse_assignment_view()` RPC for manual testing.
+  - [x] No invite links, deep links, realtime, push notifications, offline queues, drag-and-drop, tablet layout, or AI were added.
+- Broader context:
+  - [x] Shift access boundaries prepare NurseFlow for later collaboration without exposing the full charge nurse board to joined nurses.
+  - [x] Charge nurse templates, shifts, and snapshots remain owned by the signed-in charge nurse profile.
+  - [x] Later invite/join behavior can create access records, but this task only proves the authorization shape.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
 ### 2026-06-19 - Save Previous-Shift Snapshot to Server
 
 - Task: Complete Phase 5 Task 3.4 by saving carry-over nurse and patient suggestions to Supabase when a shift ends.

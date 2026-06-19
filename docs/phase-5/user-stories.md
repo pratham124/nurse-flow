@@ -84,23 +84,24 @@ As a charge nurse, I want active shift setup, assignment, requests, and break sc
 - Existing assignment, local request, and break scheduling behavior still works after server persistence is added.
 - Do not add realtime refresh, offline write queueing, conflict resolution, or push notifications in Phase 5.
 
-## Story 5: Add Real Role Boundaries
+## Story 5: Add Shift Access Boundaries
 
-As a product owner, I want real charge nurse and regular nurse roles in the account model so later phases can safely add multi-device collaboration.
+As a product owner, I want signed-in accounts to have safe shift-specific nurse access so later phases can safely add multi-device collaboration.
 
 ### Acceptance Criteria
 
-- Each authenticated profile has one Phase 5 role: `charge_nurse` or `regular_nurse`.
+- Each authenticated profile is charge-capable in Phase 5.
 - Charge nurses can access the full charge nurse workspace for their own templates and shifts.
-- Regular nurses cannot access the full charge nurse board.
-- Regular nurses can reach only role-appropriate nurse-facing screens when a server access record exists for their account.
-- If no shift access exists, a regular nurse sees a clear empty state.
+- A signed-in account can be linked to one nurse inside one active shift through a server access record.
+- Joined nurse access can reach only nurse-facing assignment data for that linked nurse.
+- If no shift access exists, the user sees a clear empty state from the joined nurse view.
+- A signed-in account should have at most one active shift participation at a time. A joined user should leave before starting a charge shift or joining another shift.
 
 ### Validation and Edge Cases
 
-- A regular nurse account cannot load another nurse's full assignment by changing a backend `nurseId`.
-- A charge nurse cannot accidentally create nurse-facing access without a future invite flow.
-- Role checks should happen at both the app UI boundary and the server authorization boundary.
+- A joined user cannot load another nurse's full assignment by changing a backend `nurseId`.
+- A charge nurse cannot accidentally create nurse-facing access without a future join-code flow.
+- Shift access checks should happen at both the app UI boundary and the server authorization boundary.
 - Do not add nurse invite links, deep link joins, realtime presence, or push notifications in Phase 5.
 
 ## Story 6: Replace Local Storage With Server Truth

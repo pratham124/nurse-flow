@@ -9,7 +9,7 @@ Phase 5 should make NurseFlow feel account-backed without making it feel live or
 - Add account entry points without burying the existing charge nurse workflow.
 - Make the signed-in workspace feel like the same app, now saved to an account.
 - Keep server save and error states visible but calm.
-- Keep regular nurse access guarded and intentionally limited.
+- Keep joined nurse access guarded and intentionally limited.
 - Preserve the existing phone-first visual system from Phases 1-4.
 - Keep auth and server setup understandable for a beginner.
 
@@ -67,19 +67,20 @@ These are design components, not implementation code.
 
 Purpose:
 
-Decide whether the user sees auth screens, charge nurse workspace, or regular nurse workspace.
+Decide whether the user sees auth screens, Home, or joined nurse access.
 
 Content:
 
 - Loading state while checking session.
 - Signed-out auth entry.
-- Signed-in workspace routing based on role.
+- Signed-in users land on Home.
+- Future Home entry: `Join active session`.
 - Setup error if backend configuration is missing.
 
 Rules:
 
 - Keep the loading state short and plain.
-- Do not show floor board data before the session and role are known.
+- Do not show floor board data before the session and account are known.
 
 ### Auth Form
 
@@ -92,7 +93,7 @@ Content:
 - Email field.
 - Password field.
 - Display name field on signup.
-- Role selection on signup only if the implementation keeps it beginner-friendly.
+- No role selection on signup.
 - Primary action.
 - Link between login and signup.
 - Inline error area.
@@ -131,7 +132,7 @@ Give the signed-in charge nurse confidence about whose workspace they are editin
 Content:
 
 - Display name or email.
-- Role chip: `Charge nurse`.
+- Account chip.
 - Sign out action.
 - Server save status when relevant.
 
@@ -139,16 +140,16 @@ Rules:
 
 - Do not add hospital, organization, or admin switchers.
 
-### Regular Nurse Access Empty State
+### Joined Nurse Access Empty State
 
 Purpose:
 
-Explain why a regular nurse account may not show a shift yet.
+Explain why a signed-in account may not show joined shift access yet.
 
 Content:
 
 - `No shift access yet`.
-- Short explanation that shift access will be connected by the charge nurse in a later flow.
+- Short explanation that shift access will be connected through a future join-code flow.
 - Sign out action.
 
 Rules:
@@ -168,8 +169,8 @@ Phase 5 can keep the existing Expo Router stack and add an auth/session gate:
 6. Existing Start Shift and Carry-Over Review
 7. Existing Nurses, Patients, Acuity, Assignment Review
 8. Existing Floor Board, Breaks, and Flags
-9. Regular Nurse Access Empty State
-10. Regular Nurse Assignment View when a linked server access record exists
+9. Joined Nurse Access Empty State
+10. Joined Nurse Assignment View when a linked server access record exists
 
 The existing local simulated nurse screens can remain available for charge nurse testing until the real Phase 6 invite flow replaces that simulation.
 
@@ -207,14 +208,14 @@ Layout:
 - Display name.
 - Email.
 - Password.
-- Optional role selector if the implementation needs manual role testing.
+- No role selector.
 - Primary button: `Create account`.
 - Secondary link: `I already have an account`.
 
 Rules:
 
 - Default new product workflow should favor charge nurse signup.
-- Regular nurse signup is allowed only to test role boundaries before Phase 6 invites.
+- Joining a shift is a separate future flow from signup.
 
 ### Charge Nurse Account Workspace
 
@@ -254,11 +255,11 @@ Rules:
 - Do not redesign the product around backend state.
 - Do not add realtime update banners.
 
-### Regular Nurse Workspace
+### Joined Nurse Workspace
 
 Purpose:
 
-Keep regular nurse accounts safely scoped.
+Keep joined nurse access safely scoped.
 
 Layout:
 
@@ -268,7 +269,7 @@ Layout:
 
 Rules:
 
-- Show only the logged-in nurse's assignment.
+- Show only the joined nurse assignment linked to the signed-in account.
 - Do not expose the full charge nurse board.
 - Do not add invite link handling or realtime updates in Phase 5.
 
@@ -281,7 +282,7 @@ Rules:
 - Start a shift, run assignment, and confirm the active shift restores after app reload.
 - Submit local nurse requests through the existing simulated flow and confirm request records persist with the active shift.
 - Generate breaks and confirm break schedule state persists with the active shift.
-- Log in as a regular nurse test account and confirm the full charge nurse board is not visible.
+- Link a signed-in test account to one shift nurse and confirm the full charge nurse board is not visible from joined nurse access.
 - Confirm a new account with no data shows an empty workspace, not a crash.
 - Confirm the UI does not mention realtime, invite links, deep links, push notifications, offline queueing, drag-and-drop, tablet layout, or AI.
 
@@ -299,4 +300,3 @@ Do not design Phase 5 UI for:
 - Tablet-specific layout.
 - AI suggestions.
 - Hospital or organization admin management.
-

@@ -14,10 +14,6 @@ function isAuthRoute(pathname: string) {
   return pathname === "/login" || pathname === "/signup";
 }
 
-function getSignedInPath(role: "charge_nurse" | "regular_nurse") {
-  return role === "regular_nurse" ? "/regular-nurse-workspace" : "/";
-}
-
 function getNextPath(
   authState: AuthSessionState,
   pathname: string,
@@ -30,24 +26,8 @@ function getNextPath(
     return undefined;
   }
 
-  const signedInPath = getSignedInPath(authState.profile.role);
-
   if (isAuthRoute(pathname)) {
-    return signedInPath;
-  }
-
-  if (
-    authState.profile.role === "regular_nurse" &&
-    pathname !== signedInPath
-  ) {
-    return signedInPath;
-  }
-
-  if (
-    authState.profile.role === "charge_nurse" &&
-    pathname === "/regular-nurse-workspace"
-  ) {
-    return signedInPath;
+    return "/";
   }
 
   return undefined;

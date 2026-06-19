@@ -13,7 +13,7 @@ Each screen should be simple enough to build and test independently. Existing Ph
 | Signup | US2, US5 |
 | Charge Nurse Account Workspace | US3, US4, US6 |
 | Existing Workflow Screens | US3, US4, US6 |
-| Regular Nurse Workspace | US5 |
+| Joined Nurse Workspace | US5 |
 | Access Denied / Recovery | US2, US5, US6 |
 
 ## 1. Session Loading
@@ -41,7 +41,8 @@ Check whether a backend auth session already exists before choosing the starting
 
 - Signed out goes to Login.
 - Signed in charge nurse goes to Charge Nurse Account Workspace.
-- Signed in regular nurse goes to Regular Nurse Workspace.
+- Signed-in users go to Home.
+- A future `Join active session` entry can open Joined Nurse Workspace after access is linked.
 
 ### Validation and Error States
 
@@ -80,7 +81,7 @@ Let an existing account enter the server-backed app.
 ### Navigation Targets
 
 - Successful charge nurse login opens Charge Nurse Account Workspace.
-- Successful regular nurse login opens Regular Nurse Workspace.
+- Successful login opens Home.
 - Signup link opens Signup.
 
 ### Validation and Error States
@@ -102,7 +103,7 @@ Create a server-backed account.
 - Display name field.
 - Email field.
 - Password field.
-- Optional role selector if manual role testing needs it.
+- No role selector in Phase 5 signup.
 - Primary action: `Create account`.
 - Secondary action: `I already have an account`.
 - Inline error area.
@@ -110,7 +111,7 @@ Create a server-backed account.
 ### Components
 
 - Auth form fields.
-- Optional role segmented control.
+- No role segmented control.
 - Primary button.
 - Secondary text button.
 
@@ -123,7 +124,7 @@ Create a server-backed account.
 ### Navigation Targets
 
 - Successful charge nurse signup opens Charge Nurse Account Workspace.
-- Successful regular nurse signup opens Regular Nurse Workspace.
+- Successful signup opens Home.
 - Login link opens Login.
 
 ### Validation and Error States
@@ -142,7 +143,7 @@ Show the signed-in charge nurse's server-backed workspace.
 
 ### Layout
 
-- Account header with display name and role.
+- Account header with display name.
 - Sign out action.
 - Server save/load status.
 - Active shift card if one exists.
@@ -184,7 +185,7 @@ Show the signed-in charge nurse's server-backed workspace.
 - Server load failed.
 - Server save failed.
 - Active shift references missing template.
-- User profile role is not charge nurse.
+- User profile cannot load the signed-in account safely.
 
 ## 5. Existing Workflow Screens
 
@@ -228,15 +229,15 @@ Keep Phase 1-4 workflows intact while saving to the server.
 - No push notification prompts.
 - No offline queue or conflict screens.
 
-## 6. Regular Nurse Workspace
+## 6. Joined Nurse Workspace
 
 ### Purpose
 
-Provide a safe regular nurse role boundary before Phase 6 nurse invite links.
+Provide a safe joined nurse access boundary before a future join-code or invite flow.
 
 ### Layout
 
-- Account header with display name and role.
+- Account header with display name.
 - If no access exists:
   - Empty state: `No shift access yet`.
   - Short supporting text.
@@ -295,8 +296,8 @@ Show safe recovery when the session, role, or authorization state does not match
 ### Validation and Error States
 
 - Signed-out user opens protected route.
-- Regular nurse opens charge nurse route.
-- Charge nurse opens regular nurse route without selected/access-linked nurse context.
+- A user opens joined nurse access without an access-linked nurse context.
+- A user tries to access another nurse's joined assignment data.
 - Backend authorization denies a read or write.
 
 ## Build Order Recommendation
@@ -310,7 +311,6 @@ Show safe recovery when the session, role, or authorization state does not match
 7. Add server floor template persistence.
 8. Add server active shift persistence.
 9. Add previous-shift snapshot persistence.
-10. Add role-gated regular nurse workspace.
+10. Add joined nurse workspace boundary.
 11. Add authorization checks and manual role testing.
 12. Run a full Phase 5 manual test pass.
-

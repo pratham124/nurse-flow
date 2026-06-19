@@ -11,10 +11,11 @@ Phase 5 builds on the Phase 1 model in `docs/phase-1/data-model.md`, the Phase 2
 - Treat backend-generated IDs as the IDs used by fetched app data.
 - Keep Phase 5 request/response based. Do not add realtime subscriptions yet.
 - Treat the backend response as the source of truth after server-backed changes.
-- Keep auth roles simple: `charge_nurse` and `regular_nurse`.
+- Keep account roles simple: every signed-in Phase 5 profile is `charge_nurse`.
+- Treat regular nurse access as a shift-specific participation state, not a permanent account role.
 - Store reusable floor templates separately from active shifts.
 - Store active shift data as the source of truth for shift-specific nurses, patients, acuity, assignments, requests, and breaks.
-- Use server authorization rules so regular nurses cannot read full charge nurse data.
+- Use server authorization rules so joined-shift nurse views cannot read full charge nurse data.
 - Keep old local IDs and old local persisted app state out of the normal Phase 5 app model.
 - Do not add invite tokens, deep link records, realtime channel metadata, push tokens, offline queue records, drag-and-drop override records, tablet layout fields, or AI fields.
 
@@ -54,7 +55,7 @@ If Supabase is chosen, Phase 5 should use Supabase Auth and normal Postgres read
 ```ts
 type Id = string;
 
-type UserRole = 'charge_nurse' | 'regular_nurse';
+type UserRole = 'charge_nurse';
 
 type AuthStatus = 'checking' | 'signed_out' | 'signed_in';
 
@@ -100,9 +101,10 @@ interface UserProfile {
 ### Rules
 
 - `authUserId` comes from the backend auth system.
-- `role` controls which app workspace the user can enter.
+- `role` remains charge-capable for every signed-in account in Phase 5.
+- Shift-specific nurse access is controlled by `ShiftNurseAccess`, not by changing the profile role.
 - Phase 5 does not need organizations, hospitals, teams, or multi-hospital admin roles.
-- A regular nurse profile alone does not grant shift access. It also needs a `ShiftNurseAccess` record.
+- A signed-in profile does not get nurse-facing shift access unless it has a linked `ShiftNurseAccess` record.
 
 ## Floor Template Record
 
@@ -176,7 +178,7 @@ interface ServerPreviousShiftSnapshot {
 
 ## Shift Nurse Access
 
-`ShiftNurseAccess` gives a regular nurse profile permission to see their own assignment for one active shift.
+`ShiftNurseAccess` gives a signed-in profile permission to see one nurse assignment for one active shift.
 
 ```ts
 interface ShiftNurseAccess {
@@ -195,9 +197,10 @@ interface ShiftNurseAccess {
 ### Rules
 
 - `nurseId` points to a nurse inside `ActiveShiftRecord.shiftSnapshot.nurses`.
-- `nurseProfileId` is optional because the future invite/linking flow belongs to Phase 6.
-- In Phase 5, this record exists to prove role authorization and prepare for nurse joins.
-- A regular nurse can see only role-scoped assignment data for access records linked to their profile.
+- `nurseProfileId` is optional because the future join-code flow belongs to a later explicit task.
+- In Phase 5, this record exists to prove authorization and prepare for nurse joins.
+- A signed-in user can see only nurse-scoped assignment data for access records linked to their profile.
+- A profile should have at most one active shift participation at a time. If it is linked as a nurse for an active shift, it should leave before starting a charge shift or joining another shift.
 - The charge nurse can still use the existing local/simulated nurse flow while real linking is incomplete.
 
 ## Server Workspace View
@@ -219,12 +222,12 @@ interface ServerWorkspace {
 - Empty arrays are valid for a new account.
 - Screens should derive board, nurse assignment, request, and break display from `activeShift.shiftSnapshot`, not duplicate those models.
 
-## Regular Nurse Assignment View
+## Joined Nurse Assignment View
 
-Regular nurse screens should receive only the nurse-scoped view they are allowed to see.
+Joined nurse screens should receive only the nurse-scoped view they are allowed to see.
 
 ```ts
-interface ServerNurseAssignmentView {
+interface JoinedNurseAssignmentView {
   access: ShiftNurseAccess;
   shiftId: Id;
   floorName: string;
@@ -238,8 +241,8 @@ interface ServerNurseAssignmentView {
 ### Rules
 
 - This view is derived from the active shift snapshot and the nurse's access record.
-- It must not expose the full charge nurse board to regular nurses.
-- Phase 5 can load this view manually after login. Phase 6 can make it update in realtime.
+- It must not expose the full charge nurse board to joined nurses.
+- Phase 5 can load this view from a manually created access record. A later join-code task can create access records from `Join active session`.
 
 ## Local Storage Removal
 
@@ -257,9 +260,9 @@ The normal Phase 5 app model should not carry both local and server IDs, and it 
 ## Authorization Summary
 
 - Charge nurses can read and write their own profiles, templates, active shifts, snapshots, and nurse access records.
-- Regular nurses can read their own profile.
-- Regular nurses can read only nurse-scoped assignment data for linked access records.
-- Regular nurses cannot read full `ActiveShiftRecord.shiftSnapshot` records.
+- Signed-in users can read their own profile.
+- Joined-shift users can read only nurse-scoped assignment data for linked access records.
+- Joined-shift users cannot read full `ActiveShiftRecord.shiftSnapshot` records.
 - Unauthenticated users cannot read or write server workspace data.
 
 ## Supports Phase 5 Stories
@@ -272,7 +275,7 @@ This model supports:
 - Server floor templates.
 - Server active shifts.
 - Server carry-over snapshots.
-- Real charge nurse and regular nurse profile roles.
+- Real charge-capable profiles and nurse-scoped shift access.
 - Basic authorization boundaries.
 - Compatibility with Phase 1-4 local workflow models.
 

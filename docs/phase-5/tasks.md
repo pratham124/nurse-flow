@@ -22,7 +22,7 @@ Status legend:
 7. Add server floor template persistence.
 8. Add server active shift persistence.
 9. Add server previous-shift snapshot persistence.
-10. Add role-gated regular nurse access boundary.
+10. Add joined nurse access boundary.
 11. Add authorization checks.
 12. Run a full manual Phase 5 test pass.
 
@@ -110,7 +110,7 @@ Build:
 - Avoid plain AsyncStorage for native auth tokens unless a documented platform limitation forces a fallback.
 - Route signed-out users to auth screens.
 - Route charge nurse users to the charge nurse workspace.
-- Route regular nurse users to the regular nurse workspace.
+- Route signed-in users to Home; joined nurse access is opened from a shift-specific access path.
 - Show a setup error if backend configuration is missing.
 - Show a safe signed-out or setup-recovery state if secure session storage cannot be read.
 
@@ -118,7 +118,7 @@ Validation check:
 
 - Signed-out state opens Login.
 - Signed-in charge nurse state opens the charge nurse workspace.
-- Signed-in regular nurse state opens the regular nurse workspace.
+- Signed-in users open Home.
 - Missing setup shows a readable message instead of a crash.
 - Secure storage read failure does not crash the app.
 
@@ -222,12 +222,12 @@ Build:
 
 - Show the signed-in charge nurse's server floor templates.
 - Show an empty state for a new account.
-- Prevent regular nurse users from listing charge nurse templates.
+- Prevent joined nurse access from exposing another charge nurse's templates.
 
 Validation check:
 
 - Charge nurse sees only their templates.
-- Regular nurse does not see template management.
+- Joined nurse access does not expose another charge nurse's template management.
 - Empty account state is clear and usable.
 
 ## Server Active Shift Persistence
@@ -320,67 +320,67 @@ Validation check:
 
 ## Roles and Authorization
 
-### Task 4.1: Add Role-Gated Charge Nurse Workspace
+### Done Task 4.1: Add Charge Workspace Boundary
 
 Story coverage: US5
 
 Build:
 
-- Protect charge nurse workspace screens with a charge nurse role check.
-- Show access recovery if a regular nurse reaches a charge nurse route.
-- Keep checks simple and visible in the navigation/session boundary.
+- Kept signed-in users routed to Home because every Phase 5 profile is charge-capable.
+- Kept joined nurse assignment access separate from the full charge workspace.
+- Kept checks simple and visible in the navigation/session boundary.
 
 Validation check:
 
 - Charge nurse can open the workspace.
-- Regular nurse cannot open the charge nurse board or template management screens.
+- Joined nurse assignment access does not expose another charge nurse's full board or template management.
 
-### Task 4.2: Add Regular Nurse Workspace Empty State
+### Done Task 4.2: Add Joined Nurse Access Empty State
 
 Story coverage: US5
 
 Build:
 
-- Add a regular nurse workspace for signed-in regular nurse accounts.
+- Added a joined nurse access view for signed-in accounts.
 - Show `No shift access yet` when no access record is linked.
-- Keep the message clear that invite/join behavior comes later.
+- Kept the message clear that join-code behavior comes later.
 
 Validation check:
 
-- Regular nurse login opens the regular nurse workspace.
+- Signed-in users open Home; joined nurse access can be opened when a linked access record exists.
 - With no linked access, no charge nurse data is visible.
-- No invite link or deep link UI appears.
+- No join-code, invite link, or deep link UI appears.
 
-### Task 4.3: Add Shift Nurse Access Records
+### Done Task 4.3: Add Shift Nurse Access Records
 
 Story coverage: US5
 
 Build:
 
-- Add a minimal server access record that links a regular nurse profile to one nurse inside one shift snapshot.
-- Keep this as an authorization preparation step, not an invite flow.
-- Allow manual test setup if needed.
+- Added a minimal server access record plan that links a signed-in profile to one nurse inside one shift snapshot.
+- Kept this as an authorization preparation step, not a join-code flow.
+- Allowed manual test setup in the Supabase setup notes.
 
 Validation check:
 
-- A linked regular nurse can load only their own assignment view.
-- A regular nurse cannot load another nurse's assignment by changing a backend `nurseId`.
+- A linked user can load only their own joined nurse assignment view.
+- A linked user cannot load another nurse's assignment by changing a backend `nurseId`.
 - A removed or stale access record shows a safe recovery state.
 
-### Task 4.4: Add Server Authorization Checks
+### Done Task 4.4: Add Server Authorization Checks
 
 Story coverage: US3, US4, US5
 
 Build:
 
-- Enforce ownership checks for charge nurse templates and shifts.
-- Enforce nurse-scoped reads for regular nurse assignment views.
+- Enforced ownership checks for charge nurse templates and shifts.
+- Enforced nurse-scoped reads for joined nurse assignment views.
 - Treat server authorization failures as safe UI states.
 
 Validation check:
 
 - Charge Nurse A cannot see Charge Nurse B's templates or shifts.
-- Regular nurse cannot read a full active shift snapshot.
+- Joined nurse access cannot read a full active shift snapshot.
 - Signed-out user cannot read or write server data.
 
 ## Remove Local Persistence
@@ -451,7 +451,7 @@ Validation check:
 - Create a template.
 - Restart the app.
 - Confirm the template loads from the server.
-- Confirm regular nurse role cannot manage templates.
+- Confirm joined nurse access does not expose another user's template management.
 
 ### Task 6.3: Server Active Shift Manual Test
 
@@ -473,14 +473,14 @@ Validation check:
 Build:
 
 - No new feature work.
-- Manually test charge nurse and regular nurse boundaries.
+- Manually test charge workspace and joined nurse boundaries.
 
 Validation check:
 
 - Charge nurse sees full workspace.
-- Regular nurse does not see the full board.
-- Linked regular nurse sees only their own assignment view.
-- Unlinked regular nurse sees `No shift access yet`.
+- Joined nurse access does not see the full board.
+- Linked user sees only their own joined nurse assignment view.
+- Unlinked user sees `No shift access yet`.
 
 ### Task 6.5: Previous Phase Compatibility Test
 
@@ -518,7 +518,7 @@ Build:
 
 Validation check:
 
-- A beginner can explain how login leads to a profile, how templates are saved, how active shifts are saved, and why regular nurses cannot see the charge nurse board.
+- A beginner can explain how login leads to a profile, how templates are saved, how active shifts are saved, and why joined nurse access cannot see the charge nurse board.
 
 ## Later, Not Phase 5
 
