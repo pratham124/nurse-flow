@@ -97,7 +97,7 @@ Rules:
 
 ## Local Persistence Paths That Server Persistence Will Replace
 
-Phase 5 should replace these local persistence responsibilities gradually:
+Phase 5 should replace these local persistence responsibilities with server-backed state:
 
 - `saveFloorTemplates` in `LocalStateContext` becomes server floor template create/update/list behavior for signed-in charge nurses.
 - `saveActiveShift` in `LocalStateContext` becomes server active shift persistence after meaningful shift changes.
@@ -105,23 +105,26 @@ Phase 5 should replace these local persistence responsibilities gradually:
 - `createShiftFromTemplate` in `src/helpers/shiftHelpers.ts` should eventually start from a server template record and create a server active shift record.
 - `createPreviousShiftSnapshot` in `src/helpers/shiftHelpers.ts` remains useful for shaping carry-over data, but the save destination changes from local storage to the server.
 
-The local storage repository should not be deleted early. It may still be needed for detecting old Phase 1-4 data and for manual import.
+The local storage repository and local storage-backed state context should be removed from Phase 5 runtime flows once the matching server-backed paths exist. The old local data was only for testing before the backend existed, so Phase 5 does not need to preserve or import it.
 
-## Existing Local Data And Import
+## Local Storage Removal
 
-A temporary legacy import helper is likely needed because users may already have saved local data under `nurseflow.localAppState.v1`.
+Old local testing data under `nurseflow.localAppState.v1` can be discarded when server persistence takes over.
 
-Likely future helper:
+Likely files to remove, shrink, or disconnect from runtime flows:
 
-- `src/services/legacyLocalImport.ts`
+- `src/store/LocalStateContext.tsx`
+- `src/services/storageRepository.ts`
+- `src/services/localStorageAdapters.ts`
+- Any runtime usage of the `nurseflow.localAppState.v1` key
 
-Import rules:
+Removal rules:
 
-- Detect existing local templates, active shift, and previous-shift snapshots after login.
-- Ask the charge nurse before importing.
-- Convert old local IDs into normal backend `id` values during import.
-- Keep old-to-new ID maps inside the import helper only.
-- Do not silently delete local data after import.
+- Do not import old local testing data.
+- Do not keep two sources of truth for templates, active shifts, snapshots, nurses, patients, requests, or breaks.
+- Keep temporary form state local only until submit.
+- Fetch server data after successful mutations and render from fetched server state.
+- Sign out should clear in-memory server workspace state; it should not depend on local app-state storage.
 
 ## Current Workflow Touchpoints
 
@@ -137,7 +140,7 @@ Current screens that will need careful server-backed changes later:
 - `src/screens/LocalRequestDetailScreen.tsx`: resolves local swap requests.
 - `src/screens/SimulatedNurseIssueScreen.tsx` and `src/screens/SimulatedNurseSwapScreen.tsx`: append local nurse requests to the active shift.
 
-These screens should keep their existing local behavior until each matching Phase 5 task replaces one persistence path.
+These screens should keep their existing behavior until each matching Phase 5 task replaces one persistence path, then the old local storage path should be removed instead of kept as a fallback.
 
 ## Scope Guardrail
 

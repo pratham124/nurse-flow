@@ -36,7 +36,7 @@ Build:
 
 - Added Phase 5 planning docs for user stories, data model, mobile design, screens, and implementation tasks.
 - Confirmed Phase 5 is backend, auth, and server persistence based on `docs/phases.md`.
-- Preserved Phase 1 assignment, Phase 2 local persistence and carry-over, Phase 3 local nurse simulation and requests, and Phase 4 local break scheduling in the plan.
+- Preserved Phase 1 assignment behavior, Phase 2 carry-over behavior through server snapshots, Phase 3 local nurse simulation and requests, and Phase 4 local break scheduling in the plan.
 - Kept realtime collaboration, nurse invite links, deep links, push notifications, offline sync queues, drag-and-drop, board sharing, tablet layout, and AI out of Phase 5.
 
 Validation check:
@@ -53,7 +53,7 @@ Build:
 - Chose Supabase Auth for email/password auth and Supabase Postgres for server persistence.
 - Documented the required client-safe environment variables.
 - Documented why Supabase Realtime is not enabled in Phase 5.
-- Documented the ID rule: normal backend records use one `id` field, and old local IDs are import-only metadata.
+- Documented the ID rule: normal backend records use one `id` field.
 - Documented local setup and reset expectations for beginner-friendly testing.
 
 Validation check:
@@ -72,8 +72,8 @@ Build:
 - Reviewed current routes, screens, state, storage, and helper files before writing Phase 5 feature code.
 - Identified where auth/session state should live.
 - Identified where server service or repository functions should live.
-- Identified which existing local persistence paths will be replaced by server persistence.
-- Identified that a temporary legacy import helper is likely needed for old local data.
+- Identified which existing local persistence paths and local state context responsibilities will be removed or replaced by server persistence.
+- Confirmed old local testing data does not need to be imported.
 
 Validation check:
 
@@ -383,25 +383,27 @@ Validation check:
 - Regular nurse cannot read a full active shift snapshot.
 - Signed-out user cannot read or write server data.
 
-## Local-to-Server Compatibility
+## Remove Local Persistence
 
-### Task 5.1: Add Manual Import Path for Existing Local Data
+### Task 5.1: Remove Local Storage and Local State Context
 
 Story coverage: US6
 
 Build:
 
-- If local Phase 1-4 data exists after login, offer a clear manual import path.
-- Import floor templates, active shift, and previous-shift snapshots only after the charge nurse confirms.
-- Convert old local IDs into normal backend `id` fields during import.
-- Keep any old-to-new ID mapping inside the import helper only.
-- Do not silently delete local data.
+- Remove the old local storage repository and saved local app-state key from the Phase 5 runtime path.
+- Remove or replace the local storage-backed state context so server workspace data is the source of truth.
+- Delete migration/import planning for old Phase 1-4 testing data.
+- Route templates, active shifts, previous-shift snapshots, nurses, patients, assignment results, requests, and breaks through server-backed reads and writes.
+- Keep temporary screen/form state only for unsaved input before submit.
+- Make sign out clear in-memory server workspace state without relying on local persisted app data.
 
 Validation check:
 
-- Existing local data is detected.
-- Declining import leaves local data untouched.
-- Confirming import creates server records that can be loaded after app restart.
+- Search the codebase and confirm old local app-state storage helpers are no longer used by Phase 5 flows.
+- Restart the app and confirm the workspace restores from the server session and server data, not local app-state storage.
+- Create/edit templates, start/restore shifts, add nurses/patients, run assignment, submit requests, and generate breaks through server-backed state.
+- Confirm deleting old local test data does not affect server-backed account data.
 
 ### Task 5.2: Review Previous Phase Workflows
 

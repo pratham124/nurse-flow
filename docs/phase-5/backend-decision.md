@@ -109,7 +109,7 @@ Examples:
 - `ServerPreviousShiftSnapshot.id`
 - `ShiftNurseAccess.id`
 
-Old local IDs from Phase 1-4 should be treated as import-only metadata. If a later task imports existing local data, the old-to-new ID mapping should live only inside that import helper. Normal screen state and fetched server records should not carry both `localId` and `serverId`.
+Old local IDs from Phase 1-4 should not be carried into the normal Phase 5 model. The old local storage data was only for testing before server persistence existed, so Phase 5 should remove the local storage-backed app state path instead of importing it. Normal screen state and fetched server records should use one backend-owned `id` field.
 
 ## Beginner-Friendly Local Setup
 
@@ -125,7 +125,7 @@ Reset expectations:
 
 - Never reset production data while testing.
 - Keep test account emails obvious, such as `charge-test@example.com`.
-- Do not silently delete existing local Phase 1-4 data during backend setup.
+- Existing local Phase 1-4 test data does not need to be preserved after the matching server-backed flows are in place.
 
 ## References Checked
 

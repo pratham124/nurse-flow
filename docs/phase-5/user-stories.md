@@ -4,7 +4,7 @@ These user stories cover Phase 5 only: backend, auth, and server-side persistenc
 
 Phase source note: `docs/phases.md` defines Phase 5 as Backend, Auth, and Server Persistence. Realtime collaboration, nurse invite links, and deep linking belong to Phase 6 in that file, so they are intentionally excluded here.
 
-Phase 5 preserves the Phase 1 charge nurse assignment workflow, Phase 2 local persistence and carry-over behavior, Phase 3 simulated nurse view and local request behavior, and Phase 4 local break scheduling. It adds real accounts and server storage without making the app feel realtime yet.
+Phase 5 preserves the Phase 1 charge nurse assignment workflow, Phase 2 carry-over behavior through server snapshots, Phase 3 simulated nurse view and local request behavior, and Phase 4 local break scheduling. It adds real accounts and server storage without making the app feel realtime yet.
 
 ## Story 1: Choose and Document the Backend Approach
 
@@ -103,22 +103,23 @@ As a product owner, I want real charge nurse and regular nurse roles in the acco
 - Role checks should happen at both the app UI boundary and the server authorization boundary.
 - Do not add nurse invite links, deep link joins, realtime presence, or push notifications in Phase 5.
 
-## Story 6: Preserve Local-to-Server Compatibility
+## Story 6: Replace Local Storage With Server Truth
 
-As a learner, I want Phase 5 to adapt the existing local model carefully so earlier work remains understandable.
+As a learner, I want Phase 5 to remove the old local storage state path so the app has one clear source of truth after connecting to the server.
 
 ### Acceptance Criteria
 
 - Phase 1 floor setup, assignment, board, census, imbalance flags, and unassigned-bed flags still work.
-- Phase 2 reusable templates, active shift restore, and carry-over suggestions still work through server storage.
+- Phase 2 reusable templates, active shift restore, and carry-over suggestions are backed by server storage instead of local app-state storage.
 - Phase 3 nurse-facing assignment derivation and request records still use the active shift as their source of truth.
 - Phase 4 break schedules still belong to the active shift.
 - Fetched server data uses normal backend `id` fields for templates, shifts, nurses, rooms, beds, and relationships.
-- Old local IDs are only used inside an explicit legacy import path, not in the normal Phase 5 app model.
+- Old local testing data does not need to be imported.
+- The old local storage repository and local storage-backed state context are removed or bypassed for Phase 5 runtime flows.
 
 ### Validation and Edge Cases
 
-- Existing locally saved data should not be silently deleted after login.
+- Existing locally saved testing data may be discarded because it was only used before server persistence.
 - A new account with no server data should show an empty workspace state.
 - A server account with templates but no active shift should still let the charge nurse start a shift.
 - Phase 5 should not force a large rewrite of assignment, break scheduling, or nurse request logic.

@@ -15,7 +15,7 @@ Phase 5 builds on the Phase 1 model in `docs/phase-1/data-model.md`, the Phase 2
 - Store reusable floor templates separately from active shifts.
 - Store active shift data as the source of truth for shift-specific nurses, patients, acuity, assignments, requests, and breaks.
 - Use server authorization rules so regular nurses cannot read full charge nurse data.
-- Keep old local IDs out of the normal Phase 5 app model. Use them only inside an explicit legacy import helper if existing local data must be imported.
+- Keep old local IDs and old local persisted app state out of the normal Phase 5 app model.
 - Do not add invite tokens, deep link records, realtime channel metadata, push tokens, offline queue records, drag-and-drop override records, tablet layout fields, or AI fields.
 
 ## Server Mutation Pattern
@@ -241,23 +241,17 @@ interface ServerNurseAssignmentView {
 - It must not expose the full charge nurse board to regular nurses.
 - Phase 5 can load this view manually after login. Phase 6 can make it update in realtime.
 
-## Legacy Local Import
+## Local Storage Removal
 
-The normal Phase 5 app model should not carry both local and server IDs. If existing Phase 1-4 local data must be imported, keep old local IDs inside a temporary import-only helper.
-
-```ts
-interface LegacyLocalImportMap {
-  legacyLocalId: string;
-  newId: Id;
-  entityType: 'floor_template' | 'active_shift' | 'previous_shift_snapshot' | 'nurse' | 'room' | 'bed';
-}
-```
+The normal Phase 5 app model should not carry both local and server IDs, and it should not keep the old local storage-backed app state as a second source of truth.
 
 ### Rules
 
-- Use legacy import maps only during explicit import or migration.
-- After import, fetched app data should use normal backend `id` values.
+- Old Phase 1-4 locally saved testing data can be discarded when Phase 5 server persistence takes over.
+- Fetched app data should use normal backend `id` values.
 - Do not keep `serverId` and `localId` pairs in normal screen state, domain records, or task plans.
+- Do not keep the old local storage repository or local storage-backed state context in the Phase 5 runtime path.
+- Temporary screen state is still allowed for unsaved form input.
 - Keep assignment and break scheduling helpers focused on fetched shift data.
 
 ## Authorization Summary

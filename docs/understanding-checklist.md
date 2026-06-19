@@ -207,13 +207,13 @@ For each task, add a dated section with:
 - Problem understanding:
   - [ ] Phase 5 should not add backend code before identifying the current app boundaries.
   - [ ] Real auth/session state must stay separate from local app state and simulated nurse role state.
-  - [ ] Existing local persistence should be replaced gradually instead of rewritten all at once.
+  - [ ] Existing local persistence should be removed from Phase 5 runtime flows once server-backed replacements exist.
 - Solution understanding:
   - [ ] `docs/phase-5/app-touchpoints.md` documents current routes, state, storage, helpers, and future Phase 5 touchpoints.
   - [ ] Auth/session state should likely live in a new provider near `src/app/_layout.tsx`, not inside individual screens.
   - [ ] Server repository helpers should likely live in `src/services` so screens do not call Supabase directly.
   - [ ] Current local persistence paths are `saveFloorTemplates`, active-shift saving, and `savePreviousShiftSnapshot`.
-  - [ ] A temporary legacy import helper is likely needed for `nurseflow.localAppState.v1` data.
+  - [ ] The old `nurseflow.localAppState.v1` testing data does not need to be imported.
 - Broader context:
   - [ ] This protects Phase 1-4 behavior while preparing for server-backed accounts.
   - [ ] It makes the likely implementation files explainable before auth code starts.
@@ -237,7 +237,7 @@ For each task, add a dated section with:
   - [ ] The decision uses only client-safe Expo environment variables: `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
   - [ ] The task list now carries secure session storage into Task 1.2 and Task 1.5 so the auth implementation cannot skip it.
   - [ ] Supabase Realtime, Broadcast, Presence, nurse invite links, deep links, push notifications, and offline queues are deferred.
-  - [ ] Normal backend records use one `id` field, while old local IDs are import-only metadata.
+  - [ ] Normal backend records use one `id` field, and old local storage data should not remain as a second source of truth.
   - [ ] `docs/phase-5/tasks.md` marks only Task 0.2 done.
 - Broader context:
   - [ ] This sets the provider boundary for upcoming auth/session and server persistence tasks.
@@ -259,7 +259,7 @@ For each task, add a dated section with:
   - [ ] Realtime collaboration, nurse invite links, deep links, push notifications, offline sync, drag-and-drop, tablet layout, and AI belong to later phases.
 - Solution understanding:
   - [ ] `docs/phase-5/user-stories.md` defines account, server persistence, role, authorization, and compatibility stories.
-  - [ ] `docs/phase-5/data-model.md` documents backend-owned `id` fields for profiles, templates, active shifts, snapshots, and nurse access records, with old local IDs limited to optional import helpers.
+  - [ ] `docs/phase-5/data-model.md` documents backend-owned `id` fields for profiles, templates, active shifts, snapshots, and nurse access records, and says old local storage state should be removed from Phase 5 runtime flows.
   - [ ] `docs/phase-5/mobile-design.md` documents account-backed UI direction without realtime or invite-link language.
   - [ ] `docs/phase-5/screens.md` maps the auth, workspace, existing workflow, regular nurse, and recovery screens.
   - [ ] `docs/phase-5/tasks.md` orders small future implementation tasks with manual validation checks and marks only planning Task 0.1 done.
