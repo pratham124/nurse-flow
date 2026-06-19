@@ -1,6 +1,6 @@
 # Phase 5 Supabase Auth Setup
 
-Use this setup for Tasks 1.3, 1.4, and 1.5 so signup, login, profile loading, session restore, and sign out can be tested manually. It also includes the small server workspace tables needed for Tasks 2.1, 2.2, and 2.3.
+Use this setup for Tasks 1.3, 1.4, and 1.5 so signup, login, profile loading, session restore, and sign out can be tested manually. It also includes the small server workspace tables needed for Tasks 2.1, 2.2, 2.3, 3.1, 3.2, 3.2a, and 3.3.
 
 This setup does not add realtime, invite links, deep links, push notifications, offline sync, drag-and-drop override, board sharing, tablet layout, or AI.
 
@@ -59,7 +59,7 @@ with check (auth.uid() = auth_user_id);
 
 ## Server Workspace Tables
 
-Run this SQL for Tasks 2.1, 2.2, and 2.3 so the signed-in charge nurse can load an empty server workspace and save reusable floor templates.
+Run this SQL for Tasks 2.1, 2.2, 2.3, 3.1, 3.2, 3.2a, and 3.3 so the signed-in charge nurse can load an empty server workspace, save reusable floor templates, start an active shift, save active-shift changes, and restore the active shift on app open.
 
 These tables still use normal request/response reads and writes only. They do not enable realtime, invite links, deep links, push notifications, offline queues, drag-and-drop overrides, board sharing, tablet layout, or AI.
 
@@ -153,6 +153,43 @@ on public.active_shifts
 for select
 to authenticated
 using (
+  exists (
+    select 1
+    from public.profiles
+    where profiles.id = active_shifts.charge_profile_id
+      and profiles.auth_user_id = auth.uid()
+      and profiles.role = 'charge_nurse'
+  )
+);
+
+create policy "Charge nurses can create their own active shifts"
+on public.active_shifts
+for insert
+to authenticated
+with check (
+  exists (
+    select 1
+    from public.profiles
+    where profiles.id = active_shifts.charge_profile_id
+      and profiles.auth_user_id = auth.uid()
+      and profiles.role = 'charge_nurse'
+  )
+);
+
+create policy "Charge nurses can update their own active shifts"
+on public.active_shifts
+for update
+to authenticated
+using (
+  exists (
+    select 1
+    from public.profiles
+    where profiles.id = active_shifts.charge_profile_id
+      and profiles.auth_user_id = auth.uid()
+      and profiles.role = 'charge_nurse'
+  )
+)
+with check (
   exists (
     select 1
     from public.profiles

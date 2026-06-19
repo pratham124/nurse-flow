@@ -9,6 +9,7 @@ import {
   WorkflowSection,
 } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
+import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { colors, fontWeight, radius, shadows, spacing, textSize } from "../theme/tokens";
 import type { LocalId, NurseRequest } from "../types/models";
 import {
@@ -170,7 +171,8 @@ function SwapFormContent({
 }
 
 export default function SimulatedNurseSwapScreen() {
-  const { localState, setLocalState, simulatedSessionState } = useLocalState();
+  const { localState, simulatedSessionState } = useLocalState();
+  const { saveActiveShift, saveStatus } = useServerWorkspace();
   const [reason, setReason] = useState("");
   const [reasonError, setReasonError] = useState("");
   const [formError, setFormError] = useState("");
@@ -197,7 +199,7 @@ export default function SimulatedNurseSwapScreen() {
     setFormError("");
   }
 
-  function handleSubmitSwap() {
+  async function handleSubmitSwap() {
     if (!readyView) {
       setFormError(recoveryResult?.message ?? "Choose a nurse before submitting.");
       return;
@@ -224,33 +226,41 @@ export default function SimulatedNurseSwapScreen() {
       return;
     }
 
-    setLocalState((currentState) => {
-      if (!currentState.activeShift) {
-        return currentState;
-      }
+    if (!localState.activeShift) {
+      setFormError("Start a shift before submitting a swap request.");
+      return;
+    }
 
-      const swapRequest: NurseRequest = {
-        id: createNurseRequestId(currentState.activeShift),
-        createdAt: new Date().toISOString(),
-        message: trimmedReason,
-        requestingNurseId: readyView.nurse.id,
-        requestingNurseName: readyView.nurse.name,
-        sourceBedId: selectedSourceBedId,
-        status: "pending",
-        type: "swap",
-      };
+    const swapRequest: NurseRequest = {
+      id: createNurseRequestId(localState.activeShift),
+      createdAt: new Date().toISOString(),
+      message: trimmedReason,
+      requestingNurseId: readyView.nurse.id,
+      requestingNurseName: readyView.nurse.name,
+      sourceBedId: selectedSourceBedId,
+      status: "pending",
+      type: "swap",
+    };
+    const nextShift = {
+      ...localState.activeShift,
+      nurseRequests: [
+        ...getShiftNurseRequests(localState.activeShift),
+        swapRequest,
+      ],
+    };
 
-      return {
-        ...currentState,
-        activeShift: {
-          ...currentState.activeShift,
-          nurseRequests: [
-            ...getShiftNurseRequests(currentState.activeShift),
-            swapRequest,
-          ],
-        },
-      };
-    });
+    try {
+      setFormError("");
+      await saveActiveShift(nextShift);
+    } catch (error) {
+      const saveMessage =
+        error instanceof Error
+          ? error.message
+          : "Swap request could not be saved. Try again.";
+
+      setFormError(saveMessage);
+      return;
+    }
 
     router.push("/simulated-nurse-assignment");
   }
@@ -259,11 +269,13 @@ export default function SimulatedNurseSwapScreen() {
     <WorkflowScreen
       activeStep="Board"
       actionErrorText={formError}
+      actionStatusText={saveStatus === "saved" ? "Saved to account." : ""}
       flow={assignmentFlow}
       headerActionLabel="Floors"
       onHeaderActionPress={() => router.push("/")}
       onPrimaryPress={handleSubmitSwap}
-      primaryLabel="Submit swap"
+      primaryDisabled={saveStatus === "saving"}
+      primaryLabel={saveStatus === "saving" ? "Saving..." : "Submit swap"}
       subtitle=""
       title={readyView ? `Swap for ${readyView.nurse.name}` : "Request swap"}
     >

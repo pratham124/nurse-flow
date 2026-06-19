@@ -11,6 +11,7 @@ import {
   WorkflowScreen,
 } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
+import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { shiftSetupFlow } from "../utils/workflowFlows";
 import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
 import type { LoadLimitRange } from "../types/models";
@@ -82,6 +83,10 @@ function LoadLimitRangeControl({
 
 export default function StartShiftScreen() {
   const { localState, setLocalState } = useLocalState();
+  const {
+    saveActiveShift,
+    saveStatus,
+  } = useServerWorkspace();
   const activeShift = localState.activeShift;
   const doctorSideOptions =
     activeShift?.doctorSides.map((doctorSide) => doctorSide.name) ?? [];
@@ -93,7 +98,9 @@ export default function StartShiftScreen() {
   const hasAdmittingSide = selectedAdmittingSideIndex >= 0;
   const [admittingSideError, setAdmittingSideError] = useState("");
   const [loadLimitError, setLoadLimitError] = useState("");
+  const [serverSaveError, setServerSaveError] = useState("");
   const canContinue = Boolean(activeShift);
+  const isSavingShift = saveStatus === "saving";
 
   function handleSelectAdmittingSide(index: number) {
     const selectedDoctorSide = activeShift?.doctorSides[index];
@@ -103,6 +110,7 @@ export default function StartShiftScreen() {
     }
 
     setAdmittingSideError("");
+    setServerSaveError("");
     setLocalState((currentState) => {
       if (!currentState.activeShift) {
         return currentState;
@@ -150,6 +158,7 @@ export default function StartShiftScreen() {
     }
 
     setLoadLimitError("");
+    setServerSaveError("");
 
     setLocalState((currentState) => {
       const currentShift = currentState.activeShift;
@@ -171,7 +180,7 @@ export default function StartShiftScreen() {
     });
   }
 
-  function handleContinue() {
+  async function handleContinue() {
     if (!activeShift) {
       router.push("/");
       return;
@@ -186,13 +195,28 @@ export default function StartShiftScreen() {
       return;
     }
 
+    try {
+      setServerSaveError("");
+      await saveActiveShift(activeShift);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Shift setup could not be saved. Try again.";
+
+      setServerSaveError(message);
+      return;
+    }
+
     router.push("/nurses");
   }
 
   return (
     <WorkflowScreen
       activeStep="Shift"
+      actionStatusText={saveStatus === "saved" ? "Saved to account." : ""}
       actionErrorText={
+        serverSaveError ||
         admittingSideError ||
         loadLimitError ||
         (canContinue ? "" : "Create a floor template before starting a shift.")
@@ -200,7 +224,16 @@ export default function StartShiftScreen() {
       headerActionLabel="Floors"
       onHeaderActionPress={() => router.push("/")}
       onPrimaryPress={handleContinue}
-      primaryLabel={canContinue ? "Continue" : "Back to floors"}
+      primaryDisabled={isSavingShift}
+      primaryLabel={
+        isSavingShift
+          ? "Saving..."
+          : serverSaveError
+            ? "Retry save"
+            : canContinue
+              ? "Continue"
+              : "Back to floors"
+      }
       flow={shiftSetupFlow}
       subtitle="Step 1 of 3"
       title={activeShift?.floorName ?? "Start shift"}

@@ -5,11 +5,15 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { WorkflowScreen, WorkflowSection } from "../components/workflow";
 import { createLocalId } from "../helpers/localId";
 import { useLocalState } from "../store/LocalStateContext";
+import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { colors, fontWeight, radius, spacing, textSize } from "../theme/tokens";
 import type {
   Acuity,
+  BedState,
+  Nurse,
   NurseCarryOverSuggestion,
   PatientCarryOverSuggestion,
+  Shift,
 } from "../types/models";
 import { carryOverReviewFlow } from "../utils/workflowFlows";
 
@@ -65,6 +69,42 @@ function toggleSet(set: Set<string>, id: string): Set<string> {
     next.add(id);
   }
   return next;
+}
+
+function getShiftWithCarryOver(
+  activeShift: Shift,
+  acceptedNurses: NurseCarryOverSuggestion[],
+  acceptedPatients: PatientCarryOverSuggestion[],
+) {
+  const defaultMaxLoad = activeShift.sideLoadLimits.admitting.max;
+  const newNurses: Nurse[] = acceptedNurses.map((suggestion) => ({
+    id: createLocalId("nurse"),
+    name: suggestion.name,
+    licenseType: suggestion.licenseType,
+    experienceLevel: suggestion.experienceLevel,
+    maxPatientLoad: defaultMaxLoad,
+  }));
+  const updatedBedStates: BedState[] = activeShift.bedStates.map((bedState) => {
+    const match = acceptedPatients.find(
+      (suggestion) => suggestion.previousBedId === bedState.bedId,
+    );
+
+    if (!match) {
+      return bedState;
+    }
+
+    return {
+      ...bedState,
+      patient: { ...match.patient },
+      acuity: match.acuity,
+    };
+  });
+
+  return {
+    ...activeShift,
+    nurses: [...activeShift.nurses, ...newNurses],
+    bedStates: updatedBedStates,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -145,6 +185,8 @@ function PatientSuggestionRow({ suggestion, isIncluded, onToggle }: PatientSugge
 
 export default function CarryOverReviewScreen() {
   const { localState, setLocalState } = useLocalState();
+  const { saveActiveShift, saveStatus } = useServerWorkspace();
+  const [serverSaveError, setServerSaveError] = useState("");
   const activeShift = localState.activeShift;
   const previousShiftSnapshot = activeShift
     ? localState.previousShiftSnapshots.find(
@@ -163,7 +205,7 @@ export default function CarryOverReviewScreen() {
   const [includedNurseIds, setIncludedNurseIds] = useState<Set<string>>(new Set());
   const [includedPatientIds, setIncludedPatientIds] = useState<Set<string>>(new Set());
 
-  function handleContinue() {
+  async function handleContinue() {
     if (!activeShift) {
       router.push("/");
       return;
@@ -171,46 +213,27 @@ export default function CarryOverReviewScreen() {
 
     const acceptedNurses = nurseSuggestions.filter((s) => includedNurseIds.has(s.id));
     const acceptedPatients = patientSuggestions.filter((s) => includedPatientIds.has(s.id));
+    const nextShift =
+      acceptedNurses.length > 0 || acceptedPatients.length > 0
+        ? getShiftWithCarryOver(activeShift, acceptedNurses, acceptedPatients)
+        : activeShift;
 
-    if (acceptedNurses.length > 0 || acceptedPatients.length > 0) {
-      setLocalState((currentState) => {
-        if (!currentState.activeShift) return currentState;
+    setLocalState((currentState) => ({
+      ...currentState,
+      activeShift: nextShift,
+    }));
 
-        const shift = currentState.activeShift;
+    try {
+      setServerSaveError("");
+      await saveActiveShift(nextShift);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Carry-over choices could not be saved. Try again.";
 
-        // Build new nurses from accepted suggestions.
-        const defaultMaxLoad = shift.sideLoadLimits.admitting.max;
-        const newNurses = acceptedNurses.map((suggestion) => ({
-          id: createLocalId("nurse"),
-          name: suggestion.name,
-          licenseType: suggestion.licenseType,
-          experienceLevel: suggestion.experienceLevel,
-          maxPatientLoad: defaultMaxLoad,
-        }));
-
-        // Pre-fill bed states for accepted patient suggestions.
-        const updatedBedStates = shift.bedStates.map((bedState) => {
-          const match = acceptedPatients.find(
-            (s) => s.previousBedId === bedState.bedId,
-          );
-          if (!match) return bedState;
-
-          return {
-            ...bedState,
-            patient: { ...match.patient },
-            acuity: match.acuity,
-          };
-        });
-
-        return {
-          ...currentState,
-          activeShift: {
-            ...shift,
-            nurses: [...shift.nurses, ...newNurses],
-            bedStates: updatedBedStates,
-          },
-        };
-      });
+      setServerSaveError(message);
+      return;
     }
 
     router.push("/start-shift");
@@ -220,13 +243,24 @@ export default function CarryOverReviewScreen() {
     <WorkflowScreen
       activeStep="Carry Over"
       actionErrorText={
-        canContinue ? "" : "Start a shift before reviewing carry-over."
+        serverSaveError ||
+        (canContinue ? "" : "Start a shift before reviewing carry-over.")
       }
+      actionStatusText={saveStatus === "saved" ? "Saved to account." : ""}
       flow={carryOverReviewFlow}
       headerActionLabel="Floors"
       onHeaderActionPress={() => router.push("/")}
       onPrimaryPress={handleContinue}
-      primaryLabel={canContinue ? "Continue setup" : "Back to floors"}
+      primaryDisabled={saveStatus === "saving"}
+      primaryLabel={
+        saveStatus === "saving"
+          ? "Saving..."
+          : serverSaveError
+            ? "Retry save"
+            : canContinue
+              ? "Continue setup"
+              : "Back to floors"
+      }
       title={activeShift?.floorName ?? "Carry-over review"}
     >
       <WorkflowSection title="Nurse suggestions">

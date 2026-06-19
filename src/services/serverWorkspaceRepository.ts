@@ -95,6 +95,14 @@ function requireShiftSnapshot(value: unknown) {
   return shift;
 }
 
+function getActiveShiftPayload(activeShift: Shift) {
+  return {
+    shift_snapshot: activeShift,
+    status: activeShift.status,
+    updated_at: new Date().toISOString(),
+  };
+}
+
 function isShiftStatus(status: string): status is ShiftStatus {
   return status === "setup" || status === "assigned";
 }
@@ -312,6 +320,78 @@ export async function saveServerFloorTemplate(
   }
 
   return mapTemplateRow(refreshedData);
+}
+
+export async function createServerActiveShift(
+  supabase: SupabaseClient,
+  profile: UserProfile,
+  activeShift: Shift,
+) {
+  assertChargeNurse(profile);
+
+  if (!uuidPattern.test(activeShift.floorTemplateId)) {
+    throw new Error("Save the floor template to this account before starting a shift.");
+  }
+
+  const { data, error } = await supabase
+    .from("active_shifts")
+    .insert({
+      charge_profile_id: profile.id,
+      floor_template_id: activeShift.floorTemplateId,
+      ...getActiveShiftPayload(activeShift),
+    })
+    .select(activeShiftColumns)
+    .single<ActiveShiftRow>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const serverShiftSnapshot = {
+    ...activeShift,
+    id: data.id,
+  };
+
+  const { data: refreshedData, error: refreshError } = await supabase
+    .from("active_shifts")
+    .update(getActiveShiftPayload(serverShiftSnapshot))
+    .eq("id", data.id)
+    .eq("charge_profile_id", profile.id)
+    .select(activeShiftColumns)
+    .single<ActiveShiftRow>();
+
+  if (refreshError) {
+    throw new Error(refreshError.message);
+  }
+
+  return mapActiveShiftRow(refreshedData);
+}
+
+export async function saveServerActiveShift(
+  supabase: SupabaseClient,
+  profile: UserProfile,
+  activeShift: Shift,
+) {
+  assertChargeNurse(profile);
+
+  if (!uuidPattern.test(activeShift.id)) {
+    throw new Error("Start this shift from a saved account template before saving changes.");
+  }
+
+  const { data, error } = await supabase
+    .from("active_shifts")
+    .update(getActiveShiftPayload(activeShift))
+    .eq("id", activeShift.id)
+    .eq("charge_profile_id", profile.id)
+    .is("ended_at", null)
+    .select(activeShiftColumns)
+    .single<ActiveShiftRow>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return mapActiveShiftRow(data);
 }
 
 export function getLocalStateFromServerWorkspace(workspace: ServerWorkspace) {

@@ -17,6 +17,7 @@ import {
 } from "../components/workflow";
 import { createLocalId } from "../helpers/localId";
 import { useLocalState } from "../store/LocalStateContext";
+import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { shiftSetupFlow } from "../utils/workflowFlows";
 import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
 import type { ExperienceLevel, LicenseType, Nurse, Shift } from "../types/models";
@@ -284,6 +285,7 @@ function getNurseKey(nurse: Nurse) {
 
 export default function NursesScreen() {
   const { localState, setLocalState } = useLocalState();
+  const { saveActiveShift, saveStatus } = useServerWorkspace();
   const activeShift = localState.activeShift;
   const nurses = activeShift?.nurses ?? [];
   const totalCapacity = nurses.reduce(
@@ -296,9 +298,12 @@ export default function NursesScreen() {
     useState<ExperienceLevel>("experienced");
   const [nurseNameError, setNurseNameError] = useState("");
   const [nurseListError, setNurseListError] = useState("");
+  const [serverSaveError, setServerSaveError] = useState("");
+  const isSavingShift = saveStatus === "saving";
 
   function handleNurseNameChange(name: string) {
     setNurseName(name);
+    setServerSaveError("");
 
     if (nurseNameError) {
       setNurseNameError("");
@@ -342,6 +347,7 @@ export default function NursesScreen() {
     setNurseName("");
     setNurseNameError("");
     setNurseListError("");
+    setServerSaveError("");
   }
 
   function handleRemoveNurse(nurseId: string) {
@@ -416,9 +422,10 @@ export default function NursesScreen() {
     });
 
     setNurseListError("");
+    setServerSaveError("");
   }
 
-  function handleContinue() {
+  async function handleContinue() {
     if (!activeShift) {
       return;
     }
@@ -447,6 +454,19 @@ export default function NursesScreen() {
       return;
     }
 
+    try {
+      setServerSaveError("");
+      await saveActiveShift(activeShift);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Nurses could not be saved. Try again.";
+
+      setServerSaveError(message);
+      return;
+    }
+
     router.push("/patients-and-acuity");
   }
 
@@ -464,9 +484,10 @@ export default function NursesScreen() {
   return (
     <WorkflowListScreen
       activeStep="Nurses"
+      actionStatusText={saveStatus === "saved" ? "Saved to account." : ""}
       actionErrorText={
         activeShift
-          ? nurseListError
+          ? serverSaveError || nurseListError
           : "Start a shift before adding nurses."
       }
       data={nurses}
@@ -489,7 +510,10 @@ export default function NursesScreen() {
       }
       onHeaderActionPress={() => router.push("/")}
       onPrimaryPress={handleContinue}
-      primaryLabel="Continue"
+      primaryDisabled={isSavingShift}
+      primaryLabel={
+        isSavingShift ? "Saving..." : serverSaveError ? "Retry save" : "Continue"
+      }
       renderItem={renderNurseItem}
       subtitle="Step 2 of 3"
       title={activeShift?.floorName ?? "Nurses"}

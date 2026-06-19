@@ -232,7 +232,7 @@ Validation check:
 
 ## Server Active Shift Persistence
 
-### Task 3.1: Start Shift From Server Template
+### Done Task 3.1: Start Shift From Server Template
 
 Story coverage: US4, US6
 
@@ -249,7 +249,7 @@ Validation check:
 - Confirm the shift opens through the existing setup flow.
 - Confirm the server active shift can be loaded again.
 
-### Task 3.2: Save Active Shift Changes
+### Done Task 3.2: Save Active Shift Changes
 
 Story coverage: US4, US6
 
@@ -268,7 +268,7 @@ Validation check:
 - Run assignment, reload, and confirm assignment result and flags restore.
 - Submit local requests and generate breaks, reload, and confirm they restore.
 
-### Task 3.2a: Add Server-Backed Nurse Save and Refresh
+### Done Task 3.2a: Add Server-Backed Nurse Save and Refresh
 
 Story coverage: US4, US6
 
@@ -286,7 +286,7 @@ Validation check:
 - Add multiple nurses, continue, and confirm the fetched list matches the backend.
 - Force or simulate a failed save and confirm the app does not navigate as if the nurses were saved.
 
-### Task 3.3: Restore Server Active Shift on App Open
+### Done Task 3.3: Restore Server Active Shift on App Open
 
 Story coverage: US2, US4, US6
 

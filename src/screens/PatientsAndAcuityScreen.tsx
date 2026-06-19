@@ -15,6 +15,7 @@ import {
   WorkflowSection,
 } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
+import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
 import { getShiftCensus, isOccupiedBedState } from "../utils/census";
 import type {
@@ -528,10 +529,12 @@ function EmptyCensusMessage({ selectedFilter }: { selectedFilter: CensusFilter }
 
 export default function PatientsAndAcuityScreen() {
   const { localState, setLocalState } = useLocalState();
+  const { saveActiveShift, saveStatus } = useServerWorkspace();
   const [ageTextByBedId, setAgeTextByBedId] = useState<Record<string, string>>(
     {},
   );
   const [selectedFilter, setSelectedFilter] = useState<CensusFilter>("all");
+  const [serverSaveError, setServerSaveError] = useState("");
   const activeShift = localState.activeShift;
   const roomGroups = getRoomGroups(activeShift);
   const filteredRoomGroups = getFilteredRoomGroups(roomGroups, selectedFilter);
@@ -553,6 +556,8 @@ export default function PatientsAndAcuityScreen() {
     field: PatientField,
     value: string,
   ) {
+    setServerSaveError("");
+
     if (field === "age") {
       setAgeTextByBedId((currentAgeTextByBedId) => ({
         ...currentAgeTextByBedId,
@@ -613,6 +618,8 @@ export default function PatientsAndAcuityScreen() {
   }
 
   function handleUpdateAcuity(bedId: string, acuity: Acuity) {
+    setServerSaveError("");
+
     setLocalState((currentState) => {
       const currentShift = currentState.activeShift;
 
@@ -633,6 +640,8 @@ export default function PatientsAndAcuityScreen() {
   }
 
   function handleClearPatient(bedId: string) {
+    setServerSaveError("");
+
     setAgeTextByBedId((currentAgeTextByBedId) => {
       const nextAgeTextByBedId = { ...currentAgeTextByBedId };
       delete nextAgeTextByBedId[bedId];
@@ -661,15 +670,30 @@ export default function PatientsAndAcuityScreen() {
     });
   }
 
-  function handleContinue() {
+  async function handleContinue() {
     if (!activeShift) {
       router.replace("/");
       return;
     }
 
-    if (!hasInvalidAge && !hasMissingAcuity) {
-      router.push("/assignment-review");
+    if (hasInvalidAge || hasMissingAcuity) {
+      return;
     }
+
+    try {
+      setServerSaveError("");
+      await saveActiveShift(activeShift);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Patients and acuity could not be saved. Try again.";
+
+      setServerSaveError(message);
+      return;
+    }
+
+    router.push("/assignment-review");
   }
 
   function renderRoomItem({ item }: { item: PatientRoomGroup }) {
@@ -687,13 +711,15 @@ export default function PatientsAndAcuityScreen() {
   return (
     <WorkflowListScreen
       activeStep="Patients"
+      actionStatusText={saveStatus === "saved" ? "Saved to account." : ""}
       actionErrorText={
         activeShift
-          ? hasInvalidAge
+          ? serverSaveError ||
+            (hasInvalidAge
             ? wholeNumberAgeMessage
             : hasMissingAcuity
               ? acuityRequiredMessage
-              : ""
+              : "")
           : "Start a shift before adding patients."
       }
       data={filteredRoomGroups}
@@ -713,7 +739,14 @@ export default function PatientsAndAcuityScreen() {
       }
       onHeaderActionPress={() => router.push("/")}
       onPrimaryPress={handleContinue}
-      primaryLabel="Review assignment"
+      primaryDisabled={saveStatus === "saving"}
+      primaryLabel={
+        saveStatus === "saving"
+          ? "Saving..."
+          : serverSaveError
+            ? "Retry save"
+            : "Review assignment"
+      }
       renderItem={renderRoomItem}
       subtitle="Step 3 of 3"
       title={activeShift?.floorName ?? "Patients and acuity"}

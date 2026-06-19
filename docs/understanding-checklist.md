@@ -40,6 +40,30 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-19 - Add Server Active Shift Persistence
+
+- Task: Complete Phase 5 Tasks 3.1, 3.2, 3.2a, and 3.3 by starting active shifts from server templates, saving active-shift changes to Supabase, refreshing after saves, and restoring the server active shift after session restore.
+- Problem understanding:
+  - [ ] Active shifts were still mostly local after server floor templates were added.
+  - [ ] Screens could move forward using in-memory nurses, patients, assignments, requests, or breaks even if the server had not saved them.
+  - [ ] App startup could load old device state near the same time as server workspace state, so the restore order needed to be explicit.
+- Solution understanding:
+  - [ ] `src/services/serverWorkspaceRepository.ts` now creates and updates `active_shifts` rows with the full active-shift snapshot.
+  - [ ] `src/store/ServerWorkspaceContext.tsx` owns the save-then-refresh pattern for starting and saving active shifts.
+  - [ ] Setup, nurse, patient, assignment, carry-over, request, and break screens call the server save before relying on the next screen or restored data.
+  - [ ] `src/store/LocalStateContext.tsx` exposes local-load completion so the server workspace can hydrate after device state loads.
+  - [ ] The Supabase setup docs now include active-shift insert and update RLS policies.
+- Broader context:
+  - [ ] The active shift is now the server-backed source for Phase 1-4 workflow data during Phase 5.
+  - [ ] This keeps the implementation request/response based and does not add realtime, invite links, push notifications, offline queues, drag-and-drop, tablet layout, or AI.
+  - [ ] Later previous-shift and role/authorization tasks can build on the same repository/provider boundary.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
 ### 2026-06-17 - Replace Deprecated Supabase Returns Helper
 
 - Task: Replace deprecated Supabase `.returns<T>()` list query typing in the server workspace repository.

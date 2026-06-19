@@ -38,6 +38,7 @@ const storageRepository = createStorageRepository(
 );
 
 interface LocalStateContextValue {
+  hasLoadedLocalState: boolean;
   localState: LocalAppState;
   setSimulatedSessionState: Dispatch<SetStateAction<SimulatedSessionState>>;
   setLocalState: Dispatch<SetStateAction<LocalAppState>>;
@@ -61,6 +62,7 @@ export function LocalStateProvider({
   storageRepository: appStorageRepository = storageRepository,
 }: LocalStateProviderProps) {
   const [localState, setLocalState] = useState<LocalAppState>(emptyLocalState);
+  const [hasLoadedLocalState, setHasLoadedLocalState] = useState(false);
   const [simulatedSessionState, setSimulatedSessionState] =
     useState<SimulatedSessionState>(chargeNurseSessionState);
   const hasSavedActiveShiftInSession = useRef(false);
@@ -77,10 +79,15 @@ export function LocalStateProvider({
 
       setLocalState((currentState) => ({
         ...currentState,
-        activeShift: savedState.activeShift,
-        floorTemplates: savedState.floorTemplates,
-        previousShiftSnapshots: savedState.previousShiftSnapshots,
+        activeShift: currentState.activeShift ?? savedState.activeShift,
+        floorTemplates: currentState.floorTemplates.length
+          ? currentState.floorTemplates
+          : savedState.floorTemplates,
+        previousShiftSnapshots: currentState.previousShiftSnapshots.length
+          ? currentState.previousShiftSnapshots
+          : savedState.previousShiftSnapshots,
       }));
+      setHasLoadedLocalState(true);
     }
 
     void loadSavedLocalState();
@@ -170,6 +177,7 @@ export function LocalStateProvider({
 
   const value = useMemo(
     () => ({
+      hasLoadedLocalState,
       localState,
       saveFloorTemplates,
       savePreviousShiftSnapshot,
@@ -178,6 +186,7 @@ export function LocalStateProvider({
       simulatedSessionState,
     }),
     [
+      hasLoadedLocalState,
       localState,
       saveFloorTemplates,
       savePreviousShiftSnapshot,

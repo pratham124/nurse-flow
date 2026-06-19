@@ -24,6 +24,7 @@ type WorkflowListScreenProps<ItemT> = {
   onPrimaryPress?: () => void;
   primaryDisabled?: boolean;
   actionErrorText?: string;
+  actionStatusText?: string;
   bottomAccessory?: ReactElement;
   data: ItemT[];
   keyExtractor: (item: ItemT, index: number) => string;
@@ -44,6 +45,7 @@ export function WorkflowListScreen<ItemT>({
   onPrimaryPress,
   primaryDisabled,
   actionErrorText,
+  actionStatusText,
   bottomAccessory,
   data,
   keyExtractor,
@@ -56,6 +58,7 @@ export function WorkflowListScreen<ItemT>({
     <WorkflowScreen
       activeStep={activeStep}
       actionErrorText={actionErrorText}
+      actionStatusText={actionStatusText}
       bottomAccessory={bottomAccessory}
       flow={flow}
       headerActionLabel={headerActionLabel}

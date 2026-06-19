@@ -123,7 +123,8 @@ export default function Index() {
   const { authState, signOut } = useAuthSession();
   const { localState, savePreviousShiftSnapshot, setLocalState } =
     useLocalState();
-  const { retryLoadWorkspace, workspaceState } = useServerWorkspace();
+  const { retryLoadWorkspace, startActiveShift, workspaceState } =
+    useServerWorkspace();
   const [floorTemplateToDelete, setFloorTemplateToDelete] =
     useState<FloorTemplate>();
   const [endShiftConfirmationVisible, setEndShiftConfirmationVisible] =
@@ -205,7 +206,7 @@ export default function Index() {
     router.push("/template-review");
   }
 
-  function handleStartShift(floorTemplate: FloorTemplate) {
+  async function handleStartShift(floorTemplate: FloorTemplate) {
     if (activeShift) {
       setTemplateEditMessage("End the active shift before starting another shift.");
       return;
@@ -226,13 +227,26 @@ export default function Index() {
     const hasPreviousShiftSnapshot = localState.previousShiftSnapshots.some(
       (snapshot) => snapshot.floorTemplateId === floorTemplate.id,
     );
+    const nextShift = createShiftFromTemplate(floorTemplate);
+
+    try {
+      setTemplateEditMessage("Saving active shift to your account...");
+      await startActiveShift(nextShift);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Shift could not be started. Try again.";
+
+      setTemplateEditMessage(message);
+      return;
+    }
 
     setLocalState((currentState) => ({
       ...currentState,
       draftFloorTemplate: undefined,
-      activeShift: createShiftFromTemplate(floorTemplate),
     }));
-    setTemplateEditMessage("");
+    setTemplateEditMessage("Saved to account.");
     router.push(
       hasPreviousShiftSnapshot ? "/carry-over-review" : "/start-shift",
     );

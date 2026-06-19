@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -11,8 +11,16 @@ import {
   WorkflowScreen,
 } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
+import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { assignmentFlow } from "../utils/workflowFlows";
-import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
+import {
+  colors,
+  radius,
+  spacing,
+  textSize,
+  fontWeight,
+  shadows,
+} from "../theme/tokens";
 import { getShiftCensus } from "../utils/census";
 import {
   getAssignmentValidation,
@@ -161,6 +169,8 @@ function AssignmentReviewListHeader({
 
 export default function AssignmentReviewScreen() {
   const { localState, setLocalState } = useLocalState();
+  const { saveActiveShift, saveStatus } = useServerWorkspace();
+  const [serverSaveError, setServerSaveError] = useState("");
   const activeShift = localState.activeShift;
   const nurses = activeShift?.nurses ?? [];
   const validation = getAssignmentValidation(activeShift);
@@ -177,7 +187,7 @@ export default function AssignmentReviewScreen() {
     }
   }, [activeShift]);
 
-  function handlePrimaryPress() {
+  async function handlePrimaryPress() {
     if (!activeShift) {
       router.replace("/");
       return;
@@ -187,29 +197,32 @@ export default function AssignmentReviewScreen() {
       return;
     }
 
-    setLocalState((currentState) => {
-      const currentShift = currentState.activeShift;
+    const assignmentResult = generateLocalAssignmentResult(activeShift);
+    const nextShift = {
+      ...activeShift,
+      assignmentResult,
+      breakSchedule: generateLocalBreakSchedule(activeShift, assignmentResult),
+      flags: generateAssignmentFlags(activeShift, assignmentResult),
+      status: "assigned" as const,
+    };
 
-      if (!currentShift) {
-        return currentState;
-      }
+    setLocalState((currentState) => ({
+      ...currentState,
+      activeShift: nextShift,
+    }));
 
-      const assignmentResult = generateLocalAssignmentResult(currentShift);
+    try {
+      setServerSaveError("");
+      await saveActiveShift(nextShift);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Assignment could not be saved. Try again.";
 
-      return {
-        ...currentState,
-        activeShift: {
-          ...currentShift,
-          assignmentResult,
-          breakSchedule: generateLocalBreakSchedule(
-            currentShift,
-            assignmentResult,
-          ),
-          flags: generateAssignmentFlags(currentShift, assignmentResult),
-          status: "assigned",
-        },
-      };
-    });
+      setServerSaveError(message);
+      return;
+    }
 
     router.push("/floor-board");
   }
@@ -217,13 +230,20 @@ export default function AssignmentReviewScreen() {
   return (
     <WorkflowScreen
       activeStep="Assign"
-      actionErrorText={firstBlockerMessage}
+      actionErrorText={serverSaveError || firstBlockerMessage}
+      actionStatusText={saveStatus === "saved" ? "Saved to account." : ""}
       flow={assignmentFlow}
       headerActionLabel="Floors"
       onHeaderActionPress={() => router.push("/")}
       onPrimaryPress={handlePrimaryPress}
-      primaryDisabled={!validation.canRunAssignment}
-      primaryLabel="Run local assignment"
+      primaryDisabled={!validation.canRunAssignment || saveStatus === "saving"}
+      primaryLabel={
+        saveStatus === "saving"
+          ? "Saving..."
+          : serverSaveError
+            ? "Retry save"
+            : "Run assignment"
+      }
       subtitle=""
       title={activeShift?.floorName ?? "Assignment review"}
     >

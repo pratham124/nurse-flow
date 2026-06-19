@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
+import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import {
@@ -7,6 +8,7 @@ import {
   WorkflowSection,
 } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
+import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { colors, fontWeight, radius, shadows, spacing, textSize } from "../theme/tokens";
 import { getNurseRequestDisplayById } from "../utils/nurseRequestDisplay";
 import { resolvePendingSwapRequest } from "../utils/nurseRequests";
@@ -32,6 +34,8 @@ function DetailRow({ label, value }: DetailRowProps) {
 
 export default function LocalRequestDetailScreen() {
   const { localState, setLocalState } = useLocalState();
+  const { saveActiveShift, saveStatus } = useServerWorkspace();
+  const [serverSaveError, setServerSaveError] = useState("");
   const { requestId } = useLocalSearchParams<{
     requestId?: string | string[];
   }>();
@@ -45,30 +49,40 @@ export default function LocalRequestDetailScreen() {
     request?.requestType === "swap" &&
     request.requestStatus === "pending";
 
-  function handleResolveSwap(nextStatus: "accepted" | "declined") {
-    if (!selectedRequestId) {
+  async function handleResolveSwap(nextStatus: "accepted" | "declined") {
+    if (!selectedRequestId || !localState.activeShift) {
       return;
     }
 
-    setLocalState((currentState) => {
-      if (!currentState.activeShift) {
-        return currentState;
-      }
+    const nextShift = resolvePendingSwapRequest(
+      localState.activeShift,
+      selectedRequestId,
+      nextStatus,
+    );
 
-      return {
-        ...currentState,
-        activeShift: resolvePendingSwapRequest(
-          currentState.activeShift,
-          selectedRequestId,
-          nextStatus,
-        ),
-      };
-    });
+    setLocalState((currentState) => ({
+      ...currentState,
+      activeShift: nextShift,
+    }));
+
+    try {
+      setServerSaveError("");
+      await saveActiveShift(nextShift);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Request update could not be saved. Try again.";
+
+      setServerSaveError(message);
+    }
   }
 
   return (
     <WorkflowScreen
       activeStep="Board"
+      actionErrorText={serverSaveError}
+      actionStatusText={saveStatus === "saved" ? "Saved to account." : ""}
       flow={assignmentFlow}
       headerActionLabel="Floors"
       onHeaderActionPress={() => router.push("/")}

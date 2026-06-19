@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -8,6 +8,7 @@ import {
   WorkflowSection,
 } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
+import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { colors, radius, spacing, textSize, fontWeight } from "../theme/tokens";
 import type {
   BreakScheduleEntry,
@@ -257,6 +258,8 @@ function BreakWarningRow({ activeShift, warning }: BreakWarningRowProps) {
 
 export default function BreakScheduleScreen() {
   const { localState, setLocalState } = useLocalState();
+  const { saveActiveShift, saveStatus } = useServerWorkspace();
+  const [serverSaveError, setServerSaveError] = useState("");
   const activeShift = localState.activeShift;
   const scheduleView = getBreakScheduleView(activeShift);
   const sortedEntries = useMemo(
@@ -267,28 +270,35 @@ export default function BreakScheduleScreen() {
     activeShift?.breakSchedule && activeShift.assignmentResult,
   );
 
-  function handleRefreshBreaks() {
-    setLocalState((currentState) => {
-      const currentShift = currentState.activeShift;
+  async function handleRefreshBreaks() {
+    if (!activeShift?.breakSchedule || !activeShift.assignmentResult) {
+      return;
+    }
 
-      if (
-        !currentShift?.breakSchedule ||
-        !currentShift.assignmentResult
-      ) {
-        return currentState;
-      }
+    const nextShift = {
+      ...activeShift,
+      breakSchedule: generateLocalBreakSchedule(
+        activeShift,
+        activeShift.assignmentResult,
+      ),
+    };
 
-      return {
-        ...currentState,
-        activeShift: {
-          ...currentShift,
-          breakSchedule: generateLocalBreakSchedule(
-            currentShift,
-            currentShift.assignmentResult,
-          ),
-        },
-      };
-    });
+    setLocalState((currentState) => ({
+      ...currentState,
+      activeShift: nextShift,
+    }));
+
+    try {
+      setServerSaveError("");
+      await saveActiveShift(nextShift);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Break schedule could not be saved. Try again.";
+
+      setServerSaveError(message);
+    }
   }
 
   return (
@@ -298,13 +308,15 @@ export default function BreakScheduleScreen() {
       headerActionLabel="Board"
       onHeaderActionPress={() => router.push("/floor-board")}
       bottomAccessory={<BoardSubTabBar activeTab="breaks" />}
+      actionErrorText={serverSaveError}
+      actionStatusText={saveStatus === "saved" ? "Saved to account." : ""}
       subtitle=""
       title={activeShift?.floorName ?? "Breaks"}
     >
       <WorkflowSection title="Break summary">
         <BreakSummaryCard
           activityLabel={getFloorActivityLabel(scheduleView.activityLevel)}
-          canRefresh={canRefresh}
+          canRefresh={canRefresh && saveStatus !== "saving"}
           needsRefresh={scheduleView.status === "needs_refresh"}
           nurseCount={sortedEntries.length}
           onRefresh={handleRefreshBreaks}

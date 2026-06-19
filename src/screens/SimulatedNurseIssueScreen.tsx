@@ -9,6 +9,7 @@ import {
   WorkflowSection,
 } from "../components/workflow";
 import { useLocalState } from "../store/LocalStateContext";
+import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { colors, fontWeight, radius, shadows, spacing, textSize } from "../theme/tokens";
 import type { LocalId, NurseRequest } from "../types/models";
 import {
@@ -166,7 +167,8 @@ function IssueFormContent({
 }
 
 export default function SimulatedNurseIssueScreen() {
-  const { localState, setLocalState, simulatedSessionState } = useLocalState();
+  const { localState, simulatedSessionState } = useLocalState();
+  const { saveActiveShift, saveStatus } = useServerWorkspace();
   const [message, setMessage] = useState("");
   const [messageError, setMessageError] = useState("");
   const [formError, setFormError] = useState("");
@@ -191,7 +193,7 @@ export default function SimulatedNurseIssueScreen() {
     setFormError("");
   }
 
-  function handleSubmitIssue() {
+  async function handleSubmitIssue() {
     if (!readyView) {
       setFormError(recoveryResult?.message ?? "Choose a nurse before submitting.");
       return;
@@ -213,33 +215,41 @@ export default function SimulatedNurseIssueScreen() {
       return;
     }
 
-    setLocalState((currentState) => {
-      if (!currentState.activeShift) {
-        return currentState;
-      }
+    if (!localState.activeShift) {
+      setFormError("Start a shift before submitting an issue.");
+      return;
+    }
 
-      const issueRequest: NurseRequest = {
-        id: createNurseRequestId(currentState.activeShift),
-        createdAt: new Date().toISOString(),
-        message: trimmedMessage,
-        requestingNurseId: readyView.nurse.id,
-        requestingNurseName: readyView.nurse.name,
-        sourceBedId: selectedBedId,
-        status: "pending",
-        type: "issue",
-      };
+    const issueRequest: NurseRequest = {
+      id: createNurseRequestId(localState.activeShift),
+      createdAt: new Date().toISOString(),
+      message: trimmedMessage,
+      requestingNurseId: readyView.nurse.id,
+      requestingNurseName: readyView.nurse.name,
+      sourceBedId: selectedBedId,
+      status: "pending",
+      type: "issue",
+    };
+    const nextShift = {
+      ...localState.activeShift,
+      nurseRequests: [
+        ...getShiftNurseRequests(localState.activeShift),
+        issueRequest,
+      ],
+    };
 
-      return {
-        ...currentState,
-        activeShift: {
-          ...currentState.activeShift,
-          nurseRequests: [
-            ...getShiftNurseRequests(currentState.activeShift),
-            issueRequest,
-          ],
-        },
-      };
-    });
+    try {
+      setFormError("");
+      await saveActiveShift(nextShift);
+    } catch (error) {
+      const saveMessage =
+        error instanceof Error
+          ? error.message
+          : "Issue could not be saved. Try again.";
+
+      setFormError(saveMessage);
+      return;
+    }
 
     router.push("/simulated-nurse-assignment");
   }
@@ -248,11 +258,13 @@ export default function SimulatedNurseIssueScreen() {
     <WorkflowScreen
       activeStep="Board"
       actionErrorText={formError}
+      actionStatusText={saveStatus === "saved" ? "Saved to account." : ""}
       flow={assignmentFlow}
       headerActionLabel="Floors"
       onHeaderActionPress={() => router.push("/")}
       onPrimaryPress={handleSubmitIssue}
-      primaryLabel="Submit issue"
+      primaryDisabled={saveStatus === "saving"}
+      primaryLabel={saveStatus === "saving" ? "Saving..." : "Submit issue"}
       subtitle=""
       title={readyView ? `Issue for ${readyView.nurse.name}` : "Flag issue"}
     >

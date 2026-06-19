@@ -9,8 +9,10 @@ import {
 } from "react";
 
 import {
+  createServerActiveShift,
   getLocalStateFromServerWorkspace,
   loadServerWorkspace,
+  saveServerActiveShift,
   saveServerFloorTemplate,
 } from "../services/serverWorkspaceRepository";
 import { getSupabaseClient } from "../services/supabaseClient";
@@ -21,6 +23,7 @@ import type {
   FloorTemplateRecord,
   ServerSaveStatus,
   ServerWorkspace,
+  Shift,
 } from "../types/models";
 
 type ServerWorkspaceState =
@@ -32,11 +35,13 @@ type ServerWorkspaceState =
 
 type ServerWorkspaceContextValue = {
   retryLoadWorkspace: () => Promise<void>;
+  saveActiveShift: (activeShift: Shift) => Promise<Shift>;
   saveErrorMessage: string;
   saveFloorTemplate: (
     floorTemplate: FloorTemplate,
   ) => Promise<FloorTemplateRecord>;
   saveStatus: ServerSaveStatus;
+  startActiveShift: (activeShift: Shift) => Promise<Shift>;
   workspaceState: ServerWorkspaceState;
 };
 
@@ -65,12 +70,25 @@ export function ServerWorkspaceProvider({
   children,
 }: ServerWorkspaceProviderProps) {
   const { authState } = useAuthSession();
-  const { setLocalState } = useLocalState();
+  const { hasLoadedLocalState, setLocalState } = useLocalState();
   const [workspaceState, setWorkspaceState] = useState<ServerWorkspaceState>({
     status: "idle",
   });
   const [saveStatus, setSaveStatus] = useState<ServerSaveStatus>("idle");
   const [saveErrorMessage, setSaveErrorMessage] = useState("");
+
+  const applyWorkspace = useCallback(
+    (workspace: ServerWorkspace) => {
+      const serverLocalState = getLocalStateFromServerWorkspace(workspace);
+
+      setLocalState((currentState) => ({
+        ...currentState,
+        ...serverLocalState,
+      }));
+      setWorkspaceState(getWorkspaceState(workspace));
+    },
+    [setLocalState],
+  );
 
   const loadWorkspace = useCallback(async () => {
     if (
@@ -78,6 +96,11 @@ export function ServerWorkspaceProvider({
       authState.profile.role !== "charge_nurse"
     ) {
       setWorkspaceState({ status: "idle" });
+      return;
+    }
+
+    if (!hasLoadedLocalState) {
+      setWorkspaceState({ status: "loading" });
       return;
     }
 
@@ -95,20 +118,15 @@ export function ServerWorkspaceProvider({
 
     try {
       const workspace = await loadServerWorkspace(supabase, authState.profile);
-      const serverLocalState = getLocalStateFromServerWorkspace(workspace);
 
-      setLocalState((currentState) => ({
-        ...currentState,
-        ...serverLocalState,
-      }));
-      setWorkspaceState(getWorkspaceState(workspace));
+      applyWorkspace(workspace);
     } catch (error) {
       setWorkspaceState({
         errorMessage: getErrorMessage(error, "Workspace could not be loaded."),
         status: "error",
       });
     }
-  }, [authState, setLocalState]);
+  }, [applyWorkspace, authState, hasLoadedLocalState]);
 
   useEffect(() => {
     void loadWorkspace();
@@ -139,13 +157,8 @@ export function ServerWorkspaceProvider({
           floorTemplate,
         );
         const workspace = await loadServerWorkspace(supabase, authState.profile);
-        const serverLocalState = getLocalStateFromServerWorkspace(workspace);
 
-        setLocalState((currentState) => ({
-          ...currentState,
-          ...serverLocalState,
-        }));
-        setWorkspaceState(getWorkspaceState(workspace));
+        applyWorkspace(workspace);
         setSaveStatus("saved");
 
         return savedTemplate;
@@ -157,22 +170,108 @@ export function ServerWorkspaceProvider({
         throw error;
       }
     },
-    [authState, setLocalState],
+    [applyWorkspace, authState],
+  );
+
+  const startActiveShift = useCallback(
+    async (activeShift: Shift) => {
+      if (
+        authState.status !== "signed_in" ||
+        authState.profile.role !== "charge_nurse"
+      ) {
+        throw new Error("Sign in as a charge nurse to start a server shift.");
+      }
+
+      const supabase = getSupabaseClient();
+
+      if (!supabase) {
+        throw new Error("Supabase is not configured yet.");
+      }
+
+      setSaveErrorMessage("");
+      setSaveStatus("saving");
+
+      try {
+        const savedActiveShift = await createServerActiveShift(
+          supabase,
+          authState.profile,
+          activeShift,
+        );
+        const workspace = await loadServerWorkspace(supabase, authState.profile);
+
+        applyWorkspace(workspace);
+        setSaveStatus("saved");
+
+        return savedActiveShift.shiftSnapshot;
+      } catch (error) {
+        setSaveErrorMessage(
+          getErrorMessage(error, "Shift could not be started on the server."),
+        );
+        setSaveStatus("error");
+        throw error;
+      }
+    },
+    [applyWorkspace, authState],
+  );
+
+  const saveActiveShift = useCallback(
+    async (activeShift: Shift) => {
+      if (
+        authState.status !== "signed_in" ||
+        authState.profile.role !== "charge_nurse"
+      ) {
+        throw new Error("Sign in as a charge nurse to save this shift.");
+      }
+
+      const supabase = getSupabaseClient();
+
+      if (!supabase) {
+        throw new Error("Supabase is not configured yet.");
+      }
+
+      setSaveErrorMessage("");
+      setSaveStatus("saving");
+
+      try {
+        const savedActiveShift = await saveServerActiveShift(
+          supabase,
+          authState.profile,
+          activeShift,
+        );
+        const workspace = await loadServerWorkspace(supabase, authState.profile);
+
+        applyWorkspace(workspace);
+        setSaveStatus("saved");
+
+        return savedActiveShift.shiftSnapshot;
+      } catch (error) {
+        setSaveErrorMessage(
+          getErrorMessage(error, "Shift changes could not be saved."),
+        );
+        setSaveStatus("error");
+        throw error;
+      }
+    },
+    [applyWorkspace, authState],
   );
 
   const value = useMemo(
     () => ({
       retryLoadWorkspace: loadWorkspace,
+      saveActiveShift,
       saveErrorMessage,
       saveFloorTemplate,
       saveStatus,
+      startActiveShift,
       workspaceState,
     }),
     [
       loadWorkspace,
+      saveActiveShift,
       saveErrorMessage,
       saveFloorTemplate,
       saveStatus,
+      startActiveShift,
       workspaceState,
     ],
   );
