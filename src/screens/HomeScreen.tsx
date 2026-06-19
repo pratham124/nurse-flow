@@ -126,6 +126,7 @@ export default function Index() {
     setLocalState,
   } = useLocalState();
   const {
+    activeParticipation,
     endActiveShift,
     retryLoadWorkspace,
     savePreviousShiftSnapshot: saveServerPreviousShiftSnapshot,
@@ -179,6 +180,25 @@ export default function Index() {
     setTemplateEditMessage("");
 
     router.push("/floor-details");
+  }
+
+  function handleJoinActiveSession() {
+    if (activeParticipation.type === "charge_shift") {
+      setTemplateEditMessage(
+        "End your active charge shift before joining another shift as a nurse.",
+      );
+      return;
+    }
+
+    if (activeParticipation.type === "joined_nurse") {
+      setTemplateEditMessage(
+        "Leave your joined nurse shift before joining another shift.",
+      );
+      return;
+    }
+
+    setTemplateEditMessage("");
+    router.push("/join-active-session");
   }
 
   function handleConfirmDeleteFloor() {
@@ -476,6 +496,19 @@ export default function Index() {
       </ScrollView>
 
       <View style={styles.actionBar}>
+        <Pressable
+          accessibilityHint="Opens the future nurse code entry screen."
+          accessibilityRole="button"
+          onPress={handleJoinActiveSession}
+          style={({ pressed }) => [
+            styles.secondaryActionButton,
+            pressed && styles.secondaryActionButtonPressed,
+          ]}
+        >
+          <Text style={styles.secondaryActionButtonText}>
+            Join active session
+          </Text>
+        </Pressable>
         <Pressable
           accessibilityHint="Opens the static floor template setup path."
           accessibilityRole="button"
@@ -881,6 +914,7 @@ const styles = StyleSheet.create({
   },
   actionBar: {
     backgroundColor: colors.neutral.backgroundPrimary,
+    gap: spacing.sm,
     padding: spacing.xl,
     borderTopWidth: 0.5,
     borderTopColor: colors.neutral.borderTertiary,
@@ -899,6 +933,24 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     color: colors.neutral.surface,
+    fontSize: textSize.action,
+    fontWeight: fontWeight.semibold,
+  },
+  secondaryActionButton: {
+    alignItems: "center",
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    height: 48,
+    justifyContent: "center",
+    paddingHorizontal: spacing.lg,
+  },
+  secondaryActionButtonPressed: {
+    backgroundColor: colors.neutral.backgroundSecondary,
+  },
+  secondaryActionButtonText: {
+    color: colors.brand.burgundy,
     fontSize: textSize.action,
     fontWeight: fontWeight.semibold,
   },

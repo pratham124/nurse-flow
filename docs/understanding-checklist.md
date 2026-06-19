@@ -40,6 +40,27 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-19 - Add Join Active Session Screen Shell
+
+- Task: Add a Home entry and placeholder screen for the future nurse-code join flow without implementing code verification.
+- Problem understanding:
+  - [ ] Users need to see where joining an active shift will happen.
+  - [ ] The app should not imply join codes already work.
+  - [ ] Existing active participation guardrails should still prevent conflicting shift contexts.
+- Solution understanding:
+  - [ ] `src/app/join-active-session.tsx` adds the route.
+  - [ ] `src/screens/JoinActiveSessionScreen.tsx` shows disabled code entry and disabled join action.
+  - [ ] `src/screens/HomeScreen.tsx` links to the shell and blocks navigation when the account is already in an active shift context.
+- Broader context:
+  - [ ] A later task can wire this screen to real code verification and `shift_nurse_access` creation.
+  - [ ] The shell keeps the next workflow visible without adding invite links, deep links, realtime, push notifications, or full join behavior.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
 ### 2026-06-19 - Treat Nurse Access As Shift Participation
 
 - Task: Update Phase 5 role/access direction so every signed-in profile is charge-capable, while regular nurse behavior comes from joined shift access.

@@ -12,6 +12,7 @@ Each screen should be simple enough to build and test independently. Existing Ph
 | Login | US2 |
 | Signup | US2, US5 |
 | Charge Nurse Account Workspace | US3, US4, US6 |
+| Join Active Session Shell | US5 |
 | Existing Workflow Screens | US3, US4, US6 |
 | Joined Nurse Workspace | US5 |
 | Access Denied / Recovery | US2, US5, US6 |
@@ -229,7 +230,31 @@ Keep Phase 1-4 workflows intact while saving to the server.
 - No push notification prompts.
 - No offline queue or conflict screens.
 
-## 6. Joined Nurse Workspace
+## 6. Join Active Session Shell
+
+### Purpose
+
+Show the future entry point for joining an active shift by nurse code without implementing code verification yet.
+
+### Layout
+
+- Title: `Join active session`.
+- Disabled nurse code field.
+- Disabled `Join shift` action.
+- Plain helper copy that code verification comes later.
+
+### User Actions
+
+- Return to Home.
+
+### Exclusions
+
+- No code generation.
+- No code validation.
+- No access-record creation.
+- No invite links or deep links.
+
+## 7. Joined Nurse Workspace
 
 ### Purpose
 
