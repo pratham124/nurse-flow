@@ -1,13 +1,12 @@
 import { router } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
-import { loadJoinedNurseAssignmentView } from "../services/serverWorkspaceRepository";
-import { getSupabaseClient } from "../services/supabaseClient";
 import { useAuthSession } from "../store/AuthSessionContext";
+import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import {
   colors,
   fontWeight,
@@ -17,12 +16,6 @@ import {
   textSize,
 } from "../theme/tokens";
 import type { JoinedNurseAssignmentView } from "../types/models";
-
-type JoinedNurseWorkspaceState =
-  | { status: "loading" }
-  | { status: "empty" }
-  | { status: "ready"; assignmentView: JoinedNurseAssignmentView }
-  | { errorMessage: string; status: "error" };
 
 type AssignmentSummaryProps = {
   assignmentView: JoinedNurseAssignmentView;
@@ -89,62 +82,11 @@ function AssignmentSummary({ assignmentView }: AssignmentSummaryProps) {
 
 export default function RegularNurseWorkspaceScreen() {
   const { authState, signOut } = useAuthSession();
-  const [workspaceState, setWorkspaceState] =
-    useState<JoinedNurseWorkspaceState>({ status: "loading" });
+  const { joinedNurseAccessState, retryLoadJoinedNurseAccess } =
+    useServerWorkspace();
   const [errorMessage, setErrorMessage] = useState("");
   const displayName =
     authState.status === "signed_in" ? authState.profile.displayName : "Nurse";
-
-  const loadAssignmentView = useCallback(async () => {
-    if (
-      authState.status !== "signed_in"
-    ) {
-      setWorkspaceState({
-        errorMessage: "Sign in before opening joined shift access.",
-        status: "error",
-      });
-      return;
-    }
-
-    const supabase = getSupabaseClient();
-
-    if (!supabase) {
-      setWorkspaceState({
-        errorMessage: "Supabase is not configured yet.",
-        status: "error",
-      });
-      return;
-    }
-
-    setWorkspaceState({ status: "loading" });
-
-    try {
-      const assignmentView = await loadJoinedNurseAssignmentView(
-        supabase,
-        authState.profile,
-      );
-
-      setWorkspaceState(
-        assignmentView
-          ? { assignmentView, status: "ready" }
-          : { status: "empty" },
-      );
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Regular nurse workspace could not be loaded.";
-
-      setWorkspaceState({
-        errorMessage: message,
-        status: "error",
-      });
-    }
-  }, [authState]);
-
-  useEffect(() => {
-    void loadAssignmentView();
-  }, [loadAssignmentView]);
 
   async function handleSignOut() {
     try {
@@ -161,31 +103,34 @@ export default function RegularNurseWorkspaceScreen() {
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.card}>
-        <Text style={styles.eyebrow}>Regular nurse workspace</Text>
+        <Text style={styles.eyebrow}>Joined nurse workspace</Text>
         <Text style={styles.title}>{displayName}</Text>
 
-        {workspaceState.status === "loading" ? (
+        {joinedNurseAccessState.status === "loading" ||
+        joinedNurseAccessState.status === "idle" ? (
           <LoadingState message="Checking shift access" />
         ) : null}
 
-        {workspaceState.status === "empty" ? (
+        {joinedNurseAccessState.status === "empty" ? (
           <View style={styles.emptyPanel}>
             <Text style={styles.emptyTitle}>No shift access yet</Text>
             <Text style={styles.message}>
-              A charge nurse will connect shift access in a later invite or join
+              A charge nurse will connect shift access in a future join-code
               flow.
             </Text>
           </View>
         ) : null}
 
-        {workspaceState.status === "ready" ? (
-          <AssignmentSummary assignmentView={workspaceState.assignmentView} />
+        {joinedNurseAccessState.status === "ready" ? (
+          <AssignmentSummary
+            assignmentView={joinedNurseAccessState.assignmentView}
+          />
         ) : null}
 
-        {workspaceState.status === "error" ? (
+        {joinedNurseAccessState.status === "error" ? (
           <ErrorState
-            message={workspaceState.errorMessage}
-            onRetry={loadAssignmentView}
+            message={joinedNurseAccessState.errorMessage}
+            onRetry={retryLoadJoinedNurseAccess}
             title="Shift access could not load"
           />
         ) : null}

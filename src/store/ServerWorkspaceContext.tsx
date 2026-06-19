@@ -12,6 +12,7 @@ import {
   createServerActiveShift,
   endServerActiveShift,
   getLocalStateFromServerWorkspace,
+  loadJoinedNurseAssignmentView,
   loadServerWorkspace,
   saveServerActiveShift,
   saveServerFloorTemplate,
@@ -23,6 +24,7 @@ import { useLocalState } from "./LocalStateContext";
 import type {
   FloorTemplate,
   FloorTemplateRecord,
+  JoinedNurseAssignmentView,
   PreviousShiftSnapshot,
   ServerSaveStatus,
   ServerWorkspace,
@@ -36,8 +38,23 @@ type ServerWorkspaceState =
   | { status: "ready"; workspace: ServerWorkspace }
   | { errorMessage: string; status: "error" };
 
+type JoinedNurseAccessState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "empty" }
+  | { status: "ready"; assignmentView: JoinedNurseAssignmentView }
+  | { errorMessage: string; status: "error" };
+
+type ActiveParticipation =
+  | { type: "none" }
+  | { shiftId: string; type: "charge_shift" }
+  | { nurseId: string; shiftId: string; type: "joined_nurse" };
+
 type ServerWorkspaceContextValue = {
+  activeParticipation: ActiveParticipation;
   endActiveShift: (activeShift: Shift) => Promise<void>;
+  joinedNurseAccessState: JoinedNurseAccessState;
+  retryLoadJoinedNurseAccess: () => Promise<void>;
   retryLoadWorkspace: () => Promise<void>;
   saveActiveShift: (activeShift: Shift) => Promise<Shift>;
   saveErrorMessage: string;
@@ -69,6 +86,31 @@ function getWorkspaceState(workspace: ServerWorkspace): ServerWorkspaceState {
   };
 }
 
+function getActiveParticipation(
+  workspaceState: ServerWorkspaceState,
+  joinedNurseAccessState: JoinedNurseAccessState,
+): ActiveParticipation {
+  if (
+    (workspaceState.status === "ready" || workspaceState.status === "empty") &&
+    workspaceState.workspace.activeShift
+  ) {
+    return {
+      shiftId: workspaceState.workspace.activeShift.id,
+      type: "charge_shift",
+    };
+  }
+
+  if (joinedNurseAccessState.status === "ready") {
+    return {
+      nurseId: joinedNurseAccessState.assignmentView.access.nurseId,
+      shiftId: joinedNurseAccessState.assignmentView.shiftId,
+      type: "joined_nurse",
+    };
+  }
+
+  return { type: "none" };
+}
+
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
@@ -81,6 +123,10 @@ export function ServerWorkspaceProvider({
   const [workspaceState, setWorkspaceState] = useState<ServerWorkspaceState>({
     status: "idle",
   });
+  const [joinedNurseAccessState, setJoinedNurseAccessState] =
+    useState<JoinedNurseAccessState>({
+      status: "idle",
+    });
   const [saveStatus, setSaveStatus] = useState<ServerSaveStatus>("idle");
   const [saveErrorMessage, setSaveErrorMessage] = useState("");
 
@@ -138,6 +184,50 @@ export function ServerWorkspaceProvider({
   useEffect(() => {
     void loadWorkspace();
   }, [loadWorkspace]);
+
+  const loadJoinedNurseAccess = useCallback(async () => {
+    if (authState.status !== "signed_in") {
+      setJoinedNurseAccessState({ status: "idle" });
+      return;
+    }
+
+    const supabase = getSupabaseClient();
+
+    if (!supabase) {
+      setJoinedNurseAccessState({
+        errorMessage: "Supabase is not configured yet.",
+        status: "error",
+      });
+      return;
+    }
+
+    setJoinedNurseAccessState({ status: "loading" });
+
+    try {
+      const assignmentView = await loadJoinedNurseAssignmentView(
+        supabase,
+        authState.profile,
+      );
+
+      setJoinedNurseAccessState(
+        assignmentView
+          ? { assignmentView, status: "ready" }
+          : { status: "empty" },
+      );
+    } catch (error) {
+      setJoinedNurseAccessState({
+        errorMessage: getErrorMessage(
+          error,
+          "Joined nurse access could not be loaded.",
+        ),
+        status: "error",
+      });
+    }
+  }, [authState]);
+
+  useEffect(() => {
+    void loadJoinedNurseAccess();
+  }, [loadJoinedNurseAccess]);
 
   const saveFloorTemplate = useCallback(
     async (floorTemplate: FloorTemplate) => {
@@ -338,7 +428,13 @@ export function ServerWorkspaceProvider({
 
   const value = useMemo(
     () => ({
+      activeParticipation: getActiveParticipation(
+        workspaceState,
+        joinedNurseAccessState,
+      ),
       endActiveShift,
+      joinedNurseAccessState,
+      retryLoadJoinedNurseAccess: loadJoinedNurseAccess,
       retryLoadWorkspace: loadWorkspace,
       saveActiveShift,
       saveErrorMessage,
@@ -350,6 +446,8 @@ export function ServerWorkspaceProvider({
     }),
     [
       endActiveShift,
+      joinedNurseAccessState,
+      loadJoinedNurseAccess,
       loadWorkspace,
       saveActiveShift,
       saveErrorMessage,
