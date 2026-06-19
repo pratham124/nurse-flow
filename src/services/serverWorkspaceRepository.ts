@@ -426,6 +426,54 @@ export async function endServerActiveShift(
   return mapActiveShiftRow(data);
 }
 
+export async function saveServerPreviousShiftSnapshot(
+  supabase: SupabaseClient,
+  profile: UserProfile,
+  snapshot: PreviousShiftSnapshot,
+) {
+  assertChargeNurse(profile);
+
+  if (!uuidPattern.test(snapshot.floorTemplateId)) {
+    throw new Error("Save the floor template to this account before saving carry-over.");
+  }
+
+  const { error: deleteError } = await supabase
+    .from("previous_shift_snapshots")
+    .delete()
+    .eq("charge_profile_id", profile.id)
+    .eq("floor_template_id", snapshot.floorTemplateId);
+
+  if (deleteError) {
+    throw new Error(deleteError.message);
+  }
+
+  const hasUsefulSuggestions =
+    snapshot.nurseSuggestions.length > 0 ||
+    snapshot.patientSuggestions.length > 0;
+
+  if (!hasUsefulSuggestions) {
+    return undefined;
+  }
+
+  const { data, error } = await supabase
+    .from("previous_shift_snapshots")
+    .insert({
+      charge_profile_id: profile.id,
+      completed_at: snapshot.completedAt,
+      floor_template_id: snapshot.floorTemplateId,
+      nurse_suggestions: snapshot.nurseSuggestions,
+      patient_suggestions: snapshot.patientSuggestions,
+    })
+    .select(previousShiftColumns)
+    .single<PreviousShiftSnapshotRow>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return mapPreviousShiftRow(data);
+}
+
 export function getLocalStateFromServerWorkspace(workspace: ServerWorkspace) {
   return {
     activeShift: workspace.activeShift?.shiftSnapshot,

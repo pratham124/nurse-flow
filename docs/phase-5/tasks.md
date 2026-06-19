@@ -302,7 +302,7 @@ Validation check:
 - Close and reopen the app after assignment.
 - Confirm the app does not lose the active shift.
 
-### Task 3.4: Save Previous-Shift Snapshot to Server
+### Done Task 3.4: Save Previous-Shift Snapshot to Server
 
 Story coverage: US4, US6
 

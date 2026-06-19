@@ -15,6 +15,7 @@ import {
   loadServerWorkspace,
   saveServerActiveShift,
   saveServerFloorTemplate,
+  saveServerPreviousShiftSnapshot,
 } from "../services/serverWorkspaceRepository";
 import { getSupabaseClient } from "../services/supabaseClient";
 import { useAuthSession } from "./AuthSessionContext";
@@ -22,6 +23,7 @@ import { useLocalState } from "./LocalStateContext";
 import type {
   FloorTemplate,
   FloorTemplateRecord,
+  PreviousShiftSnapshot,
   ServerSaveStatus,
   ServerWorkspace,
   Shift,
@@ -42,6 +44,9 @@ type ServerWorkspaceContextValue = {
   saveFloorTemplate: (
     floorTemplate: FloorTemplate,
   ) => Promise<FloorTemplateRecord>;
+  savePreviousShiftSnapshot: (
+    snapshot: PreviousShiftSnapshot,
+  ) => Promise<void>;
   saveStatus: ServerSaveStatus;
   startActiveShift: (activeShift: Shift) => Promise<Shift>;
   workspaceState: ServerWorkspaceState;
@@ -292,6 +297,45 @@ export function ServerWorkspaceProvider({
     [applyWorkspace, authState],
   );
 
+  const savePreviousShiftSnapshot = useCallback(
+    async (snapshot: PreviousShiftSnapshot) => {
+      if (
+        authState.status !== "signed_in" ||
+        authState.profile.role !== "charge_nurse"
+      ) {
+        throw new Error("Sign in as a charge nurse to save carry-over.");
+      }
+
+      const supabase = getSupabaseClient();
+
+      if (!supabase) {
+        throw new Error("Supabase is not configured yet.");
+      }
+
+      setSaveErrorMessage("");
+      setSaveStatus("saving");
+
+      try {
+        await saveServerPreviousShiftSnapshot(
+          supabase,
+          authState.profile,
+          snapshot,
+        );
+        const workspace = await loadServerWorkspace(supabase, authState.profile);
+
+        applyWorkspace(workspace);
+        setSaveStatus("saved");
+      } catch (error) {
+        setSaveErrorMessage(
+          getErrorMessage(error, "Carry-over could not be saved to the server."),
+        );
+        setSaveStatus("error");
+        throw error;
+      }
+    },
+    [applyWorkspace, authState],
+  );
+
   const value = useMemo(
     () => ({
       endActiveShift,
@@ -299,6 +343,7 @@ export function ServerWorkspaceProvider({
       saveActiveShift,
       saveErrorMessage,
       saveFloorTemplate,
+      savePreviousShiftSnapshot,
       saveStatus,
       startActiveShift,
       workspaceState,
@@ -309,6 +354,7 @@ export function ServerWorkspaceProvider({
       saveActiveShift,
       saveErrorMessage,
       saveFloorTemplate,
+      savePreviousShiftSnapshot,
       saveStatus,
       startActiveShift,
       workspaceState,

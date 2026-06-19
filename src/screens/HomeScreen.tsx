@@ -1,12 +1,6 @@
 import { useState } from "react";
 import { router } from "expo-router";
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
@@ -23,7 +17,14 @@ import { LoadingState } from "../components/LoadingState";
 import { useAuthSession } from "../store/AuthSessionContext";
 import { useLocalState } from "../store/LocalStateContext";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
-import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
+import {
+  colors,
+  radius,
+  spacing,
+  textSize,
+  fontWeight,
+  shadows,
+} from "../theme/tokens";
 import type { FloorTemplate } from "../types/models";
 import {
   isCompletedFloorTemplate,
@@ -117,21 +118,28 @@ function FloorTemplateRow({
   );
 }
 
-
-
 export default function Index() {
   const { authState, signOut } = useAuthSession();
-  const { localState, savePreviousShiftSnapshot, setLocalState } =
-    useLocalState();
-  const { endActiveShift, retryLoadWorkspace, startActiveShift, workspaceState } =
-    useServerWorkspace();
+  const {
+    localState,
+    savePreviousShiftSnapshot: saveLocalPreviousShiftSnapshot,
+    setLocalState,
+  } = useLocalState();
+  const {
+    endActiveShift,
+    retryLoadWorkspace,
+    savePreviousShiftSnapshot: saveServerPreviousShiftSnapshot,
+    startActiveShift,
+    workspaceState,
+  } = useServerWorkspace();
   const [floorTemplateToDelete, setFloorTemplateToDelete] =
     useState<FloorTemplate>();
   const [endShiftConfirmationVisible, setEndShiftConfirmationVisible] =
     useState(false);
   const [templateEditMessage, setTemplateEditMessage] = useState("");
   const isChargeNurseSignedIn =
-    authState.status === "signed_in" && authState.profile.role === "charge_nurse";
+    authState.status === "signed_in" &&
+    authState.profile.role === "charge_nurse";
   const isServerWorkspaceLoading =
     isChargeNurseSignedIn &&
     (workspaceState.status === "idle" || workspaceState.status === "loading");
@@ -150,7 +158,9 @@ export default function Index() {
         (t) => t.id === activeShift.floorTemplateId,
       )
     : null;
-  const activeShiftMissingTemplate = Boolean(activeShift && !activeShiftTemplate);
+  const activeShiftMissingTemplate = Boolean(
+    activeShift && !activeShiftTemplate,
+  );
   const activeShiftFloorName =
     activeShift?.floorName ?? activeShiftTemplate?.name ?? "Active Floor";
   const activeShiftNursesCount = activeShift?.nurses?.length ?? 0;
@@ -158,7 +168,8 @@ export default function Index() {
     activeShift?.bedStates?.filter((bedState) =>
       bedState.patient?.initials.trim(),
     ).length ?? 0;
-  const profile = authState.status === "signed_in" ? authState.profile : undefined;
+  const profile =
+    authState.status === "signed_in" ? authState.profile : undefined;
 
   function handleCreateFloor() {
     setLocalState((currentState) => ({
@@ -208,7 +219,9 @@ export default function Index() {
 
   async function handleStartShift(floorTemplate: FloorTemplate) {
     if (activeShift) {
-      setTemplateEditMessage("End the active shift before starting another shift.");
+      setTemplateEditMessage(
+        "End the active shift before starting another shift.",
+      );
       return;
     }
 
@@ -230,7 +243,6 @@ export default function Index() {
     const nextShift = createShiftFromTemplate(floorTemplate);
 
     try {
-      setTemplateEditMessage("Saving active shift to your account...");
       await startActiveShift(nextShift);
     } catch (error) {
       const message =
@@ -254,6 +266,21 @@ export default function Index() {
 
   async function handleConfirmEndActiveShift() {
     if (activeShift) {
+      const previousShiftSnapshot = createPreviousShiftSnapshot(activeShift);
+
+      try {
+        await saveServerPreviousShiftSnapshot(previousShiftSnapshot);
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Carry-over could not be saved. Try again.";
+
+        setTemplateEditMessage(message);
+        setEndShiftConfirmationVisible(false);
+        return;
+      }
+
       try {
         await endActiveShift(activeShift);
       } catch (error) {
@@ -268,7 +295,7 @@ export default function Index() {
       }
 
       try {
-        await savePreviousShiftSnapshot(createPreviousShiftSnapshot(activeShift));
+        await saveLocalPreviousShiftSnapshot(previousShiftSnapshot);
       } catch {
         // Ending the shift should still work if local snapshot saving fails.
       }
@@ -478,7 +505,7 @@ export default function Index() {
       <ConfirmationDialog
         confirmLabel="End shift"
         confirmTone="danger"
-        message={`${activeShiftFloorName} shift data will be cleared from this local session. Saved floor templates will stay available.`}
+        message={`${activeShiftFloorName} shift data will be cleared.`}
         onCancel={() => setEndShiftConfirmationVisible(false)}
         onConfirm={handleConfirmEndActiveShift}
         title="End active shift?"
@@ -620,12 +647,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: spacing.lg,
     gap: spacing.sm,
-    boxShadow: [{
-      offsetX: 0,
-      offsetY: 4,
-      blurRadius: 8,
-      color: "rgba(59, 109, 17, 0.1)",
-    }],
+    boxShadow: [
+      {
+        offsetX: 0,
+        offsetY: 4,
+        blurRadius: 8,
+        color: "rgba(59, 109, 17, 0.1)",
+      },
+    ],
   },
   activeShiftHeader: {
     flexDirection: "row",

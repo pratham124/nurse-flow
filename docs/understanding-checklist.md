@@ -40,6 +40,30 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-19 - Save Previous-Shift Snapshot to Server
+
+- Task: Complete Phase 5 Task 3.4 by saving carry-over nurse and patient suggestions to Supabase when a shift ends.
+- Problem understanding:
+  - [ ] Ending a server shift no longer restored the active shift, but carry-over suggestions were still only local.
+  - [ ] Reloading from the server could lose nurse and patient suggestions for the next shift.
+  - [ ] Request history and break schedules should not become carry-over data.
+- Solution understanding:
+  - [ ] `src/services/serverWorkspaceRepository.ts` now saves one previous-shift snapshot per floor template by replacing the older server snapshot.
+  - [ ] `src/store/ServerWorkspaceContext.tsx` exposes a server previous-shift snapshot save function.
+  - [ ] `src/screens/HomeScreen.tsx` saves the server carry-over snapshot before ending the active shift.
+  - [ ] Empty snapshots remove the older server snapshot instead of keeping stale suggestions.
+  - [ ] `docs/phase-5/supabase-auth-setup.md` documents the previous-snapshot insert and delete policies.
+- Broader context:
+  - [ ] Carry-over suggestions now follow the signed-in account instead of depending only on device-local state.
+  - [ ] The change stays within Phase 5 server persistence and does not add realtime, invites, push notifications, offline queues, drag-and-drop, tablet layout, or AI.
+  - [ ] Later role and authorization work can keep using the repository/provider boundary.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
 ### 2026-06-19 - Add Server Active Shift Persistence
 
 - Task: Complete Phase 5 Tasks 3.1, 3.2, 3.2a, and 3.3 by starting active shifts from server templates, saving active-shift changes to Supabase, refreshing after saves, and restoring the server active shift after session restore.
