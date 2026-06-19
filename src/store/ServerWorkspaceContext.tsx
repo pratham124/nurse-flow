@@ -111,6 +111,13 @@ function getActiveParticipation(
   return { type: "none" };
 }
 
+function hasActiveChargeShift(workspaceState: ServerWorkspaceState) {
+  return (
+    (workspaceState.status === "ready" || workspaceState.status === "empty") &&
+    Boolean(workspaceState.workspace.activeShift)
+  );
+}
+
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
@@ -191,6 +198,15 @@ export function ServerWorkspaceProvider({
       return;
     }
 
+    if (hasActiveChargeShift(workspaceState)) {
+      setJoinedNurseAccessState({
+        errorMessage:
+          "End your active charge shift before joining another shift as a nurse.",
+        status: "error",
+      });
+      return;
+    }
+
     const supabase = getSupabaseClient();
 
     if (!supabase) {
@@ -223,7 +239,7 @@ export function ServerWorkspaceProvider({
         status: "error",
       });
     }
-  }, [authState]);
+  }, [authState, workspaceState]);
 
   useEffect(() => {
     void loadJoinedNurseAccess();
@@ -242,6 +258,18 @@ export function ServerWorkspaceProvider({
 
       if (!supabase) {
         throw new Error("Supabase is not configured yet.");
+      }
+
+      if (joinedNurseAccessState.status === "ready") {
+        throw new Error(
+          "Leave your joined nurse shift before starting a charge shift.",
+        );
+      }
+
+      if (joinedNurseAccessState.status === "loading") {
+        throw new Error(
+          "Nurse shift access is still loading. Try starting the shift again in a moment.",
+        );
       }
 
       setSaveErrorMessage("");
@@ -267,7 +295,7 @@ export function ServerWorkspaceProvider({
         throw error;
       }
     },
-    [applyWorkspace, authState],
+    [applyWorkspace, authState, joinedNurseAccessState.status],
   );
 
   const startActiveShift = useCallback(

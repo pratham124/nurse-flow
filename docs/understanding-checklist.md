@@ -51,6 +51,8 @@ For each task, add a dated section with:
   - [ ] `UserRole` is now only `charge_nurse` for Phase 5 profiles.
   - [ ] `SessionGate` sends signed-in users to Home rather than routing by regular-nurse profile role.
   - [ ] `ServerWorkspaceContext` owns joined nurse assignment loading, retry, and active participation state.
+  - [ ] `ServerWorkspaceContext` blocks joined nurse access when the account already owns an active charge shift.
+  - [ ] `ServerWorkspaceContext` blocks starting a charge shift when the account is already joined to another shift as a nurse.
   - [ ] Joined nurse assignment loading uses `shift_nurse_access` and `get_joined_nurse_assignment_view()`.
   - [ ] Phase 5 docs describe future `Join active session` code entry without implementing it yet.
 - Broader context:
