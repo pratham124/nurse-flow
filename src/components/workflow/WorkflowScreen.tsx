@@ -22,7 +22,6 @@ type WorkflowScreenProps = {
   onPrimaryPress?: () => void;
   primaryDisabled?: boolean;
   actionErrorText?: string;
-  actionStatusText?: string;
   managesOwnScrolling?: boolean;
   bottomAccessory?: ReactNode;
 };
@@ -45,7 +44,6 @@ export function WorkflowScreen({
   onPrimaryPress,
   primaryDisabled = false,
   actionErrorText,
-  actionStatusText,
   managesOwnScrolling = false,
   bottomAccessory,
 }: WorkflowScreenProps) {
@@ -99,9 +97,6 @@ export function WorkflowScreen({
           <Text accessibilityRole="alert" style={styles.actionErrorText}>
             {actionErrorText}
           </Text>
-        ) : null}
-        {!actionErrorText && actionStatusText ? (
-          <Text style={styles.actionStatusText}>{actionStatusText}</Text>
         ) : null}
         {primaryLabel && onPrimaryPress ? (
           <View style={styles.actionRow}>
@@ -233,13 +228,6 @@ const styles = StyleSheet.create({
   actionErrorText: {
     color: colors.status.red700,
     fontSize: textSize.sm,
-    lineHeight: 18,
-    textAlign: "center",
-  },
-  actionStatusText: {
-    color: colors.status.greenIcon,
-    fontSize: textSize.sm,
-    fontWeight: fontWeight.semibold,
     lineHeight: 18,
     textAlign: "center",
   },

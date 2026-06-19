@@ -34,7 +34,7 @@ function DetailRow({ label, value }: DetailRowProps) {
 
 export default function LocalRequestDetailScreen() {
   const { localState, setLocalState } = useLocalState();
-  const { saveActiveShift, saveStatus } = useServerWorkspace();
+  const { saveActiveShift } = useServerWorkspace();
   const [serverSaveError, setServerSaveError] = useState("");
   const { requestId } = useLocalSearchParams<{
     requestId?: string | string[];
@@ -82,7 +82,6 @@ export default function LocalRequestDetailScreen() {
     <WorkflowScreen
       activeStep="Board"
       actionErrorText={serverSaveError}
-      actionStatusText={saveStatus === "saved" ? "Saved to account." : ""}
       flow={assignmentFlow}
       headerActionLabel="Floors"
       onHeaderActionPress={() => router.push("/")}

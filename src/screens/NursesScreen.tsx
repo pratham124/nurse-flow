@@ -484,7 +484,6 @@ export default function NursesScreen() {
   return (
     <WorkflowListScreen
       activeStep="Nurses"
-      actionStatusText={saveStatus === "saved" ? "Saved to account." : ""}
       actionErrorText={
         activeShift
           ? serverSaveError || nurseListError

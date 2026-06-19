@@ -214,7 +214,6 @@ export default function StartShiftScreen() {
   return (
     <WorkflowScreen
       activeStep="Shift"
-      actionStatusText={saveStatus === "saved" ? "Saved to account." : ""}
       actionErrorText={
         serverSaveError ||
         admittingSideError ||

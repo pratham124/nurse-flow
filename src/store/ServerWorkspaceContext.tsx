@@ -10,6 +10,7 @@ import {
 
 import {
   createServerActiveShift,
+  endServerActiveShift,
   getLocalStateFromServerWorkspace,
   loadServerWorkspace,
   saveServerActiveShift,
@@ -34,6 +35,7 @@ type ServerWorkspaceState =
   | { errorMessage: string; status: "error" };
 
 type ServerWorkspaceContextValue = {
+  endActiveShift: (activeShift: Shift) => Promise<void>;
   retryLoadWorkspace: () => Promise<void>;
   saveActiveShift: (activeShift: Shift) => Promise<Shift>;
   saveErrorMessage: string;
@@ -255,8 +257,44 @@ export function ServerWorkspaceProvider({
     [applyWorkspace, authState],
   );
 
+  const endActiveShift = useCallback(
+    async (activeShift: Shift) => {
+      if (
+        authState.status !== "signed_in" ||
+        authState.profile.role !== "charge_nurse"
+      ) {
+        throw new Error("Sign in as a charge nurse to end this shift.");
+      }
+
+      const supabase = getSupabaseClient();
+
+      if (!supabase) {
+        throw new Error("Supabase is not configured yet.");
+      }
+
+      setSaveErrorMessage("");
+      setSaveStatus("saving");
+
+      try {
+        await endServerActiveShift(supabase, authState.profile, activeShift);
+        const workspace = await loadServerWorkspace(supabase, authState.profile);
+
+        applyWorkspace(workspace);
+        setSaveStatus("saved");
+      } catch (error) {
+        setSaveErrorMessage(
+          getErrorMessage(error, "Shift could not be ended on the server."),
+        );
+        setSaveStatus("error");
+        throw error;
+      }
+    },
+    [applyWorkspace, authState],
+  );
+
   const value = useMemo(
     () => ({
+      endActiveShift,
       retryLoadWorkspace: loadWorkspace,
       saveActiveShift,
       saveErrorMessage,
@@ -266,6 +304,7 @@ export function ServerWorkspaceProvider({
       workspaceState,
     }),
     [
+      endActiveShift,
       loadWorkspace,
       saveActiveShift,
       saveErrorMessage,

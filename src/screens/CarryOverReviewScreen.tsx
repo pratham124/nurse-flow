@@ -246,7 +246,6 @@ export default function CarryOverReviewScreen() {
         serverSaveError ||
         (canContinue ? "" : "Start a shift before reviewing carry-over.")
       }
-      actionStatusText={saveStatus === "saved" ? "Saved to account." : ""}
       flow={carryOverReviewFlow}
       headerActionLabel="Floors"
       onHeaderActionPress={() => router.push("/")}

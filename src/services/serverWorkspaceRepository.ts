@@ -394,6 +394,38 @@ export async function saveServerActiveShift(
   return mapActiveShiftRow(data);
 }
 
+export async function endServerActiveShift(
+  supabase: SupabaseClient,
+  profile: UserProfile,
+  activeShift: Shift,
+) {
+  assertChargeNurse(profile);
+
+  if (!uuidPattern.test(activeShift.id)) {
+    throw new Error("Only server active shifts can be ended from this account.");
+  }
+
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("active_shifts")
+    .update({
+      ended_at: now,
+      shift_snapshot: activeShift,
+      updated_at: now,
+    })
+    .eq("id", activeShift.id)
+    .eq("charge_profile_id", profile.id)
+    .is("ended_at", null)
+    .select(activeShiftColumns)
+    .single<ActiveShiftRow>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return mapActiveShiftRow(data);
+}
+
 export function getLocalStateFromServerWorkspace(workspace: ServerWorkspace) {
   return {
     activeShift: workspace.activeShift?.shiftSnapshot,

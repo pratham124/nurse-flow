@@ -711,7 +711,6 @@ export default function PatientsAndAcuityScreen() {
   return (
     <WorkflowListScreen
       activeStep="Patients"
-      actionStatusText={saveStatus === "saved" ? "Saved to account." : ""}
       actionErrorText={
         activeShift
           ? serverSaveError ||

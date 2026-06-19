@@ -309,7 +309,6 @@ export default function BreakScheduleScreen() {
       onHeaderActionPress={() => router.push("/floor-board")}
       bottomAccessory={<BoardSubTabBar activeTab="breaks" />}
       actionErrorText={serverSaveError}
-      actionStatusText={saveStatus === "saved" ? "Saved to account." : ""}
       subtitle=""
       title={activeShift?.floorName ?? "Breaks"}
     >

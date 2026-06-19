@@ -123,7 +123,7 @@ export default function Index() {
   const { authState, signOut } = useAuthSession();
   const { localState, savePreviousShiftSnapshot, setLocalState } =
     useLocalState();
-  const { retryLoadWorkspace, startActiveShift, workspaceState } =
+  const { endActiveShift, retryLoadWorkspace, startActiveShift, workspaceState } =
     useServerWorkspace();
   const [floorTemplateToDelete, setFloorTemplateToDelete] =
     useState<FloorTemplate>();
@@ -246,7 +246,7 @@ export default function Index() {
       ...currentState,
       draftFloorTemplate: undefined,
     }));
-    setTemplateEditMessage("Saved to account.");
+    setTemplateEditMessage("");
     router.push(
       hasPreviousShiftSnapshot ? "/carry-over-review" : "/start-shift",
     );
@@ -254,6 +254,19 @@ export default function Index() {
 
   async function handleConfirmEndActiveShift() {
     if (activeShift) {
+      try {
+        await endActiveShift(activeShift);
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Shift could not be ended. Try again.";
+
+        setTemplateEditMessage(message);
+        setEndShiftConfirmationVisible(false);
+        return;
+      }
+
       try {
         await savePreviousShiftSnapshot(createPreviousShiftSnapshot(activeShift));
       } catch {

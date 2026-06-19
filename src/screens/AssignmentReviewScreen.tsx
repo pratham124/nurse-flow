@@ -231,7 +231,6 @@ export default function AssignmentReviewScreen() {
     <WorkflowScreen
       activeStep="Assign"
       actionErrorText={serverSaveError || firstBlockerMessage}
-      actionStatusText={saveStatus === "saved" ? "Saved to account." : ""}
       flow={assignmentFlow}
       headerActionLabel="Floors"
       onHeaderActionPress={() => router.push("/")}

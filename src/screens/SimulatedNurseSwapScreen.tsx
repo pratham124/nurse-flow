@@ -269,7 +269,6 @@ export default function SimulatedNurseSwapScreen() {
     <WorkflowScreen
       activeStep="Board"
       actionErrorText={formError}
-      actionStatusText={saveStatus === "saved" ? "Saved to account." : ""}
       flow={assignmentFlow}
       headerActionLabel="Floors"
       onHeaderActionPress={() => router.push("/")}
