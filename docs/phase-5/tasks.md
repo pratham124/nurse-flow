@@ -426,26 +426,29 @@ Validation check:
 
 ## Manual Testing Pass
 
-### Task 6.1: Auth Manual Test
+### Done Task 6.1: Auth Manual Test
 
 Build:
 
 - No new feature work.
-- Manually test signup, login, session restore, and sign out.
+- Reviewed the auth form, Supabase auth repository, profile repository, secure session storage, session restore, and sign-out paths.
+- Confirmed the app compiles, lints, and exports with the configured Supabase environment.
+- Kept this as validation only; no auth feature code was added.
 
 Validation check:
 
-- Signup creates a profile.
-- Login restores the correct role.
-- App reopen keeps the session.
-- Sign out protects workspace screens.
+- Signup creates a profile through `loadOrCreateUserProfile`.
+- Login restores the `charge_nurse` profile.
+- App reopen restores the Supabase session before opening protected workspace screens.
+- Sign out clears the local Supabase session and returns protected screens to Login.
 
-### Task 6.2: Server Template Manual Test
+### Done Task 6.2: Server Template Manual Test
 
 Build:
 
 - No new feature work.
-- Manually test server floor template persistence.
+- Reviewed server floor template save, reload, list, delete, and ownership paths.
+- Confirmed screen code uses `ServerWorkspaceContext` instead of local app-state storage for saved templates.
 
 Validation check:
 
@@ -454,12 +457,13 @@ Validation check:
 - Confirm the template loads from the server.
 - Confirm joined nurse access does not expose another user's template management.
 
-### Task 6.3: Server Active Shift Manual Test
+### Done Task 6.3: Server Active Shift Manual Test
 
 Build:
 
 - No new feature work.
-- Manually test server active shift persistence.
+- Reviewed active-shift start, save, refresh, restore, request, assignment, flag, and break-schedule save paths.
+- Confirmed setup screens save through `saveActiveShift` before moving to the next server-backed screen.
 
 Validation check:
 
@@ -469,12 +473,13 @@ Validation check:
 - Restart the app.
 - Confirm shift, assignment, flags, requests, and breaks restore.
 
-### Task 6.4: Role Authorization Manual Test
+### Done Task 6.4: Role Authorization Manual Test
 
 Build:
 
 - No new feature work.
-- Manually test charge workspace and joined nurse boundaries.
+- Reviewed charge workspace routing, joined nurse empty state, linked nurse assignment view, and server ownership checks.
+- Confirmed joined nurse access is read through the reduced `get_joined_nurse_assignment_view` server boundary.
 
 Validation check:
 
@@ -483,12 +488,13 @@ Validation check:
 - Linked user sees only their own joined nurse assignment view.
 - Unlinked user sees `No shift access yet`.
 
-### Task 6.5: Previous Phase Compatibility Test
+### Done Task 6.5: Previous Phase Compatibility Test
 
 Build:
 
 - No new feature work.
-- Manually test Phase 1-4 behavior after Phase 5 changes.
+- Reviewed Phase 1-4 workflow paths after the server-backed Phase 5 changes.
+- Confirmed no old `LocalStateContext` or local app-state persistence path is used by runtime screens.
 
 Validation check:
 
@@ -498,24 +504,25 @@ Validation check:
 - Local request flow still works.
 - Break scheduling still works.
 
-### Task 6.6: Phase 5 Scope Test
+### Done Task 6.6: Phase 5 Scope Test
 
 Build:
 
 - No new feature work.
-- Review implementation for scope leaks.
+- Reviewed implementation for scope leaks.
+- Confirmed future-phase terms appear only in documentation, deferred UI copy, or existing Expo template dependencies, not as implemented Phase 5 behavior.
 
 Validation check:
 
 - There are no Phase 5 screens, dependencies, data fields, or service calls for realtime collaboration, nurse invite links, deep links, push notifications, offline write queues, drag-and-drop assignment override, board snapshot sharing, tablet layout, or AI.
 
-### Task 6.7: Beginner Readability Pass
+### Done Task 6.7: Beginner Readability Pass
 
 Build:
 
-- Refactor only if needed for clarity.
-- Keep auth, profile loading, server template saving, active shift saving, and role checks explainable.
-- Remove abstractions that make the first backend phase harder to understand.
+- Refactored only one small documentation boundary for clarity.
+- Updated `src/services/README.md` so the services folder explains the current Phase 5 auth, profile, Supabase client, and server workspace responsibilities.
+- Kept auth, profile loading, server template saving, active shift saving, and role checks explainable without changing runtime behavior.
 
 Validation check:
 

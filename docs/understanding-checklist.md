@@ -40,6 +40,29 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-20 - Complete Phase 5 Manual Test Pass
+
+- Task: Complete Phase 5 Tasks 6.1 through 6.7 by validating the auth, server template, active shift, role boundary, previous-phase compatibility, scope, and readability pass without adding new feature behavior.
+- Problem understanding:
+  - [ ] Task 6.x is a validation and readability pass, not a new feature build.
+  - [ ] Manual-test tasks should verify the Phase 5 flow while preserving previous Phase 1-4 behavior.
+  - [ ] Future-phase features such as realtime, invite links, push notifications, offline queues, drag-and-drop, tablet layout, and AI must stay out of this pass.
+- Solution understanding:
+  - [ ] `docs/phase-5/tasks.md` now marks only Tasks 6.1 through 6.7 done.
+  - [ ] `src/services/README.md` now describes the current Phase 5 service boundaries for auth, profiles, Supabase client setup, and server workspace persistence.
+  - [ ] No runtime feature code changed.
+  - [ ] Validation covered TypeScript, lint, web export, server-backed code paths, and scope searches.
+- Broader context:
+  - [ ] This closes the Phase 5 task list without jumping into Phase 6 collaboration or invite behavior.
+  - [ ] The service boundary docs make it easier to explain where backend code belongs.
+  - [ ] The app remains account-backed through normal request/response server persistence.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
 ### 2026-06-20 - Enable Floor Template Deletion
 
 - Task: Make Home floor-template swipe delete available and actually remove the saved server template after confirmation.
