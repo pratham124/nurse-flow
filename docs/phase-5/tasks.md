@@ -385,18 +385,19 @@ Validation check:
 
 ## Remove Local Persistence
 
-### Task 5.1: Remove Local Storage and Local State Context
+### Done Task 5.1: Remove Local Storage and Local State Context
 
 Story coverage: US6
 
 Build:
 
-- Remove the old local storage repository and saved local app-state key from the Phase 5 runtime path.
-- Remove or replace the local storage-backed state context so server workspace data is the source of truth.
-- Delete migration/import planning for old Phase 1-4 testing data.
-- Route templates, active shifts, previous-shift snapshots, nurses, patients, assignment results, requests, and breaks through server-backed reads and writes.
-- Keep temporary screen/form state only for unsaved input before submit.
-- Make sign out clear in-memory server workspace state without relying on local persisted app data.
+- Removed the old local storage repository and saved local app-state key from the Phase 5 runtime path.
+- Removed the local workspace mirror so screens read server-backed templates, active shift, and snapshots from `ServerWorkspaceContext`.
+- Added a small draft-only context for unsaved floor-template setup and simulated nurse testing state.
+- Deleted runtime migration/import handling for old Phase 1-4 testing data.
+- Kept templates, active shifts, previous-shift snapshots, nurses, patients, assignment results, requests, and breaks on server-backed reads and writes.
+- Kept temporary screen/form state only for unsaved input before submit.
+- Made sign out clear in-memory server workspace state without relying on local persisted app data.
 
 Validation check:
 
@@ -405,15 +406,15 @@ Validation check:
 - Create/edit templates, start/restore shifts, add nurses/patients, run assignment, submit requests, and generate breaks through server-backed state.
 - Confirm deleting old local test data does not affect server-backed account data.
 
-### Task 5.2: Review Previous Phase Workflows
+### Done Task 5.2: Review Previous Phase Workflows
 
 Story coverage: US6
 
 Build:
 
-- Manually walk through Phase 1-4 core flows against server-backed state.
-- Fix only compatibility issues that block the existing flow.
-- Avoid refactors unrelated to server persistence.
+- Reviewed Phase 1-4 core flow code paths against server-backed state.
+- Fixed only compatibility issues that blocked the server-backed flow.
+- Avoided refactors unrelated to server persistence.
 
 Validation check:
 

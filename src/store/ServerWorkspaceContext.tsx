@@ -11,7 +11,6 @@ import {
 import {
   createServerActiveShift,
   endServerActiveShift,
-  getLocalStateFromServerWorkspace,
   loadJoinedNurseAssignmentView,
   loadServerWorkspace,
   saveServerActiveShift,
@@ -20,7 +19,6 @@ import {
 } from "../services/serverWorkspaceRepository";
 import { getSupabaseClient } from "../services/supabaseClient";
 import { useAuthSession } from "./AuthSessionContext";
-import { useLocalState } from "./LocalStateContext";
 import type {
   FloorTemplate,
   FloorTemplateRecord,
@@ -52,8 +50,11 @@ type ActiveParticipation =
 
 type ServerWorkspaceContextValue = {
   activeParticipation: ActiveParticipation;
+  activeShift?: Shift;
   endActiveShift: (activeShift: Shift) => Promise<void>;
+  floorTemplates: FloorTemplate[];
   joinedNurseAccessState: JoinedNurseAccessState;
+  previousShiftSnapshots: PreviousShiftSnapshot[];
   retryLoadJoinedNurseAccess: () => Promise<void>;
   retryLoadWorkspace: () => Promise<void>;
   saveActiveShift: (activeShift: Shift) => Promise<Shift>;
@@ -122,11 +123,35 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+function getWorkspaceSnapshots(workspaceState: ServerWorkspaceState) {
+  if (workspaceState.status !== "ready" && workspaceState.status !== "empty") {
+    return {
+      activeShift: undefined,
+      floorTemplates: [],
+      previousShiftSnapshots: [],
+    };
+  }
+
+  return {
+    activeShift: workspaceState.workspace.activeShift?.shiftSnapshot,
+    floorTemplates: workspaceState.workspace.floorTemplates.map(
+      (record) => record.templateSnapshot,
+    ),
+    previousShiftSnapshots:
+      workspaceState.workspace.previousShiftSnapshots.map((snapshot) => ({
+        completedAt: snapshot.completedAt,
+        floorTemplateId: snapshot.floorTemplateId,
+        id: snapshot.id,
+        nurseSuggestions: snapshot.nurseSuggestions,
+        patientSuggestions: snapshot.patientSuggestions,
+      })),
+  };
+}
+
 export function ServerWorkspaceProvider({
   children,
 }: ServerWorkspaceProviderProps) {
   const { authState } = useAuthSession();
-  const { hasLoadedLocalState, setLocalState } = useLocalState();
   const [workspaceState, setWorkspaceState] = useState<ServerWorkspaceState>({
     status: "idle",
   });
@@ -139,15 +164,9 @@ export function ServerWorkspaceProvider({
 
   const applyWorkspace = useCallback(
     (workspace: ServerWorkspace) => {
-      const serverLocalState = getLocalStateFromServerWorkspace(workspace);
-
-      setLocalState((currentState) => ({
-        ...currentState,
-        ...serverLocalState,
-      }));
       setWorkspaceState(getWorkspaceState(workspace));
     },
-    [setLocalState],
+    [],
   );
 
   const loadWorkspace = useCallback(async () => {
@@ -156,11 +175,6 @@ export function ServerWorkspaceProvider({
       authState.profile.role !== "charge_nurse"
     ) {
       setWorkspaceState({ status: "idle" });
-      return;
-    }
-
-    if (!hasLoadedLocalState) {
-      setWorkspaceState({ status: "loading" });
       return;
     }
 
@@ -186,7 +200,7 @@ export function ServerWorkspaceProvider({
         status: "error",
       });
     }
-  }, [applyWorkspace, authState, hasLoadedLocalState]);
+  }, [applyWorkspace, authState]);
 
   useEffect(() => {
     void loadWorkspace();
@@ -460,6 +474,7 @@ export function ServerWorkspaceProvider({
         workspaceState,
         joinedNurseAccessState,
       ),
+      ...getWorkspaceSnapshots(workspaceState),
       endActiveShift,
       joinedNurseAccessState,
       retryLoadJoinedNurseAccess: loadJoinedNurseAccess,

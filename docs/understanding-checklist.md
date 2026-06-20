@@ -40,6 +40,98 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-20 - Preserve Pending Carry-Over On Resume
+
+- Task: Fix Home resume so an active setup shift returns to carry-over review until that review has been completed.
+- Problem understanding:
+  - [ ] A setup shift can exist before carry-over review is finished.
+  - [ ] Home previously resumed every setup shift to Start Shift.
+  - [ ] Always showing carry-over would repeat the review even after the user completed it.
+- Solution understanding:
+  - [ ] `Shift` now has optional `carryOverReviewedAt`.
+  - [ ] `CarryOverReviewScreen` sets `carryOverReviewedAt` when Continue is pressed.
+  - [ ] `HomeScreen` routes Resume to carry-over when a matching previous snapshot exists and `carryOverReviewedAt` is still missing.
+- Broader context:
+  - [ ] Carry-over review becomes a resumable setup step.
+  - [ ] Completed carry-over review does not keep interrupting normal setup resume.
+  - [ ] This stays inside server-backed active-shift persistence.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
+### 2026-06-20 - Fix Carry-Over Patient Bed Matching
+
+- Task: Fix carry-over patient suggestions so they can still apply when the new active shift has a matching bed label but not the exact previous bed id.
+- Problem understanding:
+  - [ ] Carry-over snapshots store `previousBedId` and `previousBedLabel`.
+  - [ ] Exact bed-id matching can fail after server-backed template/save cycles.
+  - [ ] Matching across the same floor template should still be safe when the bed label exists.
+- Solution understanding:
+  - [ ] `src/screens/CarryOverReviewScreen.tsx` now finds the target bed by id first.
+  - [ ] If the id no longer exists, it falls back to `previousBedLabel`.
+  - [ ] Patient suggestions without a matching id or label stay filtered out.
+- Broader context:
+  - [ ] Nurse carry-over is unaffected because nurse suggestions create new nurse rows.
+  - [ ] Patient carry-over remains tied to beds on the current active shift.
+  - [ ] This preserves Phase 5 scope and does not add sync/realtime behavior.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
+### 2026-06-20 - Refactor Workspace Reads Out Of Local State
+
+- Task: Refactor Phase 5 workspace screens so server-backed templates, active shifts, previous-shift snapshots, flags, requests, and breaks are read from `ServerWorkspaceContext` instead of a copied `LocalStateContext`.
+- Problem understanding:
+  - [ ] Copying server workspace snapshots into global local state made the source of truth harder to explain.
+  - [ ] Saved server data and unsaved UI drafts need different homes.
+  - [ ] Some screens still need temporary edits before submit, but those edits do not need global app state.
+- Solution understanding:
+  - [ ] `src/store/ServerWorkspaceContext.tsx` now exposes `floorTemplates`, `activeShift`, and `previousShiftSnapshots` directly.
+  - [ ] `src/store/WorkflowDraftContext.tsx` owns only `draftFloorTemplate` and simulated nurse testing state.
+  - [ ] `src/hooks/useActiveShiftDraft.ts` gives setup screens a screen-local active-shift draft before they call `saveActiveShift`.
+  - [ ] `src/store/LocalStateContext.tsx` and the old local storage service files are removed.
+  - [ ] Screens no longer import `useLocalState`.
+- Broader context:
+  - [ ] Server workspace data is clearer as the saved truth.
+  - [ ] Unsaved form edits stay local to the screen or draft-only context.
+  - [ ] This remains Phase 5 server persistence cleanup and does not add future collaboration features.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
+### 2026-06-20 - Remove Local App-State Persistence
+
+- Task: Complete Phase 5 Tasks 5.1 and 5.2 by removing the old durable local app-state path and reviewing previous workflow compatibility against server-backed state.
+- Problem understanding:
+  - [x] Phase 5 server persistence should not restore templates, active shifts, carry-over snapshots, requests, or breaks from old device-local app data.
+  - [x] `LocalStateContext` was still loading and saving the old `nurseflow.localAppState.v1` data path.
+  - [x] Previous Phase 1-4 screens still need an in-memory working copy so their forms and setup flow remain usable.
+- Solution understanding:
+  - [x] `src/store/ServerWorkspaceContext.tsx` exposes server-backed workspace snapshots directly.
+  - [x] `src/store/WorkflowDraftContext.tsx` keeps only unsaved floor-template draft state and simulated nurse testing state.
+  - [x] `src/services/storageRepository.ts` and `src/services/localStorageAdapters.ts` were removed from the runtime path.
+  - [x] `src/screens/HomeScreen.tsx` no longer writes a previous-shift snapshot to local storage after saving carry-over to the server.
+  - [x] `package.json` no longer lists `expo-file-system` as a direct dependency for app-state persistence.
+- Broader context:
+  - [x] Account data now restores from Supabase session plus server workspace records, not from old Phase 1-4 local test data.
+  - [x] Temporary form state can still be local before submit, but saved truth belongs to the server.
+  - [x] This stays inside Phase 5 and does not add realtime, invite links, deep links, push notifications, offline queues, drag-and-drop, tablet layout, or AI.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
 ### 2026-06-19 - Add Join Active Session Screen Shell
 
 - Task: Add a Home entry and placeholder screen for the future nurse-code join flow without implementing code verification.

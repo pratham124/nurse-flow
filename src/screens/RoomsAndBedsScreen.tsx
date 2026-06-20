@@ -15,7 +15,7 @@ import {
   WorkflowSection,
 } from "../components/workflow";
 import { createLocalId } from "../helpers/localId";
-import { useLocalState } from "../store/LocalStateContext";
+import { useWorkflowDraft } from "../store/WorkflowDraftContext";
 import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
 import type { Bed, Room } from "../types/models";
 
@@ -145,12 +145,12 @@ function createRoomBed(room: Room, bedNumber: number): Bed {
 }
 
 export default function RoomsAndBedsScreen() {
-  const { localState, setLocalState } = useLocalState();
+  const { draftFloorTemplate, setDraftFloorTemplate } = useWorkflowDraft();
   const [roomName, setRoomName] = useState("");
   const [roomNameError, setRoomNameError] = useState("");
   const [roomListError, setRoomListError] = useState("");
-  const screenTitle = localState.draftFloorTemplate?.name ?? "Rooms and beds";
-  const rooms = localState.draftFloorTemplate?.rooms ?? [];
+  const screenTitle = draftFloorTemplate?.name ?? "Rooms and beds";
+  const rooms = draftFloorTemplate?.rooms ?? [];
 
   function handleRoomNameChange(text: string) {
     setRoomName(text);
@@ -177,11 +177,9 @@ export default function RoomsAndBedsScreen() {
       return;
     }
 
-    setLocalState((currentState) => {
-      const currentDraft = currentState.draftFloorTemplate;
-
+    setDraftFloorTemplate((currentDraft) => {
       if (!currentDraft) {
-        return currentState;
+        return currentDraft;
       }
 
       const newRoom: Room = {
@@ -192,12 +190,9 @@ export default function RoomsAndBedsScreen() {
       };
 
       return {
-        ...currentState,
-        draftFloorTemplate: {
-          ...currentDraft,
-          rooms: [...currentDraft.rooms, newRoom],
-          beds: [...currentDraft.beds, createRoomBed(newRoom, 1)],
-        },
+        ...currentDraft,
+        rooms: [...currentDraft.rooms, newRoom],
+        beds: [...currentDraft.beds, createRoomBed(newRoom, 1)],
       };
     });
 
@@ -206,31 +201,25 @@ export default function RoomsAndBedsScreen() {
   }
 
   function handleRemoveRoom(roomId: string) {
-    setLocalState((currentState) => {
-      const currentDraft = currentState.draftFloorTemplate;
-
+    setDraftFloorTemplate((currentDraft) => {
       if (!currentDraft) {
-        return currentState;
+        return currentDraft;
       }
 
       return {
-        ...currentState,
-        draftFloorTemplate: {
-          ...currentDraft,
-          rooms: currentDraft.rooms.filter((room) => room.id !== roomId),
-          beds: currentDraft.beds.filter((bed) => bed.roomId !== roomId),
-        },
+        ...currentDraft,
+        rooms: currentDraft.rooms.filter((room) => room.id !== roomId),
+        beds: currentDraft.beds.filter((bed) => bed.roomId !== roomId),
       };
     });
   }
 
   function handleUpdateBedCount(roomId: string, bedCount: number) {
-    setLocalState((currentState) => {
-      const currentDraft = currentState.draftFloorTemplate;
+    setDraftFloorTemplate((currentDraft) => {
       const roomToUpdate = currentDraft?.rooms.find((room) => room.id === roomId);
 
       if (!currentDraft || !roomToUpdate) {
-        return currentState;
+        return currentDraft;
       }
 
       const updatedRoom = {
@@ -246,14 +235,11 @@ export default function RoomsAndBedsScreen() {
           );
 
       return {
-        ...currentState,
-        draftFloorTemplate: {
-          ...currentDraft,
-          rooms: currentDraft.rooms.map((room) =>
-            room.id === roomId ? updatedRoom : room,
-          ),
-          beds: updatedBeds,
-        },
+        ...currentDraft,
+        rooms: currentDraft.rooms.map((room) =>
+          room.id === roomId ? updatedRoom : room,
+        ),
+        beds: updatedBeds,
       };
     });
   }

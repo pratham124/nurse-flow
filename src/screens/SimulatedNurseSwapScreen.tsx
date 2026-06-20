@@ -8,8 +8,8 @@ import {
   WorkflowScreen,
   WorkflowSection,
 } from "../components/workflow";
-import { useLocalState } from "../store/LocalStateContext";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
+import { useWorkflowDraft } from "../store/WorkflowDraftContext";
 import { colors, fontWeight, radius, shadows, spacing, textSize } from "../theme/tokens";
 import type { LocalId, NurseRequest } from "../types/models";
 import {
@@ -171,8 +171,8 @@ function SwapFormContent({
 }
 
 export default function SimulatedNurseSwapScreen() {
-  const { localState, simulatedSessionState } = useLocalState();
-  const { saveActiveShift, saveStatus } = useServerWorkspace();
+  const { activeShift, saveActiveShift, saveStatus } = useServerWorkspace();
+  const { simulatedSessionState } = useWorkflowDraft();
   const [reason, setReason] = useState("");
   const [reasonError, setReasonError] = useState("");
   const [formError, setFormError] = useState("");
@@ -180,7 +180,7 @@ export default function SimulatedNurseSwapScreen() {
     LocalId | undefined
   >();
   const assignmentResult = getSelectedNurseAssignmentView(
-    localState.activeShift,
+    activeShift,
     simulatedSessionState.selectedNurseId,
   );
   const readyView =
@@ -226,13 +226,13 @@ export default function SimulatedNurseSwapScreen() {
       return;
     }
 
-    if (!localState.activeShift) {
+    if (!activeShift) {
       setFormError("Start a shift before submitting a swap request.");
       return;
     }
 
     const swapRequest: NurseRequest = {
-      id: createNurseRequestId(localState.activeShift),
+      id: createNurseRequestId(activeShift),
       createdAt: new Date().toISOString(),
       message: trimmedReason,
       requestingNurseId: readyView.nurse.id,
@@ -242,9 +242,9 @@ export default function SimulatedNurseSwapScreen() {
       type: "swap",
     };
     const nextShift = {
-      ...localState.activeShift,
+      ...activeShift,
       nurseRequests: [
-        ...getShiftNurseRequests(localState.activeShift),
+        ...getShiftNurseRequests(activeShift),
         swapRequest,
       ],
     };

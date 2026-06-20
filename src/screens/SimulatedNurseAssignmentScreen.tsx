@@ -11,7 +11,8 @@ import {
   WorkflowListScreen,
   WorkflowSection,
 } from "../components/workflow";
-import { useLocalState } from "../store/LocalStateContext";
+import { useServerWorkspace } from "../store/ServerWorkspaceContext";
+import { useWorkflowDraft } from "../store/WorkflowDraftContext";
 import { colors, fontWeight, radius, shadows, spacing, textSize } from "../theme/tokens";
 import type { Acuity, ExperienceLevel, NurseRequest, Sex } from "../types/models";
 import {
@@ -435,17 +436,18 @@ function renderAssignmentItem({ item }: { item: NurseAssignmentListItem }) {
 }
 
 export default function SimulatedNurseAssignmentScreen() {
-  const { localState, setSimulatedSessionState, simulatedSessionState } =
-    useLocalState();
+  const { activeShift } = useServerWorkspace();
+  const { setSimulatedSessionState, simulatedSessionState } =
+    useWorkflowDraft();
   const assignmentResult = getSelectedNurseAssignmentView(
-    localState.activeShift,
+    activeShift,
     simulatedSessionState.selectedNurseId,
   );
   const listItems = getRecoveryListItems(assignmentResult);
   const readyView =
     assignmentResult.status === "ready" ? assignmentResult.view : undefined;
   const breakView = getNurseBreakView(
-    localState.activeShift,
+    activeShift,
     readyView?.nurse.id,
   );
 
@@ -465,7 +467,7 @@ export default function SimulatedNurseAssignmentScreen() {
         readyView ? (
           <NurseAssignmentHeader
             breakView={breakView}
-            hasBreakSchedule={Boolean(localState.activeShift?.breakSchedule)}
+            hasBreakSchedule={Boolean(activeShift?.breakSchedule)}
             onFlagIssue={() => router.push("/simulated-nurse-issue")}
             onRequestSwap={() => router.push("/simulated-nurse-swap")}
             view={readyView}

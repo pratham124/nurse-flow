@@ -10,7 +10,7 @@ import {
   WorkflowListScreen,
   WorkflowSection,
 } from "../components/workflow";
-import { useLocalState } from "../store/LocalStateContext";
+import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
 import type { Flag, FlagSeverity, Shift } from "../types/models";
 import {
@@ -401,15 +401,15 @@ function renderFlagItem({ item }: { item: FlagListItem }) {
 }
 
 export default function FlagsScreen() {
-  const { localState } = useLocalState();
+  const { activeShift } = useServerWorkspace();
   const [activeReviewTab, setActiveReviewTab] = useState<"Flags" | "Requests">("Flags");
   const [selectedFilter, setSelectedFilter] = useState<FlagFilter>("All");
   const [selectedRequestFilter, setSelectedRequestFilter] =
     useState<RequestFilter>("All");
   const [selectedRequestStatusFilter, setSelectedRequestStatusFilter] =
     useState<RequestStatusFilter>("All");
-  const flags = getFlagRows(localState.activeShift);
-  const requests = getNurseRequestDisplays(localState.activeShift);
+  const flags = getFlagRows(activeShift);
+  const requests = getNurseRequestDisplays(activeShift);
   const filteredFlags = filterFlagRows(flags, selectedFilter);
   const filteredRequests = filterNurseRequestRows(
     requests,
@@ -458,7 +458,7 @@ export default function FlagsScreen() {
       bottomAccessory={<BoardSubTabBar activeTab="flags" />}
       renderItem={renderFlagItem}
       subtitle=""
-      title={localState.activeShift?.floorName ?? "Flags and requests"}
+      title={activeShift?.floorName ?? "Flags and requests"}
     />
   );
 }

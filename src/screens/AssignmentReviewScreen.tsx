@@ -10,7 +10,6 @@ import {
   WorkflowSection,
   WorkflowScreen,
 } from "../components/workflow";
-import { useLocalState } from "../store/LocalStateContext";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { assignmentFlow } from "../utils/workflowFlows";
 import {
@@ -168,10 +167,8 @@ function AssignmentReviewListHeader({
 }
 
 export default function AssignmentReviewScreen() {
-  const { localState, setLocalState } = useLocalState();
-  const { saveActiveShift, saveStatus } = useServerWorkspace();
+  const { activeShift, saveActiveShift, saveStatus } = useServerWorkspace();
   const [serverSaveError, setServerSaveError] = useState("");
-  const activeShift = localState.activeShift;
   const nurses = activeShift?.nurses ?? [];
   const validation = getAssignmentValidation(activeShift);
   const patientNeedSummary = getAssignmentNeedSummary(activeShift);
@@ -205,11 +202,6 @@ export default function AssignmentReviewScreen() {
       flags: generateAssignmentFlags(activeShift, assignmentResult),
       status: "assigned" as const,
     };
-
-    setLocalState((currentState) => ({
-      ...currentState,
-      activeShift: nextShift,
-    }));
 
     try {
       setServerSaveError("");

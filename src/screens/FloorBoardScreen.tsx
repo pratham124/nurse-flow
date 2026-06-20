@@ -14,7 +14,8 @@ import {
   WorkflowListScreen,
   WorkflowSection,
 } from "../components/workflow";
-import { useLocalState } from "../store/LocalStateContext";
+import { useServerWorkspace } from "../store/ServerWorkspaceContext";
+import { useWorkflowDraft } from "../store/WorkflowDraftContext";
 import {
   getBreakEntryForNurse,
   getBreakWarningsForNurse,
@@ -679,10 +680,10 @@ function getRoleSimulationMessage(activeShift?: Shift) {
 }
 
 export default function FloorBoardScreen() {
-  const { localState, setSimulatedSessionState, simulatedSessionState } =
-    useLocalState();
+  const { activeShift } = useServerWorkspace();
+  const { setSimulatedSessionState, simulatedSessionState } =
+    useWorkflowDraft();
   const [selectedFilter, setSelectedFilter] = useState<BoardFilter>("All");
-  const activeShift = localState.activeShift;
   const { occupiedBedCount, totalBedCount } = getShiftCensus(activeShift);
   const admittingDoctorSide = activeShift?.doctorSides.find(
     (doctorSide) => doctorSide.id === activeShift.admittingDoctorSideId,

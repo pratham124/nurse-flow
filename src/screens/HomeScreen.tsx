@@ -15,8 +15,8 @@ import {
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import { useAuthSession } from "../store/AuthSessionContext";
-import { useLocalState } from "../store/LocalStateContext";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
+import { useWorkflowDraft } from "../store/WorkflowDraftContext";
 import {
   colors,
   radius,
@@ -120,14 +120,13 @@ function FloorTemplateRow({
 
 export default function Index() {
   const { authState, signOut } = useAuthSession();
+  const { resetWorkflowDraft, setDraftFloorTemplate } = useWorkflowDraft();
   const {
-    localState,
-    savePreviousShiftSnapshot: saveLocalPreviousShiftSnapshot,
-    setLocalState,
-  } = useLocalState();
-  const {
+    activeShift,
     activeParticipation,
     endActiveShift,
+    floorTemplates,
+    previousShiftSnapshots,
     retryLoadWorkspace,
     savePreviousShiftSnapshot: saveServerPreviousShiftSnapshot,
     startActiveShift,
@@ -148,35 +147,30 @@ export default function Index() {
     workspaceState.status === "error" ? workspaceState.errorMessage : "";
   const visibleFloorTemplates = isServerWorkspaceLoading
     ? []
-    : localState.floorTemplates;
+    : floorTemplates;
   const floorTemplateCount = visibleFloorTemplates.length;
 
-  const activeShift = isServerWorkspaceLoading
-    ? undefined
-    : localState.activeShift;
-  const activeShiftTemplate = activeShift
-    ? localState.floorTemplates.find(
-        (t) => t.id === activeShift.floorTemplateId,
+  const visibleActiveShift = isServerWorkspaceLoading ? undefined : activeShift;
+  const activeShiftTemplate = visibleActiveShift
+    ? floorTemplates.find(
+        (t) => t.id === visibleActiveShift?.floorTemplateId,
       )
     : null;
   const activeShiftMissingTemplate = Boolean(
-    activeShift && !activeShiftTemplate,
+    visibleActiveShift && !activeShiftTemplate,
   );
   const activeShiftFloorName =
-    activeShift?.floorName ?? activeShiftTemplate?.name ?? "Active Floor";
-  const activeShiftNursesCount = activeShift?.nurses?.length ?? 0;
+    visibleActiveShift?.floorName ?? activeShiftTemplate?.name ?? "Active Floor";
+  const activeShiftNursesCount = visibleActiveShift?.nurses?.length ?? 0;
   const activeShiftPatientsCount =
-    activeShift?.bedStates?.filter((bedState) =>
+    visibleActiveShift?.bedStates?.filter((bedState) =>
       bedState.patient?.initials.trim(),
     ).length ?? 0;
   const profile =
     authState.status === "signed_in" ? authState.profile : undefined;
 
   function handleCreateFloor() {
-    setLocalState((currentState) => ({
-      ...currentState,
-      draftFloorTemplate: undefined,
-    }));
+    resetWorkflowDraft();
     setTemplateEditMessage("");
 
     router.push("/floor-details");
@@ -202,43 +196,22 @@ export default function Index() {
   }
 
   function handleConfirmDeleteFloor() {
-    if (!floorTemplateToDelete) {
-      return;
-    }
-
-    setLocalState((currentState) => {
-      const shouldClearActiveShift =
-        currentState.activeShift?.floorTemplateId === floorTemplateToDelete.id;
-
-      return {
-        ...currentState,
-        activeShift: shouldClearActiveShift
-          ? undefined
-          : currentState.activeShift,
-        floorTemplates: currentState.floorTemplates.filter(
-          (floorTemplate) => floorTemplate.id !== floorTemplateToDelete.id,
-        ),
-      };
-    });
     setFloorTemplateToDelete(undefined);
   }
 
   function handleSelectTemplate(floorTemplate: FloorTemplate) {
-    if (activeShift) {
+    if (visibleActiveShift) {
       setTemplateEditMessage("End the active shift before editing templates.");
       return;
     }
 
-    setLocalState((currentState) => ({
-      ...currentState,
-      draftFloorTemplate: copyFloorTemplate(floorTemplate),
-    }));
+    setDraftFloorTemplate(copyFloorTemplate(floorTemplate));
     setTemplateEditMessage("");
     router.push("/template-review");
   }
 
   async function handleStartShift(floorTemplate: FloorTemplate) {
-    if (activeShift) {
+    if (visibleActiveShift) {
       setTemplateEditMessage(
         "End the active shift before starting another shift.",
       );
@@ -246,10 +219,7 @@ export default function Index() {
     }
 
     if (!isCompletedFloorTemplate(floorTemplate)) {
-      setLocalState((currentState) => ({
-        ...currentState,
-        draftFloorTemplate: copyFloorTemplate(floorTemplate),
-      }));
+      setDraftFloorTemplate(copyFloorTemplate(floorTemplate));
       setTemplateEditMessage(
         "This saved floor needs review before it can start a shift.",
       );
@@ -257,7 +227,7 @@ export default function Index() {
       return;
     }
 
-    const hasPreviousShiftSnapshot = localState.previousShiftSnapshots.some(
+    const hasPreviousShiftSnapshot = previousShiftSnapshots.some(
       (snapshot) => snapshot.floorTemplateId === floorTemplate.id,
     );
     const nextShift = createShiftFromTemplate(floorTemplate);
@@ -274,10 +244,7 @@ export default function Index() {
       return;
     }
 
-    setLocalState((currentState) => ({
-      ...currentState,
-      draftFloorTemplate: undefined,
-    }));
+    resetWorkflowDraft();
     setTemplateEditMessage("");
     router.push(
       hasPreviousShiftSnapshot ? "/carry-over-review" : "/start-shift",
@@ -285,8 +252,8 @@ export default function Index() {
   }
 
   async function handleConfirmEndActiveShift() {
-    if (activeShift) {
-      const previousShiftSnapshot = createPreviousShiftSnapshot(activeShift);
+    if (visibleActiveShift) {
+      const previousShiftSnapshot = createPreviousShiftSnapshot(visibleActiveShift);
 
       try {
         await saveServerPreviousShiftSnapshot(previousShiftSnapshot);
@@ -302,7 +269,7 @@ export default function Index() {
       }
 
       try {
-        await endActiveShift(activeShift);
+        await endActiveShift(visibleActiveShift);
       } catch (error) {
         const message =
           error instanceof Error
@@ -313,19 +280,9 @@ export default function Index() {
         setEndShiftConfirmationVisible(false);
         return;
       }
-
-      try {
-        await saveLocalPreviousShiftSnapshot(previousShiftSnapshot);
-      } catch {
-        // Ending the shift should still work if local snapshot saving fails.
-      }
     }
 
-    setLocalState((currentState) => ({
-      ...currentState,
-      activeShift: undefined,
-      draftFloorTemplate: undefined,
-    }));
+    resetWorkflowDraft();
     setTemplateEditMessage("");
     setEndShiftConfirmationVisible(false);
     if (router.canDismiss()) {
@@ -335,9 +292,19 @@ export default function Index() {
   }
 
   function handleResumeActiveShift() {
-    if (!activeShift) return;
-    if (activeShift.status === "assigned") {
+    if (!visibleActiveShift) return;
+    if (visibleActiveShift.status === "assigned") {
       router.push("/floor-board");
+      return;
+    }
+
+    const hasPendingCarryOverReview = previousShiftSnapshots.some(
+      (snapshot) =>
+        snapshot.floorTemplateId === visibleActiveShift.floorTemplateId,
+    ) && !visibleActiveShift.carryOverReviewedAt;
+
+    if (hasPendingCarryOverReview) {
+      router.push("/carry-over-review");
     } else {
       router.push("/start-shift");
     }
@@ -394,7 +361,7 @@ export default function Index() {
         showsVerticalScrollIndicator={false}
       >
         {/* Active Shift Card */}
-        {activeShift && (
+        {visibleActiveShift && (
           <View style={styles.activeShiftCard}>
             <View style={styles.activeShiftHeader}>
               <View style={styles.activeShiftBadgeContainer}>
@@ -404,7 +371,7 @@ export default function Index() {
                 </Text>
               </View>
               <Text style={styles.activeShiftTime}>
-                {activeShift.status === "assigned" ? "Assigned" : "In Setup"}
+                {visibleActiveShift.status === "assigned" ? "Assigned" : "In Setup"}
               </Text>
             </View>
             <Text style={styles.activeShiftName}>{activeShiftFloorName}</Text>
@@ -416,8 +383,8 @@ export default function Index() {
             </Text>
             {activeShiftMissingTemplate ? (
               <Text accessibilityRole="alert" style={styles.activeShiftWarning}>
-                Saved floor template is missing. Resume this local shift or end
-                it to clear the recovered shift.
+                Saved floor template is missing. Resume this shift or end it to
+                clear the recovered shift.
               </Text>
             ) : null}
             <View style={styles.activeShiftActions}>
@@ -434,7 +401,7 @@ export default function Index() {
                 <ChevronRightIcon color={colors.neutral.surface} size={14} />
               </Pressable>
               <Pressable
-                accessibilityHint="Clears the current local shift but keeps saved floor templates."
+                accessibilityHint="Ends the current server-backed shift while keeping saved floor templates."
                 accessibilityRole="button"
                 onPress={() => setEndShiftConfirmationVisible(true)}
                 style={({ pressed }) => [
@@ -527,7 +494,7 @@ export default function Index() {
         confirmTone="danger"
         message={
           floorTemplateToDelete
-            ? `${floorTemplateToDelete.name} will be removed from this device.`
+            ? `${floorTemplateToDelete.name} will be removed from this account.`
             : ""
         }
         onCancel={() => setFloorTemplateToDelete(undefined)}

@@ -11,8 +11,8 @@ import {
   WorkflowSection,
   WorkflowScreen,
 } from "../components/workflow";
-import { useLocalState } from "../store/LocalStateContext";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
+import { useWorkflowDraft } from "../store/WorkflowDraftContext";
 import { colors, radius, spacing, textSize, fontWeight } from "../theme/tokens";
 import type {
   Bed,
@@ -143,32 +143,15 @@ function isCompletedFloorTemplate(
   );
 }
 
-function getFloorTemplatesWithSavedTemplate(
-  floorTemplates: FloorTemplate[],
-  savedTemplate: FloorTemplate,
-) {
-  const existingTemplate = floorTemplates.find(
-    (floorTemplate) => floorTemplate.id === savedTemplate.id,
-  );
-
-  if (!existingTemplate) {
-    return [...floorTemplates, savedTemplate];
-  }
-
-  return floorTemplates.map((floorTemplate) =>
-    floorTemplate.id === savedTemplate.id ? savedTemplate : floorTemplate,
-  );
-}
-
 export default function TemplateReviewScreen() {
-  const { localState, setLocalState } = useLocalState();
+  const { draftFloorTemplate, resetWorkflowDraft } = useWorkflowDraft();
   const {
     saveErrorMessage: serverSaveErrorMessage,
     saveFloorTemplate,
     saveStatus,
   } = useServerWorkspace();
   const [saveErrorText, setSaveErrorText] = useState("");
-  const draftTemplate = localState.draftFloorTemplate;
+  const draftTemplate = draftFloorTemplate;
   const reviewTemplate = draftTemplate;
   const screenTitle = reviewTemplate?.name ?? "Review floor";
   const roomCount = reviewTemplate?.rooms.length ?? 0;
@@ -192,13 +175,8 @@ export default function TemplateReviewScreen() {
       return;
     }
 
-    const completedDraft = draftTemplate;
-    let savedTemplate = completedDraft;
-
     try {
-      const savedRecord = await saveFloorTemplate(completedDraft);
-
-      savedTemplate = savedRecord.templateSnapshot;
+      await saveFloorTemplate(draftTemplate);
     } catch (error) {
       const message =
         error instanceof Error
@@ -209,22 +187,7 @@ export default function TemplateReviewScreen() {
       return;
     }
 
-    const nextFloorTemplates = getFloorTemplatesWithSavedTemplate(
-      localState.floorTemplates,
-      savedTemplate,
-    );
-
-    setLocalState((currentState) => {
-      if (!currentState.draftFloorTemplate) {
-        return currentState;
-      }
-
-      return {
-        ...currentState,
-        draftFloorTemplate: undefined,
-        floorTemplates: nextFloorTemplates,
-      };
-    });
+    resetWorkflowDraft();
 
     router.push("/");
   }

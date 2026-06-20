@@ -296,18 +296,6 @@ function mapJoinedNurseAssignmentView(
   };
 }
 
-function toPreviousShiftSnapshot(
-  snapshot: ServerPreviousShiftSnapshot,
-): PreviousShiftSnapshot {
-  return {
-    completedAt: snapshot.completedAt,
-    floorTemplateId: snapshot.floorTemplateId,
-    id: snapshot.id,
-    nurseSuggestions: snapshot.nurseSuggestions,
-    patientSuggestions: snapshot.patientSuggestions,
-  };
-}
-
 function getReusableTemplateSnapshot(
   floorTemplate: FloorTemplate,
 ): FloorTemplate {
@@ -659,16 +647,4 @@ export async function saveServerPreviousShiftSnapshot(
   }
 
   return mapPreviousShiftRow(data);
-}
-
-export function getLocalStateFromServerWorkspace(workspace: ServerWorkspace) {
-  return {
-    activeShift: workspace.activeShift?.shiftSnapshot,
-    floorTemplates: workspace.floorTemplates.map(
-      (record) => record.templateSnapshot,
-    ),
-    previousShiftSnapshots: workspace.previousShiftSnapshots.map(
-      toPreviousShiftSnapshot,
-    ),
-  };
 }

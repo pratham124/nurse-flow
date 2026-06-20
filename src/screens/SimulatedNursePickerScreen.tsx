@@ -8,7 +8,8 @@ import {
   WorkflowListScreen,
   WorkflowSection,
 } from "../components/workflow";
-import { useLocalState } from "../store/LocalStateContext";
+import { useServerWorkspace } from "../store/ServerWorkspaceContext";
+import { useWorkflowDraft } from "../store/WorkflowDraftContext";
 import { assignmentFlow } from "../utils/workflowFlows";
 import { colors, fontWeight, radius, shadows, spacing, textSize } from "../theme/tokens";
 import type { ExperienceLevel, Shift } from "../types/models";
@@ -229,9 +230,9 @@ function renderPickerItem({
 }
 
 export default function SimulatedNursePickerScreen() {
-  const { localState, setSimulatedSessionState, simulatedSessionState } =
-    useLocalState();
-  const activeShift = localState.activeShift;
+  const { activeShift } = useServerWorkspace();
+  const { setSimulatedSessionState, simulatedSessionState } =
+    useWorkflowDraft();
   const selectedNurse = activeShift?.nurses.find(
     (nurse) => nurse.id === simulatedSessionState.selectedNurseId,
   );

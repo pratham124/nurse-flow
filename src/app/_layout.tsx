@@ -2,15 +2,15 @@ import { Stack } from "expo-router";
 
 import { SessionGate } from "../components/SessionGate";
 import { AuthSessionProvider } from "../store/AuthSessionContext";
-import { LocalStateProvider } from "../store/LocalStateContext";
 import { ServerWorkspaceProvider } from "../store/ServerWorkspaceContext";
+import { WorkflowDraftProvider } from "../store/WorkflowDraftContext";
 import { colors } from "../theme/tokens";
 
 export default function RootLayout() {
   return (
     <AuthSessionProvider>
-      <LocalStateProvider>
-        <ServerWorkspaceProvider>
+      <ServerWorkspaceProvider>
+        <WorkflowDraftProvider>
           <SessionGate>
             <Stack
               screenOptions={{
@@ -22,8 +22,8 @@ export default function RootLayout() {
               }}
             />
           </SessionGate>
-        </ServerWorkspaceProvider>
-      </LocalStateProvider>
+        </WorkflowDraftProvider>
+      </ServerWorkspaceProvider>
     </AuthSessionProvider>
   );
 }

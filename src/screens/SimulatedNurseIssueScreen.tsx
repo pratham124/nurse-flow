@@ -8,8 +8,8 @@ import {
   WorkflowScreen,
   WorkflowSection,
 } from "../components/workflow";
-import { useLocalState } from "../store/LocalStateContext";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
+import { useWorkflowDraft } from "../store/WorkflowDraftContext";
 import { colors, fontWeight, radius, shadows, spacing, textSize } from "../theme/tokens";
 import type { LocalId, NurseRequest } from "../types/models";
 import {
@@ -167,14 +167,14 @@ function IssueFormContent({
 }
 
 export default function SimulatedNurseIssueScreen() {
-  const { localState, simulatedSessionState } = useLocalState();
-  const { saveActiveShift, saveStatus } = useServerWorkspace();
+  const { activeShift, saveActiveShift, saveStatus } = useServerWorkspace();
+  const { simulatedSessionState } = useWorkflowDraft();
   const [message, setMessage] = useState("");
   const [messageError, setMessageError] = useState("");
   const [formError, setFormError] = useState("");
   const [selectedBedId, setSelectedBedId] = useState<LocalId | undefined>();
   const assignmentResult = getSelectedNurseAssignmentView(
-    localState.activeShift,
+    activeShift,
     simulatedSessionState.selectedNurseId,
   );
   const readyView =
@@ -215,13 +215,13 @@ export default function SimulatedNurseIssueScreen() {
       return;
     }
 
-    if (!localState.activeShift) {
+    if (!activeShift) {
       setFormError("Start a shift before submitting an issue.");
       return;
     }
 
     const issueRequest: NurseRequest = {
-      id: createNurseRequestId(localState.activeShift),
+      id: createNurseRequestId(activeShift),
       createdAt: new Date().toISOString(),
       message: trimmedMessage,
       requestingNurseId: readyView.nurse.id,
@@ -231,9 +231,9 @@ export default function SimulatedNurseIssueScreen() {
       type: "issue",
     };
     const nextShift = {
-      ...localState.activeShift,
+      ...activeShift,
       nurseRequests: [
-        ...getShiftNurseRequests(localState.activeShift),
+        ...getShiftNurseRequests(activeShift),
         issueRequest,
       ],
     };

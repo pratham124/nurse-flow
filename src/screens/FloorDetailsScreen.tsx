@@ -7,7 +7,8 @@ import {
   WorkflowScreen,
 } from "../components/workflow";
 import { createLocalId } from "../helpers/localId";
-import { useLocalState } from "../store/LocalStateContext";
+import { useServerWorkspace } from "../store/ServerWorkspaceContext";
+import { useWorkflowDraft } from "../store/WorkflowDraftContext";
 import type { FloorTemplate, LocalId } from "../types/models";
 
 const requiredFloorNameMessage = "Floor name is required.";
@@ -26,16 +27,17 @@ function hasSavedFloorTemplateWithName(
 }
 
 export default function FloorDetailsScreen() {
-  const { localState, setLocalState } = useLocalState();
+  const { floorTemplates } = useServerWorkspace();
+  const { draftFloorTemplate, setDraftFloorTemplate } = useWorkflowDraft();
   const [floorName, setFloorName] = useState(
-    localState.draftFloorTemplate?.name ?? "",
+    draftFloorTemplate?.name ?? "",
   );
   const [floorNameError, setFloorNameError] = useState("");
 
   useEffect(() => {
-    setFloorName(localState.draftFloorTemplate?.name ?? "");
+    setFloorName(draftFloorTemplate?.name ?? "");
     setFloorNameError("");
-  }, [localState.draftFloorTemplate?.id, localState.draftFloorTemplate?.name]);
+  }, [draftFloorTemplate?.id, draftFloorTemplate?.name]);
 
   function handleFloorNameChange(text: string) {
     setFloorName(text);
@@ -53,9 +55,9 @@ export default function FloorDetailsScreen() {
       return;
     }
 
-    const currentDraftId = localState.draftFloorTemplate?.id;
+    const currentDraftId = draftFloorTemplate?.id;
     const hasDuplicateFloorName = hasSavedFloorTemplateWithName(
-      localState.floorTemplates,
+      floorTemplates,
       trimmedFloorName,
       currentDraftId,
     );
@@ -67,15 +69,12 @@ export default function FloorDetailsScreen() {
 
     const draftId = currentDraftId ?? createLocalId("floor-template");
 
-    setLocalState((currentState) => ({
-      ...currentState,
-      draftFloorTemplate: {
+    setDraftFloorTemplate((currentDraft) => ({
         id: draftId,
         name: trimmedFloorName,
-        doctorSides: currentState.draftFloorTemplate?.doctorSides ?? [],
-        rooms: currentState.draftFloorTemplate?.rooms ?? [],
-        beds: currentState.draftFloorTemplate?.beds ?? [],
-      },
+        doctorSides: currentDraft?.doctorSides ?? [],
+        rooms: currentDraft?.rooms ?? [],
+        beds: currentDraft?.beds ?? [],
     }));
 
     router.push("/rooms-and-beds");

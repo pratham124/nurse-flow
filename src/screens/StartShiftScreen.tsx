@@ -10,7 +10,7 @@ import {
   WorkflowSection,
   WorkflowScreen,
 } from "../components/workflow";
-import { useLocalState } from "../store/LocalStateContext";
+import { useActiveShiftDraft } from "../hooks/useActiveShiftDraft";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { shiftSetupFlow } from "../utils/workflowFlows";
 import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
@@ -82,12 +82,13 @@ function LoadLimitRangeControl({
 }
 
 export default function StartShiftScreen() {
-  const { localState, setLocalState } = useLocalState();
   const {
+    activeShift: serverActiveShift,
     saveActiveShift,
     saveStatus,
   } = useServerWorkspace();
-  const activeShift = localState.activeShift;
+  const { draftShift: activeShift, setDraftShift } =
+    useActiveShiftDraft(serverActiveShift);
   const doctorSideOptions =
     activeShift?.doctorSides.map((doctorSide) => doctorSide.name) ?? [];
   const selectedAdmittingSideIndex = activeShift
@@ -111,18 +112,9 @@ export default function StartShiftScreen() {
 
     setAdmittingSideError("");
     setServerSaveError("");
-    setLocalState((currentState) => {
-      if (!currentState.activeShift) {
-        return currentState;
-      }
-
-      return {
-        ...currentState,
-        activeShift: {
-          ...currentState.activeShift,
-          admittingDoctorSideId: selectedDoctorSide.id,
-        },
-      };
+    setDraftShift({
+      ...activeShift,
+      admittingDoctorSideId: selectedDoctorSide.id,
     });
   }
 
@@ -160,23 +152,12 @@ export default function StartShiftScreen() {
     setLoadLimitError("");
     setServerSaveError("");
 
-    setLocalState((currentState) => {
-      const currentShift = currentState.activeShift;
-
-      if (!currentShift) {
-        return currentState;
-      }
-
-      return {
-        ...currentState,
-        activeShift: {
-          ...currentShift,
-          sideLoadLimits: {
-            ...currentShift.sideLoadLimits,
-            [loadLimitKind]: nextRange,
-          },
-        },
-      };
+    setDraftShift({
+      ...activeShift,
+      sideLoadLimits: {
+        ...activeShift.sideLoadLimits,
+        [loadLimitKind]: nextRange,
+      },
     });
   }
 

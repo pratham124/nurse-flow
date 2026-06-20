@@ -7,7 +7,6 @@ import {
   WorkflowScreen,
   WorkflowSection,
 } from "../components/workflow";
-import { useLocalState } from "../store/LocalStateContext";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { colors, fontWeight, radius, shadows, spacing, textSize } from "../theme/tokens";
 import { getNurseRequestDisplayById } from "../utils/nurseRequestDisplay";
@@ -33,15 +32,14 @@ function DetailRow({ label, value }: DetailRowProps) {
 }
 
 export default function LocalRequestDetailScreen() {
-  const { localState, setLocalState } = useLocalState();
-  const { saveActiveShift } = useServerWorkspace();
+  const { activeShift, saveActiveShift } = useServerWorkspace();
   const [serverSaveError, setServerSaveError] = useState("");
   const { requestId } = useLocalSearchParams<{
     requestId?: string | string[];
   }>();
   const selectedRequestId = getParamValue(requestId);
   const request = getNurseRequestDisplayById(
-    localState.activeShift,
+    activeShift,
     selectedRequestId,
   );
   const showSwapActions =
@@ -50,20 +48,15 @@ export default function LocalRequestDetailScreen() {
     request.requestStatus === "pending";
 
   async function handleResolveSwap(nextStatus: "accepted" | "declined") {
-    if (!selectedRequestId || !localState.activeShift) {
+    if (!selectedRequestId || !activeShift) {
       return;
     }
 
     const nextShift = resolvePendingSwapRequest(
-      localState.activeShift,
+      activeShift,
       selectedRequestId,
       nextStatus,
     );
-
-    setLocalState((currentState) => ({
-      ...currentState,
-      activeShift: nextShift,
-    }));
 
     try {
       setServerSaveError("");

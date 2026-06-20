@@ -7,7 +7,6 @@ import {
   WorkflowScreen,
   WorkflowSection,
 } from "../components/workflow";
-import { useLocalState } from "../store/LocalStateContext";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { colors, radius, spacing, textSize, fontWeight } from "../theme/tokens";
 import type {
@@ -257,10 +256,8 @@ function BreakWarningRow({ activeShift, warning }: BreakWarningRowProps) {
 }
 
 export default function BreakScheduleScreen() {
-  const { localState, setLocalState } = useLocalState();
-  const { saveActiveShift, saveStatus } = useServerWorkspace();
+  const { activeShift, saveActiveShift, saveStatus } = useServerWorkspace();
   const [serverSaveError, setServerSaveError] = useState("");
-  const activeShift = localState.activeShift;
   const scheduleView = getBreakScheduleView(activeShift);
   const sortedEntries = useMemo(
     () => getSortedEntries(scheduleView.entries),
@@ -282,11 +279,6 @@ export default function BreakScheduleScreen() {
         activeShift.assignmentResult,
       ),
     };
-
-    setLocalState((currentState) => ({
-      ...currentState,
-      activeShift: nextShift,
-    }));
 
     try {
       setServerSaveError("");

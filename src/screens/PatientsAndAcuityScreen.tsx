@@ -14,7 +14,7 @@ import {
   WorkflowListScreen,
   WorkflowSection,
 } from "../components/workflow";
-import { useLocalState } from "../store/LocalStateContext";
+import { useActiveShiftDraft } from "../hooks/useActiveShiftDraft";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
 import { getShiftCensus, isOccupiedBedState } from "../utils/census";
@@ -528,14 +528,18 @@ function EmptyCensusMessage({ selectedFilter }: { selectedFilter: CensusFilter }
 }
 
 export default function PatientsAndAcuityScreen() {
-  const { localState, setLocalState } = useLocalState();
-  const { saveActiveShift, saveStatus } = useServerWorkspace();
+  const {
+    activeShift: serverActiveShift,
+    saveActiveShift,
+    saveStatus,
+  } = useServerWorkspace();
+  const { draftShift: activeShift, setDraftShift } =
+    useActiveShiftDraft(serverActiveShift);
   const [ageTextByBedId, setAgeTextByBedId] = useState<Record<string, string>>(
     {},
   );
   const [selectedFilter, setSelectedFilter] = useState<CensusFilter>("all");
   const [serverSaveError, setServerSaveError] = useState("");
-  const activeShift = localState.activeShift;
   const roomGroups = getRoomGroups(activeShift);
   const filteredRoomGroups = getFilteredRoomGroups(roomGroups, selectedFilter);
   const { occupiedBedCount, totalBedCount } = getShiftCensus(activeShift);
@@ -565,54 +569,49 @@ export default function PatientsAndAcuityScreen() {
       }));
     }
 
-    setLocalState((currentState) => {
-      const currentShift = currentState.activeShift;
-
+    setDraftShift((currentShift) => {
       if (!currentShift) {
-        return currentState;
+        return currentShift;
       }
 
       return {
-        ...currentState,
-        activeShift: {
-          ...currentShift,
-          bedStates: currentShift.bedStates.map((bedState) => {
-            if (bedState.bedId !== bedId) {
-              return bedState;
-            }
+        ...currentShift,
+        bedStates: currentShift.bedStates.map((bedState) => {
+          if (bedState.bedId !== bedId) {
+            return bedState;
+          }
 
-            const currentPatient = bedState.patient ?? { initials: "" };
-            const updatedPatient: Patient = { ...currentPatient };
+          const currentPatient = bedState.patient ?? { initials: "" };
+          const updatedPatient: Patient = { ...currentPatient };
 
-            if (field === "initials") {
-              updatedPatient.initials = value;
-            }
+          if (field === "initials") {
+            updatedPatient.initials = value;
+          }
 
-            if (field === "age") {
-              updatedPatient.age = isWholeNumberText(value)
-                ? getPatientAgeFromText(value)
-                : undefined;
-            }
+          if (field === "age") {
+            updatedPatient.age = isWholeNumberText(value)
+              ? getPatientAgeFromText(value)
+              : undefined;
+          }
 
-            if (field === "sex") {
-              updatedPatient.sex = value ? (value as Sex) : undefined;
-            }
+          if (field === "sex") {
+            updatedPatient.sex = value ? (value as Sex) : undefined;
+          }
 
-            if (field === "diagnosis") {
-              updatedPatient.diagnosis = value;
-            }
+          if (field === "diagnosis") {
+            updatedPatient.diagnosis = value;
+          }
 
-            return {
-              ...bedState,
-              acuity: updatedPatient.initials.trim()
-                ? bedState.acuity
-                : undefined,
-              patient: shouldKeepPatient(updatedPatient)
-                ? updatedPatient
-                : undefined,
-            };
-          }),
-        },
+          return {
+            ...bedState,
+            acuity: updatedPatient.initials.trim()
+              ? bedState.acuity
+              : undefined,
+            patient: shouldKeepPatient(updatedPatient)
+              ? updatedPatient
+              : undefined,
+          };
+        }),
       };
     });
   }
@@ -620,21 +619,16 @@ export default function PatientsAndAcuityScreen() {
   function handleUpdateAcuity(bedId: string, acuity: Acuity) {
     setServerSaveError("");
 
-    setLocalState((currentState) => {
-      const currentShift = currentState.activeShift;
-
+    setDraftShift((currentShift) => {
       if (!currentShift) {
-        return currentState;
+        return currentShift;
       }
 
       return {
-        ...currentState,
-        activeShift: {
-          ...currentShift,
-          bedStates: currentShift.bedStates.map((bedState) =>
-            bedState.bedId === bedId ? { ...bedState, acuity } : bedState,
-          ),
-        },
+        ...currentShift,
+        bedStates: currentShift.bedStates.map((bedState) =>
+          bedState.bedId === bedId ? { ...bedState, acuity } : bedState,
+        ),
       };
     });
   }
@@ -649,23 +643,18 @@ export default function PatientsAndAcuityScreen() {
       return nextAgeTextByBedId;
     });
 
-    setLocalState((currentState) => {
-      const currentShift = currentState.activeShift;
-
+    setDraftShift((currentShift) => {
       if (!currentShift) {
-        return currentState;
+        return currentShift;
       }
 
       return {
-        ...currentState,
-        activeShift: {
-          ...currentShift,
-          bedStates: currentShift.bedStates.map((bedState) =>
-            bedState.bedId === bedId
-              ? { ...bedState, acuity: undefined, patient: undefined }
-              : bedState,
-          ),
-        },
+        ...currentShift,
+        bedStates: currentShift.bedStates.map((bedState) =>
+          bedState.bedId === bedId
+            ? { ...bedState, acuity: undefined, patient: undefined }
+            : bedState,
+        ),
       };
     });
   }

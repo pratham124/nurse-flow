@@ -10,8 +10,6 @@ export type Sex = "female" | "male" | "other" | "unknown";
 
 export type ShiftStatus = "setup" | "assigned";
 
-export type LocalStorageVersion = 1;
-
 export type SimulatedRole = "charge" | "regular_nurse";
 
 export type AuthStatus =
@@ -101,6 +99,7 @@ export interface Shift {
   flags: Flag[];
   nurseRequests?: NurseRequest[];
   breakSchedule?: BreakSchedule;
+  carryOverReviewedAt?: string;
 }
 
 export interface SideLoadLimits {
@@ -239,13 +238,6 @@ export interface PreviousShiftSnapshot {
   patientSuggestions: PatientCarryOverSuggestion[];
 }
 
-export interface LocalAppState {
-  floorTemplates: FloorTemplate[];
-  previousShiftSnapshots: PreviousShiftSnapshot[];
-  draftFloorTemplate?: FloorTemplate;
-  activeShift?: Shift;
-}
-
 export interface SimulatedSessionState {
   role: SimulatedRole;
   selectedNurseId?: LocalId;
@@ -334,10 +326,3 @@ export type AuthSessionState =
       profile: UserProfile;
       status: "signed_in";
     };
-
-export interface PersistedLocalAppState {
-  storageVersion: LocalStorageVersion;
-  floorTemplates: FloorTemplate[];
-  activeShift?: Shift;
-  previousShiftSnapshots: PreviousShiftSnapshot[];
-}

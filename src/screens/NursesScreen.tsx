@@ -16,7 +16,7 @@ import {
   WorkflowSection,
 } from "../components/workflow";
 import { createLocalId } from "../helpers/localId";
-import { useLocalState } from "../store/LocalStateContext";
+import { useActiveShiftDraft } from "../hooks/useActiveShiftDraft";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { shiftSetupFlow } from "../utils/workflowFlows";
 import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
@@ -284,9 +284,13 @@ function getNurseKey(nurse: Nurse) {
 }
 
 export default function NursesScreen() {
-  const { localState, setLocalState } = useLocalState();
-  const { saveActiveShift, saveStatus } = useServerWorkspace();
-  const activeShift = localState.activeShift;
+  const {
+    activeShift: serverActiveShift,
+    saveActiveShift,
+    saveStatus,
+  } = useServerWorkspace();
+  const { draftShift: activeShift, setDraftShift } =
+    useActiveShiftDraft(serverActiveShift);
   const nurses = activeShift?.nurses ?? [];
   const totalCapacity = nurses.reduce(
     (capacity, nurse) => capacity + nurse.maxPatientLoad,
@@ -322,26 +326,17 @@ export default function NursesScreen() {
       return;
     }
 
-    setLocalState((currentState) => {
-      if (!currentState.activeShift) {
-        return currentState;
-      }
+    const nextNurse: Nurse = {
+      id: createLocalId("nurse"),
+      name: trimmedName,
+      licenseType,
+      experienceLevel,
+      maxPatientLoad: activeShift.sideLoadLimits.admitting.max,
+    };
 
-      const nextNurse: Nurse = {
-        id: createLocalId("nurse"),
-        name: trimmedName,
-        licenseType,
-        experienceLevel,
-        maxPatientLoad: currentState.activeShift.sideLoadLimits.admitting.max,
-      };
-
-      return {
-        ...currentState,
-        activeShift: {
-          ...currentState.activeShift,
-          nurses: [...currentState.activeShift.nurses, nextNurse],
-        },
-      };
+    setDraftShift({
+      ...activeShift,
+      nurses: [...activeShift.nurses, nextNurse],
     });
 
     setNurseName("");
@@ -351,11 +346,9 @@ export default function NursesScreen() {
   }
 
   function handleRemoveNurse(nurseId: string) {
-    setLocalState((currentState) => {
-      const currentShift = currentState.activeShift;
-
+    setDraftShift((currentShift) => {
       if (!currentShift) {
-        return currentState;
+        return currentShift;
       }
 
       const nurseExists = currentShift.nurses.some(
@@ -363,7 +356,7 @@ export default function NursesScreen() {
       );
 
       if (!nurseExists) {
-        return currentState;
+        return currentShift;
       }
 
       const shouldClearAssignment =
@@ -371,16 +364,13 @@ export default function NursesScreen() {
         Boolean(currentShift.assignmentResult);
 
       return {
-        ...currentState,
-        activeShift: {
-          ...currentShift,
-          assignmentResult: shouldClearAssignment
-            ? undefined
-            : currentShift.assignmentResult,
-          flags: shouldClearAssignment ? [] : currentShift.flags,
-          nurses: currentShift.nurses.filter((nurse) => nurse.id !== nurseId),
-          status: shouldClearAssignment ? "setup" : currentShift.status,
-        },
+        ...currentShift,
+        assignmentResult: shouldClearAssignment
+          ? undefined
+          : currentShift.assignmentResult,
+        flags: shouldClearAssignment ? [] : currentShift.flags,
+        nurses: currentShift.nurses.filter((nurse) => nurse.id !== nurseId),
+        status: shouldClearAssignment ? "setup" : currentShift.status,
       };
     });
   }
@@ -403,21 +393,16 @@ export default function NursesScreen() {
       return;
     }
 
-    setLocalState((currentState) => {
-      const currentShift = currentState.activeShift;
-
+    setDraftShift((currentShift) => {
       if (!currentShift) {
-        return currentState;
+        return currentShift;
       }
 
       return {
-        ...currentState,
-        activeShift: {
-          ...currentShift,
-          nurses: currentShift.nurses.map((nurse) =>
-            nurse.id === nurseId ? { ...nurse, maxPatientLoad } : nurse,
-          ),
-        },
+        ...currentShift,
+        nurses: currentShift.nurses.map((nurse) =>
+          nurse.id === nurseId ? { ...nurse, maxPatientLoad } : nurse,
+        ),
       };
     });
 

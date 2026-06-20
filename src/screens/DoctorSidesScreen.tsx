@@ -11,7 +11,7 @@ import {
   WorkflowSection,
 } from "../components/workflow";
 import { createLocalId } from "../helpers/localId";
-import { useLocalState } from "../store/LocalStateContext";
+import { useWorkflowDraft } from "../store/WorkflowDraftContext";
 import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
 import type { DoctorSide, Room } from "../types/models";
 
@@ -196,18 +196,18 @@ function getRoomIdsMissingDoctorSide(rooms: Room[], doctorSides: DoctorSide[]) {
 }
 
 export default function DoctorSidesScreen() {
-  const { localState, setLocalState } = useLocalState();
+  const { draftFloorTemplate, setDraftFloorTemplate } = useWorkflowDraft();
   const [sideNameErrors, setSideNameErrors] = useState(["", ""]);
   const [missingDoctorSideError, setMissingDoctorSideError] = useState("");
   const [missingDoctorSideRoomIds, setMissingDoctorSideRoomIds] = useState<
     string[]
   >([]);
-  const screenTitle = localState.draftFloorTemplate?.name ?? "Doctor sides";
-  const doctorSides = localState.draftFloorTemplate?.doctorSides ?? [];
+  const screenTitle = draftFloorTemplate?.name ?? "Doctor sides";
+  const doctorSides = draftFloorTemplate?.doctorSides ?? [];
   const visibleDoctorSides = createTwoDoctorSides(doctorSides);
   const sideOneName = doctorSides[0]?.name ?? "";
   const sideTwoName = doctorSides[1]?.name ?? "";
-  const rooms = localState.draftFloorTemplate?.rooms ?? [];
+  const rooms = draftFloorTemplate?.rooms ?? [];
   const sideOneRoomCount = rooms.filter(
     (room) => room.doctorSideId === visibleDoctorSides[0]?.id,
   ).length;
@@ -216,29 +216,24 @@ export default function DoctorSidesScreen() {
   ).length;
 
   useEffect(() => {
-    if (!localState.draftFloorTemplate || doctorSides.length === 2) {
+    if (!draftFloorTemplate || doctorSides.length === 2) {
       return;
     }
 
-    setLocalState((currentState) => {
-      const currentDraft = currentState.draftFloorTemplate;
-
+    setDraftFloorTemplate((currentDraft) => {
       if (!currentDraft || currentDraft.doctorSides.length === 2) {
-        return currentState;
+        return currentDraft;
       }
 
       return {
-        ...currentState,
-        draftFloorTemplate: {
-          ...currentDraft,
-          doctorSides: createTwoDoctorSides(currentDraft.doctorSides),
-        },
+        ...currentDraft,
+        doctorSides: createTwoDoctorSides(currentDraft.doctorSides),
       };
     });
   }, [
     doctorSides.length,
-    localState.draftFloorTemplate,
-    setLocalState,
+    draftFloorTemplate,
+    setDraftFloorTemplate,
   ]);
 
   function handleSideNameChange(sideIndex: number, name: string) {
@@ -249,11 +244,9 @@ export default function DoctorSidesScreen() {
       validateDoctorSideNames(nextSideOneName, nextSideTwoName, false),
     );
 
-    setLocalState((currentState) => {
-      const currentDraft = currentState.draftFloorTemplate;
-
+    setDraftFloorTemplate((currentDraft) => {
       if (!currentDraft) {
-        return currentState;
+        return currentDraft;
       }
 
       const nextDoctorSides = createTwoDoctorSides(currentDraft.doctorSides).map(
@@ -262,11 +255,8 @@ export default function DoctorSidesScreen() {
       );
 
       return {
-        ...currentState,
-        draftFloorTemplate: {
-          ...currentDraft,
-          doctorSides: nextDoctorSides,
-        },
+        ...currentDraft,
+        doctorSides: nextDoctorSides,
       };
     });
   }
@@ -287,24 +277,20 @@ export default function DoctorSidesScreen() {
       );
     }
 
-    setLocalState((currentState) => {
-      const currentDraft = currentState.draftFloorTemplate;
+    setDraftFloorTemplate((currentDraft) => {
       const doctorSideExists = currentDraft?.doctorSides.some(
         (doctorSide) => doctorSide.id === doctorSideId,
       );
 
       if (!currentDraft || !doctorSideExists) {
-        return currentState;
+        return currentDraft;
       }
 
       return {
-        ...currentState,
-        draftFloorTemplate: {
-          ...currentDraft,
-          rooms: currentDraft.rooms.map((room) =>
-            room.id === roomId ? { ...room, doctorSideId } : room,
-          ),
-        },
+        ...currentDraft,
+        rooms: currentDraft.rooms.map((room) =>
+          room.id === roomId ? { ...room, doctorSideId } : room,
+        ),
       };
     });
   }
@@ -331,11 +317,9 @@ export default function DoctorSidesScreen() {
       return;
     }
 
-    setLocalState((currentState) => {
-      const currentDraft = currentState.draftFloorTemplate;
-
+    setDraftFloorTemplate((currentDraft) => {
       if (!currentDraft) {
-        return currentState;
+        return currentDraft;
       }
 
       const nextDoctorSides = createTwoDoctorSides(currentDraft.doctorSides).map(
@@ -346,11 +330,8 @@ export default function DoctorSidesScreen() {
       );
 
       return {
-        ...currentState,
-        draftFloorTemplate: {
-          ...currentDraft,
-          doctorSides: nextDoctorSides,
-        },
+        ...currentDraft,
+        doctorSides: nextDoctorSides,
       };
     });
 

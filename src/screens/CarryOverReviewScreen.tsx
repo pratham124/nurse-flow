@@ -4,11 +4,11 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { WorkflowScreen, WorkflowSection } from "../components/workflow";
 import { createLocalId } from "../helpers/localId";
-import { useLocalState } from "../store/LocalStateContext";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { colors, fontWeight, radius, spacing, textSize } from "../theme/tokens";
 import type {
   Acuity,
+  Bed,
   BedState,
   Nurse,
   NurseCarryOverSuggestion,
@@ -86,7 +86,9 @@ function getShiftWithCarryOver(
   }));
   const updatedBedStates: BedState[] = activeShift.bedStates.map((bedState) => {
     const match = acceptedPatients.find(
-      (suggestion) => suggestion.previousBedId === bedState.bedId,
+      (suggestion) =>
+        getCarryOverTargetBedId(activeShift.beds, suggestion) ===
+        bedState.bedId,
     );
 
     if (!match) {
@@ -105,6 +107,23 @@ function getShiftWithCarryOver(
     nurses: [...activeShift.nurses, ...newNurses],
     bedStates: updatedBedStates,
   };
+}
+
+function getCarryOverTargetBedId(
+  beds: Bed[],
+  suggestion: PatientCarryOverSuggestion,
+) {
+  const bedById = beds.find((bed) => bed.id === suggestion.previousBedId);
+
+  if (bedById) {
+    return bedById.id;
+  }
+
+  const bedByLabel = beds.find(
+    (bed) => bed.label === suggestion.previousBedLabel,
+  );
+
+  return bedByLabel?.id;
 }
 
 // ---------------------------------------------------------------------------
@@ -184,12 +203,15 @@ function PatientSuggestionRow({ suggestion, isIncluded, onToggle }: PatientSugge
 // ---------------------------------------------------------------------------
 
 export default function CarryOverReviewScreen() {
-  const { localState, setLocalState } = useLocalState();
-  const { saveActiveShift, saveStatus } = useServerWorkspace();
+  const {
+    activeShift,
+    previousShiftSnapshots,
+    saveActiveShift,
+    saveStatus,
+  } = useServerWorkspace();
   const [serverSaveError, setServerSaveError] = useState("");
-  const activeShift = localState.activeShift;
   const previousShiftSnapshot = activeShift
-    ? localState.previousShiftSnapshots.find(
+    ? previousShiftSnapshots.find(
         (snapshot) => snapshot.floorTemplateId === activeShift.floorTemplateId,
       )
     : undefined;
@@ -197,7 +219,11 @@ export default function CarryOverReviewScreen() {
   const nurseSuggestions = previousShiftSnapshot?.nurseSuggestions ?? [];
   const patientSuggestions = (previousShiftSnapshot?.patientSuggestions ?? []).filter(
     (suggestion) =>
-      activeShift?.beds.some((b) => b.id === suggestion.previousBedId),
+      Boolean(
+        activeShift
+          ? getCarryOverTargetBedId(activeShift.beds, suggestion)
+          : undefined,
+      ),
   );
   const canContinue = Boolean(activeShift);
 
@@ -213,15 +239,14 @@ export default function CarryOverReviewScreen() {
 
     const acceptedNurses = nurseSuggestions.filter((s) => includedNurseIds.has(s.id));
     const acceptedPatients = patientSuggestions.filter((s) => includedPatientIds.has(s.id));
-    const nextShift =
+    const shiftWithAcceptedCarryOver =
       acceptedNurses.length > 0 || acceptedPatients.length > 0
         ? getShiftWithCarryOver(activeShift, acceptedNurses, acceptedPatients)
         : activeShift;
-
-    setLocalState((currentState) => ({
-      ...currentState,
-      activeShift: nextShift,
-    }));
+    const nextShift = {
+      ...shiftWithAcceptedCarryOver,
+      carryOverReviewedAt: new Date().toISOString(),
+    };
 
     try {
       setServerSaveError("");
