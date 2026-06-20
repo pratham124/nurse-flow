@@ -812,11 +812,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.md,
     flex: 1,
+    minWidth: 0,
   },
   templateRight: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
+    flexShrink: 0,
   },
   templateBadge: {
     alignItems: "center",
@@ -836,6 +838,7 @@ const styles = StyleSheet.create({
   templateTitleGroup: {
     flex: 1,
     gap: spacing.xs,
+    minWidth: 0,
   },
   templateName: {
     color: colors.neutral.textPrimary,
@@ -844,7 +847,6 @@ const styles = StyleSheet.create({
   },
   templateMetaRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: spacing.xs,
   },
   templateMetaChip: {
