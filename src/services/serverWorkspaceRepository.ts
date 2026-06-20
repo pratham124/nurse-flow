@@ -497,6 +497,28 @@ export async function saveServerFloorTemplate(
   return mapTemplateRow(refreshedData);
 }
 
+export async function deleteServerFloorTemplate(
+  supabase: SupabaseClient,
+  profile: UserProfile,
+  floorTemplateId: string,
+) {
+  assertChargeNurse(profile);
+
+  if (!uuidPattern.test(floorTemplateId)) {
+    throw new Error("Only saved account templates can be deleted.");
+  }
+
+  const { error } = await supabase
+    .from("floor_templates")
+    .delete()
+    .eq("id", floorTemplateId)
+    .eq("owner_profile_id", profile.id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
 export async function createServerActiveShift(
   supabase: SupabaseClient,
   profile: UserProfile,

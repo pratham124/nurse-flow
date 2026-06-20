@@ -10,6 +10,7 @@ import {
 
 import {
   createServerActiveShift,
+  deleteServerFloorTemplate,
   endServerActiveShift,
   loadJoinedNurseAssignmentView,
   loadServerWorkspace,
@@ -51,6 +52,7 @@ type ActiveParticipation =
 type ServerWorkspaceContextValue = {
   activeParticipation: ActiveParticipation;
   activeShift?: Shift;
+  deleteFloorTemplate: (floorTemplateId: string) => Promise<void>;
   endActiveShift: (activeShift: Shift) => Promise<void>;
   floorTemplates: FloorTemplate[];
   joinedNurseAccessState: JoinedNurseAccessState;
@@ -312,6 +314,49 @@ export function ServerWorkspaceProvider({
     [applyWorkspace, authState, joinedNurseAccessState.status],
   );
 
+  const deleteFloorTemplate = useCallback(
+    async (floorTemplateId: string) => {
+      if (
+        authState.status !== "signed_in" ||
+        authState.profile.role !== "charge_nurse"
+      ) {
+        throw new Error("Sign in as a charge nurse to delete floor templates.");
+      }
+
+      if (hasActiveChargeShift(workspaceState)) {
+        throw new Error("End the active shift before deleting templates.");
+      }
+
+      const supabase = getSupabaseClient();
+
+      if (!supabase) {
+        throw new Error("Supabase is not configured yet.");
+      }
+
+      setSaveErrorMessage("");
+      setSaveStatus("saving");
+
+      try {
+        await deleteServerFloorTemplate(
+          supabase,
+          authState.profile,
+          floorTemplateId,
+        );
+        const workspace = await loadServerWorkspace(supabase, authState.profile);
+
+        applyWorkspace(workspace);
+        setSaveStatus("saved");
+      } catch (error) {
+        setSaveErrorMessage(
+          getErrorMessage(error, "Template could not be deleted."),
+        );
+        setSaveStatus("error");
+        throw error;
+      }
+    },
+    [applyWorkspace, authState, workspaceState],
+  );
+
   const startActiveShift = useCallback(
     async (activeShift: Shift) => {
       if (
@@ -475,6 +520,7 @@ export function ServerWorkspaceProvider({
         joinedNurseAccessState,
       ),
       ...getWorkspaceSnapshots(workspaceState),
+      deleteFloorTemplate,
       endActiveShift,
       joinedNurseAccessState,
       retryLoadJoinedNurseAccess: loadJoinedNurseAccess,
@@ -488,6 +534,7 @@ export function ServerWorkspaceProvider({
       workspaceState,
     }),
     [
+      deleteFloorTemplate,
       endActiveShift,
       joinedNurseAccessState,
       loadJoinedNurseAccess,

@@ -148,6 +148,20 @@ with check (
   )
 );
 
+create policy "Charge nurses can delete their own templates"
+on public.floor_templates
+for delete
+to authenticated
+using (
+  exists (
+    select 1
+    from public.profiles
+    where profiles.id = floor_templates.owner_profile_id
+      and profiles.auth_user_id = auth.uid()
+      and profiles.role = 'charge_nurse'
+  )
+);
+
 create policy "Charge nurses can read their own active shifts"
 on public.active_shifts
 for select

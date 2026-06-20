@@ -40,6 +40,49 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-20 - Enable Floor Template Deletion
+
+- Task: Make Home floor-template swipe delete available and actually remove the saved server template after confirmation.
+- Problem understanding:
+  - [ ] Home was passing `canDelete={false}`, so templates were never wrapped in the swipe-delete component.
+  - [ ] The confirm handler only closed the dialog and did not delete anything.
+  - [ ] Supabase also needs an explicit delete RLS policy for template deletion.
+- Solution understanding:
+  - [ ] `serverWorkspaceRepository` deletes an owned `floor_templates` row by template id and owner id.
+  - [ ] `ServerWorkspaceContext` exposes `deleteFloorTemplate` and refreshes the workspace after delete.
+  - [ ] `HomeScreen` enables swipe delete only when no active shift is running.
+- Broader context:
+  - [ ] Deleting templates stays server-backed and account-scoped.
+  - [ ] Active shifts are protected from losing the template they were started from.
+  - [ ] Old carry-over snapshots for that template are cleaned up by the schema cascade.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+### 2026-06-20 - Align Floor Template Meta Chips
+
+- Task: Keep the room and bed chips aligned on one row in Home floor-template cards when there is enough width.
+- Problem understanding:
+  - [ ] The template title area was allowed to size differently per row.
+  - [ ] Longer names could leave the room and bed chips with less measured space.
+  - [ ] The result looked uneven because one card showed chips side by side and another stacked them.
+- Solution understanding:
+  - [ ] `HomeScreen` now lets the left text area shrink predictably with `minWidth: 0`.
+  - [ ] The right action area stays fixed with `flexShrink: 0`.
+  - [ ] The meta chip row no longer wraps in normal card width.
+- Broader context:
+  - [ ] This is a presentation-only fix.
+  - [ ] Saved templates, shift start, and navigation behavior are unchanged.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
 ### 2026-06-20 - Preserve Pending Carry-Over On Resume
 
 - Task: Fix Home resume so an active setup shift returns to carry-over review until that review has been completed.

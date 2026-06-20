@@ -70,13 +70,13 @@ function FloorTemplateRow({
           <View style={styles.templateMetaRow}>
             <View style={styles.templateMetaChip}>
               <RoomIcon size={11} color={colors.neutral.textSecondary} />
-              <Text style={styles.templateMetaChipText}>
+              <Text numberOfLines={1} style={styles.templateMetaChipText}>
                 {roomCount} {roomCount === 1 ? "room" : "rooms"}
               </Text>
             </View>
             <View style={styles.templateMetaChip}>
               <BedIcon size={11} color={colors.neutral.textSecondary} />
-              <Text style={styles.templateMetaChipText}>
+              <Text numberOfLines={1} style={styles.templateMetaChipText}>
                 {bedCount} {bedCount === 1 ? "bed" : "beds"}
               </Text>
             </View>
@@ -124,6 +124,7 @@ export default function Index() {
   const {
     activeShift,
     activeParticipation,
+    deleteFloorTemplate,
     endActiveShift,
     floorTemplates,
     previousShiftSnapshots,
@@ -195,8 +196,21 @@ export default function Index() {
     router.push("/join-active-session");
   }
 
-  function handleConfirmDeleteFloor() {
-    setFloorTemplateToDelete(undefined);
+  async function handleConfirmDeleteFloor() {
+    if (!floorTemplateToDelete) return;
+
+    try {
+      setTemplateEditMessage("");
+      await deleteFloorTemplate(floorTemplateToDelete.id);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Floor template could not be deleted.";
+      setTemplateEditMessage(message);
+    } finally {
+      setFloorTemplateToDelete(undefined);
+    }
   }
 
   function handleSelectTemplate(floorTemplate: FloorTemplate) {
@@ -440,7 +454,7 @@ export default function Index() {
           <View style={styles.templateList}>
             {visibleFloorTemplates.map((floorTemplate) => (
               <FloorTemplateRow
-                canDelete={false}
+                canDelete={!visibleActiveShift}
                 floorTemplate={floorTemplate}
                 key={floorTemplate.id}
                 onRequestDelete={setFloorTemplateToDelete}
@@ -853,6 +867,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
+    flexShrink: 0,
     backgroundColor: colors.neutral.backgroundTertiary,
     borderColor: colors.neutral.borderTertiary,
     borderRadius: radius.pill,
