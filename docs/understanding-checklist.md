@@ -40,6 +40,29 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-21 - Confirm Phase 6 Existing App Touchpoints
+
+- Task: Complete Phase 6 Tasks 0.1 and 0.2 by verifying the Phase 6 planning docs and documenting the current app touchpoints before runtime feature work starts.
+- Problem understanding:
+  - [ ] Phase 6 needs a clear boundary before adding realtime subscriptions or invite links.
+  - [ ] Task 0.2 is documentation and review, not runtime implementation.
+  - [ ] Existing Phase 1-5 behavior should stay unchanged while touchpoints are mapped.
+- Solution understanding:
+  - [ ] `docs/phase-6/app-touchpoints.md` documents current routes, providers, services, joined nurse access, request flow, active shift saves, likely future files, and compatibility risks.
+  - [ ] `docs/phase-6/tasks.md` now marks only Task 0.2 done in addition to the already done Task 0.1.
+  - [ ] No app runtime code was changed for this setup step.
+  - [ ] Realtime connection state is planned as foreground UI/provider state, not saved active-shift data.
+- Broader context:
+  - [ ] The touchpoint map protects later Phase 6 tasks from spreading Supabase calls across screens.
+  - [ ] Invite work can build on the existing join shell and joined nurse workspace without exposing the full charge board.
+  - [ ] Push notifications, offline queues, conflict handling, drag-and-drop, board sharing, tablet layout, and AI remain out of scope.
+- Verification:
+  - [x] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: in progress
+
 ### 2026-06-20 - Plan Phase 6 Realtime Collaboration and Nurse Invites
 
 - Task: Create Phase 6 planning docs for realtime collaboration, nurse invite links, deep link joining, and live nurse-scoped shift participation.

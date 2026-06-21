@@ -44,7 +44,7 @@ Validation check:
 - You can point to `docs/phases.md` and `docs/phase-6/` and explain what Phase 6 includes and excludes before writing feature code.
 - No app implementation code is written in this task.
 
-### Task 0.2: Confirm Existing App Touchpoints
+### Done Task 0.2: Confirm Existing App Touchpoints
 
 Story coverage: US1, US2, US3, US4, US5, US7
 
