@@ -40,6 +40,30 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-20 - Plan Phase 6 Realtime Collaboration and Nurse Invites
+
+- Task: Create Phase 6 planning docs for realtime collaboration, nurse invite links, deep link joining, and live nurse-scoped shift participation.
+- Problem understanding:
+  - [ ] Phase 6 should follow `docs/phases.md`, where Phase 6 is Realtime Collaboration and Nurse Invites.
+  - [ ] The AGENTS summary has an older-looking Phase 6 note for push/offline, but push notifications and offline resilience belong to Phase 7 in `docs/phases.md`.
+  - [ ] Realtime should make server-backed active shifts update across devices without adding push notifications or offline write queues.
+- Solution understanding:
+  - [ ] `docs/phase-6/user-stories.md` defines realtime, invite, join, live nurse view, live request, regeneration, and compatibility stories.
+  - [ ] `docs/phase-6/data-model.md` documents invite records, shift nurse access updates, realtime subscription scopes, and connection state.
+  - [ ] `docs/phase-6/mobile-design.md` documents phone-first live status, invite management, join gate, joined nurse, and live request UI.
+  - [ ] `docs/phase-6/screens.md` maps the Phase 6 screens and safe recovery states.
+  - [ ] `docs/phase-6/tasks.md` orders small implementation tasks and marks only planning Task 0.1 done.
+- Broader context:
+  - [ ] Phase 6 connects the Phase 5 server-backed app to live multi-device use.
+  - [ ] Joined nurse access stays nurse-scoped and does not expose the full charge nurse board.
+  - [ ] Push notifications, offline queues, drag-and-drop, board sharing, tablet layout, and AI remain deferred.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
 ### 2026-06-20 - Complete Phase 5 Manual Test Pass
 
 - Task: Complete Phase 5 Tasks 6.1 through 6.7 by validating the auth, server template, active shift, role boundary, previous-phase compatibility, scope, and readability pass without adding new feature behavior.
