@@ -40,6 +40,29 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-26 - Add Live Status UI to Charge Screens
+
+- Task: Complete Phase 6 Task 1.3 by showing the charge active-shift realtime connection state on the charge workspace and floor board.
+- Problem understanding:
+  - [x] Charge nurses need visible feedback that active-shift updates are live, reconnecting, disconnected, or in error.
+  - [x] Realtime connection health is foreground UI state, not saved active-shift data.
+  - [x] The recovery action should refresh server truth without adding offline queues, push notifications, or conflict handling.
+- Solution understanding:
+  - [x] `src/components/workflow/Chips.tsx` exports `LiveStatusChip` with labels for connecting, live, reconnecting, disconnected, and error.
+  - [x] `src/screens/HomeScreen.tsx` renders the chip in the active-shift card.
+  - [x] `src/screens/FloorBoardScreen.tsx` renders the chip above the board summary.
+  - [x] The chip uses `retryLoadWorkspace` only for disconnected or error states.
+- Broader context:
+  - [x] Task 1.3 makes Task 1.2's temporary realtime state visible to users.
+  - [x] Existing request-then-refresh writes and assignment behavior stay unchanged.
+  - [x] Joined nurse live status and invite behavior remain future Phase 6 tasks.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
 ### 2026-06-26 - Add Charge Active Shift Realtime Subscription Boundary
 
 - Task: Implement Phase 6 Task 1.2 by starting a charge active-shift realtime listener and refetching the active shift after server change signals.

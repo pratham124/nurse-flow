@@ -3,6 +3,7 @@ export {
   BedChipRow,
   FilterChip,
   FilterChipRow,
+  LiveStatusChip,
   SeverityBadge,
   StatusPill,
   SummaryChip,

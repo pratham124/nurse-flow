@@ -80,7 +80,7 @@ Validation check:
 - TypeScript compiles.
 - Existing auth, server workspace, active shift, assignment, request, and break types still compile.
 
-### Task 1.2: Add Charge Active Shift Realtime Subscription Boundary
+### Done Task 1.2: Add Charge Active Shift Realtime Subscription Boundary
 
 Story coverage: US1, US7
 
@@ -98,7 +98,7 @@ Validation check:
 - Sign out and confirm the listener stops.
 - Update the active shift from another session or backend tool and confirm the app refreshes the active shift.
 
-### Task 1.3: Add Live Status UI to Charge Screens
+### Done Task 1.3: Add Live Status UI to Charge Screens
 
 Story coverage: US1, US7
 

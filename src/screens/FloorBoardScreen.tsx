@@ -7,6 +7,7 @@ import {
   BoardSubTabBar,
   FilterChip,
   FilterChipRow,
+  LiveStatusChip,
   PlaceholderButton,
   SeverityBadge,
   StatusPill,
@@ -37,6 +38,7 @@ import type {
   ExperienceLevel,
   Flag,
   FlagSeverity,
+  RealtimeConnectionState,
   Shift,
 } from "../types/models";
 
@@ -114,9 +116,11 @@ type FloorBoardListHeaderProps = {
   isRegularNurseSimulation: boolean;
   nurseWorkloads: NurseWorkloadViewModel[];
   onFilterPress: (filter: BoardFilter) => void;
+  onRefreshLiveStatus: () => void;
   onReturnToChargeView: () => void;
   onViewAsNurse: () => void;
   occupiedBedCount: number;
+  realtimeConnectionState: RealtimeConnectionState;
   roleSimulationMessage: string;
   selectedFilter: BoardFilter;
   selectedNurseName?: string;
@@ -143,9 +147,11 @@ function FloorBoardListHeader({
   isRegularNurseSimulation,
   nurseWorkloads,
   onFilterPress,
+  onRefreshLiveStatus,
   onReturnToChargeView,
   onViewAsNurse,
   occupiedBedCount,
+  realtimeConnectionState,
   roleSimulationMessage,
   selectedFilter,
   selectedNurseName,
@@ -155,6 +161,11 @@ function FloorBoardListHeader({
 }: FloorBoardListHeaderProps) {
   return (
     <View style={styles.headerContent}>
+      <LiveStatusChip
+        connectionState={realtimeConnectionState}
+        onRefresh={onRefreshLiveStatus}
+      />
+
       <WorkflowSection title="Board summary">
         <BoardSummaryCard
           admittingSideName={admittingSideName}
@@ -680,7 +691,8 @@ function getRoleSimulationMessage(activeShift?: Shift) {
 }
 
 export default function FloorBoardScreen() {
-  const { activeShift } = useServerWorkspace();
+  const { activeShift, realtimeConnectionState, retryLoadWorkspace } =
+    useServerWorkspace();
   const { setSimulatedSessionState, simulatedSessionState } =
     useWorkflowDraft();
   const [selectedFilter, setSelectedFilter] = useState<BoardFilter>("All");
@@ -724,6 +736,7 @@ export default function FloorBoardScreen() {
           }
           nurseWorkloads={getNurseWorkloads(activeShift)}
           onFilterPress={setSelectedFilter}
+          onRefreshLiveStatus={retryLoadWorkspace}
           onReturnToChargeView={() =>
             setSimulatedSessionState({ role: "charge" })
           }
@@ -732,6 +745,7 @@ export default function FloorBoardScreen() {
             router.push("/simulated-nurse-picker");
           }}
           occupiedBedCount={occupiedBedCount}
+          realtimeConnectionState={realtimeConnectionState}
           roleSimulationMessage={getRoleSimulationMessage(activeShift)}
           selectedFilter={selectedFilter}
           selectedNurseName={selectedNurseName}

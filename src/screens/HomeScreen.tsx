@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ConfirmationDialog,
   HospitalIcon,
+  LiveStatusChip,
   SwipeRevealAction,
   TrashIcon,
   ChevronRightIcon,
@@ -151,6 +152,7 @@ export default function Index() {
     endActiveShift,
     floorTemplates,
     previousShiftSnapshots,
+    realtimeConnectionState,
     retryLoadWorkspace,
     savePreviousShiftSnapshot: saveServerPreviousShiftSnapshot,
     startActiveShift,
@@ -420,6 +422,10 @@ export default function Index() {
               {activeShiftPatientsCount}{" "}
               {activeShiftPatientsCount === 1 ? "patient" : "patients"}
             </Text>
+            <LiveStatusChip
+              connectionState={realtimeConnectionState}
+              onRefresh={retryLoadWorkspace}
+            />
             {activeShiftMissingTemplate ? (
               <Text accessibilityRole="alert" style={styles.activeShiftWarning}>
                 Saved floor template is missing. Resume this shift or end it to

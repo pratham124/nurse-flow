@@ -1,7 +1,15 @@
 import { ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { colors, radius, spacing, textSize, fontWeight, shadows } from "../../theme/tokens";
+import {
+  colors,
+  radius,
+  spacing,
+  textSize,
+  fontWeight,
+  shadows,
+} from "../../theme/tokens";
+import type { RealtimeConnectionState } from "../../types/models";
 
 type BedChipProps = {
   label: string;
@@ -40,6 +48,41 @@ type SeverityBadgeProps = {
   tone: SeverityTone;
 };
 
+type LiveStatusChipProps = {
+  connectionState: RealtimeConnectionState;
+  onRefresh?: () => void;
+};
+
+type LiveStatusTone = "live" | "pending" | "warning" | "error";
+
+type LiveStatusContent = {
+  label: string;
+  tone: LiveStatusTone;
+};
+
+const liveStatusContent: Record<RealtimeConnectionState, LiveStatusContent> = {
+  connecting: {
+    label: "Connecting",
+    tone: "pending",
+  },
+  live: {
+    label: "Live",
+    tone: "live",
+  },
+  reconnecting: {
+    label: "Reconnecting",
+    tone: "pending",
+  },
+  disconnected: {
+    label: "Disconnected",
+    tone: "warning",
+  },
+  error: {
+    label: "Live issue",
+    tone: "error",
+  },
+};
+
 export function BedChip({ label }: BedChipProps) {
   return (
     <View style={styles.bedChip}>
@@ -72,10 +115,7 @@ export function SummaryTileGrid({ children }: ChipRowProps) {
   return <View style={styles.summaryTileGrid}>{children}</View>;
 }
 
-export function SummaryTile({
-  value,
-  label,
-}: SummaryTileProps) {
+export function SummaryTile({ value, label }: SummaryTileProps) {
   return (
     <View style={styles.summaryTile}>
       <Text style={styles.summaryTileValue}>{value}</Text>
@@ -121,10 +161,7 @@ export function FilterChipRow({ children }: ChipRowProps) {
   );
 }
 
-export function StatusPill({
-  label,
-  tone,
-}: StatusPillProps) {
+export function StatusPill({ label, tone }: StatusPillProps) {
   return (
     <View style={[styles.statusPill, statusPillStyles[tone]]}>
       <View style={[styles.statusDot, statusDotStyles[tone]]} />
@@ -135,15 +172,45 @@ export function StatusPill({
   );
 }
 
-export function SeverityBadge({
-  label,
-  tone,
-}: SeverityBadgeProps) {
+export function SeverityBadge({ label, tone }: SeverityBadgeProps) {
   return (
     <View style={[styles.severityBadge, severityBadgeStyles[tone]]}>
       <Text style={[styles.severityBadgeText, severityBadgeTextStyles[tone]]}>
         {label}
       </Text>
+    </View>
+  );
+}
+
+export function LiveStatusChip({
+  connectionState,
+  onRefresh,
+}: LiveStatusChipProps) {
+  const content = liveStatusContent[connectionState];
+  const canRefresh =
+    Boolean(onRefresh) &&
+    (connectionState === "disconnected" || connectionState === "error");
+
+  return (
+    <View style={[styles.liveStatusChip, liveStatusChipStyles[content.tone]]}>
+      <View style={styles.liveStatusLabelRow}>
+        <View
+          style={[styles.liveStatusDot, liveStatusDotStyles[content.tone]]}
+        />
+        <Text style={styles.liveStatusLabel}>{content.label}</Text>
+      </View>
+      {canRefresh ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={onRefresh}
+          style={({ pressed }) => [
+            styles.liveStatusRefreshButton,
+            pressed && styles.liveStatusRefreshButtonPressed,
+          ]}
+        >
+          <Text style={styles.liveStatusRefreshText}>Refresh</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -261,6 +328,45 @@ const styles = StyleSheet.create({
   severityBadgeText: {
     fontSize: textSize.xs,
   },
+  liveStatusChip: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    gap: spacing.sm,
+    minHeight: 24,
+    paddingVertical: 2,
+  },
+  liveStatusLabelRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.xs,
+  },
+  liveStatusDot: {
+    borderRadius: 4,
+    height: 8,
+    width: 8,
+  },
+  liveStatusLabel: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
+  liveStatusRefreshButton: {
+    alignItems: "center",
+    borderLeftColor: colors.neutral.borderSecondary,
+    borderLeftWidth: 0.5,
+    justifyContent: "center",
+    minHeight: 24,
+    paddingLeft: spacing.sm,
+  },
+  liveStatusRefreshButtonPressed: {
+    opacity: 0.7,
+  },
+  liveStatusRefreshText: {
+    color: colors.brand.burgundy,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
 });
 
 const statusDotStyles = StyleSheet.create({
@@ -341,6 +447,36 @@ const severityBadgeTextStyles = StyleSheet.create({
   },
 });
 
+const liveStatusChipStyles = StyleSheet.create({
+  live: {
+    backgroundColor: "transparent",
+  },
+  pending: {
+    backgroundColor: "transparent",
+  },
+  warning: {
+    backgroundColor: "transparent",
+  },
+  error: {
+    backgroundColor: "transparent",
+  },
+});
+
+const liveStatusDotStyles = StyleSheet.create({
+  live: {
+    backgroundColor: colors.status.green700,
+  },
+  pending: {
+    backgroundColor: colors.status.blue800,
+  },
+  warning: {
+    backgroundColor: colors.status.yellow700,
+  },
+  error: {
+    backgroundColor: colors.status.red700,
+  },
+});
+
 type SegmentedControlProps<T extends string> = {
   options: readonly T[];
   selectedOption: T;
@@ -411,4 +547,3 @@ const segmentedStyles = StyleSheet.create({
     fontWeight: fontWeight.bold,
   },
 });
-
