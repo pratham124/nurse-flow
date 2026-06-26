@@ -13,11 +13,13 @@ import {
   deleteServerFloorTemplate,
   endServerActiveShift,
   loadJoinedNurseAssignmentView,
+  loadServerActiveShift,
   loadServerWorkspace,
   saveServerActiveShift,
   saveServerFloorTemplate,
   saveServerPreviousShiftSnapshot,
 } from "../services/serverWorkspaceRepository";
+import { subscribeToChargeActiveShift } from "../services/realtimeWorkspaceRepository";
 import { getSupabaseClient } from "../services/supabaseClient";
 import { useAuthSession } from "./AuthSessionContext";
 import type {
@@ -25,6 +27,7 @@ import type {
   FloorTemplateRecord,
   JoinedNurseAssignmentView,
   PreviousShiftSnapshot,
+  RealtimeConnectionState,
   ServerSaveStatus,
   ServerWorkspace,
   Shift,
@@ -57,6 +60,7 @@ type ServerWorkspaceContextValue = {
   floorTemplates: FloorTemplate[];
   joinedNurseAccessState: JoinedNurseAccessState;
   previousShiftSnapshots: PreviousShiftSnapshot[];
+  realtimeConnectionState: RealtimeConnectionState;
   retryLoadJoinedNurseAccess: () => Promise<void>;
   retryLoadWorkspace: () => Promise<void>;
   saveActiveShift: (activeShift: Shift) => Promise<Shift>;
@@ -163,6 +167,8 @@ export function ServerWorkspaceProvider({
     });
   const [saveStatus, setSaveStatus] = useState<ServerSaveStatus>("idle");
   const [saveErrorMessage, setSaveErrorMessage] = useState("");
+  const [realtimeConnectionState, setRealtimeConnectionState] =
+    useState<RealtimeConnectionState>("disconnected");
 
   const applyWorkspace = useCallback(
     (workspace: ServerWorkspace) => {
@@ -207,6 +213,93 @@ export function ServerWorkspaceProvider({
   useEffect(() => {
     void loadWorkspace();
   }, [loadWorkspace]);
+
+  const activeShiftId =
+    workspaceState.status === "ready" || workspaceState.status === "empty"
+      ? workspaceState.workspace.activeShift?.id
+      : undefined;
+  const chargeProfileId =
+    authState.status === "signed_in" &&
+    authState.profile.role === "charge_nurse"
+      ? authState.profile.id
+      : undefined;
+
+  useEffect(() => {
+    if (!chargeProfileId || !activeShiftId) {
+      setRealtimeConnectionState("disconnected");
+      return;
+    }
+
+    const supabase = getSupabaseClient();
+
+    if (!supabase) {
+      setRealtimeConnectionState("error");
+      console.error("[Realtime] Supabase is not configured.");
+      return;
+    }
+
+    setRealtimeConnectionState("connecting");
+    console.info(
+      `[Realtime] Starting charge active shift listener for ${activeShiftId}.`,
+    );
+
+    const stopSubscription = subscribeToChargeActiveShift({
+      activeShiftId,
+      onConnectionStateChange: (connectionState, error) => {
+        setRealtimeConnectionState(connectionState);
+
+        if (error) {
+          console.error(
+            `[Realtime] Charge active shift listener ${connectionState}.`,
+            error,
+          );
+          return;
+        }
+
+        console.info(
+          `[Realtime] Charge active shift listener ${connectionState}.`,
+        );
+      },
+      onShiftChanged: () => {
+        console.info(
+          `[Realtime] Active shift ${activeShiftId} changed; refreshing server state.`,
+        );
+
+        void loadServerActiveShift(supabase, {
+          id: chargeProfileId,
+          role: "charge_nurse",
+        })
+          .then((activeShift) => {
+            setWorkspaceState((currentState) => {
+              if (
+                currentState.status !== "ready" &&
+                currentState.status !== "empty"
+              ) {
+                return currentState;
+              }
+
+              return getWorkspaceState({
+                ...currentState.workspace,
+                activeShift,
+              });
+            });
+          })
+          .catch((error: unknown) => {
+            setRealtimeConnectionState("error");
+            console.error("[Realtime] Active shift refresh failed.", error);
+          });
+      },
+      supabase,
+    });
+
+    return () => {
+      console.info(
+        `[Realtime] Stopping charge active shift listener for ${activeShiftId}.`,
+      );
+      stopSubscription();
+      setRealtimeConnectionState("disconnected");
+    };
+  }, [activeShiftId, chargeProfileId]);
 
   const loadJoinedNurseAccess = useCallback(async () => {
     if (authState.status !== "signed_in") {
@@ -523,6 +616,7 @@ export function ServerWorkspaceProvider({
       deleteFloorTemplate,
       endActiveShift,
       joinedNurseAccessState,
+      realtimeConnectionState,
       retryLoadJoinedNurseAccess: loadJoinedNurseAccess,
       retryLoadWorkspace: loadWorkspace,
       saveActiveShift,
@@ -539,6 +633,7 @@ export function ServerWorkspaceProvider({
       joinedNurseAccessState,
       loadJoinedNurseAccess,
       loadWorkspace,
+      realtimeConnectionState,
       saveActiveShift,
       saveErrorMessage,
       saveFloorTemplate,

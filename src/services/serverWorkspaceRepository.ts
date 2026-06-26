@@ -79,6 +79,8 @@ type ShiftNurseAccessSnapshot = {
   updated_at?: string;
 };
 
+type ChargeProfileIdentifier = Pick<UserProfile, "id" | "role">;
+
 const templateColumns =
   "id, owner_profile_id, name, template_snapshot, created_at, updated_at";
 const activeShiftColumns =
@@ -88,7 +90,7 @@ const previousShiftColumns =
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-function assertChargeNurse(profile: UserProfile) {
+function assertChargeNurse(profile: Pick<UserProfile, "role">) {
   if (profile.role !== "charge_nurse") {
     throw new Error("Sign in with a NurseFlow account to manage charge nurse templates.");
   }
@@ -328,14 +330,16 @@ async function loadFloorTemplates(
   return data.map(mapTemplateRow);
 }
 
-async function loadActiveShift(
+export async function loadServerActiveShift(
   supabase: SupabaseClient,
-  profileId: string,
+  profile: ChargeProfileIdentifier,
 ) {
+  assertChargeNurse(profile);
+
   const { data, error } = await supabase
     .from("active_shifts")
     .select(activeShiftColumns)
-    .eq("charge_profile_id", profileId)
+    .eq("charge_profile_id", profile.id)
     .is("ended_at", null)
     .order("updated_at", { ascending: false })
     .limit(1)
@@ -345,7 +349,19 @@ async function loadActiveShift(
     throw new Error(error.message);
   }
 
-  return data ? mapActiveShiftRow(data) : undefined;
+  if (!data) {
+    return undefined;
+  }
+
+  const activeShift = mapActiveShiftRow(data);
+
+  assertOwnedRecord(
+    activeShift.chargeProfileId,
+    profile.id,
+    "A server shift was returned for the wrong account.",
+  );
+
+  return activeShift;
 }
 
 async function loadPreviousShiftSnapshots(
@@ -375,7 +391,7 @@ export async function loadServerWorkspace(
   const [floorTemplates, activeShift, previousShiftSnapshots] =
     await Promise.all([
       loadFloorTemplates(supabase, profile.id),
-      loadActiveShift(supabase, profile.id),
+      loadServerActiveShift(supabase, profile),
       loadPreviousShiftSnapshots(supabase, profile.id),
     ]);
 
@@ -386,14 +402,6 @@ export async function loadServerWorkspace(
       "A server template was returned for the wrong account.",
     );
   });
-
-  if (activeShift) {
-    assertOwnedRecord(
-      activeShift.chargeProfileId,
-      profile.id,
-      "A server shift was returned for the wrong account.",
-    );
-  }
 
   previousShiftSnapshots.forEach((snapshot) => {
     assertOwnedRecord(

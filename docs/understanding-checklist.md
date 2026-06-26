@@ -40,6 +40,29 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-26 - Add Charge Active Shift Realtime Subscription Boundary
+
+- Task: Implement Phase 6 Task 1.2 by starting a charge active-shift realtime listener and refetching the active shift after server change signals.
+- Problem understanding:
+  - [ ] A realtime event should be treated as a signal that server data changed, not as trusted app state.
+  - [ ] The listener must start only for a signed-in charge nurse with an active shift.
+  - [ ] The listener must stop when the active shift disappears or the signed-in charge context is gone.
+- Solution understanding:
+  - [ ] `src/services/realtimeWorkspaceRepository.ts` owns the Supabase channel setup and status mapping.
+  - [ ] `src/store/ServerWorkspaceContext.tsx` owns temporary foreground realtime connection state and listener lifecycle.
+  - [ ] `src/services/serverWorkspaceRepository.ts` exposes `loadServerActiveShift` so realtime refreshes can refetch only the active shift.
+  - [ ] Existing write flows still use request-then-refresh.
+- Broader context:
+  - [ ] Task 1.3 can render the temporary connection state in UI.
+  - [ ] Joined-nurse subscriptions, invite links, push notifications, offline queues, and conflict handling remain out of scope.
+  - [ ] Supabase must have `public.active_shifts` enabled in the `supabase_realtime` publication before backend update events can arrive.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
 ### 2026-06-25 - Fix Home Template Cards on Small Screens
 
 - Task: Reflow the Home floor-template card so its action no longer overlaps metadata on narrow phone screens.
