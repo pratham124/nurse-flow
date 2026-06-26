@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { router } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
@@ -33,6 +40,8 @@ import {
   createPreviousShiftSnapshot,
 } from "../helpers/shiftHelpers";
 
+const COMPACT_TEMPLATE_CARD_MAX_WIDTH = 350;
+
 type FloorTemplateRowProps = {
   canDelete: boolean;
   floorTemplate: FloorTemplate;
@@ -48,57 +57,71 @@ function FloorTemplateRow({
   onPress,
   onStartShift,
 }: FloorTemplateRowProps) {
+  const { width } = useWindowDimensions();
+  const isCompactLayout = width < COMPACT_TEMPLATE_CARD_MAX_WIDTH;
   const roomCount = floorTemplate.rooms.length;
   const bedCount = floorTemplate.beds.length;
   const floorInitial = floorTemplate.name.trim().charAt(0).toUpperCase() || "F";
+
+  const startShiftButton = (
+    <Pressable
+      onPress={(event) => {
+        event.stopPropagation();
+        onStartShift(floorTemplate);
+      }}
+      style={({ pressed }) => [
+        styles.startShiftButton,
+        isCompactLayout && styles.startShiftButtonCompact,
+        pressed && styles.startShiftButtonPressed,
+      ]}
+    >
+      <Text style={styles.startShiftButtonText}>Start Shift</Text>
+    </Pressable>
+  );
 
   const rowContent = (
     <Pressable
       onPress={() => onPress(floorTemplate)}
       style={({ pressed }) => [
         styles.templateRow,
+        isCompactLayout && styles.templateRowCompact,
         pressed && styles.templateRowPressed,
       ]}
     >
       <View style={styles.templateAccent} />
-      <View style={styles.templateLeft}>
-        <View style={styles.templateBadge}>
-          <Text style={styles.templateBadgeText}>{floorInitial}</Text>
-        </View>
-        <View style={styles.templateTitleGroup}>
-          <Text style={styles.templateName}>{floorTemplate.name}</Text>
-          <View style={styles.templateMetaRow}>
-            <View style={styles.templateMetaChip}>
-              <RoomIcon size={11} color={colors.neutral.textSecondary} />
-              <Text numberOfLines={1} style={styles.templateMetaChipText}>
-                {roomCount} {roomCount === 1 ? "room" : "rooms"}
-              </Text>
-            </View>
-            <View style={styles.templateMetaChip}>
-              <BedIcon size={11} color={colors.neutral.textSecondary} />
-              <Text numberOfLines={1} style={styles.templateMetaChipText}>
-                {bedCount} {bedCount === 1 ? "bed" : "beds"}
-              </Text>
+      <View style={styles.templateMainRow}>
+        <View style={styles.templateLeft}>
+          <View style={styles.templateBadge}>
+            <Text style={styles.templateBadgeText}>{floorInitial}</Text>
+          </View>
+          <View style={styles.templateTitleGroup}>
+            <Text numberOfLines={1} style={styles.templateName}>
+              {floorTemplate.name}
+            </Text>
+            <View style={styles.templateMetaRow}>
+              <View style={styles.templateMetaChip}>
+                <RoomIcon size={11} color={colors.neutral.textSecondary} />
+                <Text numberOfLines={1} style={styles.templateMetaChipText}>
+                  {roomCount} {roomCount === 1 ? "room" : "rooms"}
+                </Text>
+              </View>
+              <View style={styles.templateMetaChip}>
+                <BedIcon size={11} color={colors.neutral.textSecondary} />
+                <Text numberOfLines={1} style={styles.templateMetaChipText}>
+                  {bedCount} {bedCount === 1 ? "bed" : "beds"}
+                </Text>
+              </View>
             </View>
           </View>
         </View>
+
+        <View style={styles.templateRight}>
+          {isCompactLayout ? null : startShiftButton}
+          <ChevronRightIcon color={colors.neutral.textTertiary} size={14} />
+        </View>
       </View>
 
-      <View style={styles.templateRight}>
-        <Pressable
-          onPress={(e) => {
-            e.stopPropagation();
-            onStartShift(floorTemplate);
-          }}
-          style={({ pressed }) => [
-            styles.startShiftButton,
-            pressed && styles.startShiftButtonPressed,
-          ]}
-        >
-          <Text style={styles.startShiftButtonText}>Start Shift</Text>
-        </Pressable>
-        <ChevronRightIcon color={colors.neutral.textTertiary} size={14} />
-      </View>
+      {isCompactLayout ? startShiftButton : null}
     </Pressable>
   );
 
@@ -146,22 +169,20 @@ export default function Index() {
     (workspaceState.status === "idle" || workspaceState.status === "loading");
   const serverWorkspaceError =
     workspaceState.status === "error" ? workspaceState.errorMessage : "";
-  const visibleFloorTemplates = isServerWorkspaceLoading
-    ? []
-    : floorTemplates;
+  const visibleFloorTemplates = isServerWorkspaceLoading ? [] : floorTemplates;
   const floorTemplateCount = visibleFloorTemplates.length;
 
   const visibleActiveShift = isServerWorkspaceLoading ? undefined : activeShift;
   const activeShiftTemplate = visibleActiveShift
-    ? floorTemplates.find(
-        (t) => t.id === visibleActiveShift?.floorTemplateId,
-      )
+    ? floorTemplates.find((t) => t.id === visibleActiveShift?.floorTemplateId)
     : null;
   const activeShiftMissingTemplate = Boolean(
     visibleActiveShift && !activeShiftTemplate,
   );
   const activeShiftFloorName =
-    visibleActiveShift?.floorName ?? activeShiftTemplate?.name ?? "Active Floor";
+    visibleActiveShift?.floorName ??
+    activeShiftTemplate?.name ??
+    "Active Floor";
   const activeShiftNursesCount = visibleActiveShift?.nurses?.length ?? 0;
   const activeShiftPatientsCount =
     visibleActiveShift?.bedStates?.filter((bedState) =>
@@ -267,7 +288,8 @@ export default function Index() {
 
   async function handleConfirmEndActiveShift() {
     if (visibleActiveShift) {
-      const previousShiftSnapshot = createPreviousShiftSnapshot(visibleActiveShift);
+      const previousShiftSnapshot =
+        createPreviousShiftSnapshot(visibleActiveShift);
 
       try {
         await saveServerPreviousShiftSnapshot(previousShiftSnapshot);
@@ -312,10 +334,11 @@ export default function Index() {
       return;
     }
 
-    const hasPendingCarryOverReview = previousShiftSnapshots.some(
-      (snapshot) =>
-        snapshot.floorTemplateId === visibleActiveShift.floorTemplateId,
-    ) && !visibleActiveShift.carryOverReviewedAt;
+    const hasPendingCarryOverReview =
+      previousShiftSnapshots.some(
+        (snapshot) =>
+          snapshot.floorTemplateId === visibleActiveShift.floorTemplateId,
+      ) && !visibleActiveShift.carryOverReviewedAt;
 
     if (hasPendingCarryOverReview) {
       router.push("/carry-over-review");
@@ -385,7 +408,9 @@ export default function Index() {
                 </Text>
               </View>
               <Text style={styles.activeShiftTime}>
-                {visibleActiveShift.status === "assigned" ? "Assigned" : "In Setup"}
+                {visibleActiveShift.status === "assigned"
+                  ? "Assigned"
+                  : "In Setup"}
               </Text>
             </View>
             <Text style={styles.activeShiftName}>{activeShiftFloorName}</Text>
@@ -803,11 +828,13 @@ const styles = StyleSheet.create({
   templateRow: {
     alignItems: "center",
     backgroundColor: colors.neutral.surface,
-    flexDirection: "row",
-    justifyContent: "space-between",
     gap: spacing.md,
     minHeight: 76,
     padding: spacing.lg,
+  },
+  templateRowCompact: {
+    alignItems: "stretch",
+    gap: spacing.sm,
   },
   templateRowPressed: {
     opacity: 0.92,
@@ -820,6 +847,13 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     width: 4,
+  },
+  templateMainRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.md,
+    justifyContent: "space-between",
+    width: "100%",
   },
   templateLeft: {
     flexDirection: "row",
@@ -887,6 +921,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 14,
     paddingVertical: 6,
+  },
+  startShiftButtonCompact: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 52,
+    minHeight: 44,
   },
   startShiftButtonPressed: {
     backgroundColor: colors.brand.burgundy15,

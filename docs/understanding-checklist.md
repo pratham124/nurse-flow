@@ -40,6 +40,27 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-25 - Fix Home Template Cards on Small Screens
+
+- Task: Reflow the Home floor-template card so its action no longer overlaps metadata on narrow phone screens.
+- Problem understanding:
+  - [ ] The template identity, two metadata chips, Start Shift action, and chevron were competing for one horizontal row.
+  - [ ] Flexible shrinking could not preserve readable metadata and a usable action at narrow content widths.
+  - [ ] This is a responsive presentation issue, not a shift or server-data issue.
+- Solution understanding:
+  - [ ] `FloorTemplateRow` compares the current window width with the module-level `COMPACT_TEMPLATE_CARD_MAX_WIDTH` constant.
+  - [ ] Compact cards keep template identity and the chevron on the first row, then place Start Shift on its own aligned row.
+  - [ ] The compact Start Shift action has a 44-point minimum touch target.
+- Broader context:
+  - [ ] Template editing, shift creation, deletion, navigation, and saved data behavior are unchanged.
+  - [ ] Wider screens retain the existing single-row card layout.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
 ### 2026-06-25 - Add Realtime Connection State Types
 
 - Task: Complete Phase 6 Task 1.1 by defining the foreground realtime connection states without adding subscription behavior.
