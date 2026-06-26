@@ -50,10 +50,12 @@ export default function JoinActiveSessionScreen() {
         <View style={styles.panel}>
           <View style={styles.panelHeader}>
             <Text style={styles.label}>Nurse code</Text>
-            <Text style={styles.panelMeta}>6 characters</Text>
           </View>
 
-          <View accessibilityLabel="Nurse code entry disabled" style={styles.codeRow}>
+          <View
+            accessibilityLabel="Nurse code entry disabled"
+            style={styles.codeRow}
+          >
             {["", "", "", "", "", ""].map((_, index) => (
               <View key={`code-cell-${index}`} style={styles.codeCell}>
                 <Text style={styles.codeCellText}>-</Text>
@@ -64,8 +66,8 @@ export default function JoinActiveSessionScreen() {
           <View style={styles.infoBox}>
             <Text style={styles.infoTitle}>Not active in this build</Text>
             <Text style={styles.helperText}>
-              The next task will verify codes and link this account to one
-              shift nurse assignment.
+              The next task will verify codes and link this account to one shift
+              nurse assignment.
             </Text>
           </View>
         </View>

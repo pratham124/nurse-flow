@@ -138,24 +138,26 @@ Validation check:
 - Joined nurse users cannot list or manage invite records.
 - TypeScript and lint pass.
 
-### Task 2.2: Generate Per-Nurse Invite Link
+### Done Task 2.2: Generate Per-Nurse Invite Code
 
 Story coverage: US2
 
 Build:
 
-- Add a focused action to generate an invite link for a nurse in the active shift.
-- Return the link to the app only after the server creates the invite record.
+- Add a focused action to generate an invite code for a nurse in the active shift.
+- Return the code to the app only after the server creates the invite record.
 - Show a readable error if no active shift or target nurse exists.
-- Keep generated links valid only for active shifts.
+- Keep generated codes valid only for active shifts.
+- Added secure per-nurse code generation and hashed code storage in `shiftInviteRepository`.
+- Kept raw invite codes in screen memory only; they are not persisted as normal app data.
 
 Validation check:
 
-- Generate a link for one active-shift nurse.
-- Confirm the link is tied to the intended shift and nurse.
+- Generate a code for one active-shift nurse.
+- Confirm the code is tied to the intended shift and nurse.
 - Confirm generation fails safely after the shift ends.
 
-### Task 2.3: Add Nurse Invites Screen
+### Done Task 2.3: Add Nurse Invites Screen
 
 Story coverage: US2, US6
 
@@ -166,30 +168,34 @@ Build:
 - Add generate, copy, share, and regenerate actions.
 - Show empty states for no active shift and no nurses.
 - Show invite expiration language.
+- Added `/nurse-invites`, reachable from the Floor Board bottom sub-nav.
+- Added copy through `expo-clipboard` and share through the native device share sheet.
 
 Validation check:
 
 - Active shift with nurses shows one row per nurse.
-- A generated invite can be copied.
-- A generated invite can be shared through the device share sheet.
+- A generated invite code can be copied.
+- A generated invite code can be shared through the device share sheet.
 - Empty and error states are readable.
 
-### Task 2.4: Regenerate and Revoke Invite Links
+### Done Task 2.4: Regenerate and Revoke Invite Codes
 
 Story coverage: US6
 
 Build:
 
-- Add regenerate behavior for one nurse's invite link.
+- Add regenerate behavior for one nurse's invite code.
 - Revoke the old active invite when a new one is generated.
-- Confirm regeneration before invalidating the old link.
+- Confirm regeneration before invalidating the old code.
 - Keep already linked nurse access unless a later explicit access-removal task is added.
+- Added confirmation before regeneration.
+- Regeneration revokes any active invite for that shift nurse, then creates a fresh active invite and code.
 
 Validation check:
 
-- Regenerate a link and confirm the newest link is active.
-- Confirm the previous link fails safely.
-- Confirm a joined nurse does not lose access simply because the link was regenerated.
+- Regenerate a code and confirm the newest code is active.
+- Confirm the previous code fails safely.
+- Confirm a joined nurse does not lose access simply because the code was regenerated.
 
 ## Deep Link Join Flow
 

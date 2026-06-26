@@ -12,6 +12,7 @@ export type WorkflowRoute =
   | "/patients-and-acuity"
   | "/assignment-review"
   | "/floor-board"
+  | "/nurse-invites"
   | "/simulated-nurse-picker"
   | "/simulated-nurse-assignment"
   | "/simulated-nurse-issue"

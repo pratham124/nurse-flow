@@ -140,6 +140,64 @@ export function RoomIcon({
   );
 }
 
+export function CopyIcon({
+  color = colors.neutral.textSecondary,
+  size = 18,
+}: IconProps) {
+  return (
+    <View style={[styles.copyIcon, { height: size, width: size }]}>
+      <View
+        style={[
+          styles.copyBackPage,
+          {
+            borderColor: color,
+            height: size * 0.66,
+            width: size * 0.58,
+          },
+        ]}
+      />
+      <View
+        style={[
+          styles.copyFrontPage,
+          {
+            borderColor: color,
+            height: size * 0.66,
+            width: size * 0.58,
+          },
+        ]}
+      />
+    </View>
+  );
+}
+
+export function ShareIcon({
+  color = colors.neutral.textSecondary,
+  size = 18,
+}: IconProps) {
+  return (
+    <View style={[styles.shareIcon, { height: size, width: size }]}>
+      <View style={[styles.shareStem, { backgroundColor: color }]} />
+      <View
+        style={[
+          styles.shareArrowLeft,
+          {
+            borderColor: color,
+          },
+        ]}
+      />
+      <View
+        style={[
+          styles.shareArrowRight,
+          {
+            borderColor: color,
+          },
+        ]}
+      />
+      <View style={[styles.shareTray, { borderColor: color }]} />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   icon: {
     alignItems: "center",
@@ -295,5 +353,62 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 1,
     width: "45%",
     height: "55%",
+  },
+  copyIcon: {
+    position: "relative",
+  },
+  copyBackPage: {
+    borderRadius: 3,
+    borderWidth: 1.5,
+    left: 2,
+    position: "absolute",
+    top: 1,
+  },
+  copyFrontPage: {
+    backgroundColor: colors.neutral.surface,
+    borderRadius: 3,
+    borderWidth: 1.5,
+    bottom: 1,
+    position: "absolute",
+    right: 2,
+  },
+  shareIcon: {
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  shareStem: {
+    borderRadius: 1,
+    height: 11,
+    position: "absolute",
+    top: 2,
+    width: 1.8,
+  },
+  shareArrowLeft: {
+    borderLeftWidth: 1.8,
+    borderTopWidth: 1.8,
+    height: 6,
+    position: "absolute",
+    top: 2,
+    transform: [{ rotate: "45deg" }],
+    width: 6,
+  },
+  shareArrowRight: {
+    borderRightWidth: 1.8,
+    borderTopWidth: 1.8,
+    height: 6,
+    position: "absolute",
+    top: 2,
+    transform: [{ rotate: "-45deg" }],
+    width: 6,
+  },
+  shareTray: {
+    borderRadius: 3,
+    borderTopWidth: 0,
+    borderWidth: 1.8,
+    bottom: 1,
+    height: 7,
+    position: "absolute",
+    width: 14,
   },
 });

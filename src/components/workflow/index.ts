@@ -20,8 +20,10 @@ export {
   PlusIcon,
   TrashIcon,
   ChevronRightIcon,
+  CopyIcon,
   BedIcon,
   RoomIcon,
+  ShareIcon,
 } from "./Icons";
 export { ConfirmationDialog } from "./ConfirmationDialog";
 export {

@@ -40,6 +40,29 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-26 - Add Nurse Invite Codes Screen
+
+- Task: Complete Phase 6 Tasks 2.2, 2.3, and 2.4 by generating per-nurse invite codes, adding the Nurse Invites screen, and regenerating codes by revoking old active invites.
+- Problem understanding:
+  - [ ] Nurse invite codes need a server-created invite record before the raw code is returned to the app.
+  - [ ] The app should not persist raw invite codes because the server stores only hashed code validation data.
+  - [ ] Regeneration must invalidate the old active invite without removing already linked nurse access.
+- Solution understanding:
+  - [ ] `src/services/shiftInviteRepository.ts` generates a 6-character nurse code, stores only its hash, loads invite/access status, and revokes active invites before regeneration.
+  - [ ] `src/screens/NurseInvitesScreen.tsx` lists active-shift nurses, shows joined/invite status, and supports generate, copy, share, and regenerate actions.
+  - [ ] `src/screens/FloorBoardScreen.tsx` adds the Floor Board entry point without changing assignment behavior.
+  - [ ] `expo-clipboard` and `expo-crypto` are used because copy and secure code generation are direct task requirements.
+- Broader context:
+  - [ ] This prepares the later nurse-code join flow while intentionally not implementing invite validation or joining yet.
+  - [ ] Existing Phase 1-5 shift setup, assignment, requests, breaks, auth, and realtime charge-board behavior should remain unchanged.
+  - [ ] Push notifications, offline queues, drag-and-drop, tablet layout, AI, and access-removal behavior remain out of scope.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: in progress
+
 ### 2026-06-26 - Add Shift Nurse Invite Server Model
 
 - Task: Complete Phase 6 Task 2.1 by adding the server invite record model, app-side repository boundary, and Supabase setup note for nurse invite records.

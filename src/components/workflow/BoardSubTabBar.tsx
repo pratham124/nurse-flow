@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { colors, fontWeight, radius, shadows, spacing, textSize } from "../../theme/tokens";
 
-type BoardSubTab = "board" | "breaks" | "flags";
+type BoardSubTab = "board" | "breaks" | "flags" | "invites";
 
 type BoardSubTabBarProps = {
   activeTab: BoardSubTab;
@@ -11,7 +11,7 @@ type BoardSubTabBarProps = {
 
 type BoardSubTabItem = {
   label: string;
-  route: "/floor-board" | "/break-schedule" | "/flags";
+  route: "/floor-board" | "/break-schedule" | "/flags" | "/nurse-invites";
   tab: BoardSubTab;
 };
 
@@ -24,6 +24,7 @@ const boardSubTabs: BoardSubTabItem[] = [
   { label: "Board", route: "/floor-board", tab: "board" },
   { label: "Breaks", route: "/break-schedule", tab: "breaks" },
   { label: "Flags", route: "/flags", tab: "flags" },
+  { label: "Invites", route: "/nurse-invites", tab: "invites" },
 ];
 
 export function BoardSubTabBar({ activeTab }: BoardSubTabBarProps) {
@@ -93,6 +94,30 @@ function BoardSubTabIcon({ active, tab }: BoardSubTabIconProps) {
     );
   }
 
+  if (tab === "invites") {
+    return (
+      <View style={styles.inviteIcon}>
+        <View
+          style={[
+            styles.inviteLink,
+            styles.inviteLinkTop,
+            { borderColor: iconColor },
+          ]}
+        />
+        <View
+          style={[
+            styles.inviteLink,
+            styles.inviteLinkBottom,
+            {
+              backgroundColor: active ? colors.brand.burgundy10 : "transparent",
+              borderColor: iconColor,
+            },
+          ]}
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.boardIcon}>
       <View
@@ -126,8 +151,8 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     justifyContent: "center",
     minHeight: 58,
-    minWidth: 86,
-    paddingHorizontal: spacing.md,
+    minWidth: 72,
+    paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
   },
   activeTabButton: {
@@ -204,5 +229,27 @@ const styles = StyleSheet.create({
     borderRadius: 1,
     height: 2,
     width: 18,
+  },
+  inviteIcon: {
+    height: 21,
+    position: "relative",
+    width: 22,
+  },
+  inviteLink: {
+    borderRadius: 6,
+    borderWidth: 1.5,
+    height: 10,
+    position: "absolute",
+    width: 15,
+  },
+  inviteLinkTop: {
+    left: 1,
+    top: 3,
+    transform: [{ rotate: "-25deg" }],
+  },
+  inviteLinkBottom: {
+    bottom: 3,
+    right: 1,
+    transform: [{ rotate: "-25deg" }],
   },
 });
