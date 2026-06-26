@@ -238,13 +238,56 @@ export function ServerWorkspaceProvider({
       return;
     }
 
+    const activeSupabase = supabase;
+    const subscribedActiveShiftId = activeShiftId;
+    const subscribedChargeProfileId = chargeProfileId;
+    let isCurrentSubscription = true;
+
+    async function refreshActiveShiftFromServer() {
+      console.info(
+        `[Realtime] Active shift ${subscribedActiveShiftId} changed; refreshing server state.`,
+      );
+
+      try {
+        const activeShift = await loadServerActiveShift(activeSupabase, {
+          id: subscribedChargeProfileId,
+          role: "charge_nurse",
+        });
+
+        if (!isCurrentSubscription) {
+          return;
+        }
+
+        setWorkspaceState((currentState) => {
+          if (
+            currentState.status !== "ready" &&
+            currentState.status !== "empty"
+          ) {
+            return currentState;
+          }
+
+          return getWorkspaceState({
+            ...currentState.workspace,
+            activeShift,
+          });
+        });
+      } catch (error: unknown) {
+        if (!isCurrentSubscription) {
+          return;
+        }
+
+        setRealtimeConnectionState("error");
+        console.error("[Realtime] Active shift refresh failed.", error);
+      }
+    }
+
     setRealtimeConnectionState("connecting");
     console.info(
-      `[Realtime] Starting charge active shift listener for ${activeShiftId}.`,
+      `[Realtime] Starting charge active shift listener for ${subscribedActiveShiftId}.`,
     );
 
     const stopSubscription = subscribeToChargeActiveShift({
-      activeShiftId,
+      activeShiftId: subscribedActiveShiftId,
       onConnectionStateChange: (connectionState, error) => {
         setRealtimeConnectionState(connectionState);
 
@@ -261,40 +304,15 @@ export function ServerWorkspaceProvider({
         );
       },
       onShiftChanged: () => {
-        console.info(
-          `[Realtime] Active shift ${activeShiftId} changed; refreshing server state.`,
-        );
-
-        void loadServerActiveShift(supabase, {
-          id: chargeProfileId,
-          role: "charge_nurse",
-        })
-          .then((activeShift) => {
-            setWorkspaceState((currentState) => {
-              if (
-                currentState.status !== "ready" &&
-                currentState.status !== "empty"
-              ) {
-                return currentState;
-              }
-
-              return getWorkspaceState({
-                ...currentState.workspace,
-                activeShift,
-              });
-            });
-          })
-          .catch((error: unknown) => {
-            setRealtimeConnectionState("error");
-            console.error("[Realtime] Active shift refresh failed.", error);
-          });
+        void refreshActiveShiftFromServer();
       },
-      supabase,
+      supabase: activeSupabase,
     });
 
     return () => {
+      isCurrentSubscription = false;
       console.info(
-        `[Realtime] Stopping charge active shift listener for ${activeShiftId}.`,
+        `[Realtime] Stopping charge active shift listener for ${subscribedActiveShiftId}.`,
       );
       stopSubscription();
       setRealtimeConnectionState("disconnected");
