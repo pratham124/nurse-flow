@@ -23,6 +23,13 @@ export type UserRole = "charge_nurse";
 
 export type ServerSaveStatus = "idle" | "saving" | "saved" | "error";
 
+export type RealtimeConnectionState =
+  | "connecting"
+  | "live"
+  | "reconnecting"
+  | "disconnected"
+  | "error";
+
 export type ShiftAccessStatus = "pending_link" | "linked" | "removed";
 
 export type NurseRequestStatus = "pending" | "accepted" | "declined";

@@ -40,6 +40,28 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-25 - Add Realtime Connection State Types
+
+- Task: Complete Phase 6 Task 1.1 by defining the foreground realtime connection states without adding subscription behavior.
+- Problem understanding:
+  - [x] Realtime connection health needs a shared vocabulary before listeners and live-status UI are implemented.
+  - [x] Connection health is temporary foreground app state, not saved active-shift or database data.
+  - [x] Offline queues and conflict state are outside this task and Phase 6 scope.
+- Solution understanding:
+  - [x] `src/types/models.ts` exports `RealtimeConnectionState` with `connecting`, `live`, `reconnecting`, `disconnected`, and `error`.
+  - [x] A string union rejects unsupported connection-state values during TypeScript compilation.
+  - [x] `Shift`, `ActiveShiftRecord`, and `ServerWorkspace` remain unchanged, so connection state is not persisted.
+- Broader context:
+  - [x] Task 1.2 can use this type when it adds the charge active-shift subscription boundary.
+  - [x] Task 1.3 can use the same vocabulary when it adds live-status UI.
+  - [x] Existing auth, workspace, assignment, request, and break behavior is unaffected.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
 ### 2026-06-21 - Confirm Phase 6 Existing App Touchpoints
 
 - Task: Complete Phase 6 Tasks 0.1 and 0.2 by verifying the Phase 6 planning docs and documenting the current app touchpoints before runtime feature work starts.

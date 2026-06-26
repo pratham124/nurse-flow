@@ -63,7 +63,7 @@ Validation check:
 
 ## Realtime Foundation
 
-### Task 1.1: Add Realtime Connection State Types
+### Done Task 1.1: Add Realtime Connection State Types
 
 Story coverage: US1, US4, US7
 
