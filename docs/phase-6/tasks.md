@@ -117,7 +117,7 @@ Validation check:
 
 ## Nurse Invites
 
-### Task 2.1: Add Shift Nurse Invite Server Model
+### Done Task 2.1: Add Shift Nurse Invite Server Model
 
 Story coverage: US2, US6
 
@@ -128,12 +128,15 @@ Build:
 - Ensure one nurse has at most one active invite per active shift.
 - Add authorization rules so only the owning charge nurse can manage invites for their shift.
 - Do not store raw invite links as normal persisted app data.
+- Added `docs/phase-6/supabase-invite-setup.md` with the `shift_nurse_invites` table, RLS policies, and one-active-invite partial unique index.
+- Added `ShiftNurseInviteRecord` and `shiftInviteRepository` as the small app-side boundary for creating and loading invite records.
 
 Validation check:
 
 - Charge nurse can create an invite record for a nurse in their own active shift.
 - Charge nurse cannot create an invite for another user's shift.
 - Joined nurse users cannot list or manage invite records.
+- TypeScript and lint pass.
 
 ### Task 2.2: Generate Per-Nurse Invite Link
 

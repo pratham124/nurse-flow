@@ -32,6 +32,12 @@ export type RealtimeConnectionState =
 
 export type ShiftAccessStatus = "pending_link" | "linked" | "removed";
 
+export type ShiftNurseInviteStatus =
+  | "active"
+  | "used"
+  | "revoked"
+  | "expired";
+
 export type NurseRequestStatus = "pending" | "accepted" | "declined";
 
 export type NurseRequestType = "issue" | "swap";
@@ -298,6 +304,20 @@ export interface ShiftNurseAccess {
   status: ShiftAccessStatus;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ShiftNurseInviteRecord {
+  id: string;
+  shiftId: string;
+  nurseId: LocalId;
+  createdByProfileId: string;
+  tokenHash: string;
+  status: ShiftNurseInviteStatus;
+  createdAt: string;
+  expiresAt: string;
+  usedAt?: string;
+  usedByProfileId?: string;
+  revokedAt?: string;
 }
 
 export interface JoinedNurseAssignedBed {

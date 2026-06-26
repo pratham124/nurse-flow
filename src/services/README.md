@@ -10,5 +10,10 @@ Keep service files focused on one boundary at a time. Auth belongs in
 setup belongs in `supabaseClient`, and floor-template or active-shift server
 reads and writes belong in `serverWorkspaceRepository`.
 
-Do not add realtime, push notifications, offline queues, invite links, deep
-links, or future-phase infrastructure here until the matching phase starts.
+Phase 6 adds focused realtime and invite boundaries here. Realtime subscription
+setup belongs in `realtimeWorkspaceRepository`, and shift invite record reads or
+writes belong in `shiftInviteRepository`.
+
+Do not add push notifications, offline queues, deep links, drag-and-drop
+overrides, board sharing, tablet layout, AI, or future-phase infrastructure here
+until the matching phase starts.

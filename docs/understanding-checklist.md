@@ -40,6 +40,29 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-26 - Add Shift Nurse Invite Server Model
+
+- Task: Complete Phase 6 Task 2.1 by adding the server invite record model, app-side repository boundary, and Supabase setup note for nurse invite records.
+- Problem understanding:
+  - [x] Nurse invite links need a server record before the app can safely generate or validate links.
+  - [x] The server should store safe token validation data, not raw invite links or raw invite tokens.
+  - [x] Invite management must be limited to the charge nurse who owns the active shift.
+- Solution understanding:
+  - [x] `src/types/models.ts` defines `ShiftNurseInviteStatus` and `ShiftNurseInviteRecord`.
+  - [x] `src/services/shiftInviteRepository.ts` checks charge ownership, active shift status, nurse membership, expiration, token hash shape, and duplicate active invites.
+  - [x] `docs/phase-6/supabase-invite-setup.md` documents the `shift_nurse_invites` table, RLS policies, and one-active-invite partial unique index.
+  - [x] Raw invite link generation, deep links, copy/share UI, and nurse join behavior remain future tasks.
+- Broader context:
+  - [x] Task 2.1 prepares Task 2.2 to generate a real per-nurse link after the server record exists.
+  - [x] Existing active-shift, realtime, assignment, request, break, and joined nurse behavior stays unchanged.
+  - [x] Push notifications, offline queues, conflict handling, drag-and-drop, board sharing, tablet layout, and AI remain out of scope.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
 ### 2026-06-26 - Add Live Status UI to Charge Screens
 
 - Task: Complete Phase 6 Task 1.3 by showing the charge active-shift realtime connection state on the charge workspace and floor board.
