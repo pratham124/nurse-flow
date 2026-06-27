@@ -41,6 +41,32 @@ type GenerateShiftNurseInviteCodeInput = {
   nurseId: string;
 };
 
+export type ShiftNurseInviteValidationBlockReason =
+  | "invalid_format"
+  | "not_found"
+  | "expired"
+  | "revoked"
+  | "already_used"
+  | "ended_shift"
+  | "stale_nurse"
+  | "participation_conflict";
+
+export type ShiftNurseInviteValidationResult =
+  | {
+      expiresAt: string;
+      floorName: string;
+      inviteId: string;
+      nurseId: string;
+      nurseName: string;
+      shiftId: string;
+      status: "valid";
+    }
+  | {
+      message: string;
+      reason: ShiftNurseInviteValidationBlockReason;
+      status: "blocked";
+    };
+
 type ShiftNurseAccessRow = {
   created_at: string;
   id: string;
@@ -53,6 +79,23 @@ type ShiftNurseAccessRow = {
   updated_at: string;
 };
 
+type ValidateShiftNurseInviteRpcResult = {
+  expiresAt?: string;
+  expires_at?: string;
+  floorName?: string;
+  floor_name?: string;
+  inviteId?: string;
+  invite_id?: string;
+  nurseId?: string;
+  nurseName?: string;
+  nurse_id?: string;
+  nurse_name?: string;
+  reason?: string;
+  shiftId?: string;
+  shift_id?: string;
+  status?: string;
+};
+
 const inviteColumns =
   "id, shift_id, nurse_id, created_by_profile_id, token_hash, status, created_at, expires_at, used_at, used_by_profile_id, revoked_at";
 const accessColumns =
@@ -60,6 +103,7 @@ const accessColumns =
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const inviteCodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const inviteCodePattern = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
 const inviteCodeLength = 6;
 const inviteExpirationHours = 24;
 
@@ -127,6 +171,38 @@ function createInviteCode() {
     .join("");
 }
 
+export function getNormalizedNurseInviteCode(code: string) {
+  return code.trim().replace(/[\s-]/g, "").toUpperCase();
+}
+
+export function getNurseInviteCodeFormatMessage(code: string) {
+  const normalizedCode = getNormalizedNurseInviteCode(code);
+
+  if (!normalizedCode) {
+    return "Enter the 6-character nurse code from charge.";
+  }
+
+  if (normalizedCode.length < inviteCodeLength) {
+    return "Nurse codes are 6 characters long.";
+  }
+
+  if (
+    normalizedCode.length > inviteCodeLength ||
+    !inviteCodePattern.test(normalizedCode)
+  ) {
+    return "Use the 6 letters or numbers shown by charge.";
+  }
+
+  return "";
+}
+
+export async function getShiftNurseInviteCodeHash(code: string) {
+  return Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    getNormalizedNurseInviteCode(code),
+  );
+}
+
 function createDefaultExpiration() {
   const expiresAt = new Date();
 
@@ -192,6 +268,124 @@ function mapAccessRow(row: ShiftNurseAccessRow): ShiftNurseAccess {
   };
 }
 
+function getValidationBlockMessage(
+  reason: ShiftNurseInviteValidationBlockReason,
+) {
+  if (reason === "invalid_format") {
+    return "Use the 6-character nurse code from charge.";
+  }
+
+  if (reason === "expired") {
+    return "That nurse code has expired. Ask charge for a new code.";
+  }
+
+  if (reason === "revoked") {
+    return "That nurse code was replaced. Ask charge for a new code.";
+  }
+
+  if (reason === "already_used") {
+    return "That nurse code was already used.";
+  }
+
+  if (reason === "ended_shift") {
+    return "That shift has ended.";
+  }
+
+  if (reason === "stale_nurse") {
+    return "That nurse is no longer in this active shift.";
+  }
+
+  if (reason === "participation_conflict") {
+    return "This account is already linked to another active shift.";
+  }
+
+  return "That nurse code is not valid.";
+}
+
+function isValidationBlockReason(
+  reason: string,
+): reason is ShiftNurseInviteValidationBlockReason {
+  return (
+    reason === "invalid_format" ||
+    reason === "not_found" ||
+    reason === "expired" ||
+    reason === "revoked" ||
+    reason === "already_used" ||
+    reason === "ended_shift" ||
+    reason === "stale_nurse" ||
+    reason === "participation_conflict"
+  );
+}
+
+function getValidationResultRow(data: unknown) {
+  if (Array.isArray(data)) {
+    return data[0] as ValidateShiftNurseInviteRpcResult | undefined;
+  }
+
+  return data as ValidateShiftNurseInviteRpcResult | undefined;
+}
+
+function mapValidationResult(
+  data: unknown,
+): ShiftNurseInviteValidationResult {
+  const row = getValidationResultRow(data);
+
+  if (!row) {
+    return {
+      message: getValidationBlockMessage("not_found"),
+      reason: "not_found",
+      status: "blocked",
+    };
+  }
+
+  const rawReason = row.reason ?? row.status ?? "not_found";
+  const reason = isValidationBlockReason(rawReason) ? rawReason : "not_found";
+
+  if (row.status !== "valid") {
+    return {
+      message: getValidationBlockMessage(reason),
+      reason,
+      status: "blocked",
+    };
+  }
+
+  const expiresAt = row.expiresAt ?? row.expires_at ?? "";
+  const floorName = row.floorName ?? row.floor_name ?? "";
+  const inviteId = row.inviteId ?? row.invite_id ?? "";
+  const nurseId = row.nurseId ?? row.nurse_id ?? "";
+  const nurseName = row.nurseName ?? row.nurse_name ?? "";
+  const shiftId = row.shiftId ?? row.shift_id ?? "";
+
+  if (
+    !expiresAt ||
+    !floorName ||
+    !inviteId ||
+    !nurseId ||
+    !nurseName ||
+    !shiftId
+  ) {
+    throw new Error("Invite validation returned an incomplete confirmation.");
+  }
+
+  if (Date.parse(expiresAt) <= Date.now()) {
+    return {
+      message: getValidationBlockMessage("expired"),
+      reason: "expired",
+      status: "blocked",
+    };
+  }
+
+  return {
+    expiresAt,
+    floorName,
+    inviteId,
+    nurseId,
+    nurseName,
+    shiftId,
+    status: "valid",
+  };
+}
+
 export async function loadShiftNurseInvitesForActiveShift(
   supabase: SupabaseClient,
   profile: UserProfile,
@@ -234,6 +428,35 @@ export async function loadShiftNurseAccessForActiveShift(
   }
 
   return data.map(mapAccessRow);
+}
+
+export async function validateShiftNurseInviteCode(
+  supabase: SupabaseClient,
+  code: string,
+): Promise<ShiftNurseInviteValidationResult> {
+  const formatMessage = getNurseInviteCodeFormatMessage(code);
+
+  if (formatMessage) {
+    return {
+      message: formatMessage,
+      reason: "invalid_format",
+      status: "blocked",
+    };
+  }
+
+  const tokenHash = await getShiftNurseInviteCodeHash(code);
+  const { data, error } = await supabase.rpc(
+    "validate_shift_nurse_invite_code",
+    {
+      invite_token_hash: tokenHash,
+    },
+  );
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return mapValidationResult(data);
 }
 
 export async function createShiftNurseInviteRecord(

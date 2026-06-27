@@ -199,7 +199,7 @@ Validation check:
 
 ## Nurse Code Join Flow
 
-### Task 3.1: Add Nurse Code Entry Handling
+### Done Task 3.1: Add Nurse Code Entry Handling
 
 Story coverage: US3
 
@@ -210,6 +210,9 @@ Build:
 - Show an invalid format state for missing, short, or malformed codes.
 - If signed out, preserve enough pending code context to continue after sign-in.
 - Do not show patient data before validation and join.
+- Enabled `/join-active-session` for 6-character nurse code entry.
+- Added local format validation for missing, short, and malformed codes.
+- Preserved the pending code through login/signup return params.
 
 Validation check:
 
@@ -217,7 +220,7 @@ Validation check:
 - Missing, short, or malformed codes show a safe invalid state.
 - Entering a nurse code while signed out asks the user to sign in or create an account.
 
-### Task 3.2: Validate Nurse Code and Show Join Confirmation
+### Done Task 3.2: Validate Nurse Code and Show Join Confirmation
 
 Story coverage: US3
 
@@ -227,6 +230,9 @@ Build:
 - Show a small confirmation with nurse name and floor name after validation.
 - Block join for expired, revoked, already-used, ended-shift, stale-nurse, or participation-conflict states.
 - Keep error messages plain.
+- Added `validateShiftNurseInviteCode` as the app-side server validation boundary.
+- Added `validate_shift_nurse_invite_code` setup notes for safe server validation.
+- Show a confirmation with nurse name and floor name only; linking remains Task 3.3.
 
 Validation check:
 

@@ -135,3 +135,153 @@ using (
 
 The `token_hash` value should be a verifier for a future raw invite token. The
 raw invite token or full invite URL should not be saved in this table.
+
+## Nurse Code Validation RPC
+
+Run this after the invite table exists. The app uses this function for Phase 6
+Task 3.2 so a signed-in user can validate a 6-character code without receiving
+the full active shift or listing invite records.
+
+```sql
+create or replace function public.validate_shift_nurse_invite_code(
+  invite_token_hash text
+)
+returns table (
+  status text,
+  reason text,
+  invite_id uuid,
+  shift_id uuid,
+  nurse_id text,
+  nurse_name text,
+  floor_name text,
+  expires_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_profile_id uuid;
+  existing_access record;
+  invite_row public.shift_nurse_invites%rowtype;
+  nurse_snapshot jsonb;
+  shift_row public.active_shifts%rowtype;
+begin
+  select id
+  into current_profile_id
+  from public.profiles
+  where auth_user_id = auth.uid();
+
+  if current_profile_id is null then
+    return query select
+      'blocked', 'not_found', null::uuid, null::uuid,
+      null::text, null::text, null::text, null::timestamptz;
+    return;
+  end if;
+
+  select *
+  into invite_row
+  from public.shift_nurse_invites
+  where token_hash = invite_token_hash
+  order by created_at desc
+  limit 1;
+
+  if not found then
+    return query select
+      'blocked', 'not_found', null::uuid, null::uuid,
+      null::text, null::text, null::text, null::timestamptz;
+    return;
+  end if;
+
+  if invite_row.status = 'revoked' then
+    return query select
+      'blocked', 'revoked', invite_row.id, invite_row.shift_id,
+      invite_row.nurse_id, null::text, null::text, invite_row.expires_at;
+    return;
+  end if;
+
+  if invite_row.status = 'used' then
+    return query select
+      'blocked', 'already_used', invite_row.id, invite_row.shift_id,
+      invite_row.nurse_id, null::text, null::text, invite_row.expires_at;
+    return;
+  end if;
+
+  if invite_row.status = 'expired' or invite_row.expires_at <= now() then
+    return query select
+      'blocked', 'expired', invite_row.id, invite_row.shift_id,
+      invite_row.nurse_id, null::text, null::text, invite_row.expires_at;
+    return;
+  end if;
+
+  select *
+  into shift_row
+  from public.active_shifts
+  where id = invite_row.shift_id;
+
+  if not found or shift_row.ended_at is not null then
+    return query select
+      'blocked', 'ended_shift', invite_row.id, invite_row.shift_id,
+      invite_row.nurse_id, null::text, null::text, invite_row.expires_at;
+    return;
+  end if;
+
+  select nurse
+  into nurse_snapshot
+  from jsonb_array_elements(
+    coalesce(shift_row.shift_snapshot -> 'nurses', '[]'::jsonb)
+  ) nurse
+  where nurse ->> 'id' = invite_row.nurse_id
+  limit 1;
+
+  if nurse_snapshot is null then
+    return query select
+      'blocked', 'stale_nurse', invite_row.id, invite_row.shift_id,
+      invite_row.nurse_id, null::text, null::text, invite_row.expires_at;
+    return;
+  end if;
+
+  select access.shift_id, access.nurse_id
+  into existing_access
+  from public.shift_nurse_access access
+  join public.active_shifts active_shift
+    on active_shift.id = access.shift_id
+  where access.nurse_profile_id = current_profile_id
+    and access.status = 'linked'
+    and active_shift.ended_at is null
+  limit 1;
+
+  if found and (
+    existing_access.shift_id <> invite_row.shift_id or
+    existing_access.nurse_id <> invite_row.nurse_id
+  ) then
+    return query select
+      'blocked', 'participation_conflict', invite_row.id, invite_row.shift_id,
+      invite_row.nurse_id, null::text, null::text, invite_row.expires_at;
+    return;
+  end if;
+
+  return query select
+    'valid',
+    null::text,
+    invite_row.id,
+    invite_row.shift_id,
+    invite_row.nurse_id,
+    nurse_snapshot ->> 'name',
+    shift_row.shift_snapshot ->> 'floorName',
+    invite_row.expires_at;
+end;
+$$;
+
+grant execute on function public.validate_shift_nurse_invite_code(text)
+to authenticated;
+```
+
+Validation checks:
+
+1. A valid active code returns `status = valid`, the invited nurse name, and the
+   floor name only.
+2. Expired, revoked, used, ended-shift, stale-nurse, and participation-conflict
+   cases return `status = blocked` with a plain reason.
+3. The function does not return patient details, assignments, room data, or the
+   raw invite code.

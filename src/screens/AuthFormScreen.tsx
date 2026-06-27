@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -103,7 +103,14 @@ function getValidationMessage({
   return "";
 }
 
+function getSingleParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 export default function AuthFormScreen({ mode }: AuthFormScreenProps) {
+  const params = useLocalSearchParams();
+  const returnTo = getSingleParam(params.returnTo);
+  const code = getSingleParam(params.code);
   const { refreshSession } = useAuthSession();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -143,6 +150,13 @@ export default function AuthFormScreen({ mode }: AuthFormScreenProps) {
       }
 
       await refreshSession();
+
+      if (returnTo === "/join-active-session") {
+        router.replace({
+          pathname: "/join-active-session",
+          params: code ? { code } : undefined,
+        });
+      }
     } catch (error) {
       const message =
         error instanceof Error
@@ -238,7 +252,15 @@ export default function AuthFormScreen({ mode }: AuthFormScreenProps) {
 
             <Pressable
               accessibilityRole="button"
-              onPress={() => router.replace(isSignup ? "/login" : "/signup")}
+              onPress={() =>
+                router.replace({
+                  pathname: isSignup ? "/login" : "/signup",
+                  params: {
+                    code,
+                    returnTo,
+                  },
+                })
+              }
               style={({ pressed }) => [
                 styles.switchButton,
                 pressed && styles.switchButtonPressed,

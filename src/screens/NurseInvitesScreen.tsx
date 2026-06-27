@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import * as Clipboard from "expo-clipboard";
-import * as Crypto from "expo-crypto";
 import { router } from "expo-router";
 import { Pressable, Share, StyleSheet, Text, View } from "react-native";
 
@@ -18,6 +17,7 @@ import {
 } from "../components/workflow";
 import {
   generateShiftNurseInviteCode,
+  getShiftNurseInviteCodeHash,
   loadShiftNurseAccessForActiveShift,
   loadShiftNurseInvitesForActiveShift,
   regenerateShiftNurseInviteCode,
@@ -106,10 +106,6 @@ function getActiveInviteForNurse(
 
 function getAccessForNurse(accessRecords: ShiftNurseAccess[], nurseId: string) {
   return accessRecords.find((access) => access.nurseId === nurseId);
-}
-
-async function getCodeHash(code: string) {
-  return Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, code);
 }
 
 function formatExpiration(expiresAt?: string) {
@@ -515,7 +511,7 @@ export default function NurseInvitesScreen() {
     void runInviteAction(nurseId, () =>
       generateShiftNurseInviteCode(supabase, profile, {
         activeShift,
-        getTokenHash: getCodeHash,
+        getTokenHash: getShiftNurseInviteCodeHash,
         nurseId,
       }),
     );
@@ -549,7 +545,7 @@ export default function NurseInvitesScreen() {
     void runInviteAction(nurseId, () =>
       regenerateShiftNurseInviteCode(supabase, profile, {
         activeShift,
-        getTokenHash: getCodeHash,
+        getTokenHash: getShiftNurseInviteCodeHash,
         nurseId,
       }),
     );

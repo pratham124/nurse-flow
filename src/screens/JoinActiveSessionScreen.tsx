@@ -1,7 +1,24 @@
-import { router } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { LoadingState } from "../components/LoadingState";
+import {
+  getNurseInviteCodeFormatMessage,
+  validateShiftNurseInviteCode,
+  type ShiftNurseInviteValidationResult,
+} from "../services/shiftInviteRepository";
+import { getSupabaseClient } from "../services/supabaseClient";
+import { useAuthSession } from "../store/AuthSessionContext";
+import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import {
   colors,
   fontWeight,
@@ -11,9 +28,266 @@ import {
   textSize,
 } from "../theme/tokens";
 
+type ValidationState =
+  | { status: "idle" }
+  | { status: "auth_required" }
+  | { message: string; status: "blocked" }
+  | { message: string; status: "error" }
+  | {
+      result: Extract<ShiftNurseInviteValidationResult, { status: "valid" }>;
+      status: "valid";
+    };
+
+type CodeCellsProps = {
+  code: string;
+  onChangeText: (value: string) => void;
+};
+
+type MessageBoxProps = {
+  message: string;
+  title: string;
+  variant: "info" | "error" | "success";
+};
+
+type JoinConfirmationProps = {
+  result: Extract<ShiftNurseInviteValidationResult, { status: "valid" }>;
+};
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function getSingleParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function getActiveParticipationMessage(
+  activeParticipation: ReturnType<typeof useServerWorkspace>["activeParticipation"],
+  result: Extract<ShiftNurseInviteValidationResult, { status: "valid" }>,
+) {
+  if (activeParticipation.type === "none") {
+    return "";
+  }
+
+  if (activeParticipation.type === "charge_shift") {
+    return "End your active charge shift before joining as a nurse.";
+  }
+
+  if (activeParticipation.shiftId !== result.shiftId) {
+    return "This account is already linked to another active shift.";
+  }
+
+  if (activeParticipation.nurseId !== result.nurseId) {
+    return "This account is already linked to a different nurse in this shift.";
+  }
+
+  return "This account already has nurse access for this shift.";
+}
+
+function CodeCells({ code, onChangeText }: CodeCellsProps) {
+  const inputRef = useRef<TextInput>(null);
+  const paddedCode = code.padEnd(6, "-").slice(0, 6);
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Nurse code"
+      onPress={() => inputRef.current?.focus()}
+      style={styles.codeInputWrapper}
+    >
+      <View style={styles.codeRow}>
+        {paddedCode.split("").map((character, index) => (
+          <View key={`code-cell-${index}`} style={styles.codeCell}>
+            <Text style={styles.codeCellText}>{character}</Text>
+          </View>
+        ))}
+      </View>
+      <TextInput
+        ref={inputRef}
+        accessibilityLabel="Nurse code entry"
+        autoCapitalize="characters"
+        autoCorrect={false}
+        caretHidden
+        maxLength={6}
+        onChangeText={onChangeText}
+        style={styles.hiddenCodeInput}
+        value={code}
+      />
+    </Pressable>
+  );
+}
+
+function MessageBox({ message, title, variant }: MessageBoxProps) {
+  return (
+    <View
+      style={[
+        styles.messageBox,
+        variant === "error" ? styles.errorBox : null,
+        variant === "success" ? styles.successBox : null,
+      ]}
+    >
+      <Text
+        style={[
+          styles.messageTitle,
+          variant === "error" ? styles.errorText : null,
+          variant === "success" ? styles.successText : null,
+        ]}
+      >
+        {title}
+      </Text>
+      <Text
+        style={[
+          styles.helperText,
+          variant === "error" ? styles.errorText : null,
+          variant === "success" ? styles.successText : null,
+        ]}
+      >
+        {message}
+      </Text>
+    </View>
+  );
+}
+
+function JoinConfirmation({ result }: JoinConfirmationProps) {
+  return (
+    <View style={styles.confirmationBox}>
+      <Text style={styles.confirmationEyebrow}>Code validated</Text>
+      <Text style={styles.confirmationTitle}>{result.nurseName}</Text>
+      <Text style={styles.confirmationText}>{result.floorName}</Text>
+      <Text style={styles.helperText}>
+        Patient details stay hidden until the next task links this account to
+        the nurse assignment.
+      </Text>
+    </View>
+  );
+}
+
 export default function JoinActiveSessionScreen() {
+  const params = useLocalSearchParams();
+  const initialCode = getSingleParam(params.code);
+  const { authState } = useAuthSession();
+  const { activeParticipation } = useServerWorkspace();
+  const [nurseCode, setNurseCode] = useState(() => (initialCode ?? "").slice(0, 6));
+  const [validationState, setValidationState] = useState<ValidationState>({
+    status: "idle",
+  });
+  const [showFormatMessage, setShowFormatMessage] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+  const formatMessage = useMemo(
+    () => getNurseInviteCodeFormatMessage(nurseCode),
+    [nurseCode],
+  );
+  const shouldShowFormatMessage =
+    showFormatMessage && validationState.status !== "valid" && Boolean(formatMessage);
+  const isCodeReady = !formatMessage;
+  const isSignedOut = authState.status === "signed_out";
+
+  useEffect(() => {
+    if (initialCode) {
+      setNurseCode(initialCode.slice(0, 6));
+    }
+  }, [initialCode]);
+
   function handleBack() {
     router.replace("/");
+  }
+
+  function handleCodeChange(value: string) {
+    setNurseCode(value.slice(0, 6));
+    setValidationState({ status: "idle" });
+  }
+
+  function handleAuthRoute(pathname: "/login" | "/signup") {
+    router.push({
+      pathname,
+      params: {
+        code: nurseCode,
+        returnTo: "/join-active-session",
+      },
+    });
+  }
+
+  async function handleValidateCode() {
+    setShowFormatMessage(true);
+
+    if (formatMessage) {
+      setValidationState({ status: "idle" });
+      return;
+    }
+
+    if (authState.status === "checking") {
+      setValidationState({
+        message: "Checking your account session. Try again in a moment.",
+        status: "error",
+      });
+      return;
+    }
+
+    if (isSignedOut) {
+      setValidationState({ status: "auth_required" });
+      return;
+    }
+
+    if (authState.status !== "signed_in") {
+      setValidationState({
+        message: authState.errorMessage ?? "Finish account setup before joining.",
+        status: "error",
+      });
+      return;
+    }
+
+    const supabase = getSupabaseClient();
+
+    if (!supabase) {
+      setValidationState({
+        message: "Supabase is not configured yet.",
+        status: "error",
+      });
+      return;
+    }
+
+    setIsValidating(true);
+    setValidationState({ status: "idle" });
+
+    try {
+      const result = await validateShiftNurseInviteCode(
+        supabase,
+        nurseCode,
+      );
+
+      if (result.status === "blocked") {
+        setValidationState({
+          message: result.message,
+          status: "blocked",
+        });
+        return;
+      }
+
+      const participationMessage = getActiveParticipationMessage(
+        activeParticipation,
+        result,
+      );
+
+      if (participationMessage) {
+        setValidationState({
+          message: participationMessage,
+          status: "blocked",
+        });
+        return;
+      }
+
+      setValidationState({
+        result,
+        status: "valid",
+      });
+    } catch (error) {
+      setValidationState({
+        message: getErrorMessage(error, "The nurse code could not be checked."),
+        status: "error",
+      });
+    } finally {
+      setIsValidating(false);
+    }
   }
 
   return (
@@ -30,57 +304,122 @@ export default function JoinActiveSessionScreen() {
           >
             <Text style={styles.backButtonText}>Back</Text>
           </Pressable>
-          <View style={styles.statusPill}>
-            <View style={styles.statusDot} />
-            <Text style={styles.statusPillText}>Coming soon</Text>
-          </View>
         </View>
         <View style={styles.titleGroup}>
           <Text style={styles.title}>Join active session</Text>
           <Text style={styles.subtitle}>
-            Enter the nurse code from charge when this workflow is enabled.
+            Enter the nurse code from charge. The app validates the code before
+            showing any shift details.
           </Text>
         </View>
       </View>
 
       <ScrollView
         contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.panel}>
           <View style={styles.panelHeader}>
             <Text style={styles.label}>Nurse code</Text>
+            <Text style={styles.panelMeta}>6 characters</Text>
           </View>
 
-          <View
-            accessibilityLabel="Nurse code entry disabled"
-            style={styles.codeRow}
-          >
-            {["", "", "", "", "", ""].map((_, index) => (
-              <View key={`code-cell-${index}`} style={styles.codeCell}>
-                <Text style={styles.codeCellText}>-</Text>
+          <CodeCells code={nurseCode} onChangeText={handleCodeChange} />
+
+          {shouldShowFormatMessage ? (
+            <MessageBox
+              message={formatMessage}
+              title="Check the code"
+              variant="error"
+            />
+          ) : null}
+
+          {isValidating ? (
+            <View style={styles.loadingBox}>
+              <LoadingState message="Checking nurse code" />
+            </View>
+          ) : null}
+
+          {validationState.status === "auth_required" ? (
+            <View style={styles.authBox}>
+              <MessageBox
+                message="Sign in or create an account, then return here with this code."
+                title="Account needed"
+                variant="info"
+              />
+              <View style={styles.authActions}>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => handleAuthRoute("/login")}
+                  style={styles.secondaryButton}
+                >
+                  <Text style={styles.secondaryButtonText}>Sign in</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => handleAuthRoute("/signup")}
+                  style={styles.secondaryButton}
+                >
+                  <Text style={styles.secondaryButtonText}>Create account</Text>
+                </Pressable>
               </View>
-            ))}
-          </View>
+            </View>
+          ) : null}
 
-          <View style={styles.infoBox}>
-            <Text style={styles.infoTitle}>Not active in this build</Text>
-            <Text style={styles.helperText}>
-              The next task will verify codes and link this account to one shift
-              nurse assignment.
-            </Text>
-          </View>
+          {validationState.status === "blocked" ? (
+            <MessageBox
+              message={validationState.message}
+              title="Cannot join with this code"
+              variant="error"
+            />
+          ) : null}
+
+          {validationState.status === "error" ? (
+            <MessageBox
+              message={validationState.message}
+              title="Code check failed"
+              variant="error"
+            />
+          ) : null}
+
+          {validationState.status === "valid" ? (
+            <JoinConfirmation result={validationState.result} />
+          ) : null}
+
+          {validationState.status === "idle" && !shouldShowFormatMessage ? (
+            <MessageBox
+              message="Only the nurse name and floor name appear after validation. Patient data waits until the join step."
+              title="Safe preview"
+              variant="info"
+            />
+          ) : null}
         </View>
       </ScrollView>
 
       <View style={styles.actionBar}>
         <Pressable
           accessibilityRole="button"
-          accessibilityState={{ disabled: true }}
-          disabled
-          style={styles.disabledButton}
+          accessibilityState={{
+            disabled: isValidating || validationState.status === "valid",
+          }}
+          disabled={isValidating || validationState.status === "valid"}
+          onPress={handleValidateCode}
+          style={({ pressed }) => [
+            styles.primaryButton,
+            (!isCodeReady || isValidating) && styles.primaryButtonMuted,
+            pressed && !isValidating ? styles.primaryButtonPressed : null,
+          ]}
         >
-          <Text style={styles.disabledButtonText}>Join shift</Text>
+          <Text style={styles.primaryButtonText}>
+            {validationState.status === "valid"
+              ? "Join available in next task"
+              : isValidating
+                ? "Checking"
+                : isSignedOut && isCodeReady
+                  ? "Continue"
+                  : "Validate code"}
+          </Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -104,8 +443,8 @@ const styles = StyleSheet.create({
   headerTopRow: {
     alignItems: "center",
     flexDirection: "row",
-    justifyContent: "space-between",
     gap: spacing.md,
+    justifyContent: "space-between",
   },
   backButton: {
     alignItems: "center",
@@ -124,26 +463,6 @@ const styles = StyleSheet.create({
     color: colors.brand.burgundy,
     fontSize: textSize.sm,
     fontWeight: fontWeight.semibold,
-  },
-  statusPill: {
-    alignItems: "center",
-    backgroundColor: colors.status.amber50,
-    borderRadius: radius.pill,
-    flexDirection: "row",
-    gap: spacing.xs,
-    minHeight: 30,
-    paddingHorizontal: spacing.md,
-  },
-  statusDot: {
-    backgroundColor: colors.status.amber800,
-    borderRadius: 3,
-    height: 6,
-    width: 6,
-  },
-  statusPillText: {
-    color: colors.status.amber800,
-    fontSize: textSize.xs,
-    fontWeight: fontWeight.bold,
   },
   titleGroup: {
     gap: spacing.sm,
@@ -175,8 +494,8 @@ const styles = StyleSheet.create({
   panelHeader: {
     alignItems: "center",
     flexDirection: "row",
-    justifyContent: "space-between",
     gap: spacing.md,
+    justifyContent: "space-between",
   },
   label: {
     color: colors.neutral.textSecondary,
@@ -187,6 +506,9 @@ const styles = StyleSheet.create({
     color: colors.neutral.textTertiary,
     fontSize: textSize.xs,
     fontWeight: fontWeight.semibold,
+  },
+  codeInputWrapper: {
+    minHeight: 52,
   },
   codeRow: {
     flexDirection: "row",
@@ -209,7 +531,13 @@ const styles = StyleSheet.create({
     fontSize: textSize.lg,
     fontWeight: fontWeight.bold,
   },
-  infoBox: {
+  hiddenCodeInput: {
+    height: 1,
+    opacity: 0,
+    position: "absolute",
+    width: 1,
+  },
+  messageBox: {
     backgroundColor: colors.status.blue50,
     borderColor: colors.neutral.borderTertiary,
     borderRadius: radius.lg,
@@ -217,7 +545,13 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     padding: spacing.md,
   },
-  infoTitle: {
+  errorBox: {
+    backgroundColor: colors.status.red50,
+  },
+  successBox: {
+    backgroundColor: colors.status.green50,
+  },
+  messageTitle: {
     color: colors.status.blue800,
     fontSize: textSize.sm,
     fontWeight: fontWeight.bold,
@@ -228,23 +562,89 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.medium,
     lineHeight: 18,
   },
+  errorText: {
+    color: colors.status.red700,
+  },
+  successText: {
+    color: colors.status.green800,
+  },
+  loadingBox: {
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+  },
+  authBox: {
+    gap: spacing.md,
+  },
+  authActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  secondaryButton: {
+    alignItems: "center",
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    justifyContent: "center",
+    minHeight: 44,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+  },
+  secondaryButtonText: {
+    color: colors.brand.burgundy,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.bold,
+  },
+  confirmationBox: {
+    backgroundColor: colors.status.green50,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    gap: spacing.xs,
+    padding: spacing.md,
+  },
+  confirmationEyebrow: {
+    color: colors.status.green800,
+    fontSize: textSize.xs,
+    fontWeight: fontWeight.bold,
+    textTransform: "uppercase",
+  },
+  confirmationTitle: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.lg,
+    fontWeight: fontWeight.bold,
+  },
+  confirmationText: {
+    color: colors.status.green800,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
+    lineHeight: 18,
+  },
   actionBar: {
     backgroundColor: colors.neutral.backgroundPrimary,
     borderTopColor: colors.neutral.borderTertiary,
     borderTopWidth: 0.5,
     padding: spacing.xl,
   },
-  disabledButton: {
+  primaryButton: {
     alignItems: "center",
-    backgroundColor: colors.neutral.backgroundSecondary,
+    backgroundColor: colors.brand.burgundy,
     borderRadius: radius.lg,
     justifyContent: "center",
     minHeight: 48,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  disabledButtonText: {
-    color: colors.neutral.textTertiary,
+  primaryButtonMuted: {
+    opacity: 0.72,
+  },
+  primaryButtonPressed: {
+    opacity: 0.82,
+  },
+  primaryButtonText: {
+    color: colors.neutral.surface,
     fontSize: textSize.action,
     fontWeight: fontWeight.semibold,
   },

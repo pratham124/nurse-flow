@@ -1,5 +1,5 @@
 import { useEffect, type PropsWithChildren } from "react";
-import { router, usePathname } from "expo-router";
+import { router, useLocalSearchParams, usePathname } from "expo-router";
 
 import {
   SessionLoadingScreen,
@@ -9,17 +9,50 @@ import { useAuthSession } from "../store/AuthSessionContext";
 import type { AuthSessionState } from "../types/models";
 
 type SessionGateProps = PropsWithChildren;
+type RedirectTarget =
+  | "/"
+  | "/login"
+  | {
+      params: {
+        code?: string;
+        returnTo: string;
+      };
+      pathname: "/login";
+    };
 
 function isAuthRoute(pathname: string) {
   return pathname === "/login" || pathname === "/signup";
 }
 
+function isJoinRoute(pathname: string) {
+  return pathname === "/join-active-session";
+}
+
+function getSingleParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 function getNextPath(
   authState: AuthSessionState,
   pathname: string,
-) {
+  code?: string,
+): RedirectTarget | undefined {
   if (authState.status === "signed_out") {
-    return isAuthRoute(pathname) ? undefined : "/login";
+    if (isAuthRoute(pathname)) {
+      return undefined;
+    }
+
+    if (isJoinRoute(pathname)) {
+      return {
+        pathname: "/login",
+        params: {
+          code,
+          returnTo: pathname,
+        },
+      };
+    }
+
+    return "/login";
   }
 
   if (authState.status !== "signed_in") {
@@ -36,13 +69,17 @@ function getNextPath(
 export function SessionGate({ children }: SessionGateProps) {
   const { authState } = useAuthSession();
   const pathname = usePathname();
-  const nextPath = getNextPath(authState, pathname);
+  const params = useLocalSearchParams();
+  const code = getSingleParam(params.code);
+  const nextPath = getNextPath(authState, pathname, code);
+  const nextPathname =
+    typeof nextPath === "string" ? nextPath : nextPath?.pathname;
 
   useEffect(() => {
-    if (nextPath && pathname !== nextPath) {
+    if (nextPath && pathname !== nextPathname) {
       router.replace(nextPath);
     }
-  }, [nextPath, pathname]);
+  }, [nextPath, nextPathname, pathname]);
 
   if (authState.status === "checking") {
     return <SessionLoadingScreen />;
@@ -69,7 +106,7 @@ export function SessionGate({ children }: SessionGateProps) {
     );
   }
 
-  if (nextPath && pathname !== nextPath) {
+  if (nextPath && pathname !== nextPathname) {
     return <SessionLoadingScreen message="Opening workspace" />;
   }
 

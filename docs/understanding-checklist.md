@@ -40,6 +40,29 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-27 - Validate Nurse Join Codes
+
+- Task: Complete Phase 6 Tasks 3.1 and 3.2 by enabling nurse code entry, preserving a pending code through sign-in, validating the code with the server, and showing a safe join confirmation.
+- Problem understanding:
+  - [ ] The old join screen was a disabled placeholder, so a nurse could not type or validate a real invite code.
+  - [ ] A typed code must be checked by the server before the app shows any shift participation details.
+  - [ ] Code validation must avoid exposing patient data, full board data, or raw stored invite codes.
+- Solution understanding:
+  - [ ] `src/screens/JoinActiveSessionScreen.tsx` stores the nurse code in screen state, validates the 6-character format, prompts signed-out users, and shows a nurse/floor confirmation after server validation.
+  - [ ] `src/services/shiftInviteRepository.ts` owns invite-code normalization, hashing, format messages, and the `validateShiftNurseInviteCode` server boundary.
+  - [ ] `src/screens/AuthFormScreen.tsx` preserves the pending join code through login/signup return params.
+  - [ ] `docs/phase-6/supabase-invite-setup.md` documents the validation RPC that returns only safe preview data and blocked reasons.
+- Broader context:
+  - [ ] This prepares Task 3.3, which will link the signed-in user to shift nurse access.
+  - [ ] The join confirmation intentionally does not navigate to the nurse assignment or create access yet.
+  - [ ] Push notifications, offline queues, conflict resolution, drag-and-drop, tablet layout, and AI remain out of scope.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: in progress
+
 ### 2026-06-26 - Add Nurse Invite Codes Screen
 
 - Task: Complete Phase 6 Tasks 2.2, 2.3, and 2.4 by generating per-nurse invite codes, adding the Nurse Invites screen, and regenerating codes by revoking old active invites.
