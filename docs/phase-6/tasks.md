@@ -1,8 +1,8 @@
 # Phase 6 Implementation Tasks
 
-This task list plans realtime collaboration and nurse invite links in small, testable steps.
+This task list plans realtime collaboration and nurse invite codes in small, testable steps.
 
-Phase 6 adds live active shift updates, nurse invite links, deep link handling, and real joined nurse participation. Do not add push notifications, offline write queues, conflict resolution systems, drag-and-drop assignment override, board snapshot sharing, tablet layout, AI, organization admin, or hospital admin features.
+Phase 6 adds live active shift updates, nurse invite codes, code-based join handling, and real joined nurse participation. Do not add push notifications, offline write queues, conflict resolution systems, drag-and-drop assignment override, board snapshot sharing, tablet layout, AI, organization admin, or hospital admin features.
 
 Each task should be small enough for one focused Codex session. Each task includes a manual validation check that should be tested before moving on.
 
@@ -17,10 +17,10 @@ Status legend:
 2. Add realtime connection state and subscription boundary.
 3. Subscribe charge nurse active shift screens to live updates.
 4. Add nurse invite server model and authorization planning.
-5. Generate and display per-nurse invite links.
+5. Generate and display per-nurse invite codes.
 6. Add copy, share, regenerate, and revoke behavior.
-7. Add invite deep link routing and validation.
-8. Link signed-in users to nurse access from valid invites.
+7. Add nurse code entry and validation.
+8. Link signed-in users to nurse access from valid codes.
 9. Subscribe joined nurse screens to live nurse-scoped assignment updates.
 10. Make issue and swap request updates live in-app.
 11. Expire invites when a shift ends.
@@ -127,7 +127,7 @@ Build:
 - Store invite status, expiration, creator, and safe token validation data.
 - Ensure one nurse has at most one active invite per active shift.
 - Add authorization rules so only the owning charge nurse can manage invites for their shift.
-- Do not store raw invite links as normal persisted app data.
+- Do not store raw invite codes as normal persisted app data.
 - Added `docs/phase-6/supabase-invite-setup.md` with the `shift_nurse_invites` table, RLS policies, and one-active-invite partial unique index.
 - Added `ShiftNurseInviteRecord` and `shiftInviteRepository` as the small app-side boundary for creating and loading invite records.
 
@@ -197,42 +197,42 @@ Validation check:
 - Confirm the previous code fails safely.
 - Confirm a joined nurse does not lose access simply because the code was regenerated.
 
-## Deep Link Join Flow
+## Nurse Code Join Flow
 
-### Task 3.1: Add Invite Link Route Handling
+### Task 3.1: Add Nurse Code Entry Handling
 
 Story coverage: US3
 
 Build:
 
-- Add a route for opening invite links in the app.
-- Parse the invite token or link identifier.
-- Show validating, invalid, expired, and auth-required states.
-- If signed out, preserve enough pending invite context to continue after sign-in.
+- Enable the existing Join Active Session screen for 6-character nurse code entry.
+- Store the typed nurse code in screen state.
+- Show an invalid format state for missing, short, or malformed codes.
+- If signed out, preserve enough pending code context to continue after sign-in.
 - Do not show patient data before validation and join.
 
 Validation check:
 
-- Opening a valid link reaches the join gate.
-- Opening a malformed link shows a safe invalid state.
-- Opening a valid link while signed out asks the user to sign in or create an account.
+- Typing a 6-character nurse code enables the next step.
+- Missing, short, or malformed codes show a safe invalid state.
+- Entering a nurse code while signed out asks the user to sign in or create an account.
 
-### Task 3.2: Validate Invite and Show Join Confirmation
+### Task 3.2: Validate Nurse Code and Show Join Confirmation
 
 Story coverage: US3
 
 Build:
 
-- Validate the invite with the server before allowing join.
+- Validate the nurse code with the server before allowing join.
 - Show a small confirmation with nurse name and floor name after validation.
-- Block join for expired, revoked, used-by-another-user, ended-shift, stale-nurse, or participation-conflict states.
+- Block join for expired, revoked, already-used, ended-shift, stale-nurse, or participation-conflict states.
 - Keep error messages plain.
 
 Validation check:
 
-- Valid invite shows join confirmation.
-- Expired invite shows expired state.
-- Revoked old invite shows revoked or invalid state.
+- Valid nurse code shows join confirmation.
+- Expired nurse code shows expired state.
+- Revoked old code shows revoked or invalid state.
 - User already in another active shift sees a clear participation conflict state.
 
 ### Task 3.3: Link Signed-In User to Shift Nurse Access
@@ -241,17 +241,17 @@ Story coverage: US3, US4
 
 Build:
 
-- Accept a valid invite and create or update the shift nurse access record for the signed-in profile.
+- Accept a valid nurse code and create or update the shift nurse access record for the signed-in profile.
 - Mark the invite used when appropriate.
 - Navigate to the joined nurse live assignment after successful join.
 - Keep access scoped to one nurse in one active shift.
 
 Validation check:
 
-- Signed-in user can join from a valid invite.
+- Signed-in user can join from a valid nurse code.
 - Joined user sees only their own nurse assignment.
 - Joined user cannot load the full charge nurse board.
-- Reusing a consumed link behaves according to the documented invite rules.
+- Reusing a consumed code behaves according to the documented invite rules.
 
 ## Joined Nurse Live View
 
@@ -375,7 +375,7 @@ Build:
 Validation check:
 
 - End a shift with active invites.
-- Confirm invite links no longer allow joining.
+- Confirm invite codes no longer allow joining.
 - Confirm joined nurse screens show shift ended.
 - Confirm carry-over suggestions still work for the next shift.
 
@@ -418,9 +418,9 @@ Build:
 
 Validation check:
 
-- Generate and use a nurse invite link.
-- Regenerate the link and confirm the old one fails.
-- End the shift and confirm all links fail.
+- Generate and use a nurse invite code.
+- Regenerate the code and confirm the old one fails.
+- End the shift and confirm all codes fail.
 
 ### Task 7.3: Joined Nurse Manual Test
 
