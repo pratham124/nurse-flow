@@ -52,6 +52,8 @@ For each task, add a dated section with:
   - [x] `src/screens/JoinActiveSessionScreen.tsx` uses the validated state to show `Join shift`, accepts the code, refreshes joined nurse access, and routes to `/regular-nurse-workspace`.
   - [ ] `docs/phase-6/supabase-invite-setup.md` documents `accept_shift_nurse_invite_code`, which creates or updates `shift_nurse_access` and marks the invite `used`.
   - [x] `src/screens/RegularNurseWorkspaceScreen.tsx` now describes the real nurse-code path in its empty state.
+  - [x] `src/screens/RegularNurseWorkspaceScreen.tsx` sends `Back to home` to `/` without calling `signOut()`.
+  - [x] `src/screens/HomeScreen.tsx` shows a joined-shift return card and changes the bottom action to `View joined shift` when access is already linked.
 - Broader context:
   - [x] This completes the real invite join link before joined nurse realtime subscriptions are added in later tasks.
   - [x] The joined nurse assignment still loads through the reduced `get_joined_nurse_assignment_view` boundary.

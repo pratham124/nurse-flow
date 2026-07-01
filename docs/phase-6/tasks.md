@@ -254,6 +254,8 @@ Build:
 - Added `acceptShiftNurseInviteCode` as the app-side server boundary for consuming a valid nurse code.
 - Added `accept_shift_nurse_invite_code` setup notes so access linking and invite consumption happen together on the server.
 - Updated the join screen to switch from validation to `Join shift`, refresh joined nurse access, and navigate to the existing nurse-scoped assignment workspace.
+- Added a Home screen return path for already joined nurses so reopening the app can resume the joined nurse workspace.
+- Changed the joined nurse workspace exit action to return Home without signing out.
 
 Validation check:
 

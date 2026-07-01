@@ -51,6 +51,48 @@ type FloorTemplateRowProps = {
   onStartShift: (floorTemplate: FloorTemplate) => void;
 };
 
+type JoinedNurseShiftCardProps = {
+  bedCount: number;
+  floorName: string;
+  nurseName: string;
+  onResume: () => void;
+};
+
+function JoinedNurseShiftCard({
+  bedCount,
+  floorName,
+  nurseName,
+  onResume,
+}: JoinedNurseShiftCardProps) {
+  return (
+    <View style={styles.joinedShiftCard}>
+      <View style={styles.joinedShiftHeader}>
+        <View style={styles.joinedShiftBadgeContainer}>
+          <View style={styles.joinedShiftDot} />
+          <Text style={styles.joinedShiftBadgeText}>JOINED SHIFT</Text>
+        </View>
+        <Text style={styles.joinedShiftMeta}>
+          {bedCount} {bedCount === 1 ? "bed" : "beds"}
+        </Text>
+      </View>
+      <Text style={styles.joinedShiftName}>{floorName}</Text>
+      <Text style={styles.joinedShiftDetail}>{nurseName}</Text>
+      <Pressable
+        accessibilityLabel="Open joined nurse shift"
+        accessibilityRole="button"
+        onPress={onResume}
+        style={({ pressed }) => [
+          styles.joinedShiftButton,
+          pressed && styles.joinedShiftButtonPressed,
+        ]}
+      >
+        <Text style={styles.joinedShiftButtonText}>Open shift</Text>
+        <ChevronRightIcon color={colors.neutral.surface} size={14} />
+      </Pressable>
+    </View>
+  );
+}
+
 function FloorTemplateRow({
   canDelete,
   floorTemplate,
@@ -151,6 +193,7 @@ export default function Index() {
     deleteFloorTemplate,
     endActiveShift,
     floorTemplates,
+    joinedNurseAccessState,
     previousShiftSnapshots,
     realtimeConnectionState,
     retryLoadWorkspace,
@@ -192,6 +235,10 @@ export default function Index() {
     ).length ?? 0;
   const profile =
     authState.status === "signed_in" ? authState.profile : undefined;
+  const joinedNurseAssignmentView =
+    joinedNurseAccessState.status === "ready"
+      ? joinedNurseAccessState.assignmentView
+      : undefined;
 
   function handleCreateFloor() {
     resetWorkflowDraft();
@@ -209,9 +256,8 @@ export default function Index() {
     }
 
     if (activeParticipation.type === "joined_nurse") {
-      setTemplateEditMessage(
-        "Leave your joined nurse shift before joining another shift.",
-      );
+      setTemplateEditMessage("");
+      router.push("/regular-nurse-workspace");
       return;
     }
 
@@ -399,6 +445,15 @@ export default function Index() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
+        {joinedNurseAssignmentView ? (
+          <JoinedNurseShiftCard
+            bedCount={joinedNurseAssignmentView.assignedBeds.length}
+            floorName={joinedNurseAssignmentView.floorName}
+            nurseName={joinedNurseAssignmentView.nurseName}
+            onResume={() => router.push("/regular-nurse-workspace")}
+          />
+        ) : null}
+
         {/* Active Shift Card */}
         {visibleActiveShift && (
           <View style={styles.activeShiftCard}>
@@ -518,7 +573,9 @@ export default function Index() {
           ]}
         >
           <Text style={styles.secondaryActionButtonText}>
-            Join active session
+            {activeParticipation.type === "joined_nurse"
+              ? "View joined shift"
+              : "Join active session"}
           </Text>
         </Pressable>
         <Pressable
@@ -750,6 +807,76 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: spacing.sm,
     marginTop: spacing.xs,
+  },
+  joinedShiftBadgeContainer: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 6,
+  },
+  joinedShiftBadgeText: {
+    color: colors.brand.burgundy,
+    fontSize: 10,
+    fontWeight: fontWeight.bold,
+    letterSpacing: 0.5,
+  },
+  joinedShiftButton: {
+    alignItems: "center",
+    alignSelf: "stretch",
+    backgroundColor: colors.brand.burgundy,
+    borderRadius: radius.lg,
+    flexDirection: "row",
+    gap: spacing.sm,
+    justifyContent: "center",
+    marginTop: spacing.xs,
+    minHeight: 44,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    ...shadows.sm,
+  },
+  joinedShiftButtonPressed: {
+    opacity: 0.85,
+  },
+  joinedShiftButtonText: {
+    color: colors.neutral.surface,
+    fontSize: textSize.action,
+    fontWeight: fontWeight.semibold,
+  },
+  joinedShiftCard: {
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.brand.burgundy15,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    gap: spacing.sm,
+    padding: spacing.lg,
+    ...shadows.sm,
+  },
+  joinedShiftDetail: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.medium,
+    lineHeight: 18,
+  },
+  joinedShiftDot: {
+    backgroundColor: colors.brand.burgundy,
+    borderRadius: 4,
+    height: 8,
+    width: 8,
+  },
+  joinedShiftHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  joinedShiftMeta: {
+    color: colors.neutral.textSecondary,
+    fontSize: 11,
+    fontWeight: fontWeight.medium,
+  },
+  joinedShiftName: {
+    color: colors.neutral.textPrimary,
+    fontSize: 18,
+    fontWeight: fontWeight.bold,
+    marginTop: 2,
   },
   resumeButton: {
     flexDirection: "row",

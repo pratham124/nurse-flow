@@ -1,5 +1,4 @@
 import { router } from "expo-router";
-import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -81,23 +80,14 @@ function AssignmentSummary({ assignmentView }: AssignmentSummaryProps) {
 }
 
 export default function RegularNurseWorkspaceScreen() {
-  const { authState, signOut } = useAuthSession();
+  const { authState } = useAuthSession();
   const { joinedNurseAccessState, retryLoadJoinedNurseAccess } =
     useServerWorkspace();
-  const [errorMessage, setErrorMessage] = useState("");
   const displayName =
     authState.status === "signed_in" ? authState.profile.displayName : "Nurse";
 
-  async function handleSignOut() {
-    try {
-      await signOut();
-      router.replace("/login");
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Sign out failed. Try again.";
-
-      setErrorMessage(message);
-    }
+  function handleBackHome() {
+    router.replace("/");
   }
 
   return (
@@ -135,20 +125,15 @@ export default function RegularNurseWorkspaceScreen() {
           />
         ) : null}
 
-        {errorMessage ? (
-          <Text accessibilityRole="alert" style={styles.errorText}>
-            {errorMessage}
-          </Text>
-        ) : null}
         <Pressable
           accessibilityRole="button"
-          onPress={handleSignOut}
+          onPress={handleBackHome}
           style={({ pressed }) => [
-            styles.signOutButton,
-            pressed && styles.signOutButtonPressed,
+            styles.homeButton,
+            pressed && styles.homeButtonPressed,
           ]}
         >
-          <Text style={styles.signOutButtonText}>Sign out</Text>
+          <Text style={styles.homeButtonText}>Back to home</Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -286,13 +271,7 @@ const styles = StyleSheet.create({
     fontSize: textSize.md,
     fontWeight: fontWeight.bold,
   },
-  errorText: {
-    color: colors.status.red700,
-    fontSize: textSize.sm,
-    fontWeight: fontWeight.medium,
-    lineHeight: 18,
-  },
-  signOutButton: {
+  homeButton: {
     alignItems: "center",
     backgroundColor: colors.brand.burgundy,
     borderRadius: radius.lg,
@@ -301,10 +280,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  signOutButtonPressed: {
+  homeButtonPressed: {
     opacity: 0.82,
   },
-  signOutButtonText: {
+  homeButtonText: {
     color: colors.neutral.surface,
     fontSize: textSize.action,
     fontWeight: fontWeight.semibold,
