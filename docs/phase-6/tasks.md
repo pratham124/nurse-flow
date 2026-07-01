@@ -306,15 +306,17 @@ Story coverage: US3, US4, US7
 
 Build:
 
-- Review the existing simulated nurse screens and decide which entry points should remain for development testing.
-- Make the real joined nurse path the main nurse-facing route after invite join.
-- Keep any temporary simulation labels clear if the simulation remains.
-- Do not remove useful beginner testing tools unless the real flow fully replaces them.
+- Make the real invite-based joined nurse path the main nurse-facing route.
+- Remove simulated nurse entry points from the normal charge nurse product flow.
+- Delete simulated nurse screens only if the real joined nurse path fully replaces their manual testing value.
+- If any simulation screens remain for development testing, keep them clearly labeled as local simulation and outside the main user flow.
+- Do not imply simulated screens provide real multi-device joined nurse access.
 
 Validation check:
 
 - Invited nurse uses the real joined nurse route.
-- Any remaining simulated route is clearly labeled and does not imply real multi-device access.
+- The normal charge nurse product flow no longer points users to simulated nurse screens.
+- Any remaining simulated route is clearly labeled as local development/testing only and does not imply real multi-device access.
 - Previous request and assignment display behavior still works.
 
 ## Live Requests
