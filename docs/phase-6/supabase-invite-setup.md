@@ -285,3 +285,240 @@ Validation checks:
    cases return `status = blocked` with a plain reason.
 3. The function does not return patient details, assignments, room data, or the
    raw invite code.
+
+## Nurse Code Accept RPC
+
+Run this after the validation RPC exists. The app uses this function for Phase 6
+Task 3.3 so a signed-in user can accept a valid nurse code, link one
+`shift_nurse_access` row, and consume the invite in one server-side action.
+
+```sql
+create or replace function public.accept_shift_nurse_invite_code(
+  invite_token_hash text
+)
+returns table (
+  status text,
+  reason text,
+  access_id uuid,
+  shift_id uuid,
+  nurse_id text,
+  nurse_name text,
+  floor_name text
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_profile_id uuid;
+  existing_nurse_access public.shift_nurse_access%rowtype;
+  existing_profile_access record;
+  invite_row public.shift_nurse_invites%rowtype;
+  linked_access_id uuid;
+  nurse_snapshot jsonb;
+  shift_row public.active_shifts%rowtype;
+  updated_at_time timestamptz := now();
+begin
+  select id
+  into current_profile_id
+  from public.profiles
+  where auth_user_id = auth.uid();
+
+  if current_profile_id is null then
+    return query select
+      'blocked', 'not_found', null::uuid, null::uuid,
+      null::text, null::text, null::text;
+    return;
+  end if;
+
+  if exists (
+    select 1
+    from public.active_shifts
+    where charge_profile_id = current_profile_id
+      and ended_at is null
+  ) then
+    return query select
+      'blocked', 'participation_conflict', null::uuid, null::uuid,
+      null::text, null::text, null::text;
+    return;
+  end if;
+
+  select *
+  into invite_row
+  from public.shift_nurse_invites
+  where token_hash = invite_token_hash
+  order by created_at desc
+  limit 1
+  for update;
+
+  if not found then
+    return query select
+      'blocked', 'not_found', null::uuid, null::uuid,
+      null::text, null::text, null::text;
+    return;
+  end if;
+
+  if invite_row.status = 'revoked' then
+    return query select
+      'blocked', 'revoked', null::uuid, invite_row.shift_id,
+      invite_row.nurse_id, null::text, null::text;
+    return;
+  end if;
+
+  if invite_row.status = 'used' then
+    return query select
+      'blocked', 'already_used', null::uuid, invite_row.shift_id,
+      invite_row.nurse_id, null::text, null::text;
+    return;
+  end if;
+
+  if invite_row.status = 'expired' or invite_row.expires_at <= updated_at_time then
+    return query select
+      'blocked', 'expired', null::uuid, invite_row.shift_id,
+      invite_row.nurse_id, null::text, null::text;
+    return;
+  end if;
+
+  select *
+  into shift_row
+  from public.active_shifts
+  where id = invite_row.shift_id;
+
+  if not found or shift_row.ended_at is not null then
+    return query select
+      'blocked', 'ended_shift', null::uuid, invite_row.shift_id,
+      invite_row.nurse_id, null::text, null::text;
+    return;
+  end if;
+
+  select nurse
+  into nurse_snapshot
+  from jsonb_array_elements(
+    coalesce(shift_row.shift_snapshot -> 'nurses', '[]'::jsonb)
+  ) nurse
+  where nurse ->> 'id' = invite_row.nurse_id
+  limit 1;
+
+  if nurse_snapshot is null then
+    return query select
+      'blocked', 'stale_nurse', null::uuid, invite_row.shift_id,
+      invite_row.nurse_id, null::text, null::text;
+    return;
+  end if;
+
+  select access.shift_id, access.nurse_id
+  into existing_profile_access
+  from public.shift_nurse_access access
+  join public.active_shifts active_shift
+    on active_shift.id = access.shift_id
+  where access.nurse_profile_id = current_profile_id
+    and access.status = 'linked'
+    and active_shift.ended_at is null
+  limit 1;
+
+  if found and (
+    existing_profile_access.shift_id <> invite_row.shift_id or
+    existing_profile_access.nurse_id <> invite_row.nurse_id
+  ) then
+    return query select
+      'blocked', 'participation_conflict', null::uuid, invite_row.shift_id,
+      invite_row.nurse_id, null::text, null::text;
+    return;
+  end if;
+
+  select *
+  into existing_nurse_access
+  from public.shift_nurse_access access
+  where access.shift_id = invite_row.shift_id
+    and access.nurse_id = invite_row.nurse_id
+    and access.status = 'linked'
+  order by access.updated_at desc
+  limit 1
+  for update;
+
+  if found and existing_nurse_access.nurse_profile_id is distinct from current_profile_id then
+    return query select
+      'blocked', 'already_used', null::uuid, invite_row.shift_id,
+      invite_row.nurse_id, null::text, null::text;
+    return;
+  end if;
+
+  if found then
+    linked_access_id := existing_nurse_access.id;
+  else
+    select *
+    into existing_nurse_access
+    from public.shift_nurse_access access
+    where access.shift_id = invite_row.shift_id
+      and access.nurse_id = invite_row.nurse_id
+      and access.status in ('pending_link', 'removed')
+    order by access.updated_at desc
+    limit 1
+    for update;
+
+    if found then
+      update public.shift_nurse_access
+      set
+        nurse_name = nurse_snapshot ->> 'name',
+        nurse_profile_id = current_profile_id,
+        nurse_email = null,
+        status = 'linked',
+        updated_at = updated_at_time
+      where id = existing_nurse_access.id
+      returning id into linked_access_id;
+    else
+      insert into public.shift_nurse_access (
+        shift_id,
+        nurse_id,
+        nurse_name,
+        nurse_profile_id,
+        nurse_email,
+        status,
+        updated_at
+      )
+      values (
+        invite_row.shift_id,
+        invite_row.nurse_id,
+        nurse_snapshot ->> 'name',
+        current_profile_id,
+        null,
+        'linked',
+        updated_at_time
+      )
+      returning id into linked_access_id;
+    end if;
+  end if;
+
+  update public.shift_nurse_invites
+  set
+    status = 'used',
+    used_at = updated_at_time,
+    used_by_profile_id = current_profile_id,
+    updated_at = updated_at_time
+  where id = invite_row.id;
+
+  return query select
+    'joined',
+    null::text,
+    linked_access_id,
+    invite_row.shift_id,
+    invite_row.nurse_id,
+    nurse_snapshot ->> 'name',
+    shift_row.shift_snapshot ->> 'floorName';
+end;
+$$;
+
+grant execute on function public.accept_shift_nurse_invite_code(text)
+to authenticated;
+```
+
+Validation checks:
+
+1. A signed-in user can accept a valid active nurse code and gets one linked
+   `shift_nurse_access` row for that shift nurse.
+2. The accepted invite changes to `status = used` with `used_at` and
+   `used_by_profile_id` filled in.
+3. A consumed, expired, revoked, ended-shift, stale-nurse, or conflicting code
+   returns `status = blocked`.
+4. After accepting, the app loads assignment data through
+   `get_joined_nurse_assignment_view`, not through a full active-shift read.

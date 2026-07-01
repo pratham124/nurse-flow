@@ -12,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { LoadingState } from "../components/LoadingState";
 import {
+  acceptShiftNurseInviteCode,
   getNurseInviteCodeFormatMessage,
   validateShiftNurseInviteCode,
   type ShiftNurseInviteValidationResult,
@@ -32,7 +33,7 @@ type ValidationState =
   | { status: "idle" }
   | { status: "auth_required" }
   | { message: string; status: "blocked" }
-  | { message: string; status: "error" }
+  | { message: string; status: "error"; title?: string }
   | {
       result: Extract<ShiftNurseInviteValidationResult, { status: "valid" }>;
       status: "valid";
@@ -155,8 +156,7 @@ function JoinConfirmation({ result }: JoinConfirmationProps) {
       <Text style={styles.confirmationTitle}>{result.nurseName}</Text>
       <Text style={styles.confirmationText}>{result.floorName}</Text>
       <Text style={styles.helperText}>
-        Patient details stay hidden until the next task links this account to
-        the nurse assignment.
+        Joining opens only the invited nurse assignment for this active shift.
       </Text>
     </View>
   );
@@ -166,13 +166,15 @@ export default function JoinActiveSessionScreen() {
   const params = useLocalSearchParams();
   const initialCode = getSingleParam(params.code);
   const { authState } = useAuthSession();
-  const { activeParticipation } = useServerWorkspace();
+  const { activeParticipation, retryLoadJoinedNurseAccess } =
+    useServerWorkspace();
   const [nurseCode, setNurseCode] = useState(() => (initialCode ?? "").slice(0, 6));
   const [validationState, setValidationState] = useState<ValidationState>({
     status: "idle",
   });
   const [showFormatMessage, setShowFormatMessage] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
   const formatMessage = useMemo(
     () => getNurseInviteCodeFormatMessage(nurseCode),
     [nurseCode],
@@ -290,6 +292,57 @@ export default function JoinActiveSessionScreen() {
     }
   }
 
+  async function handleJoinShift() {
+    if (validationState.status !== "valid") {
+      return;
+    }
+
+    if (authState.status !== "signed_in") {
+      setValidationState({
+        message: "Sign in before joining this shift.",
+        status: "error",
+        title: "Join failed",
+      });
+      return;
+    }
+
+    const supabase = getSupabaseClient();
+
+    if (!supabase) {
+      setValidationState({
+        message: "Supabase is not configured yet.",
+        status: "error",
+        title: "Join failed",
+      });
+      return;
+    }
+
+    setIsJoining(true);
+
+    try {
+      const result = await acceptShiftNurseInviteCode(supabase, nurseCode);
+
+      if (result.status === "blocked") {
+        setValidationState({
+          message: result.message,
+          status: "blocked",
+        });
+        return;
+      }
+
+      await retryLoadJoinedNurseAccess();
+      router.replace("/regular-nurse-workspace");
+    } catch (error) {
+      setValidationState({
+        message: getErrorMessage(error, "This nurse code could not be joined."),
+        status: "error",
+        title: "Join failed",
+      });
+    } finally {
+      setIsJoining(false);
+    }
+  }
+
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.header}>
@@ -335,9 +388,11 @@ export default function JoinActiveSessionScreen() {
             />
           ) : null}
 
-          {isValidating ? (
+          {isValidating || isJoining ? (
             <View style={styles.loadingBox}>
-              <LoadingState message="Checking nurse code" />
+              <LoadingState
+                message={isJoining ? "Joining shift" : "Checking nurse code"}
+              />
             </View>
           ) : null}
 
@@ -378,7 +433,7 @@ export default function JoinActiveSessionScreen() {
           {validationState.status === "error" ? (
             <MessageBox
               message={validationState.message}
-              title="Code check failed"
+              title={validationState.title ?? "Code check failed"}
               variant="error"
             />
           ) : null}
@@ -401,19 +456,28 @@ export default function JoinActiveSessionScreen() {
         <Pressable
           accessibilityRole="button"
           accessibilityState={{
-            disabled: isValidating || validationState.status === "valid",
+            disabled: isValidating || isJoining,
           }}
-          disabled={isValidating || validationState.status === "valid"}
-          onPress={handleValidateCode}
+          disabled={isValidating || isJoining}
+          onPress={
+            validationState.status === "valid"
+              ? handleJoinShift
+              : handleValidateCode
+          }
           style={({ pressed }) => [
             styles.primaryButton,
-            (!isCodeReady || isValidating) && styles.primaryButtonMuted,
-            pressed && !isValidating ? styles.primaryButtonPressed : null,
+            (!isCodeReady || isValidating || isJoining) &&
+              styles.primaryButtonMuted,
+            pressed && !isValidating && !isJoining
+              ? styles.primaryButtonPressed
+              : null,
           ]}
         >
           <Text style={styles.primaryButtonText}>
             {validationState.status === "valid"
-              ? "Join available in next task"
+              ? isJoining
+                ? "Joining"
+                : "Join shift"
               : isValidating
                 ? "Checking"
                 : isSignedOut && isCodeReady

@@ -115,8 +115,8 @@ export default function RegularNurseWorkspaceScreen() {
           <View style={styles.emptyPanel}>
             <Text style={styles.emptyTitle}>No shift access yet</Text>
             <Text style={styles.message}>
-              A charge nurse will connect shift access in a future join-code
-              flow.
+              Enter a nurse code from charge to connect this account to an
+              active shift.
             </Text>
           </View>
         ) : null}

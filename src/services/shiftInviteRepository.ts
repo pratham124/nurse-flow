@@ -67,6 +67,21 @@ export type ShiftNurseInviteValidationResult =
       status: "blocked";
     };
 
+export type ShiftNurseInviteAcceptResult =
+  | {
+      accessId: string;
+      floorName: string;
+      nurseId: string;
+      nurseName: string;
+      shiftId: string;
+      status: "joined";
+    }
+  | {
+      message: string;
+      reason: ShiftNurseInviteValidationBlockReason;
+      status: "blocked";
+    };
+
 type ShiftNurseAccessRow = {
   created_at: string;
   id: string;
@@ -80,6 +95,8 @@ type ShiftNurseAccessRow = {
 };
 
 type ValidateShiftNurseInviteRpcResult = {
+  accessId?: string;
+  access_id?: string;
   expiresAt?: string;
   expires_at?: string;
   floorName?: string;
@@ -386,6 +403,48 @@ function mapValidationResult(
   };
 }
 
+function mapAcceptResult(data: unknown): ShiftNurseInviteAcceptResult {
+  const row = getValidationResultRow(data);
+
+  if (!row) {
+    return {
+      message: getValidationBlockMessage("not_found"),
+      reason: "not_found",
+      status: "blocked",
+    };
+  }
+
+  const rawReason = row.reason ?? row.status ?? "not_found";
+  const reason = isValidationBlockReason(rawReason) ? rawReason : "not_found";
+
+  if (row.status !== "joined") {
+    return {
+      message: getValidationBlockMessage(reason),
+      reason,
+      status: "blocked",
+    };
+  }
+
+  const accessId = row.accessId ?? row.access_id ?? "";
+  const floorName = row.floorName ?? row.floor_name ?? "";
+  const nurseId = row.nurseId ?? row.nurse_id ?? "";
+  const nurseName = row.nurseName ?? row.nurse_name ?? "";
+  const shiftId = row.shiftId ?? row.shift_id ?? "";
+
+  if (!accessId || !floorName || !nurseId || !nurseName || !shiftId) {
+    throw new Error("Invite join returned an incomplete access record.");
+  }
+
+  return {
+    accessId,
+    floorName,
+    nurseId,
+    nurseName,
+    shiftId,
+    status: "joined",
+  };
+}
+
 export async function loadShiftNurseInvitesForActiveShift(
   supabase: SupabaseClient,
   profile: UserProfile,
@@ -457,6 +516,32 @@ export async function validateShiftNurseInviteCode(
   }
 
   return mapValidationResult(data);
+}
+
+export async function acceptShiftNurseInviteCode(
+  supabase: SupabaseClient,
+  code: string,
+): Promise<ShiftNurseInviteAcceptResult> {
+  const formatMessage = getNurseInviteCodeFormatMessage(code);
+
+  if (formatMessage) {
+    return {
+      message: formatMessage,
+      reason: "invalid_format",
+      status: "blocked",
+    };
+  }
+
+  const tokenHash = await getShiftNurseInviteCodeHash(code);
+  const { data, error } = await supabase.rpc("accept_shift_nurse_invite_code", {
+    invite_token_hash: tokenHash,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return mapAcceptResult(data);
 }
 
 export async function createShiftNurseInviteRecord(

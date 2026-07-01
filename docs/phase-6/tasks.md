@@ -241,7 +241,7 @@ Validation check:
 - Revoked old code shows revoked or invalid state.
 - User already in another active shift sees a clear participation conflict state.
 
-### Task 3.3: Link Signed-In User to Shift Nurse Access
+### Done Task 3.3: Link Signed-In User to Shift Nurse Access
 
 Story coverage: US3, US4
 
@@ -251,6 +251,9 @@ Build:
 - Mark the invite used when appropriate.
 - Navigate to the joined nurse live assignment after successful join.
 - Keep access scoped to one nurse in one active shift.
+- Added `acceptShiftNurseInviteCode` as the app-side server boundary for consuming a valid nurse code.
+- Added `accept_shift_nurse_invite_code` setup notes so access linking and invite consumption happen together on the server.
+- Updated the join screen to switch from validation to `Join shift`, refresh joined nurse access, and navigate to the existing nurse-scoped assignment workspace.
 
 Validation check:
 

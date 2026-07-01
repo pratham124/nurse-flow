@@ -40,6 +40,29 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-06-30 - Link Nurse Code To Shift Access
+
+- Task: Complete Phase 6 Task 3.3 by accepting a valid nurse code, linking the signed-in profile to one shift nurse access record, consuming the invite, and opening the joined nurse workspace.
+- Problem understanding:
+  - [x] Validation only proved the code was usable; it did not yet give the account nurse-scoped shift access.
+  - [x] The invite accept step must update access and invite status together so a code cannot half-join or stay reusable by accident.
+  - [x] Joined nurse access must remain scoped to one nurse in one active shift, not the full charge nurse board.
+- Solution understanding:
+  - [x] `src/services/shiftInviteRepository.ts` now exposes `acceptShiftNurseInviteCode`, which calls the server accept RPC and maps joined or blocked results.
+  - [x] `src/screens/JoinActiveSessionScreen.tsx` uses the validated state to show `Join shift`, accepts the code, refreshes joined nurse access, and routes to `/regular-nurse-workspace`.
+  - [ ] `docs/phase-6/supabase-invite-setup.md` documents `accept_shift_nurse_invite_code`, which creates or updates `shift_nurse_access` and marks the invite `used`.
+  - [x] `src/screens/RegularNurseWorkspaceScreen.tsx` now describes the real nurse-code path in its empty state.
+- Broader context:
+  - [x] This completes the real invite join link before joined nurse realtime subscriptions are added in later tasks.
+  - [x] The joined nurse assignment still loads through the reduced `get_joined_nurse_assignment_view` boundary.
+  - [x] Push notifications, offline queues, conflict resolution, drag-and-drop, tablet layout, and AI remain out of scope.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: in progress
+
 ### 2026-06-27 - Validate Nurse Join Codes
 
 - Task: Complete Phase 6 Tasks 3.1 and 3.2 by enabling nurse code entry, preserving a pending code through sign-in, validating the code with the server, and showing a safe join confirmation.
