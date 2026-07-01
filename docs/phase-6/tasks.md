@@ -266,7 +266,7 @@ Validation check:
 
 ## Joined Nurse Live View
 
-### Task 4.1: Add Joined Nurse Realtime Subscription Boundary
+### Done Task 4.1: Add Joined Nurse Realtime Subscription Boundary
 
 Story coverage: US4, US7
 
@@ -276,14 +276,18 @@ Build:
 - Refetch only the joined nurse assignment view after relevant server change signals.
 - Stop the listener when the user signs out, access is removed, or the shift ends.
 - Keep the subscription scoped so it cannot expose the full active shift.
+- Added `subscribeToJoinedNurseAssignmentView` for active shift and nurse access change signals.
+- Added a joined nurse realtime state in `ServerWorkspaceContext`.
+- Realtime refreshes call `loadJoinedNurseAssignmentView`, keeping joined nurses on the nurse-scoped RPC instead of full active-shift reads.
 
 Validation check:
 
 - Joined nurse assignment updates when the charge nurse changes patient, acuity, assignment, request, or break data.
 - Signing out stops the joined nurse listener.
 - Server authorization still blocks full shift reads.
+- TypeScript, lint, and Expo export pass.
 
-### Task 4.2: Add Live Status UI to Joined Nurse Assignment
+### Done Task 4.2: Add Live Status UI to Joined Nurse Assignment
 
 Story coverage: US4
 
@@ -293,14 +297,17 @@ Build:
 - Show disconnected or reconnecting states without promising offline edits.
 - Show shift ended or access removed state when applicable.
 - Keep assignment content readable on phone screens.
+- Reused the existing `LiveStatusChip` on the joined nurse assignment screen.
+- Added safe `Shift ended` and `Access removed` states for joined nurse access changes.
 
 Validation check:
 
 - Joined nurse sees live status.
 - Connection loss is visible.
 - Shift end moves the nurse to a safe ended state.
+- TypeScript, lint, and Expo export pass.
 
-### Task 4.3: Replace Local Simulation Entry With Real Joined Nurse Path Where Appropriate
+### Done Task 4.3: Replace Local Simulation Entry With Real Joined Nurse Path Where Appropriate
 
 Story coverage: US3, US4, US7
 
@@ -311,6 +318,10 @@ Build:
 - Delete simulated nurse screens only if the real joined nurse path fully replaces their manual testing value.
 - If any simulation screens remain for development testing, keep them clearly labeled as local simulation and outside the main user flow.
 - Do not imply simulated screens provide real multi-device joined nurse access.
+- Removed the normal Floor Board `View as nurse` simulation entry point.
+- Removed the `src/app/simulated-nurse-*` route files so simulated nurse screens are no longer reachable as app routes.
+- Kept the underlying `src/screens/SimulatedNurse*` files temporarily as reference code for the upcoming real joined nurse request tasks.
+- Left the Home and join-code paths as the main real joined nurse route.
 
 Validation check:
 
@@ -318,6 +329,7 @@ Validation check:
 - The normal charge nurse product flow no longer points users to simulated nurse screens.
 - Any remaining simulated route is clearly labeled as local development/testing only and does not imply real multi-device access.
 - Previous request and assignment display behavior still works.
+- TypeScript, lint, and Expo export pass.
 
 ## Live Requests
 

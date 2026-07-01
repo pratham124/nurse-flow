@@ -174,11 +174,11 @@ For each task, add a dated section with:
   - [ ] Joined-nurse subscriptions, invite links, push notifications, offline queues, and conflict handling remain out of scope.
   - [ ] Supabase must have `public.active_shifts` enabled in the `supabase_realtime` publication before backend update events can arrive.
 - Verification:
-  - [ ] Human restated understanding first.
-  - [ ] Gaps were explained.
-  - [ ] Code-specific question or walkthrough completed.
-  - [ ] Quiz or walkthrough completed.
-- Status: pending
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
 
 ### 2026-06-25 - Fix Home Template Cards on Small Screens
 
@@ -2068,6 +2068,32 @@ For each task, add a dated section with:
   - [ ] Phase 4 connects staffing assignments to practical break planning while staying local-first.
   - [ ] Break schedule state belongs to the active shift, not saved floor templates.
   - [ ] Phase 4 should preserve Phase 1 assignment, Phase 2 persistence, and Phase 3 simulated nurse request behavior.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
+### 2026-07-01 - Add Joined Nurse Live Assignment Updates
+
+- Task: Complete Phase 6 Tasks 4.1, 4.2, and 4.3.
+- Problem understanding:
+  - [ ] Joined nurses needed live assignment refreshes after charge nurse changes without receiving the full active shift.
+  - [ ] Joined nurses needed a visible connection state and safe recovery states for ended shifts or removed access.
+  - [ ] The normal charge nurse flow still pointed to the old local simulation entry even though the real invite path now exists.
+- Solution understanding:
+  - [ ] `src/services/realtimeWorkspaceRepository.ts` adds `subscribeToJoinedNurseAssignmentView` for nurse-scoped change signals.
+  - [ ] `src/store/ServerWorkspaceContext.tsx` keeps joined nurse realtime state separate from charge realtime state.
+  - [ ] Joined nurse refreshes call `loadJoinedNurseAssignmentView`, not a full active-shift load.
+  - [ ] `src/screens/RegularNurseWorkspaceScreen.tsx` shows the live status chip plus `Shift ended` and `Access removed` states.
+  - [ ] `src/screens/FloorBoardScreen.tsx` removes the normal `View as nurse` simulation card from the charge board flow.
+  - [ ] `src/app/simulated-nurse-*` route files were removed so simulation screens are no longer reachable as app routes.
+  - [ ] `src/screens/SimulatedNurse*` screen files remain temporarily as reference code for real joined nurse request tasks.
+- Broader context:
+  - [ ] This keeps Phase 6 focused on foreground realtime and invite-based joined nurse access.
+  - [ ] It preserves existing charge board, invite, join, assignment, request, and break display behavior.
+  - [ ] It does not add push notifications, offline queues, conflict resolution, drag-and-drop, board sharing, tablet layout, or AI.
 - Verification:
   - [ ] Human restated understanding first.
   - [ ] Gaps were explained.

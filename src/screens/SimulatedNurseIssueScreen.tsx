@@ -251,7 +251,7 @@ export default function SimulatedNurseIssueScreen() {
       return;
     }
 
-    router.push("/simulated-nurse-assignment");
+    router.push("/floor-board");
   }
 
   return (

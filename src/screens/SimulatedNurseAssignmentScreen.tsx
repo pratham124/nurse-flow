@@ -468,14 +468,14 @@ export default function SimulatedNurseAssignmentScreen() {
           <NurseAssignmentHeader
             breakView={breakView}
             hasBreakSchedule={Boolean(activeShift?.breakSchedule)}
-            onFlagIssue={() => router.push("/simulated-nurse-issue")}
-            onRequestSwap={() => router.push("/simulated-nurse-swap")}
+            onFlagIssue={() => router.push("/floor-board")}
+            onRequestSwap={() => router.push("/floor-board")}
             view={readyView}
           />
         ) : undefined
       }
       onHeaderActionPress={() => router.push("/")}
-      onPrimaryPress={() => router.push("/simulated-nurse-picker")}
+      onPrimaryPress={() => router.push("/floor-board")}
       primaryLabel="Choose nurse"
       renderItem={renderAssignmentItem}
       listFooter={

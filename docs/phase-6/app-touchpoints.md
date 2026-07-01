@@ -41,7 +41,10 @@ Relevant current routes:
 - `src/app/local-request-detail.tsx` opens one request detail.
 - `src/app/join-active-session.tsx` opens the current placeholder join shell.
 - `src/app/regular-nurse-workspace.tsx` opens the joined nurse workspace shell.
-- `src/app/simulated-nurse-*` routes support local nurse simulation testing.
+- `src/screens/SimulatedNurse*` screens are legacy local simulation reference code.
+  The `src/app/simulated-nurse-*` route files were removed in Task 4.3 so
+  simulated nurse screens are no longer reachable from the normal app route
+  surface.
 
 Likely Phase 6 route additions later:
 

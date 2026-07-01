@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
+import { LiveStatusChip } from "../components/workflow";
 import { useAuthSession } from "../store/AuthSessionContext";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import {
@@ -81,8 +82,11 @@ function AssignmentSummary({ assignmentView }: AssignmentSummaryProps) {
 
 export default function RegularNurseWorkspaceScreen() {
   const { authState } = useAuthSession();
-  const { joinedNurseAccessState, retryLoadJoinedNurseAccess } =
-    useServerWorkspace();
+  const {
+    joinedNurseAccessState,
+    joinedNurseRealtimeConnectionState,
+    retryLoadJoinedNurseAccess,
+  } = useServerWorkspace();
   const displayName =
     authState.status === "signed_in" ? authState.profile.displayName : "Nurse";
 
@@ -96,6 +100,13 @@ export default function RegularNurseWorkspaceScreen() {
         <Text style={styles.eyebrow}>Joined nurse workspace</Text>
         <Text style={styles.title}>{displayName}</Text>
 
+        {joinedNurseAccessState.status === "ready" ? (
+          <LiveStatusChip
+            connectionState={joinedNurseRealtimeConnectionState}
+            onRefresh={retryLoadJoinedNurseAccess}
+          />
+        ) : null}
+
         {joinedNurseAccessState.status === "loading" ||
         joinedNurseAccessState.status === "idle" ? (
           <LoadingState message="Checking shift access" />
@@ -107,6 +118,26 @@ export default function RegularNurseWorkspaceScreen() {
             <Text style={styles.message}>
               Enter a nurse code from charge to connect this account to an
               active shift.
+            </Text>
+          </View>
+        ) : null}
+
+        {joinedNurseAccessState.status === "shift_ended" ? (
+          <View style={styles.emptyPanel}>
+            <Text style={styles.emptyTitle}>Shift ended</Text>
+            <Text style={styles.message}>
+              This live assignment is no longer active. Return home for a safe
+              place to continue.
+            </Text>
+          </View>
+        ) : null}
+
+        {joinedNurseAccessState.status === "access_removed" ? (
+          <View style={styles.emptyPanel}>
+            <Text style={styles.emptyTitle}>Access removed</Text>
+            <Text style={styles.message}>
+              This account is no longer linked to that nurse assignment. Ask
+              charge for a new code if you still need access.
             </Text>
           </View>
         ) : null}

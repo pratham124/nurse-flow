@@ -12,6 +12,18 @@ type ChargeActiveShiftSubscriptionOptions = {
   supabase: SupabaseClient;
 };
 
+type JoinedNurseAssignmentSubscriptionOptions = {
+  accessId: string;
+  onConnectionStateChange: (
+    connectionState: RealtimeConnectionState,
+    error?: Error,
+  ) => void;
+  onNurseAccessChanged: () => void;
+  onShiftChanged: () => void;
+  shiftId: string;
+  supabase: SupabaseClient;
+};
+
 function getConnectionState(
   status: "SUBSCRIBED" | "TIMED_OUT" | "CLOSED" | "CHANNEL_ERROR",
 ): RealtimeConnectionState {
@@ -51,6 +63,58 @@ export function subscribeToChargeActiveShift({
       () => {
         if (isActive) {
           onShiftChanged();
+        }
+      },
+    )
+    .subscribe((status, error) => {
+      if (isActive) {
+        onConnectionStateChange(getConnectionState(status), error);
+      }
+    });
+
+  return () => {
+    isActive = false;
+    void supabase.removeChannel(channel);
+  };
+}
+
+export function subscribeToJoinedNurseAssignmentView({
+  accessId,
+  onConnectionStateChange,
+  onNurseAccessChanged,
+  onShiftChanged,
+  shiftId,
+  supabase,
+}: JoinedNurseAssignmentSubscriptionOptions) {
+  let isActive = true;
+
+  const channel: RealtimeChannel = supabase
+    .channel(`joined-nurse-assignment:${shiftId}:${accessId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        filter: `id=eq.${shiftId}`,
+        schema: "public",
+        table: "active_shifts",
+      },
+      () => {
+        if (isActive) {
+          onShiftChanged();
+        }
+      },
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        filter: `id=eq.${accessId}`,
+        schema: "public",
+        table: "shift_nurse_access",
+      },
+      () => {
+        if (isActive) {
+          onNurseAccessChanged();
         }
       },
     )

@@ -246,7 +246,7 @@ export default function SimulatedNursePickerScreen() {
       role: "regular_nurse",
       selectedNurseId: nurseId,
     });
-    router.push("/simulated-nurse-assignment");
+    router.push("/floor-board");
   }
 
   return (

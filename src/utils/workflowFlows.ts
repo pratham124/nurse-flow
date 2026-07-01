@@ -13,10 +13,6 @@ export type WorkflowRoute =
   | "/assignment-review"
   | "/floor-board"
   | "/nurse-invites"
-  | "/simulated-nurse-picker"
-  | "/simulated-nurse-assignment"
-  | "/simulated-nurse-issue"
-  | "/simulated-nurse-swap"
   | "/local-request-detail";
 
 export type WorkflowFlowStep = {

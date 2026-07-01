@@ -262,7 +262,7 @@ export default function SimulatedNurseSwapScreen() {
       return;
     }
 
-    router.push("/simulated-nurse-assignment");
+    router.push("/floor-board");
   }
 
   return (

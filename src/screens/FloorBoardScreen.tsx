@@ -8,7 +8,6 @@ import {
   FilterChip,
   FilterChipRow,
   LiveStatusChip,
-  PlaceholderButton,
   SeverityBadge,
   StatusPill,
   SummaryChip,
@@ -16,7 +15,6 @@ import {
   WorkflowSection,
 } from "../components/workflow";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
-import { useWorkflowDraft } from "../store/WorkflowDraftContext";
 import {
   getBreakEntryForNurse,
   getBreakWarningsForNurse,
@@ -111,19 +109,13 @@ type BoardBedProps = BoardBedViewModel;
 type FloorBoardListHeaderProps = {
   admittingSideName: string;
   breakWarningCount: number;
-  canEnterNurseSimulation: boolean;
   flagCount: number;
-  isRegularNurseSimulation: boolean;
   nurseWorkloads: NurseWorkloadViewModel[];
   onFilterPress: (filter: BoardFilter) => void;
   onRefreshLiveStatus: () => void;
-  onReturnToChargeView: () => void;
-  onViewAsNurse: () => void;
   occupiedBedCount: number;
   realtimeConnectionState: RealtimeConnectionState;
-  roleSimulationMessage: string;
   selectedFilter: BoardFilter;
-  selectedNurseName?: string;
   shiftStartTimeLabel: string;
   floorActivityLabel: string;
   totalBedCount: number;
@@ -142,19 +134,13 @@ type BoardSummaryCardProps = {
 function FloorBoardListHeader({
   admittingSideName,
   breakWarningCount,
-  canEnterNurseSimulation,
   flagCount,
-  isRegularNurseSimulation,
   nurseWorkloads,
   onFilterPress,
   onRefreshLiveStatus,
-  onReturnToChargeView,
-  onViewAsNurse,
   occupiedBedCount,
   realtimeConnectionState,
-  roleSimulationMessage,
   selectedFilter,
-  selectedNurseName,
   shiftStartTimeLabel,
   floorActivityLabel,
   totalBedCount,
@@ -176,40 +162,6 @@ function FloorBoardListHeader({
           shiftStartTimeLabel={shiftStartTimeLabel}
           totalBedCount={totalBedCount}
         />
-      </WorkflowSection>
-
-      <WorkflowSection title="Local role simulation">
-        <View style={styles.roleSimulationCard}>
-          <View style={styles.roleSimulationTopRow}>
-            <SummaryChip
-              label={
-                isRegularNurseSimulation
-                  ? "Regular nurse simulation"
-                  : "Charge nurse view"
-              }
-            />
-            <SummaryChip label="Local only" />
-          </View>
-          <Text style={styles.roleSimulationText}>
-            {isRegularNurseSimulation
-              ? selectedNurseName
-                ? `${selectedNurseName} is selected for local nurse simulation. Assignment details come next.`
-                : "Regular nurse mode is selected locally. Choose a nurse from the picker to continue."
-              : roleSimulationMessage}
-          </Text>
-          <PlaceholderButton
-            label={
-              isRegularNurseSimulation ? "Back to charge view" : "View as nurse"
-            }
-            onPress={
-              isRegularNurseSimulation
-                ? onReturnToChargeView
-                : canEnterNurseSimulation
-                  ? onViewAsNurse
-                  : undefined
-            }
-          />
-        </View>
       </WorkflowSection>
 
       <NurseWorkloadSection nurseWorkloads={nurseWorkloads} />
@@ -674,27 +626,9 @@ function EmptyBoardMessage({
   );
 }
 
-function getRoleSimulationMessage(activeShift?: Shift) {
-  if (!activeShift) {
-    return "Start a shift and run assignment before opening nurse simulation.";
-  }
-
-  if (activeShift.status !== "assigned" || !activeShift.assignmentResult) {
-    return "Run assignment before opening nurse view.";
-  }
-
-  if (!activeShift.nurses.length) {
-    return "Add nurses before opening nurse view.";
-  }
-
-  return "Use this to preview the future nurse-facing flow on this device.";
-}
-
 export default function FloorBoardScreen() {
   const { activeShift, realtimeConnectionState, retryLoadWorkspace } =
     useServerWorkspace();
-  const { setSimulatedSessionState, simulatedSessionState } =
-    useWorkflowDraft();
   const [selectedFilter, setSelectedFilter] = useState<BoardFilter>("All");
   const { occupiedBedCount, totalBedCount } = getShiftCensus(activeShift);
   const admittingDoctorSide = activeShift?.doctorSides.find(
@@ -708,14 +642,6 @@ export default function FloorBoardScreen() {
     type: "side",
     side,
   }));
-  const canEnterNurseSimulation = Boolean(
-    activeShift?.status === "assigned" &&
-    activeShift.assignmentResult &&
-    activeShift.nurses.length,
-  );
-  const selectedNurseName = activeShift?.nurses.find(
-    (nurse) => nurse.id === simulatedSessionState.selectedNurseId,
-  )?.name;
   const breakScheduleView = getBreakScheduleView(activeShift);
 
   return (
@@ -729,26 +655,13 @@ export default function FloorBoardScreen() {
         <FloorBoardListHeader
           admittingSideName={admittingDoctorSide?.name ?? "-"}
           breakWarningCount={breakScheduleView.warnings.length}
-          canEnterNurseSimulation={canEnterNurseSimulation}
           flagCount={activeShift?.flags.length ?? 0}
-          isRegularNurseSimulation={
-            simulatedSessionState.role === "regular_nurse"
-          }
           nurseWorkloads={getNurseWorkloads(activeShift)}
           onFilterPress={setSelectedFilter}
           onRefreshLiveStatus={retryLoadWorkspace}
-          onReturnToChargeView={() =>
-            setSimulatedSessionState({ role: "charge" })
-          }
-          onViewAsNurse={() => {
-            setSimulatedSessionState({ role: "regular_nurse" });
-            router.push("/simulated-nurse-picker");
-          }}
           occupiedBedCount={occupiedBedCount}
           realtimeConnectionState={realtimeConnectionState}
-          roleSimulationMessage={getRoleSimulationMessage(activeShift)}
           selectedFilter={selectedFilter}
-          selectedNurseName={selectedNurseName}
           shiftStartTimeLabel={breakScheduleView.shiftStartTime}
           floorActivityLabel={getFloorActivityLabel(
             breakScheduleView.activityLevel,
@@ -939,27 +852,6 @@ const styles = StyleSheet.create({
     color: colors.status.amber800,
     fontSize: textSize.sm,
     fontWeight: fontWeight.semibold,
-    lineHeight: 18,
-  },
-  roleSimulationCard: {
-    backgroundColor: colors.neutral.surface,
-    borderColor: colors.neutral.borderTertiary,
-    borderRadius: radius.lg,
-    borderWidth: 0.5,
-    gap: spacing.md,
-    padding: spacing.md,
-    ...shadows.sm,
-  },
-  roleSimulationTopRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  roleSimulationText: {
-    color: colors.neutral.textSecondary,
-    fontSize: textSize.sm,
-    fontWeight: fontWeight.medium,
     lineHeight: 18,
   },
   inlineFlagList: {
