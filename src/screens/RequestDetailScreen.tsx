@@ -30,7 +30,7 @@ function DetailRow({ label, value }: DetailRowProps) {
   );
 }
 
-export default function LocalRequestDetailScreen() {
+export default function RequestDetailScreen() {
   const { activeShift, resolveNurseSwapRequest } = useServerWorkspace();
   const [serverSaveError, setServerSaveError] = useState("");
   const [isResolving, setIsResolving] = useState(false);

@@ -13,7 +13,7 @@ export type WorkflowRoute =
   | "/assignment-review"
   | "/floor-board"
   | "/nurse-invites"
-  | "/local-request-detail";
+  | "/request-detail";
 
 export type WorkflowFlowStep = {
   step: WorkflowStep;

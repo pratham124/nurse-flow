@@ -52,7 +52,8 @@ For each task, add a dated section with:
   - [ ] `src/store/ServerWorkspaceContext.tsx` wraps those RPCs in beginner-readable app actions and refreshes the relevant server view afterward.
   - [ ] `src/screens/RegularNurseWorkspaceScreen.tsx` adds issue and swap request forms for the real joined nurse workspace.
   - [ ] The joined nurse request UI now uses plain nurse-facing copy and two simple action cards instead of technical helper text.
-  - [ ] `src/screens/LocalRequestDetailScreen.tsx` resolves only pending swap requests through the focused charge action.
+  - [ ] The joined nurse assignment summary groups beds by room, puts break info in a separate `Breaks` section, and keeps longer room/request lists in contained scroll areas.
+  - [ ] `src/screens/RequestDetailScreen.tsx` resolves only pending swap requests through the focused charge action.
   - [ ] `docs/phase-6/supabase-request-setup.md` documents the required server functions and validation rules.
 - Broader context:
   - [ ] This makes Phase 6 nurse requests live while keeping request records on the active shift snapshot.
@@ -1993,7 +1994,7 @@ For each task, add a dated section with:
   - [ ] The charge nurse needs more room to read one request without changing request status yet.
   - [ ] Accept, decline, reassignment, backend, notification, and sync behavior must stay out of this task.
 - Solution understanding:
-  - [ ] `src/screens/LocalRequestDetailScreen.tsx` shows a read-only detail view for one local request.
+  - [ ] `src/screens/RequestDetailScreen.tsx` shows a read-only detail view for one local request.
   - [ ] `src/screens/FlagsScreen.tsx` makes local request rows tappable and routes by request ID.
   - [ ] `src/utils/nurseRequestDisplay.ts` centralizes request labels, timestamps, and bed context so list rows and detail view stay consistent.
   - [ ] Missing or stale request IDs show a safe recovery state.
@@ -2018,7 +2019,7 @@ For each task, add a dated section with:
   - [ ] Already accepted or declined requests should not show active decision controls again.
 - Solution understanding:
   - [ ] `src/utils/nurseRequests.ts` updates only pending swap requests to `accepted` or `declined`.
-  - [ ] `src/screens/LocalRequestDetailScreen.tsx` shows Accept and Decline only for pending mock swaps.
+  - [ ] `src/screens/RequestDetailScreen.tsx` shows Accept and Decline only for pending mock swaps.
   - [ ] Resolving a swap stores `resolvedAt` and a short local `resolutionNote`.
   - [ ] `src/screens/SimulatedNurseAssignmentScreen.tsx` already reads request status from the active shift, so the selected nurse sees accepted, declined, and pending statuses from the same request list.
   - [ ] Bed assignments stay unchanged.
