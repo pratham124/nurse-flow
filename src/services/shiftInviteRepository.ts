@@ -489,6 +489,29 @@ export async function loadShiftNurseAccessForActiveShift(
   return data.map(mapAccessRow);
 }
 
+export async function expireActiveShiftNurseInvites(
+  supabase: SupabaseClient,
+  profile: UserProfile,
+  activeShift: ActiveShiftRecord,
+) {
+  assertChargeNurse(profile);
+  assertOwnedActiveShift(activeShift, profile);
+
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from("shift_nurse_invites")
+    .update({
+      status: "expired",
+      updated_at: now,
+    })
+    .eq("shift_id", activeShift.id)
+    .eq("status", "active");
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
 export async function validateShiftNurseInviteCode(
   supabase: SupabaseClient,
   code: string,

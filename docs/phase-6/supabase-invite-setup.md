@@ -522,3 +522,16 @@ Validation checks:
    returns `status = blocked`.
 4. After accepting, the app loads assignment data through
    `get_joined_nurse_assignment_view`, not through a full active-shift read.
+
+## Shift End Invite Expiration
+
+Phase 6 Task 6.1 expires active invite records when the charge nurse ends an
+active shift. The app updates `shift_nurse_invites` rows for that shift from
+`active` to `expired` before closing the `active_shifts` row.
+
+Manual validation:
+
+1. Generate an invite code for a nurse in an active shift.
+2. End the shift from the charge nurse Home screen.
+3. Confirm the invite row has `status = expired`.
+4. Confirm validating or accepting the old code returns a blocked result.

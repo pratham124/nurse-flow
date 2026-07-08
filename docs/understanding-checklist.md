@@ -40,6 +40,29 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-07-08 - Expire Invites And Clean Up Realtime
+
+- Task: Complete Phase 6 Tasks 6.1 and 6.2 by expiring active nurse invites during shift end and making realtime listener setup resilient to sign-out, navigation, and Fast Refresh.
+- Problem understanding:
+  - [ ] Active invite codes should not remain usable after the active shift is closed.
+  - [ ] Realtime listeners are foreground subscriptions and should stop when the subscribed shift or nurse access context goes away.
+  - [ ] Supabase can reuse a same-named channel, so development remounts can accidentally attach duplicate handlers if stale channels are not cleaned up.
+- Solution understanding:
+  - [ ] `src/services/shiftInviteRepository.ts` adds `expireActiveShiftNurseInvites`, which changes active invite rows for the shift to `expired`.
+  - [ ] `src/services/serverWorkspaceRepository.ts` calls invite expiration before closing the active shift, while Home still saves the carry-over snapshot first.
+  - [ ] `src/services/realtimeWorkspaceRepository.ts` removes stale channels with the same purpose and creates a unique channel name for each new listener.
+  - [ ] Existing joined nurse refresh behavior still turns an ended shift into the safe `Shift ended` screen state.
+- Broader context:
+  - [ ] This closes the Phase 6 shift-end lifecycle without adding push notifications, offline queues, conflict resolution, drag-and-drop, board sharing, tablet layout, or AI.
+  - [ ] Charge nurse and joined nurse realtime state stays separate from saved shift data.
+  - [ ] Future cleanup or access-removal work can build on the same service boundaries.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
 ### 2026-07-08 - Rework Home Header
 
 - Task: Rework the home header so the brand sits in a burgundy diagonal panel and account actions sit on the neutral side.

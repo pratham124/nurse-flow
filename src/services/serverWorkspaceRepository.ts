@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { expireActiveShiftNurseInvites } from "./shiftInviteRepository";
 import type {
   ActiveShiftRecord,
   FloorTemplate,
@@ -682,6 +683,14 @@ export async function endServerActiveShift(
   if (!uuidPattern.test(activeShift.id)) {
     throw new Error("Only server active shifts can be ended from this account.");
   }
+
+  const currentActiveShift = await loadServerActiveShift(supabase, profile);
+
+  if (!currentActiveShift || currentActiveShift.id !== activeShift.id) {
+    throw new Error("This active shift is no longer open.");
+  }
+
+  await expireActiveShiftNurseInvites(supabase, profile, currentActiveShift);
 
   const now = new Date().toISOString();
   const { data, error } = await supabase

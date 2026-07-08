@@ -398,7 +398,7 @@ Validation check:
 
 ## Shift End and Cleanup
 
-### Task 6.1: Expire Invites When Shift Ends
+### Done Task 6.1: Expire Invites When Shift Ends
 
 Story coverage: US2, US3, US6, US7
 
@@ -408,6 +408,11 @@ Build:
 - Stop active realtime listeners for that shift.
 - Move connected joined nurses to a shift ended state.
 - Preserve previous-shift snapshot behavior from Phase 5.
+- Added `expireActiveShiftNurseInvites` so active invite rows become `expired`
+  before the active shift is closed.
+- Kept Home's existing carry-over snapshot save before the shift-end call.
+- The existing joined nurse realtime refresh still moves connected nurses to
+  `Shift ended` when the nurse-scoped view disappears.
 
 Validation check:
 
@@ -415,8 +420,9 @@ Validation check:
 - Confirm invite codes no longer allow joining.
 - Confirm joined nurse screens show shift ended.
 - Confirm carry-over suggestions still work for the next shift.
+- TypeScript, lint, and Expo export pass.
 
-### Task 6.2: Cleanup Realtime Listeners on Sign Out and Navigation
+### Done Task 6.2: Cleanup Realtime Listeners on Sign Out and Navigation
 
 Story coverage: US1, US4, US7
 
@@ -425,12 +431,18 @@ Build:
 - Ensure charge nurse and joined nurse subscriptions stop on sign out.
 - Ensure subscriptions do not duplicate after app navigation or Fast Refresh during development.
 - Keep retry and refresh behavior understandable.
+- Realtime subscriptions now remove stale channels with the same purpose before
+  opening a new uniquely named channel.
+- Existing React effect cleanup still stops charge and joined nurse listeners
+  when sign-out, shift-end, access removal, or provider unmount clears the
+  subscribed IDs.
 
 Validation check:
 
 - Sign out from charge workspace and confirm no active shift listener remains.
 - Sign out from joined nurse workspace and confirm no nurse listener remains.
 - Navigate away and back without creating duplicate updates.
+- TypeScript, lint, and Expo export pass.
 
 ## Manual Testing Pass
 

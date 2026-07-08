@@ -42,6 +42,23 @@ function getConnectionState(
   return "disconnected";
 }
 
+function removeStaleChannels(supabase: SupabaseClient, topicPrefix: string) {
+  const realtimeTopicPrefix = `realtime:${topicPrefix}`;
+
+  supabase
+    .getChannels()
+    .filter((channel) => channel.topic.startsWith(realtimeTopicPrefix))
+    .forEach((channel) => {
+      void supabase.removeChannel(channel);
+    });
+}
+
+function createSubscriptionTopic(topicPrefix: string) {
+  return `${topicPrefix}:${Date.now()}:${Math.random()
+    .toString(36)
+    .slice(2)}`;
+}
+
 export function subscribeToChargeActiveShift({
   activeShiftId,
   onConnectionStateChange,
@@ -49,9 +66,12 @@ export function subscribeToChargeActiveShift({
   supabase,
 }: ChargeActiveShiftSubscriptionOptions) {
   let isActive = true;
+  const topicPrefix = `charge-active-shift:${activeShiftId}`;
+
+  removeStaleChannels(supabase, topicPrefix);
 
   const channel: RealtimeChannel = supabase
-    .channel(`charge-active-shift:${activeShiftId}`)
+    .channel(createSubscriptionTopic(topicPrefix))
     .on(
       "postgres_changes",
       {
@@ -87,9 +107,12 @@ export function subscribeToJoinedNurseAssignmentView({
   supabase,
 }: JoinedNurseAssignmentSubscriptionOptions) {
   let isActive = true;
+  const topicPrefix = `joined-nurse-assignment:${shiftId}:${accessId}`;
+
+  removeStaleChannels(supabase, topicPrefix);
 
   const channel: RealtimeChannel = supabase
-    .channel(`joined-nurse-assignment:${shiftId}:${accessId}`)
+    .channel(createSubscriptionTopic(topicPrefix))
     .on(
       "postgres_changes",
       {
