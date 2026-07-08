@@ -333,7 +333,7 @@ Validation check:
 
 ## Live Requests
 
-### Task 5.1: Make Nurse Issue Submission Live
+### Done Task 5.1: Make Nurse Issue Submission Live
 
 Story coverage: US5
 
@@ -343,14 +343,18 @@ Build:
 - Let charge nurse screens receive the update through realtime.
 - Keep request records tied to the active shift and requesting nurse.
 - Prevent blank or duplicate issue submits.
+- Added `submitJoinedNurseIssueRequest` as the app-side RPC boundary.
+- Added a joined nurse issue form to the real joined nurse workspace.
+- Added server setup notes for `submit_joined_nurse_issue_request`.
 
 Validation check:
 
 - Submit an issue from a joined nurse device.
 - Confirm the charge nurse request view updates while open.
 - Confirm invalid issue text does not create a request.
+- TypeScript, lint, and Expo export pass.
 
-### Task 5.2: Make Nurse Swap Requests Live
+### Done Task 5.2: Make Nurse Swap Requests Live
 
 Story coverage: US5
 
@@ -360,14 +364,18 @@ Build:
 - Validate the source bed belongs to the joined nurse.
 - Let charge nurse screens receive the update through realtime.
 - Keep assignment changes out unless an existing accepted-swap workflow already changes status only.
+- Added `submitJoinedNurseSwapRequest` as the app-side RPC boundary.
+- Added a joined nurse swap form that requires one currently assigned source bed.
+- Added server setup notes for `submit_joined_nurse_swap_request`.
 
 Validation check:
 
 - Submit a swap request from a joined nurse device.
 - Confirm the charge nurse request view updates while open.
 - Confirm a stale or unassigned source bed is rejected safely.
+- TypeScript, lint, and Expo export pass.
 
-### Task 5.3: Make Request Resolution Live
+### Done Task 5.3: Make Request Resolution Live
 
 Story coverage: US5
 
@@ -377,12 +385,16 @@ Build:
 - Save the resolution to the server.
 - Let the requesting nurse see the status update live.
 - Keep accepted or declined requests from showing duplicate active decision controls.
+- Added `resolveNurseSwapRequest` as a focused charge nurse resolution action.
+- Updated request review copy from local/mock language to live request language.
+- Added server setup notes for `resolve_shift_nurse_swap_request`.
 
 Validation check:
 
 - Resolve a swap request from the charge nurse device.
 - Confirm the joined nurse device sees accepted or declined status.
 - Confirm resolved requests do not show active controls again.
+- TypeScript, lint, and Expo export pass.
 
 ## Shift End and Cleanup
 

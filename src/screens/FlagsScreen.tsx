@@ -317,14 +317,14 @@ function getEmptyRequestMessage(
       : `${selectedRequestStatusFilter.toLowerCase()} `;
 
   if (selectedRequestFilter === "Issues") {
-    return `No ${statusText}local issue requests yet.`;
+    return `No ${statusText}issue requests yet.`;
   }
 
   if (selectedRequestFilter === "Swaps") {
-    return `No ${statusText}local swap requests yet.`;
+    return `No ${statusText}swap requests yet.`;
   }
 
-  return `No ${statusText}local requests yet.`;
+  return `No ${statusText}requests yet.`;
 }
 
 function getFlagListItems(
@@ -514,7 +514,7 @@ function NurseRequestRow({ onOpen, request }: NurseRequestRowProps) {
         <View style={styles.requestChipRow}>
           <SummaryChip label={request.typeLabel} />
           <SummaryChip label={request.statusLabel} />
-          <SummaryChip label="Local only" />
+          <SummaryChip label="Live request" />
         </View>
         <Text style={styles.requestTime}>{request.createdAtText}</Text>
       </View>

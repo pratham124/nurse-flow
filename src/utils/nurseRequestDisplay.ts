@@ -15,7 +15,7 @@ export type NurseRequestDisplay = {
 };
 
 export function getRequestTypeLabel(request: NurseRequest) {
-  return request.type === "swap" ? "Mock swap" : "Mock issue";
+  return request.type === "swap" ? "Swap request" : "Issue request";
 }
 
 export function getRequestStatusLabel(request: NurseRequest) {

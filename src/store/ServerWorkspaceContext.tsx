@@ -15,9 +15,12 @@ import {
   loadJoinedNurseAssignmentView,
   loadServerActiveShift,
   loadServerWorkspace,
+  resolveShiftNurseSwapRequest as resolveShiftNurseSwapRequestOnServer,
   saveServerActiveShift,
   saveServerFloorTemplate,
   saveServerPreviousShiftSnapshot,
+  submitJoinedNurseIssueRequest as submitJoinedNurseIssueRequestToServer,
+  submitJoinedNurseSwapRequest as submitJoinedNurseSwapRequestToServer,
 } from "../services/serverWorkspaceRepository";
 import {
   subscribeToChargeActiveShift,
@@ -29,6 +32,7 @@ import type {
   FloorTemplate,
   FloorTemplateRecord,
   JoinedNurseAssignmentView,
+  NurseRequestStatus,
   PreviousShiftSnapshot,
   RealtimeConnectionState,
   ServerSaveStatus,
@@ -74,6 +78,10 @@ type ServerWorkspaceContextValue = {
   realtimeConnectionState: RealtimeConnectionState;
   retryLoadJoinedNurseAccess: () => Promise<void>;
   retryLoadWorkspace: () => Promise<void>;
+  resolveNurseSwapRequest: (
+    requestId: string,
+    nextStatus: Extract<NurseRequestStatus, "accepted" | "declined">,
+  ) => Promise<void>;
   saveActiveShift: (activeShift: Shift) => Promise<Shift>;
   saveErrorMessage: string;
   saveFloorTemplate: (
@@ -84,6 +92,11 @@ type ServerWorkspaceContextValue = {
   ) => Promise<void>;
   saveStatus: ServerSaveStatus;
   startActiveShift: (activeShift: Shift) => Promise<Shift>;
+  submitJoinedNurseIssueRequest: (message: string) => Promise<void>;
+  submitJoinedNurseSwapRequest: (
+    sourceBedId: string,
+    message: string,
+  ) => Promise<void>;
   workspaceState: ServerWorkspaceState;
 };
 
@@ -744,6 +757,127 @@ export function ServerWorkspaceProvider({
     [applyWorkspace, authState],
   );
 
+  const resolveNurseSwapRequest = useCallback(
+    async (
+      requestId: string,
+      nextStatus: Extract<NurseRequestStatus, "accepted" | "declined">,
+    ) => {
+      if (
+        authState.status !== "signed_in" ||
+        authState.profile.role !== "charge_nurse"
+      ) {
+        throw new Error("Sign in as charge to resolve requests.");
+      }
+
+      const supabase = getSupabaseClient();
+
+      if (!supabase) {
+        throw new Error("Supabase is not configured yet.");
+      }
+
+      setSaveErrorMessage("");
+      setSaveStatus("saving");
+
+      try {
+        await resolveShiftNurseSwapRequestOnServer(supabase, {
+          nextStatus,
+          requestId,
+        });
+        const workspace = await loadServerWorkspace(supabase, authState.profile);
+
+        applyWorkspace(workspace);
+        setSaveStatus("saved");
+      } catch (error) {
+        setSaveErrorMessage(
+          getErrorMessage(error, "Request could not be resolved."),
+        );
+        setSaveStatus("error");
+        throw error;
+      }
+    },
+    [applyWorkspace, authState],
+  );
+
+  const submitJoinedNurseIssueRequest = useCallback(
+    async (message: string) => {
+      if (authState.status !== "signed_in") {
+        throw new Error("Sign in before submitting an issue.");
+      }
+
+      if (joinedNurseAccessState.status !== "ready") {
+        throw new Error("Join a shift before submitting an issue.");
+      }
+
+      const supabase = getSupabaseClient();
+
+      if (!supabase) {
+        throw new Error("Supabase is not configured yet.");
+      }
+
+      setSaveErrorMessage("");
+      setSaveStatus("saving");
+
+      try {
+        await submitJoinedNurseIssueRequestToServer(supabase, { message });
+        await loadJoinedNurseAccess("manual");
+        setSaveStatus("saved");
+      } catch (error) {
+        setSaveErrorMessage(
+          getErrorMessage(error, "Issue request could not be submitted."),
+        );
+        setSaveStatus("error");
+        throw error;
+      }
+    },
+    [authState, joinedNurseAccessState.status, loadJoinedNurseAccess],
+  );
+
+  const submitJoinedNurseSwapRequest = useCallback(
+    async (sourceBedId: string, message: string) => {
+      if (authState.status !== "signed_in") {
+        throw new Error("Sign in before submitting a swap request.");
+      }
+
+      if (joinedNurseAccessState.status !== "ready") {
+        throw new Error("Join a shift before submitting a swap request.");
+      }
+
+      const sourceBedBelongsToNurse =
+        joinedNurseAccessState.assignmentView.assignedBeds.some(
+          (assignedBed) => assignedBed.bed.id === sourceBedId,
+        );
+
+      if (!sourceBedBelongsToNurse) {
+        throw new Error("Choose one of your assigned beds for the swap.");
+      }
+
+      const supabase = getSupabaseClient();
+
+      if (!supabase) {
+        throw new Error("Supabase is not configured yet.");
+      }
+
+      setSaveErrorMessage("");
+      setSaveStatus("saving");
+
+      try {
+        await submitJoinedNurseSwapRequestToServer(supabase, {
+          message,
+          sourceBedId,
+        });
+        await loadJoinedNurseAccess("manual");
+        setSaveStatus("saved");
+      } catch (error) {
+        setSaveErrorMessage(
+          getErrorMessage(error, "Swap request could not be submitted."),
+        );
+        setSaveStatus("error");
+        throw error;
+      }
+    },
+    [authState, joinedNurseAccessState, loadJoinedNurseAccess],
+  );
+
   const value = useMemo(
     () => ({
       activeParticipation: getActiveParticipation(
@@ -758,12 +892,15 @@ export function ServerWorkspaceProvider({
       realtimeConnectionState,
       retryLoadJoinedNurseAccess: loadJoinedNurseAccess,
       retryLoadWorkspace: loadWorkspace,
+      resolveNurseSwapRequest,
       saveActiveShift,
       saveErrorMessage,
       saveFloorTemplate,
       savePreviousShiftSnapshot,
       saveStatus,
       startActiveShift,
+      submitJoinedNurseIssueRequest,
+      submitJoinedNurseSwapRequest,
       workspaceState,
     }),
     [
@@ -774,12 +911,15 @@ export function ServerWorkspaceProvider({
       loadJoinedNurseAccess,
       loadWorkspace,
       realtimeConnectionState,
+      resolveNurseSwapRequest,
       saveActiveShift,
       saveErrorMessage,
       saveFloorTemplate,
       savePreviousShiftSnapshot,
       saveStatus,
       startActiveShift,
+      submitJoinedNurseIssueRequest,
+      submitJoinedNurseSwapRequest,
       workspaceState,
     ],
   );

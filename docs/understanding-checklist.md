@@ -40,6 +40,31 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-07-08 - Make Joined Nurse Requests Live
+
+- Task: Complete Phase 6 Tasks 5.1, 5.2, and 5.3 by letting joined nurses submit issue and swap requests through server RPCs, and letting charge nurses resolve pending swap requests through a focused server action.
+- Problem understanding:
+  - [ ] Joined nurse request writes could not safely use the full charge nurse active-shift save path.
+  - [ ] Realtime should treat server updates as signals to refetch, not as a second local sync system.
+  - [ ] Swap requests need source-bed validation so a nurse cannot request a swap for a bed outside her current assignment.
+- Solution understanding:
+  - [ ] `src/services/serverWorkspaceRepository.ts` now exposes request submit and resolve RPC boundaries.
+  - [ ] `src/store/ServerWorkspaceContext.tsx` wraps those RPCs in beginner-readable app actions and refreshes the relevant server view afterward.
+  - [ ] `src/screens/RegularNurseWorkspaceScreen.tsx` adds issue and swap request forms for the real joined nurse workspace.
+  - [ ] The joined nurse request UI now uses plain nurse-facing copy and two simple action cards instead of technical helper text.
+  - [ ] `src/screens/LocalRequestDetailScreen.tsx` resolves only pending swap requests through the focused charge action.
+  - [ ] `docs/phase-6/supabase-request-setup.md` documents the required server functions and validation rules.
+- Broader context:
+  - [ ] This makes Phase 6 nurse requests live while keeping request records on the active shift snapshot.
+  - [ ] Assignment changes still stay out of accepted swap decisions; only request status changes.
+  - [ ] Push notifications, offline queues, conflict resolution, drag-and-drop, board sharing, tablet layout, and AI remain out of scope.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: in progress
+
 ### 2026-06-30 - Link Nurse Code To Shift Access
 
 - Task: Complete Phase 6 Task 3.3 by accepting a valid nurse code, linking the signed-in profile to one shift nurse access record, consuming the invite, and opening the joined nurse workspace.

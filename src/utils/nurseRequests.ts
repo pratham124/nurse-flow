@@ -46,7 +46,7 @@ export function resolvePendingSwapRequest(
         ...request,
         resolvedAt: new Date().toISOString(),
         resolutionNote:
-          nextStatus === "accepted" ? "Accepted locally" : "Declined locally",
+          nextStatus === "accepted" ? "Accepted by charge" : "Declined by charge",
         status: nextStatus,
       };
     }),

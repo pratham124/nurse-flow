@@ -1,5 +1,13 @@
+import { useEffect, useState } from "react";
 import { router } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ErrorState } from "../components/ErrorState";
@@ -20,6 +28,61 @@ import type { JoinedNurseAssignmentView } from "../types/models";
 type AssignmentSummaryProps = {
   assignmentView: JoinedNurseAssignmentView;
 };
+
+type RequestActionsProps = {
+  assignmentView: JoinedNurseAssignmentView;
+  formError: string;
+  formSuccess: string;
+  issueMessage: string;
+  isSubmittingIssue: boolean;
+  isSubmittingSwap: boolean;
+  onIssueMessageChange: (message: string) => void;
+  onSelectSwapBed: (bedId: string) => void;
+  onSubmitIssue: () => void;
+  onSubmitSwap: () => void;
+  onSwapMessageChange: (message: string) => void;
+  selectedSwapBedId?: string;
+  swapMessage: string;
+};
+
+type RequestTextAreaProps = {
+  label: string;
+  onChangeText: (message: string) => void;
+  placeholder: string;
+  value: string;
+};
+
+type RequestActionButtonProps = {
+  disabled: boolean;
+  label: string;
+  onPress: () => void;
+};
+
+function getAssignedBedLabel(
+  assignedBed: JoinedNurseAssignmentView["assignedBeds"][number],
+) {
+  return `Room ${assignedBed.room.label} - Bed ${assignedBed.bed.label}`;
+}
+
+function hasDuplicatePendingRequest(
+  assignmentView: JoinedNurseAssignmentView,
+  message: string,
+  sourceBedId?: string,
+) {
+  const normalizedMessage = message.trim().toLowerCase();
+
+  if (!normalizedMessage) {
+    return false;
+  }
+
+  return assignmentView.requestHistory.some((request) => {
+    const sameMessage =
+      request.message.trim().toLowerCase() === normalizedMessage;
+    const sameSourceBed = (request.sourceBedId ?? "") === (sourceBedId ?? "");
+
+    return request.status === "pending" && sameMessage && sameSourceBed;
+  });
+}
 
 function AssignmentSummary({ assignmentView }: AssignmentSummaryProps) {
   return (
@@ -56,13 +119,13 @@ function AssignmentSummary({ assignmentView }: AssignmentSummaryProps) {
           ))
         ) : (
           <Text style={styles.emptyDetail}>
-            No assigned beds are linked yet.
+            No beds assigned yet.
           </Text>
         )}
       </View>
 
       <View style={styles.requestList}>
-        <Text style={styles.sectionLabel}>Request history</Text>
+        <Text style={styles.sectionLabel}>Updates</Text>
         {assignmentView.requestHistory.length ? (
           assignmentView.requestHistory.map((request) => (
             <View key={request.id} style={styles.requestRow}>
@@ -73,9 +136,181 @@ function AssignmentSummary({ assignmentView }: AssignmentSummaryProps) {
             </View>
           ))
         ) : (
-          <Text style={styles.emptyDetail}>No request history yet.</Text>
+          <Text style={styles.emptyDetail}>No updates yet.</Text>
         )}
       </View>
+    </View>
+  );
+}
+
+function RequestTextArea({
+  label,
+  onChangeText,
+  placeholder,
+  value,
+}: RequestTextAreaProps) {
+  return (
+    <View style={styles.requestField}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      <TextInput
+        multiline
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.neutral.textTertiary}
+        style={styles.requestTextArea}
+        textAlignVertical="top"
+        value={value}
+      />
+    </View>
+  );
+}
+
+function RequestActionButton({
+  disabled,
+  label,
+  onPress,
+}: RequestActionButtonProps) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.requestActionButton,
+        disabled ? styles.disabledRequestActionButton : null,
+        pressed && !disabled ? styles.requestActionButtonPressed : null,
+      ]}
+    >
+      <Text style={styles.requestActionButtonText}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function RequestActions({
+  assignmentView,
+  formError,
+  formSuccess,
+  issueMessage,
+  isSubmittingIssue,
+  isSubmittingSwap,
+  onIssueMessageChange,
+  onSelectSwapBed,
+  onSubmitIssue,
+  onSubmitSwap,
+  onSwapMessageChange,
+  selectedSwapBedId,
+  swapMessage,
+}: RequestActionsProps) {
+  const hasAssignedBeds = assignmentView.assignedBeds.length > 0;
+  const issueDuplicate = hasDuplicatePendingRequest(
+    assignmentView,
+    issueMessage,
+  );
+  const swapDuplicate = hasDuplicatePendingRequest(
+    assignmentView,
+    swapMessage,
+    selectedSwapBedId,
+  );
+  const canSubmitIssue =
+    Boolean(issueMessage.trim()) && !issueDuplicate && !isSubmittingIssue;
+  const canSubmitSwap =
+    Boolean(selectedSwapBedId) &&
+    Boolean(swapMessage.trim()) &&
+    !swapDuplicate &&
+    !isSubmittingSwap;
+
+  return (
+    <View style={styles.requestPanel}>
+      <View style={styles.requestPanelHeader}>
+        <Text style={styles.requestPanelTitle}>Need charge nurse help?</Text>
+        <Text style={styles.requestPanelSubtitle}>
+          Send a quick note while staying on your assignment screen.
+        </Text>
+      </View>
+
+      <View style={styles.requestCard}>
+        <Text style={styles.requestCardTitle}>Flag an issue</Text>
+        <RequestTextArea
+          label="What's going on?"
+          onChangeText={onIssueMessageChange}
+          placeholder="Example: Patient asking to speak with charge"
+          value={issueMessage}
+        />
+        {issueDuplicate ? (
+          <Text style={styles.formWarning}>
+            You already sent this issue. Charge can see it.
+          </Text>
+        ) : null}
+        <RequestActionButton
+          disabled={!canSubmitIssue}
+          label={isSubmittingIssue ? "Sending..." : "Send issue"}
+          onPress={onSubmitIssue}
+        />
+      </View>
+
+      <View style={styles.requestCard}>
+        <Text style={styles.requestCardTitle}>Ask for a swap</Text>
+        <Text style={styles.fieldLabel}>Which bed is this about?</Text>
+        {hasAssignedBeds ? (
+          <View style={styles.bedChoiceList}>
+            {assignmentView.assignedBeds.map((assignedBed) => {
+              const isSelected = assignedBed.bed.id === selectedSwapBedId;
+
+              return (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected }}
+                  key={assignedBed.bed.id}
+                  onPress={() => onSelectSwapBed(assignedBed.bed.id)}
+                  style={({ pressed }) => [
+                    styles.bedChoice,
+                    isSelected ? styles.selectedBedChoice : null,
+                    pressed ? styles.bedChoicePressed : null,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.bedChoiceText,
+                      isSelected ? styles.selectedBedChoiceText : null,
+                    ]}
+                  >
+                    {getAssignedBedLabel(assignedBed)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : (
+          <Text style={styles.emptyDetail}>
+            No assigned beds are available for swap requests.
+          </Text>
+        )}
+
+        <RequestTextArea
+          label="Why are you asking?"
+          onChangeText={onSwapMessageChange}
+          placeholder="Example: This pairing feels too heavy right now"
+          value={swapMessage}
+        />
+        {swapDuplicate ? (
+          <Text style={styles.formWarning}>
+            You already asked about this bed. Charge can see it.
+          </Text>
+        ) : null}
+        <RequestActionButton
+          disabled={!canSubmitSwap}
+          label={isSubmittingSwap ? "Sending..." : "Ask to swap"}
+          onPress={onSubmitSwap}
+        />
+      </View>
+
+      {formError ? (
+        <Text accessibilityRole="alert" style={styles.formError}>
+          {formError}
+        </Text>
+      ) : null}
+      {formSuccess ? <Text style={styles.formSuccess}>{formSuccess}</Text> : null}
     </View>
   );
 }
@@ -86,18 +321,114 @@ export default function RegularNurseWorkspaceScreen() {
     joinedNurseAccessState,
     joinedNurseRealtimeConnectionState,
     retryLoadJoinedNurseAccess,
+    submitJoinedNurseIssueRequest,
+    submitJoinedNurseSwapRequest,
   } = useServerWorkspace();
+  const [issueMessage, setIssueMessage] = useState("");
+  const [swapMessage, setSwapMessage] = useState("");
+  const [selectedSwapBedId, setSelectedSwapBedId] = useState<
+    string | undefined
+  >();
+  const [requestFormError, setRequestFormError] = useState("");
+  const [requestFormSuccess, setRequestFormSuccess] = useState("");
+  const [isSubmittingIssue, setIsSubmittingIssue] = useState(false);
+  const [isSubmittingSwap, setIsSubmittingSwap] = useState(false);
   const displayName =
     authState.status === "signed_in" ? authState.profile.displayName : "Nurse";
+  const assignmentView =
+    joinedNurseAccessState.status === "ready"
+      ? joinedNurseAccessState.assignmentView
+      : undefined;
+
+  useEffect(() => {
+    if (!assignmentView) {
+      setSelectedSwapBedId(undefined);
+      return;
+    }
+
+    const selectedBedStillAssigned = assignmentView.assignedBeds.some(
+      (assignedBed) => assignedBed.bed.id === selectedSwapBedId,
+    );
+
+    if (!selectedBedStillAssigned) {
+      setSelectedSwapBedId(assignmentView.assignedBeds[0]?.bed.id);
+    }
+  }, [assignmentView, selectedSwapBedId]);
 
   function handleBackHome() {
     router.replace("/");
   }
 
+  async function handleSubmitIssue() {
+    if (!assignmentView) {
+      return;
+    }
+
+    if (hasDuplicatePendingRequest(assignmentView, issueMessage)) {
+      setRequestFormError("That issue is already pending.");
+      setRequestFormSuccess("");
+      return;
+    }
+
+    try {
+      setIsSubmittingIssue(true);
+      setRequestFormError("");
+      setRequestFormSuccess("");
+      await submitJoinedNurseIssueRequest(issueMessage);
+      setIssueMessage("");
+      setRequestFormSuccess("Issue sent to charge.");
+    } catch (error) {
+      setRequestFormError(
+        error instanceof Error
+          ? error.message
+          : "Issue request could not be submitted.",
+      );
+    } finally {
+      setIsSubmittingIssue(false);
+    }
+  }
+
+  async function handleSubmitSwap() {
+    if (!assignmentView || !selectedSwapBedId) {
+      setRequestFormError("Choose one of your assigned beds for the swap.");
+      setRequestFormSuccess("");
+      return;
+    }
+
+    if (
+      hasDuplicatePendingRequest(assignmentView, swapMessage, selectedSwapBedId)
+    ) {
+      setRequestFormError("That swap request is already pending.");
+      setRequestFormSuccess("");
+      return;
+    }
+
+    try {
+      setIsSubmittingSwap(true);
+      setRequestFormError("");
+      setRequestFormSuccess("");
+      await submitJoinedNurseSwapRequest(selectedSwapBedId, swapMessage);
+      setSwapMessage("");
+      setRequestFormSuccess("Swap request sent to charge.");
+    } catch (error) {
+      setRequestFormError(
+        error instanceof Error
+          ? error.message
+          : "Swap request could not be submitted.",
+      );
+    } finally {
+      setIsSubmittingSwap(false);
+    }
+  }
+
   return (
     <SafeAreaView style={styles.screen}>
-      <View style={styles.card}>
-        <Text style={styles.eyebrow}>Joined nurse workspace</Text>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.card}>
+        <Text style={styles.eyebrow}>My shift</Text>
         <Text style={styles.title}>{displayName}</Text>
 
         {joinedNurseAccessState.status === "ready" ? (
@@ -143,9 +474,26 @@ export default function RegularNurseWorkspaceScreen() {
         ) : null}
 
         {joinedNurseAccessState.status === "ready" ? (
-          <AssignmentSummary
-            assignmentView={joinedNurseAccessState.assignmentView}
-          />
+          <>
+            <AssignmentSummary
+              assignmentView={joinedNurseAccessState.assignmentView}
+            />
+            <RequestActions
+              assignmentView={joinedNurseAccessState.assignmentView}
+              formError={requestFormError}
+              formSuccess={requestFormSuccess}
+              issueMessage={issueMessage}
+              isSubmittingIssue={isSubmittingIssue}
+              isSubmittingSwap={isSubmittingSwap}
+              onIssueMessageChange={setIssueMessage}
+              onSelectSwapBed={setSelectedSwapBedId}
+              onSubmitIssue={handleSubmitIssue}
+              onSubmitSwap={handleSubmitSwap}
+              onSwapMessageChange={setSwapMessage}
+              selectedSwapBedId={selectedSwapBedId}
+              swapMessage={swapMessage}
+            />
+          </>
         ) : null}
 
         {joinedNurseAccessState.status === "error" ? (
@@ -166,7 +514,8 @@ export default function RegularNurseWorkspaceScreen() {
         >
           <Text style={styles.homeButtonText}>Back to home</Text>
         </Pressable>
-      </View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -175,6 +524,9 @@ const styles = StyleSheet.create({
   screen: {
     backgroundColor: colors.neutral.backgroundPrimary,
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: "center",
     padding: spacing.xl,
   },
@@ -273,11 +625,136 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     padding: spacing.md,
   },
+  requestPanel: {
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    gap: spacing.md,
+    padding: spacing.md,
+    ...shadows.sm,
+  },
+  requestPanelHeader: {
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xs,
+  },
+  requestPanelTitle: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.lg,
+    fontWeight: fontWeight.bold,
+  },
+  requestPanelSubtitle: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.medium,
+    lineHeight: 18,
+  },
+  requestCard: {
+    backgroundColor: colors.neutral.backgroundTertiary,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.md,
+    borderWidth: 0.5,
+    gap: spacing.md,
+    padding: spacing.md,
+  },
+  requestCardTitle: {
+    color: colors.brand.burgundy,
+    fontSize: textSize.md,
+    fontWeight: fontWeight.bold,
+  },
   requestTitle: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.sm,
     fontWeight: fontWeight.bold,
     textTransform: "capitalize",
+  },
+  fieldLabel: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
+  requestField: {
+    gap: spacing.sm,
+  },
+  requestTextArea: {
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.md,
+    borderWidth: 0.5,
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.md,
+    lineHeight: 20,
+    minHeight: 84,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  bedChoiceList: {
+    gap: spacing.sm,
+  },
+  bedChoice: {
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.md,
+    borderWidth: 0.5,
+    minHeight: 42,
+    justifyContent: "center",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  selectedBedChoice: {
+    backgroundColor: colors.brand.burgundy10,
+    borderColor: colors.brand.burgundy,
+  },
+  bedChoicePressed: {
+    opacity: 0.82,
+  },
+  bedChoiceText: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
+    lineHeight: 18,
+  },
+  selectedBedChoiceText: {
+    color: colors.brand.burgundy,
+  },
+  formWarning: {
+    color: colors.status.amber800,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
+    lineHeight: 18,
+  },
+  formError: {
+    color: colors.status.red700,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
+    lineHeight: 18,
+  },
+  formSuccess: {
+    color: colors.status.green800,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
+    lineHeight: 18,
+  },
+  requestActionButton: {
+    alignItems: "center",
+    backgroundColor: colors.brand.burgundy,
+    borderRadius: radius.md,
+    justifyContent: "center",
+    minHeight: 46,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    ...shadows.sm,
+  },
+  disabledRequestActionButton: {
+    opacity: 0.48,
+  },
+  requestActionButtonPressed: {
+    opacity: 0.82,
+  },
+  requestActionButtonText: {
+    color: colors.neutral.surface,
+    fontSize: textSize.action,
+    fontWeight: fontWeight.semibold,
   },
   statLabel: {
     color: colors.neutral.textSecondary,

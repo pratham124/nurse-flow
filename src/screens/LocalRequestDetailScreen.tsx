@@ -10,7 +10,6 @@ import {
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { colors, fontWeight, radius, shadows, spacing, textSize } from "../theme/tokens";
 import { getNurseRequestDisplayById } from "../utils/nurseRequestDisplay";
-import { resolvePendingSwapRequest } from "../utils/nurseRequests";
 import { assignmentFlow } from "../utils/workflowFlows";
 
 type DetailRowProps = {
@@ -32,8 +31,9 @@ function DetailRow({ label, value }: DetailRowProps) {
 }
 
 export default function LocalRequestDetailScreen() {
-  const { activeShift, saveActiveShift } = useServerWorkspace();
+  const { activeShift, resolveNurseSwapRequest } = useServerWorkspace();
   const [serverSaveError, setServerSaveError] = useState("");
+  const [isResolving, setIsResolving] = useState(false);
   const { requestId } = useLocalSearchParams<{
     requestId?: string | string[];
   }>();
@@ -52,15 +52,10 @@ export default function LocalRequestDetailScreen() {
       return;
     }
 
-    const nextShift = resolvePendingSwapRequest(
-      activeShift,
-      selectedRequestId,
-      nextStatus,
-    );
-
     try {
+      setIsResolving(true);
       setServerSaveError("");
-      await saveActiveShift(nextShift);
+      await resolveNurseSwapRequest(selectedRequestId, nextStatus);
     } catch (error) {
       const message =
         error instanceof Error
@@ -68,6 +63,8 @@ export default function LocalRequestDetailScreen() {
           : "Request update could not be saved. Try again.";
 
       setServerSaveError(message);
+    } finally {
+      setIsResolving(false);
     }
   }
 
@@ -81,7 +78,7 @@ export default function LocalRequestDetailScreen() {
       onPrimaryPress={() => router.push("/flags")}
       primaryLabel="Back to flags"
       subtitle=""
-      title={request ? request.typeLabel : "Local request"}
+      title={request ? request.typeLabel : "Request"}
     >
       {request ? (
         <View style={styles.content}>
@@ -90,7 +87,7 @@ export default function LocalRequestDetailScreen() {
               <View style={styles.chipRow}>
                 <SummaryChip label={request.typeLabel} />
                 <SummaryChip label={request.statusLabel} />
-                <SummaryChip label="Local only" />
+                <SummaryChip label="Live request" />
               </View>
 
               <DetailRow label="Requester" value={request.requesterName} />
@@ -112,15 +109,18 @@ export default function LocalRequestDetailScreen() {
             <WorkflowSection title="Swap decision">
               <View style={styles.decisionCard}>
                 <Text style={styles.decisionText}>
-                  Update this local request status. Bed assignments stay
+                  Update this request status. Bed assignments stay
                   unchanged.
                 </Text>
                 <View style={styles.decisionButtonRow}>
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityState={{ disabled: isResolving }}
+                    disabled={isResolving}
                     onPress={() => handleResolveSwap("declined")}
                     style={({ pressed }) => [
                       styles.secondaryButton,
+                      isResolving ? styles.disabledButton : null,
                       pressed ? styles.buttonPressed : null,
                     ]}
                   >
@@ -128,9 +128,12 @@ export default function LocalRequestDetailScreen() {
                   </Pressable>
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityState={{ disabled: isResolving }}
+                    disabled={isResolving}
                     onPress={() => handleResolveSwap("accepted")}
                     style={({ pressed }) => [
                       styles.primaryButton,
+                      isResolving ? styles.disabledButton : null,
                       pressed ? styles.buttonPressed : null,
                     ]}
                   >
@@ -145,7 +148,7 @@ export default function LocalRequestDetailScreen() {
         <View style={styles.emptyCard}>
           <Text style={styles.emptyTitle}>Request unavailable</Text>
           <Text style={styles.emptyMessage}>
-            Return to Flags and choose a local request from the active shift.
+            Return to Flags and choose a request from the active shift.
           </Text>
         </View>
       )}
@@ -246,6 +249,9 @@ const styles = StyleSheet.create({
   },
   buttonPressed: {
     opacity: 0.82,
+  },
+  disabledButton: {
+    opacity: 0.48,
   },
   secondaryButtonText: {
     color: colors.neutral.textPrimary,

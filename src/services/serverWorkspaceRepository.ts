@@ -6,6 +6,8 @@ import type {
   FloorTemplateRecord,
   JoinedNurseAssignedBed,
   JoinedNurseAssignmentView,
+  LocalId,
+  NurseRequestStatus,
   PreviousShiftSnapshot,
   ServerPreviousShiftSnapshot,
   ServerWorkspace,
@@ -77,6 +79,20 @@ type ShiftNurseAccessSnapshot = {
   status?: string;
   updatedAt?: string;
   updated_at?: string;
+};
+
+type SubmitJoinedNurseIssueRequestInput = {
+  message: string;
+};
+
+type SubmitJoinedNurseSwapRequestInput = {
+  message: string;
+  sourceBedId: LocalId;
+};
+
+type ResolveShiftNurseSwapRequestInput = {
+  nextStatus: Extract<NurseRequestStatus, "accepted" | "declined">;
+  requestId: LocalId;
 };
 
 type ChargeProfileIdentifier = Pick<UserProfile, "id" | "role">;
@@ -439,6 +455,63 @@ export async function loadJoinedNurseAssignmentView(
     data as JoinedNurseAssignmentRpcResult,
     profile,
   );
+}
+
+export async function submitJoinedNurseIssueRequest(
+  supabase: SupabaseClient,
+  request: SubmitJoinedNurseIssueRequestInput,
+) {
+  const message = request.message.trim();
+
+  if (!message) {
+    throw new Error("Add issue details before submitting.");
+  }
+
+  const { error } = await supabase.rpc("submit_joined_nurse_issue_request", {
+    request_message: message,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+export async function submitJoinedNurseSwapRequest(
+  supabase: SupabaseClient,
+  request: SubmitJoinedNurseSwapRequestInput,
+) {
+  const message = request.message.trim();
+
+  if (!request.sourceBedId) {
+    throw new Error("Choose the assigned bed for this swap request.");
+  }
+
+  if (!message) {
+    throw new Error("Add swap details before submitting.");
+  }
+
+  const { error } = await supabase.rpc("submit_joined_nurse_swap_request", {
+    request_message: message,
+    source_bed_id: request.sourceBedId,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+export async function resolveShiftNurseSwapRequest(
+  supabase: SupabaseClient,
+  request: ResolveShiftNurseSwapRequestInput,
+) {
+  const { error } = await supabase.rpc("resolve_shift_nurse_swap_request", {
+    next_status: request.nextStatus,
+    request_id: request.requestId,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }
 
 export async function saveServerFloorTemplate(
