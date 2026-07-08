@@ -40,6 +40,67 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-07-08 - Plan Future Request Threads
+
+- Task: Update `docs/phases.md` so future request follow-up is documented as request threads rather than a global chat feature.
+- Problem understanding:
+  - [ ] Phase 6 supports live request cards and swap status decisions, but does not support request conversations or issue resolution.
+  - [ ] A global chat inbox could make charge nurse work harder to triage than request-attached follow-up.
+- Solution understanding:
+  - [ ] Phase 8 now includes threaded conversations attached to issue and swap requests.
+  - [ ] Phase 8 now includes issue acknowledgement/resolution and a clearer swap completion flow.
+  - [ ] No runtime code, data model, or server behavior changed.
+- Broader context:
+  - [ ] Request threads preserve the charge nurse request queue while allowing future back-and-forth.
+  - [ ] Swap acceptance remains separate from actually changing assignments until a later assignment override workflow exists.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
+### 2026-07-08 - Plan Later Assignment Optimizer Phase
+
+- Task: Update `docs/phases.md` so the Phase 1 deferred production assignment optimizer is represented as a committed later phase.
+- Problem understanding:
+  - [ ] Phase 1's local assignment algorithm proves the workflow but is not a clinical-grade optimizer.
+  - [ ] Phase 5 adds backend/auth/server persistence, but should not silently expand into optimization work.
+- Solution understanding:
+  - [ ] `docs/phases.md` now excludes a production assignment optimizer from Phase 5.
+  - [ ] `docs/phases.md` now defines Phase 9 as the production assignment optimizer phase.
+  - [ ] No runtime code, data model, or server behavior changed.
+- Broader context:
+  - [ ] The app can keep using the understandable local/server snapshot assignment flow until optimizer work is explicitly promoted.
+  - [ ] A future optimizer should be planned separately with its own constraints, tests, and safety checks.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
+### 2026-07-08 - Plan Later Break Scheduling Optimizer Phase
+
+- Task: Update `docs/phases.md` so the Phase 4 deferred advanced break scheduling logic is represented as a committed later phase.
+- Problem understanding:
+  - [ ] Phase 4's local break scheduler proves the workflow but intentionally avoids complex multi-break scheduling and AI-generated schedules.
+  - [ ] Advanced break scheduling should use assignment results, room coverage, nurse experience, acuity, and activity level after those workflows are stable.
+- Solution understanding:
+  - [ ] `docs/phases.md` now excludes complex multi-break scheduling from Phase 4.
+  - [ ] `docs/phases.md` now defines Phase 10 as the advanced break scheduling optimizer phase.
+  - [ ] Phase 10 requires deterministic safety constraints before optional AI-assisted suggestions.
+  - [ ] No runtime code, data model, or server behavior changed.
+- Broader context:
+  - [ ] The app can keep the beginner-readable Phase 4 local scheduler until advanced break logic is explicitly implemented.
+  - [ ] A future break optimizer should be planned separately with safety constraints, charge nurse review, and complex scenario tests.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
 ### 2026-07-08 - Make Joined Nurse Requests Live
 
 - Task: Complete Phase 6 Tasks 5.1, 5.2, and 5.3 by letting joined nurses submit issue and swap requests through server RPCs, and letting charge nurses resolve pending swap requests through a focused server action.

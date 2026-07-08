@@ -165,6 +165,7 @@ Add local break scheduling after the assignment workflow is stable.
 - Push notifications for upcoming breaks.
 - Backend break storage.
 - Realtime break updates across devices.
+- Complex multi-break scheduling.
 - AI-generated schedules.
 
 ### Success Criteria
@@ -199,6 +200,7 @@ Introduce real accounts and server-side data only after the local product flow i
 - Deep links.
 - Offline write queue.
 - Drag-and-drop assignment override.
+- Production assignment optimizer.
 - AI.
 
 ### Success Criteria
@@ -276,17 +278,20 @@ Improve reliability and awareness when users are backgrounded or temporarily dis
 - Sync behavior is understandable and manually testable.
 - Conflicts do not silently corrupt shift data.
 
-## Phase 8: Drag-and-Drop, Sharing, and Polish
+## Phase 8: Drag-and-Drop, Request Threads, Sharing, and Polish
 
 ### Goal
 
-Add advanced interaction and presentation improvements after the core system is reliable.
+Add advanced interaction, request follow-up, and presentation improvements after the core system is reliable.
 
 ### Included Features
 
 - Drag-and-drop assignment override.
 - Inline imbalance flags after manual moves.
 - Non-blocking acknowledgement of override warnings.
+- Threaded conversations attached to issue and swap requests, not a global chat inbox.
+- Issue acknowledgement or resolution so charge nurses can mark an issue as reviewed or resolved.
+- Clear swap completion flow that separates accepting a swap request from actually changing assignments.
 - Share board snapshot.
 - Improved visual polish for the charge nurse floor board.
 - Tablet layout.
@@ -306,9 +311,75 @@ Add advanced interaction and presentation improvements after the core system is 
 
 - A charge nurse can adjust assignments with drag-and-drop.
 - The app clearly flags risky or imbalanced drag-and-drop assignment changes.
+- A charge nurse and regular nurse can follow up on a request inside that request's thread.
+- Issue requests can be marked reviewed or resolved without changing assignment data.
+- Swap requests clearly show the difference between accepted, declined, and assignment changes that have actually been completed.
 - The charge nurse can share a readable board snapshot.
 - The app remains usable on phone screens and gains a better tablet experience.
 - The UI feels polished without changing the proven core workflow.
+
+## Phase 9: Production Assignment Optimizer
+
+### Goal
+
+Replace the Phase 1 frontend assignment prototype with a production-grade backend optimizer that can safely handle more complex staffing, acuity, and room-coverage scenarios.
+
+### Included Features
+
+- Backend assignment calculation service.
+- Deterministic optimization across generated teams, room coverage, and bed assignments together.
+- Hard constraints for nurse max load, red-bed RN eligibility, occupied-bed-only assignment, and room coverage eligibility.
+- Optimization objectives that first minimize unassigned occupied beds, then prefer lower acuity load, lower patient count, and stable nurse order.
+- Red-bed tie-breaking that prefers experienced RNs, then mid RNs, then new grad RNs when multiple eligible RNs are otherwise equal.
+- Complex scenario test suite with many rooms, nurses, bed counts, max loads, and acuity mixes.
+
+### Excluded Features
+
+- AI-based assignment.
+- EHR or EMR integration.
+- Automated acuity from vitals.
+- Multi-hospital admin tools.
+
+### Success Criteria
+
+- No occupied bed remains unassigned when a valid assignment exists within the configured constraints.
+- A lower-census room does not strand capacity needed by a higher-census room.
+- Red beds are never assigned to LPNs.
+- Red beds with multiple otherwise-equal eligible RNs prefer experienced RN, then mid RN, then new grad RN.
+- The same inputs produce the same assignment result.
+- The optimizer can be manually tested and regression-tested against complex staffing scenarios.
+
+## Phase 10: Advanced Break Scheduling Optimizer
+
+### Goal
+
+Replace the Phase 4 local break scheduler with a production-grade scheduling optimizer that can handle complex break patterns after assignment results, room coverage, nurse experience, and acuity context are available.
+
+### Included Features
+
+- Backend or service-backed break schedule calculation.
+- Support for complex multi-break scheduling when a shift requires more than one break per nurse.
+- Scheduling inputs from assigned beds, room coverage, nurse experience, floor activity level, acuity mix, and generated assignment results.
+- Coverage constraints that avoid leaving room zones, doctor sides, or high-acuity patients without appropriate nurse coverage.
+- Deterministic safety rules before any AI-assisted recommendations are used.
+- Optional AI-assisted break schedule suggestions only after the deterministic constraints and validation rules are in place.
+- Complex scenario test suite with larger floors, different activity levels, multiple breaks, mixed nurse experience, and high-acuity coverage needs.
+
+### Excluded Features
+
+- Automated acuity from vitals.
+- EHR or EMR integration.
+- Multi-hospital admin tools.
+- Fully autonomous staffing decisions without charge nurse review.
+
+### Success Criteria
+
+- Break schedules keep required nurse coverage available when a valid safe schedule exists.
+- Multiple breaks per nurse can be scheduled without overlapping unsafe room-zone or doctor-side coverage.
+- High-acuity rooms avoid unsafe coverage gaps when eligible nurses are available.
+- The same deterministic inputs produce the same baseline schedule.
+- AI-assisted suggestions, if enabled, remain reviewable and cannot bypass hard safety constraints.
+- The optimizer can be manually tested and regression-tested against complex break scenarios.
 
 ## Future Considerations
 
