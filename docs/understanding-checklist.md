@@ -40,6 +40,26 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-07-08 - Rework Home Header
+
+- Task: Rework the home header so the brand sits in a burgundy diagonal panel and account actions sit on the neutral side.
+- Problem understanding:
+  - [ ] The previous header repeated role text that did not help the user.
+  - [ ] The `NF` logo mark added visual weight without adding useful information.
+- Solution understanding:
+  - [ ] `src/screens/HomeScreen.tsx` now shows `Nurse Flow` as white text inside the burgundy brand panel.
+  - [ ] The user's display name and `Sign out` action remain on the neutral side.
+  - [ ] The sign-out behavior did not change.
+- Broader context:
+  - [ ] This is a visual polish change, not an auth or navigation change.
+  - [ ] The header still separates product identity from session controls.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
 ### 2026-07-08 - Plan Future Request Threads
 
 - Task: Update `docs/phases.md` so future request follow-up is documented as request threads rather than a global chat feature.

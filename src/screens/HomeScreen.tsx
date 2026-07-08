@@ -411,16 +411,14 @@ export default function Index() {
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.header}>
-        <View style={styles.headerTitleRow}>
-          <View style={styles.brandCluster}>
-            <View style={styles.brandMark}>
-              <Text style={styles.brandMarkText}>NF</Text>
-            </View>
-            <View style={styles.headerTitleGroup}>
-              <Text style={styles.title}>NurseFlow</Text>
-              <Text style={styles.subtitle}>Charge nurse</Text>
-            </View>
-          </View>
+        <View style={styles.brandPanel}>
+          <Text style={styles.brandTitle}>Nurse Flow</Text>
+        </View>
+
+        <View style={styles.accountPanel}>
+          {profile ? (
+            <Text style={styles.accountName}>{profile.displayName}</Text>
+          ) : null}
           <Pressable
             accessibilityRole="button"
             onPress={handleSignOut}
@@ -432,12 +430,6 @@ export default function Index() {
             <Text style={styles.signOutButtonText}>Sign out</Text>
           </Pressable>
         </View>
-        {profile ? (
-          <View style={styles.accountPill}>
-            <View style={styles.accountDot} />
-            <Text style={styles.accountText}>{profile.displayName}</Text>
-          </View>
-        ) : null}
       </View>
 
       <ScrollView
@@ -623,74 +615,46 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral.backgroundPrimary,
   },
   header: {
-    backgroundColor: colors.neutral.surface,
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.lg,
-    gap: spacing.md,
     borderBottomWidth: 0.5,
     borderBottomColor: colors.neutral.borderTertiary,
-  },
-  headerTitleRow: {
     alignItems: "center",
+    backgroundColor: colors.neutral.surface,
     flexDirection: "row",
-    gap: spacing.md,
-    justifyContent: "space-between",
+    minHeight: 82,
+    overflow: "hidden",
   },
-  brandCluster: {
-    alignItems: "center",
-    flex: 1,
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  brandMark: {
-    alignItems: "center",
+  brandPanel: {
     backgroundColor: colors.brand.burgundy,
-    borderRadius: radius.md,
-    height: 38,
+    alignSelf: "stretch",
     justifyContent: "center",
-    width: 38,
+    minWidth: 142,
+    paddingLeft: spacing.xl,
+    paddingRight: spacing.lg,
+    width: 156,
   },
-  brandMarkText: {
+  brandTitle: {
     color: colors.neutral.surface,
-    fontSize: textSize.sm,
+    fontSize: textSize.md,
     fontWeight: fontWeight.heavy,
+    lineHeight: 20,
   },
-  headerTitleGroup: {
-    flex: 1,
-    gap: 2,
-  },
-  title: {
-    color: colors.neutral.textPrimary,
-    fontSize: 21,
-    fontWeight: fontWeight.heavy,
-    letterSpacing: 0,
-  },
-  subtitle: {
-    color: colors.neutral.textSecondary,
-    fontSize: textSize.sm,
-    fontWeight: fontWeight.semibold,
-  },
-  accountPill: {
+  accountPanel: {
     alignItems: "center",
-    alignSelf: "flex-start",
-    backgroundColor: colors.neutral.backgroundSecondary,
-    borderRadius: radius.pill,
+    flex: 1,
     flexDirection: "row",
-    gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    gap: spacing.sm,
+    justifyContent: "flex-end",
+    minWidth: 0,
+    paddingLeft: spacing.lg,
+    paddingRight: spacing.xl,
+    paddingVertical: spacing.md,
   },
-  accountDot: {
-    backgroundColor: colors.status.greenIcon,
-    borderRadius: 3,
-    height: 6,
-    width: 6,
-  },
-  accountText: {
-    color: colors.neutral.textSecondary,
-    fontSize: textSize.sm,
+  accountName: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.md,
+    flexShrink: 1,
     fontWeight: fontWeight.semibold,
+    textAlign: "right",
   },
   signOutButton: {
     alignItems: "center",
