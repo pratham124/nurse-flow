@@ -40,6 +40,32 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-07-08 - Plan Phase 7 Push Notifications and Lightweight Connection Resilience
+
+- Task: Create and revise Phase 7 planning docs for push notifications, read-only cached views during brief disconnects, reconnect states, and disabled-action copy.
+- Problem understanding:
+  - [ ] The first Phase 7 plan included an offline write queue, but that is probably overbuilt for a hospital-first MVP.
+  - [ ] Phase 7 should add background awareness and temporary-disconnection readability without pretending offline edits are safely saved.
+  - [ ] Offline write queues, drag-and-drop override, board snapshot sharing, tablet layout, request threads, global chat, AI, production assignment optimization, and advanced break optimization remain later-phase work.
+- Solution understanding:
+  - [ ] `docs/phase-7/user-stories.md` defines the Phase 7 user stories and acceptance criteria.
+  - [ ] `docs/phase-7/data-model.md` documents push token records, notification events, cached shift views, and connection display state.
+  - [ ] `docs/phase-7/mobile-design.md` documents phone-first notification, cached-view, reconnect, and disabled-action UI behavior.
+  - [ ] `docs/phase-7/screens.md` maps the affected screens and recovery states.
+  - [ ] `docs/phase-7/tasks.md` orders small implementation tasks and marks only planning Task 0.1 done.
+  - [ ] `docs/phases.md` now describes Phase 7 as lightweight connection resilience rather than full offline sync.
+- Broader context:
+  - [ ] Phase 7 builds on Phase 6 realtime/invite behavior instead of replacing it.
+  - [ ] Push notifications are background awareness, not source-of-truth app state.
+  - [ ] Cached views are readable saved copies, not permission to edit disconnected shift data.
+  - [ ] Requiring a connection for writes keeps the MVP simpler and easier to explain.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Documentation-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
 ### 2026-07-08 - Phase 6 Manual Pass Prep
 
 - Task: Prepare Phase 6 Tasks 7.1 through 7.6 by capturing automated validation evidence, adding a manual two-session checklist, completing the scope review, and clarifying the Phase 6 service boundaries.

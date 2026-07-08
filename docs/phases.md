@@ -232,7 +232,7 @@ Allow multiple devices to participate in the same active shift.
 ### Excluded Features
 
 - Push notifications.
-- Offline write queue and conflict resolution.
+- Offline write queue.
 - Drag-and-drop assignment override.
 - AI.
 - Tablet layout.
@@ -245,11 +245,11 @@ Allow multiple devices to participate in the same active shift.
 - Issue flags and swap requests appear for the charge nurse in-app.
 - Invite links stop working after the shift ends.
 
-## Phase 7: Push Notifications and Offline Resilience
+## Phase 7: Push Notifications and Lightweight Connection Resilience
 
 ### Goal
 
-Improve reliability and awareness when users are backgrounded or temporarily disconnected.
+Improve awareness when users are backgrounded and keep the app readable during brief connection drops without adding a full offline write/sync system.
 
 ### Included Features
 
@@ -259,24 +259,28 @@ Improve reliability and awareness when users are backgrounded or temporarily dis
 - Push notifications for upcoming breaks.
 - Push notifications for admissions, discharges, imbalance alerts, and unassigned beds where useful.
 - Offline read access to the most recent floor board.
-- Offline write queue for supported actions.
-- Sync queued writes when connectivity returns.
-- Basic conflict handling for queued writes.
+- Offline read access to the most recent joined nurse assignment.
+- Clear reconnecting, disconnected, stale-copy, and refresh-failed states.
+- Disabled-action copy for server-required writes while disconnected.
 
 ### Excluded Features
 
+- Offline write queue.
 - Drag-and-drop assignment override.
 - Share board snapshot.
 - Tablet layout.
+- Request threads.
+- Global chat.
 - AI.
 
 ### Success Criteria
 
 - Users receive important notifications when the app is backgrounded.
 - The floor board remains viewable during a connection drop.
-- Supported offline changes sync when the device reconnects.
-- Sync behavior is understandable and manually testable.
-- Conflicts do not silently corrupt shift data.
+- Joined nurses can still view their most recent nurse-scoped assignment during a connection drop.
+- Disconnected users clearly understand which actions require reconnecting.
+- Reconnect refreshes from server state.
+- No offline writes are queued or synced in this phase.
 
 ## Phase 8: Drag-and-Drop, Request Threads, Sharing, and Polish
 
