@@ -55,23 +55,33 @@ function getNurseRequestDisplay(
 ): NurseRequestDisplay {
   return {
     bedContext: getRequestBedContext(activeShift, request),
-    createdAtText: new Date(request.createdAt).toLocaleString(),
+    createdAtText: formatRequestTimestamp(request.createdAt),
     id: request.id,
     message: request.message,
     requestStatus: request.status,
     requestType: request.type,
     requesterName: request.requestingNurseName,
     resolvedAtText: request.resolvedAt
-      ? new Date(request.resolvedAt).toLocaleString()
+      ? formatRequestTimestamp(request.resolvedAt)
       : undefined,
     statusLabel: getRequestStatusLabel(request),
     typeLabel: getRequestTypeLabel(request),
   };
 }
 
+function formatRequestTimestamp(timestamp: string) {
+  return new Date(timestamp).toLocaleString(undefined, {
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    month: "numeric",
+    year: "numeric",
+  });
+}
+
 function getRequestBedContext(activeShift: Shift, request: NurseRequest) {
   if (!request.sourceBedId) {
-    return request.type === "swap" ? "Bed no longer available" : "No bed context";
+    return request.type === "swap" ? "Bed no longer available" : "No specific bed";
   }
 
   const bed = activeShift.beds.find(

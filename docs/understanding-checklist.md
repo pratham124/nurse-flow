@@ -54,6 +54,7 @@ For each task, add a dated section with:
   - [ ] The joined nurse request UI now uses plain nurse-facing copy and two simple action cards instead of technical helper text.
   - [ ] The joined nurse assignment summary groups beds by room, puts break info in a separate `Breaks` section, and keeps longer room/request lists in contained scroll areas.
   - [ ] `src/screens/RequestDetailScreen.tsx` resolves only pending swap requests through the focused charge action.
+  - [ ] `src/screens/RequestDetailScreen.tsx` shows issue requests as review-only charge items and request timestamps no longer include seconds.
   - [ ] `docs/phase-6/supabase-request-setup.md` documents the required server functions and validation rules.
 - Broader context:
   - [ ] This makes Phase 6 nurse requests live while keeping request records on the active shift snapshot.

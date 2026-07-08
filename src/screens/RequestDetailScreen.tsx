@@ -46,6 +46,10 @@ export default function RequestDetailScreen() {
     Boolean(request) &&
     request?.requestType === "swap" &&
     request.requestStatus === "pending";
+  const showIssueActionNote =
+    Boolean(request) &&
+    request?.requestType === "issue" &&
+    request.requestStatus === "pending";
 
   async function handleResolveSwap(nextStatus: "accepted" | "declined") {
     if (!selectedRequestId || !activeShift) {
@@ -140,6 +144,18 @@ export default function RequestDetailScreen() {
                     <Text style={styles.primaryButtonText}>Accept</Text>
                   </Pressable>
                 </View>
+              </View>
+            </WorkflowSection>
+          ) : null}
+
+          {showIssueActionNote ? (
+            <WorkflowSection title="Charge action">
+              <View style={styles.decisionCard}>
+                <Text style={styles.decisionText}>
+                  Review this issue with the nurse. Issue requests are
+                  tracked here, but they do not need an accept or decline
+                  decision in the app.
+                </Text>
               </View>
             </WorkflowSection>
           ) : null}
