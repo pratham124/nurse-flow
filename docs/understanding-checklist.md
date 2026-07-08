@@ -40,6 +40,29 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-07-08 - Phase 6 Manual Pass Prep
+
+- Task: Prepare Phase 6 Tasks 7.1 through 7.6 by capturing automated validation evidence, adding a manual two-session checklist, completing the scope review, and clarifying the Phase 6 service boundaries.
+- Problem understanding:
+  - [ ] Tasks 7.1 through 7.4 are manual validation tasks, not feature-build tasks.
+  - [ ] Two-session realtime and invite behavior should not be marked done from TypeScript, lint, or export alone.
+  - [ ] The Phase 6 scope test must avoid adding push, offline queues, conflict systems, drag-and-drop override, board sharing, tablet layout, or AI.
+- Solution understanding:
+  - [ ] `docs/phase-6/manual-test-pass.md` records automated validation and the remaining manual checklist for 7.1 through 7.4.
+  - [ ] `docs/phase-6/tasks.md` marks only Tasks 7.5 and 7.6 done because those were actually completed in this pass.
+  - [ ] `src/services/README.md` explains that invite code work belongs in `shiftInviteRepository` and realtime events should trigger refetches through `ServerWorkspaceContext`.
+  - [ ] No runtime feature code was added.
+- Broader context:
+  - [ ] This keeps Phase 6 honest by separating automated build confidence from real multi-session manual validation.
+  - [ ] The manual checklist gives the next test pass a clear route without jumping into Phase 7.
+  - [ ] The service notes help a beginner explain where invite and realtime responsibilities live.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
 ### 2026-07-08 - Expire Invites And Clean Up Realtime
 
 - Task: Complete Phase 6 Tasks 6.1 and 6.2 by expiring active nurse invites during shift end and making realtime listener setup resilient to sign-out, navigation, and Fast Refresh.

@@ -446,6 +446,14 @@ Validation check:
 
 ## Manual Testing Pass
 
+2026-07-08 validation prep:
+
+- Added `docs/phase-6/manual-test-pass.md` with the Phase 6 manual checklist,
+  automated validation evidence, scope review, and readability notes.
+- TypeScript, lint, and Expo export pass.
+- Tasks 7.1 through 7.4 still require real two-session manual validation before
+  they should be marked done.
+
 ### Task 7.1: Realtime Board Manual Test
 
 Build:
@@ -498,24 +506,27 @@ Validation check:
 - Signed-out user cannot join without authenticating.
 - User already in another active shift sees a safe participation conflict state.
 
-### Task 7.5: Scope Test
+### Done Task 7.5: Scope Test
 
 Build:
 
 - No new feature work.
 - Review implementation for Phase 6 scope leaks.
+- Scope review captured in `docs/phase-6/manual-test-pass.md`.
 
 Validation check:
 
 - There are no Phase 6 screens, dependencies, data fields, or service calls for push notifications, offline write queues, conflict resolution systems, drag-and-drop assignment override, board snapshot sharing, tablet layout, or AI.
 
-### Task 7.6: Beginner Readability Pass
+### Done Task 7.6: Beginner Readability Pass
 
 Build:
 
 - Refactor only small confusing boundaries found during the manual pass.
 - Update service or route documentation if it helps explain realtime and invite responsibilities.
 - Keep code understandable before moving to Phase 7.
+- Updated `src/services/README.md` to explain the Phase 6 invite and realtime service boundaries.
+- Added `docs/phase-6/manual-test-pass.md` so the remaining manual two-session checks are explicit.
 
 Validation check:
 
