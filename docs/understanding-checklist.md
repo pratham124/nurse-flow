@@ -66,6 +66,27 @@ For each task, add a dated section with:
   - [ ] Quiz or walkthrough completed.
 - Status: pending
 
+### 2026-07-09 - Confirm Phase 7 Touchpoints and Expo Notification Requirements
+
+- Task: Complete Phase 7 Tasks 0.2 and 0.3.
+- Problem understanding:
+  - [ ] Phase 7 needs mapped ownership boundaries before notification or cache code is added.
+  - [ ] Push notifications need OS permission, a device token, server registration, and a current-data reload after a tap.
+  - [ ] A development build and platform credentials are required to test remote push; Expo Go is not enough.
+- Solution understanding:
+  - [ ] `docs/phase-7/app-touchpoints.md` records the existing route, state, service, save, realtime, invite, request, and persistence touchpoints.
+  - [ ] `docs/phase-7/expo-notifications-setup.md` records current Expo SDK 55 permission, token, iOS, Android, and development-build requirements.
+  - [ ] No runtime app code, package, app config, schema, cache, or token was added.
+- Broader context:
+  - [ ] Keeping notification, cache, connection, draft, and active-shift responsibilities separate prevents scope leaks such as offline write queues.
+  - [ ] The next task can add permission state with clear device/build requirements instead of relying on Expo Go behavior.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific walkthrough: predict why `ServerWorkspaceContext` rather than `WorkflowDraftContext` will own future connection state.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
 ### 2026-07-08 - Phase 6 Manual Pass Prep
 
 - Task: Prepare Phase 6 Tasks 7.1 through 7.6 by capturing automated validation evidence, adding a manual two-session checklist, completing the scope review, and clarifying the Phase 6 service boundaries.
