@@ -45,7 +45,7 @@ Validation check:
 - You can point to `docs/phase-7/` and explain what Phase 7 includes and excludes before writing feature code.
 - No app implementation code is written in this task.
 
-### Task 0.2: Confirm Existing App Touchpoints
+### Done Task 0.2: Confirm Existing App Touchpoints
 
 Story coverage: US1, US2, US3, US4, US5, US6, US7
 
@@ -63,7 +63,7 @@ Validation check:
 - You can list the likely files affected by Phase 7 before coding starts.
 - Existing Phase 1-6 behavior is not changed in this task.
 
-### Task 0.3: Review Current Notification Docs
+### Done Task 0.3: Review Current Notification Docs
 
 Story coverage: US1, US2, US3, US4, US7
 
