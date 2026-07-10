@@ -18,11 +18,14 @@ import {
   TrashIcon,
   ChevronRightIcon,
   BedIcon,
+  BellIcon,
   RoomIcon,
 } from "../components/workflow";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
+import { NotificationPermissionDialog } from "../components/NotificationPermissionCard";
 import { useAuthSession } from "../store/AuthSessionContext";
+import { useNotificationPermission } from "../store/NotificationPermissionContext";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { useWorkflowDraft } from "../store/WorkflowDraftContext";
 import {
@@ -186,6 +189,7 @@ function FloorTemplateRow({
 
 export default function Index() {
   const { authState, signOut } = useAuthSession();
+  const { permissionStatus } = useNotificationPermission();
   const { resetWorkflowDraft, setDraftFloorTemplate } = useWorkflowDraft();
   const {
     activeShift,
@@ -204,6 +208,8 @@ export default function Index() {
   const [floorTemplateToDelete, setFloorTemplateToDelete] =
     useState<FloorTemplate>();
   const [endShiftConfirmationVisible, setEndShiftConfirmationVisible] =
+    useState(false);
+  const [notificationDialogVisible, setNotificationDialogVisible] =
     useState(false);
   const [templateEditMessage, setTemplateEditMessage] = useState("");
   const isChargeNurseSignedIn =
@@ -420,6 +426,17 @@ export default function Index() {
             <Text style={styles.accountName}>{profile.displayName}</Text>
           ) : null}
           <Pressable
+            accessibilityLabel="Open notification status"
+            accessibilityRole="button"
+            onPress={() => setNotificationDialogVisible(true)}
+            style={({ pressed }) => [
+              styles.notificationButton,
+              pressed && styles.notificationButtonPressed,
+            ]}
+          >
+            <BellIcon color={colors.brand.burgundy} size={19} />
+          </Pressable>
+          <Pressable
             accessibilityRole="button"
             onPress={handleSignOut}
             style={({ pressed }) => [
@@ -605,6 +622,11 @@ export default function Index() {
         title="End active shift?"
         visible={endShiftConfirmationVisible}
       />
+      <NotificationPermissionDialog
+        onClose={() => setNotificationDialogVisible(false)}
+        permissionStatus={permissionStatus}
+        visible={notificationDialogVisible}
+      />
     </SafeAreaView>
   );
 }
@@ -655,6 +677,17 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     fontWeight: fontWeight.semibold,
     textAlign: "right",
+  },
+  notificationButton: {
+    alignItems: "center",
+    backgroundColor: colors.brand.burgundy10,
+    borderRadius: radius.pill,
+    height: 38,
+    justifyContent: "center",
+    width: 38,
+  },
+  notificationButtonPressed: {
+    backgroundColor: colors.brand.burgundy15,
   },
   signOutButton: {
     alignItems: "center",

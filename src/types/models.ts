@@ -353,3 +353,10 @@ export type AuthSessionState =
       profile: UserProfile;
       status: "signed_in";
     };
+
+export type NotificationPermissionStatus =
+  | "unknown"
+  | "granted"
+  | "denied"
+  | "provisional"
+  | "unavailable";

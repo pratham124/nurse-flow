@@ -198,6 +198,37 @@ export function ShareIcon({
   );
 }
 
+export function BellIcon({
+  color = colors.neutral.textPrimary,
+  size = 18,
+}: IconProps) {
+  const bellWidth = size * 0.68;
+
+  return (
+    <View style={[styles.bellIcon, { height: size, width: size }]}>
+      <View
+        style={[
+          styles.bellBody,
+          {
+            borderColor: color,
+            borderTopLeftRadius: size / 2,
+            borderTopRightRadius: size / 2,
+            height: size * 0.65,
+            width: bellWidth,
+          },
+        ]}
+      />
+      <View
+        style={[
+          styles.bellBase,
+          { backgroundColor: color, width: bellWidth + size * 0.12 },
+        ]}
+      />
+      <View style={[styles.bellClapper, { backgroundColor: color }]} />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   icon: {
     alignItems: "center",
@@ -410,5 +441,29 @@ const styles = StyleSheet.create({
     height: 7,
     position: "absolute",
     width: 14,
+  },
+  bellIcon: {
+    alignItems: "center",
+    justifyContent: "flex-end",
+    position: "relative",
+  },
+  bellBody: {
+    borderBottomWidth: 0,
+    borderWidth: 1.6,
+    position: "absolute",
+    top: 1,
+  },
+  bellBase: {
+    borderRadius: 1,
+    bottom: 3,
+    height: 1.6,
+    position: "absolute",
+  },
+  bellClapper: {
+    borderRadius: 2,
+    bottom: 0,
+    height: 3,
+    position: "absolute",
+    width: 3,
   },
 });

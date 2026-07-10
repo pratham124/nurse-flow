@@ -24,6 +24,7 @@ export {
   BedIcon,
   RoomIcon,
   ShareIcon,
+  BellIcon,
 } from "./Icons";
 export { ConfirmationDialog } from "./ConfirmationDialog";
 export {

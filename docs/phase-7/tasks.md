@@ -81,7 +81,7 @@ Validation check:
 
 ## Push Notification Foundation
 
-### Task 1.1: Add Notification Permission State
+### Done Task 1.1: Add Notification Permission State
 
 Story coverage: US1, US7
 

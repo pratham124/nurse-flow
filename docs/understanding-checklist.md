@@ -40,6 +40,28 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-07-10 - Add Notification Permission State
+
+- Task: Complete Phase 7 Task 1.1 by reading the signed-in device's notification permission and showing its status on Home.
+- Problem understanding:
+  - [ ] NurseFlow needs to know the device permission state before later token registration work can be safe and understandable.
+  - [ ] Notification permission belongs to device/session infrastructure, not active shift data.
+  - [ ] Denied or unavailable notifications must not block the connected app workflow.
+- Solution understanding:
+  - [ ] `src/store/NotificationPermissionContext.tsx` reads the current Expo permission after sign-in and normalizes platform results into beginner-readable app states.
+  - [ ] `src/components/NotificationPermissionCard.tsx` maps each state to a short label and helper message in a notification status dialog without exposing technical details.
+  - [ ] `src/app/_layout.tsx` provides notification permission state to signed-in screens, and `src/screens/HomeScreen.tsx` opens that dialog from the header bell.
+  - [ ] This task reads existing permission only; it does not prompt, create a push token, or register anything with the server.
+- Broader context:
+  - [ ] Task 1.1 establishes the device-permission boundary that Task 1.2 can build on for push token registration.
+  - [ ] The app remains usable when permission is denied, unavailable, or not yet decided.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Quiz or walkthrough completed.
+- Status: pending
+
 ### 2026-07-08 - Plan Phase 7 Push Notifications and Lightweight Connection Resilience
 
 - Task: Create and revise Phase 7 planning docs for push notifications, read-only cached views during brief disconnects, reconnect states, and disabled-action copy.
