@@ -12,11 +12,17 @@ import {
   type NotificationPermissionsStatus,
 } from "expo-notifications";
 
-import type { NotificationPermissionStatus } from "../types/models";
+import type {
+  DevicePushRegistrationState,
+  NotificationPermissionStatus,
+} from "../types/models";
+import { registerDevicePushToken } from "../services/devicePushTokenRepository";
+import { getSupabaseClient } from "../services/supabaseClient";
 import { useAuthSession } from "./AuthSessionContext";
 
 type NotificationPermissionContextValue = {
   permissionStatus: NotificationPermissionStatus;
+  registrationState: DevicePushRegistrationState;
 };
 
 type NotificationPermissionProviderProps = PropsWithChildren;
@@ -57,6 +63,8 @@ export function NotificationPermissionProvider({
   const { authState } = useAuthSession();
   const [permissionStatus, setPermissionStatus] =
     useState<NotificationPermissionStatus>("unknown");
+  const [registrationState, setRegistrationState] =
+    useState<DevicePushRegistrationState>({ status: "idle" });
   const signedInProfileId =
     authState.status === "signed_in" ? authState.profile.id : undefined;
 
@@ -92,9 +100,75 @@ export function NotificationPermissionProvider({
     };
   }, [signedInProfileId]);
 
+  useEffect(() => {
+    let shouldUpdateState = true;
+
+    if (
+      !signedInProfileId ||
+      (permissionStatus !== "granted" && permissionStatus !== "provisional")
+    ) {
+      setRegistrationState({ status: "idle" });
+      return () => {
+        shouldUpdateState = false;
+      };
+    }
+
+    const supabase = getSupabaseClient();
+
+    if (!supabase) {
+      setRegistrationState({
+        errorMessage: "Notifications need a configured server connection.",
+        status: "error",
+      });
+      return () => {
+        shouldUpdateState = false;
+      };
+    }
+
+    const activeSupabase = supabase;
+    const activePermissionStatus = permissionStatus;
+    const activeProfileId = signedInProfileId;
+
+    async function registerToken() {
+      setRegistrationState({ status: "registering" });
+
+      try {
+        const result = await registerDevicePushToken(activeSupabase, {
+          permissionStatus: activePermissionStatus,
+          profileId: activeProfileId,
+        });
+
+        if (shouldUpdateState) {
+          setRegistrationState({
+            registeredAt: result.registeredAt,
+            status: "registered",
+          });
+        }
+      } catch (error) {
+        if (!shouldUpdateState) {
+          return;
+        }
+
+        setRegistrationState({
+          errorMessage:
+            error instanceof Error
+              ? error.message
+              : "Notifications could not be registered on this device.",
+          status: "error",
+        });
+      }
+    }
+
+    void registerToken();
+
+    return () => {
+      shouldUpdateState = false;
+    };
+  }, [permissionStatus, signedInProfileId]);
+
   const value = useMemo(
-    () => ({ permissionStatus }),
-    [permissionStatus],
+    () => ({ permissionStatus, registrationState }),
+    [permissionStatus, registrationState],
   );
 
   return (

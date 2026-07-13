@@ -23,6 +23,11 @@ listener only after the signed-in user has an active charge shift or linked
 joined nurse access. A realtime event is only a signal to refetch server data;
 it should not become a second copy of saved shift state.
 
-Do not add push notifications, offline queues, deep links, drag-and-drop
-overrides, board sharing, tablet layout, AI, or future-phase infrastructure here
-until the matching phase starts.
+Phase 7 adds `devicePushTokenRepository` as the focused boundary for obtaining
+this device's Expo push token, registering it for the signed-in profile, and
+disabling the device record before sign out. Token records stay separate from
+active shifts and patient data.
+
+Do not add notification delivery events, tap routing, offline queues, deep
+links, drag-and-drop overrides, board sharing, tablet layout, AI, or other
+future task infrastructure here until the matching task starts.

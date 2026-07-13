@@ -10,6 +10,7 @@ import {
 import type { Session } from "@supabase/supabase-js";
 
 import { signOutCurrentSession } from "../services/authRepository";
+import { disableCurrentDevicePushToken } from "../services/devicePushTokenRepository";
 import { loadUserProfile } from "../services/profileRepository";
 import {
   canUseNativeSecureSessionStorage,
@@ -132,9 +133,15 @@ export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
   }, []);
 
   const signOut = useCallback(async () => {
+    const client = getSupabaseClient();
+
+    if (authState.status === "signed_in" && client) {
+      await disableCurrentDevicePushToken(client, authState.profile.id);
+    }
+
     await signOutCurrentSession();
     setAuthState({ status: "signed_out" });
-  }, []);
+  }, [authState]);
 
   useEffect(() => {
     let shouldUpdateState = true;

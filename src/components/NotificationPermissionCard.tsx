@@ -7,11 +7,15 @@ import {
   spacing,
   textSize,
 } from "../theme/tokens";
-import type { NotificationPermissionStatus } from "../types/models";
+import type {
+  DevicePushRegistrationState,
+  NotificationPermissionStatus,
+} from "../types/models";
 
 type NotificationPermissionDialogProps = {
   onClose: () => void;
   permissionStatus: NotificationPermissionStatus;
+  registrationState: DevicePushRegistrationState;
   visible: boolean;
 };
 
@@ -56,6 +60,7 @@ const permissionStatusContent: Record<
 export function NotificationPermissionDialog({
   onClose,
   permissionStatus,
+  registrationState,
   visible,
 }: NotificationPermissionDialogProps) {
   const content = permissionStatusContent[permissionStatus];
@@ -97,6 +102,11 @@ export function NotificationPermissionDialog({
               <Text style={styles.helperText}>{content.helperText}</Text>
             </View>
           </View>
+          {registrationState.status === "error" ? (
+            <Text accessibilityRole="alert" style={styles.errorText}>
+              {registrationState.errorMessage}
+            </Text>
+          ) : null}
         </View>
       </View>
     </Modal>
@@ -146,6 +156,11 @@ const styles = StyleSheet.create({
     color: colors.neutral.textPrimary,
     fontSize: textSize.lg,
     fontWeight: fontWeight.bold,
+  },
+  errorText: {
+    color: colors.status.red700,
+    fontSize: textSize.sm,
+    lineHeight: 18,
   },
   statusRow: {
     alignItems: "flex-start",

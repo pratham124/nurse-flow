@@ -189,7 +189,7 @@ function FloorTemplateRow({
 
 export default function Index() {
   const { authState, signOut } = useAuthSession();
-  const { permissionStatus } = useNotificationPermission();
+  const { permissionStatus, registrationState } = useNotificationPermission();
   const { resetWorkflowDraft, setDraftFloorTemplate } = useWorkflowDraft();
   const {
     activeShift,
@@ -625,6 +625,7 @@ export default function Index() {
       <NotificationPermissionDialog
         onClose={() => setNotificationDialogVisible(false)}
         permissionStatus={permissionStatus}
+        registrationState={registrationState}
         visible={notificationDialogVisible}
       />
     </SafeAreaView>

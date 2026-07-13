@@ -2323,3 +2323,26 @@ For each task, add a dated section with:
   - [ ] Code-specific question or walkthrough completed.
   - [ ] Quiz or walkthrough completed.
 - Status: pending
+
+### 2026-07-13 - Register and Disable Device Push Tokens
+
+- Task: Complete Phase 7 Tasks 1.2 and 1.3 only.
+- Problem understanding:
+  - [ ] A push token must be tied to a signed-in profile and one local device without becoming part of an active-shift snapshot.
+  - [ ] A token that stays active after sign out could expose protected shift notifications to a signed-out device.
+  - [ ] Token registration can fail independently, so it must not break the connected app workflow.
+- Solution understanding:
+  - [ ] `src/services/devicePushTokenRepository.ts` obtains an Expo push token, registers it through an authenticated Supabase function, and disables the same profile/device record before sign out.
+  - [ ] `src/store/NotificationPermissionContext.tsx` starts registration only for signed-in profiles with granted or provisional permission and keeps readable registration state separate from shift data.
+  - [ ] `src/store/AuthSessionContext.tsx` waits for any in-flight registration and disables the device record before ending the local auth session.
+  - [ ] `docs/phase-7/supabase-device-token-setup.md` defines the token-only table and authenticated functions without giving the mobile client raw-token read access.
+  - [ ] No notification sending, tap routing, settings/retry screen, cached view, or offline write behavior was added.
+- Broader context:
+  - [ ] Later notification events can target only active device records while server-fresh shift data remains the source of truth.
+  - [ ] Signing back in refreshes the same profile/device record to active, including a changed Expo token and `last_seen_at` value.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Native development-build registration/sign-out check completed.
+- Status: pending

@@ -360,3 +360,29 @@ export type NotificationPermissionStatus =
   | "denied"
   | "provisional"
   | "unavailable";
+
+export type DevicePushPlatform = "android" | "ios";
+
+export type DevicePushTokenStatus =
+  | "active"
+  | "disabled"
+  | "expired"
+  | "revoked";
+
+export type DevicePushRegistrationState =
+  | { status: "idle" | "registering" }
+  | { registeredAt: string; status: "registered" }
+  | { errorMessage: string; status: "error" };
+
+export interface DevicePushTokenRecord {
+  id: string;
+  profileId: string;
+  deviceId: string;
+  platform: DevicePushPlatform;
+  pushToken: string;
+  status: DevicePushTokenStatus;
+  permissionStatus: NotificationPermissionStatus;
+  createdAt: string;
+  updatedAt: string;
+  lastSeenAt: string;
+}
