@@ -98,7 +98,7 @@ Validation check:
 - Denied permission leaves the connected app usable.
 - TypeScript and lint pass.
 
-### Task 1.2: Add Device Push Token Registration Boundary
+### Done Task 1.2: Add Device Push Token Registration Boundary
 
 Story coverage: US1, US7
 
@@ -115,7 +115,7 @@ Validation check:
 - Token registration failure shows a readable error.
 - TypeScript and lint pass.
 
-### Task 1.3: Disable Device Token on Sign Out
+### Done Task 1.3: Disable Device Token on Sign Out
 
 Story coverage: US1, US7
 
@@ -131,7 +131,7 @@ Validation check:
 - Signing back in can refresh registration.
 - TypeScript and lint pass.
 
-### Task 1.4: Add Notification Settings UI
+### Done Task 1.4: Add Notification Settings UI
 
 Story coverage: US1, US7
 

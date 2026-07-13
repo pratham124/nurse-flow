@@ -2346,3 +2346,25 @@ For each task, add a dated section with:
   - [ ] Code-specific question or walkthrough completed.
   - [ ] Native development-build registration/sign-out check completed.
 - Status: pending
+
+### 2026-07-13 - Add Notification Settings UI
+
+- Task: Complete Phase 7 Task 1.4 only.
+- Problem understanding:
+  - [ ] Notification permission and server device registration are separate states that can succeed or fail independently.
+  - [ ] A user needs to understand whether notifications are on, off, or blocked without seeing a raw push token.
+  - [ ] A failed token sync needs an explicit retry that does not affect connected app behavior.
+- Solution understanding:
+  - [ ] `src/components/NotificationPermissionCard.tsx` shows permission, device registration, and the supported Phase 7 notification categories.
+  - [ ] `src/store/NotificationPermissionContext.tsx` uses the same `registerCurrentDevice` function for automatic setup and an explicit retry, without storing an attempt count.
+  - [ ] The retry action appears only after registration fails and never displays the Expo push token.
+  - [ ] No notification sending, tap routing, caching, or offline write behavior was added.
+- Broader context:
+  - [ ] Clear separate states help users distinguish an operating-system permission problem from a server registration problem.
+  - [ ] Later Phase 7 notification events can reuse the registered device boundary without changing this settings UI.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Native registration-error retry check completed.
+- Status: pending

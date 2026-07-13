@@ -7,6 +7,7 @@ import {
   spacing,
   textSize,
 } from "../theme/tokens";
+import { BellIcon } from "./workflow";
 import type {
   DevicePushRegistrationState,
   NotificationPermissionStatus,
@@ -14,9 +15,17 @@ import type {
 
 type NotificationPermissionDialogProps = {
   onClose: () => void;
+  onRetryRegistration: () => Promise<void>;
   permissionStatus: NotificationPermissionStatus;
   registrationState: DevicePushRegistrationState;
   visible: boolean;
+};
+
+type RegistrationStatusContent = {
+  badgeBackgroundColor: string;
+  badgeTextColor: string;
+  helperText: string;
+  title: string;
 };
 
 type PermissionStatusContent = {
@@ -57,13 +66,52 @@ const permissionStatusContent: Record<
   },
 };
 
+const registrationStatusContent: Record<
+  DevicePushRegistrationState["status"],
+  RegistrationStatusContent
+> = {
+  idle: {
+    badgeBackgroundColor: colors.neutral.backgroundSecondary,
+    badgeTextColor: colors.neutral.textSecondary,
+    helperText: "This device is not connected for background updates.",
+    title: "Not registered",
+  },
+  registering: {
+    badgeBackgroundColor: colors.status.blue50,
+    badgeTextColor: colors.status.blue800,
+    helperText: "Connecting this device to your signed-in profile.",
+    title: "Connecting",
+  },
+  registered: {
+    badgeBackgroundColor: colors.status.green50,
+    badgeTextColor: colors.status.green800,
+    helperText: "This device is ready for background updates.",
+    title: "Registered",
+  },
+  error: {
+    badgeBackgroundColor: colors.status.red50,
+    badgeTextColor: colors.status.red700,
+    helperText: "Nurse Flow could not connect this device to the server.",
+    title: "Needs attention",
+  },
+};
+
+const notificationCategories = [
+  "Nurse requests",
+  "Assignments & breaks",
+  "Floor activity & safety",
+] as const;
+
 export function NotificationPermissionDialog({
   onClose,
+  onRetryRegistration,
   permissionStatus,
   registrationState,
   visible,
 }: NotificationPermissionDialogProps) {
   const content = permissionStatusContent[permissionStatus];
+  const registrationContent =
+    registrationStatusContent[registrationState.status];
 
   return (
     <Modal
@@ -91,22 +139,69 @@ export function NotificationPermissionDialog({
           </View>
 
           <View style={styles.statusRow}>
-            <View
-              style={[
-                styles.statusIndicator,
-                { backgroundColor: content.accentColor },
-              ]}
-            />
+            <View style={styles.statusIcon}>
+              <BellIcon color={content.accentColor} size={18} />
+            </View>
             <View style={styles.copy}>
               <Text style={styles.title}>{content.title}</Text>
               <Text style={styles.helperText}>{content.helperText}</Text>
             </View>
           </View>
-          {registrationState.status === "error" ? (
-            <Text accessibilityRole="alert" style={styles.errorText}>
-              {registrationState.errorMessage}
+
+          <View style={styles.section}>
+            <View style={styles.registrationHeader}>
+              <Text style={styles.sectionTitle}>Device registration</Text>
+              <View
+                style={[
+                  styles.registrationBadge,
+                  {
+                    backgroundColor:
+                      registrationContent.badgeBackgroundColor,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.registrationBadgeText,
+                    { color: registrationContent.badgeTextColor },
+                  ]}
+                >
+                  {registrationContent.title}
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.helperText}>
+              {registrationContent.helperText}
             </Text>
+          </View>
+          {registrationState.status === "error" ? (
+            <View style={styles.errorPanel}>
+              <Text accessibilityRole="alert" style={styles.errorText}>
+                {registrationState.errorMessage}
+              </Text>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => void onRetryRegistration()}
+                style={({ pressed }) => [
+                  styles.retryButton,
+                  pressed && styles.retryButtonPressed,
+                ]}
+              >
+                <Text style={styles.retryButtonText}>Retry registration</Text>
+              </Pressable>
+            </View>
           ) : null}
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Updates include</Text>
+            <View style={styles.categoryList}>
+              {notificationCategories.map((category) => (
+                <View key={category} style={styles.categoryChip}>
+                  <Text style={styles.categoryText}>{category}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
         </View>
       </View>
     </Modal>
@@ -139,10 +234,26 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.xs,
   },
+  categoryChip: {
+    backgroundColor: colors.neutral.backgroundSecondary,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  categoryList: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    flexWrap: "wrap",
+  },
+  categoryText: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.medium,
+  },
   dialog: {
     backgroundColor: colors.neutral.surface,
     borderRadius: radius.xl,
-    gap: spacing.lg,
+    gap: spacing.xl,
     maxWidth: 420,
     padding: spacing.xl,
     width: "100%",
@@ -162,6 +273,12 @@ const styles = StyleSheet.create({
     fontSize: textSize.sm,
     lineHeight: 18,
   },
+  errorPanel: {
+    backgroundColor: colors.status.red50,
+    borderRadius: radius.md,
+    gap: spacing.md,
+    padding: spacing.lg,
+  },
   statusRow: {
     alignItems: "flex-start",
     backgroundColor: colors.neutral.backgroundSecondary,
@@ -175,11 +292,53 @@ const styles = StyleSheet.create({
     fontSize: textSize.sm,
     lineHeight: 18,
   },
-  statusIndicator: {
+  registrationBadge: {
     borderRadius: radius.pill,
-    height: 8,
-    marginTop: 5,
-    width: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  registrationBadgeText: {
+    fontSize: textSize.xs,
+    fontWeight: fontWeight.semibold,
+  },
+  registrationHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.md,
+    justifyContent: "space-between",
+  },
+  retryButton: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: colors.brand.burgundy,
+    borderRadius: radius.pill,
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: spacing.lg,
+  },
+  retryButtonPressed: {
+    opacity: 0.75,
+  },
+  retryButtonText: {
+    color: colors.neutral.surface,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
+  section: {
+    gap: spacing.sm,
+  },
+  sectionTitle: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
+  statusIcon: {
+    alignItems: "center",
+    backgroundColor: colors.neutral.surface,
+    borderRadius: radius.pill,
+    height: 36,
+    justifyContent: "center",
+    width: 36,
   },
   title: {
     color: colors.neutral.textPrimary,

@@ -1,4 +1,5 @@
 import {
+  useCallback,
   createContext,
   useContext,
   useEffect,
@@ -23,6 +24,7 @@ import { useAuthSession } from "./AuthSessionContext";
 type NotificationPermissionContextValue = {
   permissionStatus: NotificationPermissionStatus;
   registrationState: DevicePushRegistrationState;
+  retryRegistration: () => Promise<void>;
 };
 
 type NotificationPermissionProviderProps = PropsWithChildren;
@@ -100,17 +102,13 @@ export function NotificationPermissionProvider({
     };
   }, [signedInProfileId]);
 
-  useEffect(() => {
-    let shouldUpdateState = true;
-
+  const registerCurrentDevice = useCallback(async () => {
     if (
       !signedInProfileId ||
       (permissionStatus !== "granted" && permissionStatus !== "provisional")
     ) {
       setRegistrationState({ status: "idle" });
-      return () => {
-        shouldUpdateState = false;
-      };
+      return;
     }
 
     const supabase = getSupabaseClient();
@@ -120,55 +118,47 @@ export function NotificationPermissionProvider({
         errorMessage: "Notifications need a configured server connection.",
         status: "error",
       });
-      return () => {
-        shouldUpdateState = false;
-      };
+      return;
     }
 
-    const activeSupabase = supabase;
-    const activePermissionStatus = permissionStatus;
-    const activeProfileId = signedInProfileId;
+    setRegistrationState({ status: "registering" });
 
-    async function registerToken() {
-      setRegistrationState({ status: "registering" });
+    try {
+      const result = await registerDevicePushToken(supabase, {
+        permissionStatus,
+        profileId: signedInProfileId,
+      });
 
-      try {
-        const result = await registerDevicePushToken(activeSupabase, {
-          permissionStatus: activePermissionStatus,
-          profileId: activeProfileId,
-        });
-
-        if (shouldUpdateState) {
-          setRegistrationState({
-            registeredAt: result.registeredAt,
-            status: "registered",
-          });
-        }
-      } catch (error) {
-        if (!shouldUpdateState) {
-          return;
-        }
-
-        setRegistrationState({
-          errorMessage:
-            error instanceof Error
-              ? error.message
-              : "Notifications could not be registered on this device.",
-          status: "error",
-        });
-      }
+      setRegistrationState({
+        registeredAt: result.registeredAt,
+        status: "registered",
+      });
+    } catch (error) {
+      setRegistrationState({
+        errorMessage:
+          error instanceof Error
+            ? error.message
+            : "Notifications could not be registered on this device.",
+        status: "error",
+      });
     }
-
-    void registerToken();
-
-    return () => {
-      shouldUpdateState = false;
-    };
   }, [permissionStatus, signedInProfileId]);
 
+  useEffect(() => {
+    void registerCurrentDevice();
+  }, [registerCurrentDevice]);
+
+  const retryRegistration = useCallback(async () => {
+    if (registrationState.status !== "error") {
+      return;
+    }
+
+    await registerCurrentDevice();
+  }, [registerCurrentDevice, registrationState.status]);
+
   const value = useMemo(
-    () => ({ permissionStatus, registrationState }),
-    [permissionStatus, registrationState],
+    () => ({ permissionStatus, registrationState, retryRegistration }),
+    [permissionStatus, registrationState, retryRegistration],
   );
 
   return (
