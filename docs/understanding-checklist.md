@@ -2368,3 +2368,25 @@ For each task, add a dated section with:
   - [ ] Code-specific question or walkthrough completed.
   - [ ] Native registration-error retry check completed.
 - Status: pending
+
+### 2026-07-14 - Add Server Notification Event Model
+
+- Task: Complete Phase 7 Task 2.1 only.
+- Problem understanding:
+  - [x] Important background alerts need a server-owned event record without copying active-shift or patient data into notification payloads.
+  - [x] A notification event records delivery intent; it is not proof that the underlying shift changed or that a push was delivered.
+  - [x] Ended shifts, removed nurse access, wrong charge recipients, and recipients without active device tokens must not produce deliverable events.
+- Solution understanding:
+  - [ ] `src/types/models.ts` defines the supported event types, route targets, lifecycle statuses, and `NotificationEventRecord` shape.
+  - [ ] `docs/phase-7/supabase-notification-event-setup.md` defines the protected outbox table and server-only enqueue function.
+  - [ ] Eligible events start as `pending`; ineligible events are recorded as `skipped` with a safe reason.
+  - [ ] No workflow creates or sends notifications yet; Tasks 2.2 through 2.6 remain untouched.
+- Broader context:
+  - [ ] Later server workflow functions can enqueue small alerts while the app still reloads current server data after a notification tap.
+  - [ ] Mobile clients cannot list raw outbox records or manufacture notification events directly.
+- Verification:
+  - [x] Human restated understanding first: notification events are recipient-specific and are not part of shared shift data.
+  - [x] Gaps were explained: the event is delivery intent while the active shift remains server truth.
+  - [x] Code-specific question completed: correctly predicted `pending` for an eligible event and `skipped` for ended, removed-access, and disabled-token cases.
+  - [ ] Supabase SQL manual check completed.
+- Status: in progress

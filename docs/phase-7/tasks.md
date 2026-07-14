@@ -160,6 +160,8 @@ Build:
 - Include recipient profile, optional nurse access, event type, route target, status, and safe title/body.
 - Keep notification event records separate from active shift snapshots.
 - Avoid unnecessary patient detail in payloads.
+- Added shared notification event types and a server-only Supabase outbox
+  model that records ineligible recipients as skipped.
 
 Validation check:
 

@@ -42,6 +42,30 @@ export type NurseRequestStatus = "pending" | "accepted" | "declined";
 
 export type NurseRequestType = "issue" | "swap";
 
+export type NotificationEventType =
+  | "issueSubmitted"
+  | "swapRequested"
+  | "assignmentUpdated"
+  | "breakUpdated"
+  | "admissionAdded"
+  | "patientDischarged"
+  | "imbalanceDetected"
+  | "bedUnassigned";
+
+export type NotificationEventTargetRoute =
+  | "requestDetail"
+  | "requestsList"
+  | "joinedNurseAssignment"
+  | "floorBoard"
+  | "flags";
+
+export type NotificationEventStatus =
+  | "pending"
+  | "sent"
+  | "failed"
+  | "skipped"
+  | "cancelled";
+
 export type FloorActivityLevel = "low" | "moderate" | "high";
 
 export type BreakScheduleStatus =
@@ -304,6 +328,23 @@ export interface ShiftNurseAccess {
   status: ShiftAccessStatus;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface NotificationEventRecord {
+  id: string;
+  shiftId: string;
+  recipientProfileId: string;
+  recipientAccessId?: string;
+  type: NotificationEventType;
+  targetRoute: NotificationEventTargetRoute;
+  relatedRequestId?: LocalId;
+  relatedBedId?: LocalId;
+  title: string;
+  body: string;
+  status: NotificationEventStatus;
+  createdAt: string;
+  sentAt?: string;
+  failureReason?: string;
 }
 
 export interface ShiftNurseInviteRecord {
