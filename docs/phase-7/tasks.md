@@ -150,7 +150,7 @@ Validation check:
 
 ## Notification Events
 
-### Task 2.1: Add Server Notification Event Model
+### Done Task 2.1: Add Server Notification Event Model
 
 Story coverage: US2, US3, US4, US7
 
@@ -168,7 +168,7 @@ Validation check:
 - A notification event can represent a request, assignment update, break update, admission, discharge, imbalance, or unassigned-bed alert.
 - The model can skip ended shifts and disabled recipients.
 
-### Task 2.2: Notify Charge Nurses About Issue Flags
+### Done Task 2.2: Notify Charge Nurses About Issue Flags
 
 Story coverage: US2, US7
 
@@ -177,6 +177,8 @@ Build:
 - Create a charge nurse notification event when a joined nurse submits an issue.
 - Keep existing Phase 6 foreground realtime request updates intact.
 - Route notification taps to request detail or requests list.
+- Added a server-side active-shift snapshot hook that enqueues a safe charge
+  event only when a new issue belongs to a currently linked nurse.
 
 Validation check:
 
@@ -185,7 +187,7 @@ Validation check:
 - If notifications are disabled, the request still appears in-app.
 - TypeScript and lint pass.
 
-### Task 2.3: Notify Charge Nurses About Swap Requests
+### Done Task 2.3: Notify Charge Nurses About Swap Requests
 
 Story coverage: US2, US7
 
@@ -194,6 +196,8 @@ Build:
 - Create a charge nurse notification event when a joined nurse submits a swap request.
 - Keep swap request status behavior unchanged.
 - Route notification taps to request detail or requests list.
+- Reused the same successful-write hook for new swap requests without changing
+  request status or resolution behavior.
 
 Validation check:
 
@@ -202,7 +206,7 @@ Validation check:
 - Opening an already-resolved request shows the current status.
 - TypeScript and lint pass.
 
-### Task 2.4: Notify Joined Nurses About Assignment Updates
+### Done Task 2.4: Notify Joined Nurses About Assignment Updates
 
 Story coverage: US3, US7
 
@@ -212,6 +216,8 @@ Build:
 - Notify only affected nurses.
 - Route notification taps to the joined nurse assignment screen.
 - Do not expose full board details in the payload.
+- Compared sorted bed IDs per linked access record so only nurses whose scoped
+  assignment changed receive a generic event.
 
 Validation check:
 
@@ -220,7 +226,7 @@ Validation check:
 - A nurse without access does not receive the assignment notification.
 - TypeScript and lint pass.
 
-### Task 2.5: Notify Joined Nurses About Break Updates
+### Done Task 2.5: Notify Joined Nurses About Break Updates
 
 Story coverage: US3, US7
 
@@ -229,6 +235,8 @@ Build:
 - Notify joined nurses when their own break time changes.
 - Keep the charge nurse break schedule screen behavior unchanged.
 - Route notification taps to the joined nurse assignment break section or screen.
+- Compared each linked nurse's break start time and duration so unrelated
+  schedule changes do not notify other nurses.
 
 Validation check:
 
@@ -237,7 +245,7 @@ Validation check:
 - Other nurses are not targeted unless their break changed.
 - TypeScript and lint pass.
 
-### Task 2.6: Notify Charge Nurses About Floor Events and Safety Flags
+### Done Task 2.6: Notify Charge Nurses About Floor Events and Safety Flags
 
 Story coverage: US4, US7
 
@@ -246,6 +254,9 @@ Build:
 - Create notification events for admissions, discharges, newly unassigned beds, and meaningful imbalance changes.
 - Avoid repeated notifications for unchanged existing flags.
 - Route taps to the floor board or flags screen.
+- Added generic admission/discharge events based only on patient presence and
+  deduplicated unassigned-bed and meaningful imbalance events against the
+  previous saved snapshot.
 
 Validation check:
 

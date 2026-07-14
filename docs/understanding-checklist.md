@@ -2390,3 +2390,40 @@ For each task, add a dated section with:
   - [x] Code-specific question completed: correctly predicted `pending` for an eligible event and `skipped` for ended, removed-access, and disabled-token cases.
   - [ ] Supabase SQL manual check completed.
 - Status: in progress
+
+### 2026-07-14 - Connect Shift Events to Notification Outbox
+
+- Task: Complete Phase 7 Tasks 2.2 through 2.6 by enqueueing request,
+  assignment, break, census, and safety-flag events after successful shift
+  snapshot updates.
+- Problem understanding:
+  - [ ] Notification intent must be created from the successful server write so
+    failed or screen-local changes cannot create false alerts.
+  - [ ] Assignment and break notifications must be scoped to linked nurses,
+    while request, census, and safety notifications target the shift's charge
+    nurse.
+  - [ ] Re-saving unchanged assignments, breaks, or flags must not create
+    repeated notifications.
+- Solution understanding:
+  - [ ] `docs/phase-7/supabase-notification-event-setup.md` adds one
+    `active_shifts` snapshot-diff trigger that calls the Task 2.1 outbox helper.
+  - [ ] New linked-nurse issue and swap requests route to `request_detail`
+    using only the request ID and generic copy.
+  - [ ] Sorted per-nurse bed IDs and each nurse's break time/duration determine
+    which linked nurses are affected.
+  - [ ] Patient presence, stable bed IDs, and stable flag content detect floor
+    events without putting patient details or the full board in an event.
+  - [ ] Task 2.7 tap handling, cached views, offline writes, and later features
+    remain unimplemented.
+- Broader context:
+  - [ ] Phase 6 foreground realtime remains unchanged because the same
+    `active_shifts` write is still the source of truth.
+  - [ ] Pending outbox events provide background awareness; they do not prove a
+    push was delivered or replace loading current server state.
+- Verification:
+  - [x] Human restated understanding first: the trigger compares the shift
+    snapshots for changes that can produce new notification events.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Supabase SQL manual checks completed.
+- Status: in progress
