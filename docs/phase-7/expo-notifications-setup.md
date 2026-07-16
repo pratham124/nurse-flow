@@ -100,6 +100,21 @@ Sources: [Expo SDK 55 Android requirements](https://docs.expo.dev/versions/v55.0
   notification. Test release Android builds before treating that as a product
   behavior problem.
 
+## Task 2.7 Tap Payload Contract
+
+A notification tap carries only enough data to locate current server state:
+
+- `targetRoute`: `requestDetail`, `requestsList`, `joinedNurseAssignment`,
+  `floorBoard`, or `flags`.
+- `shiftId`: the server shift that produced the event.
+- `relatedRequestId`: required only for `requestDetail`.
+- `recipientAccessId`: required only for `joinedNurseAssignment`.
+
+Snake-case versions of these keys are accepted at the server boundary. The app
+validates the payload, reloads the current shift or nurse-scoped assignment,
+and confirms access before navigating. Titles, bodies, patient details, and
+full shift snapshots are never used as routing authority.
+
 ## Out Of Scope For Tasks 0.2 And 0.3
 
 - Installing `expo-notifications`.

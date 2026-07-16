@@ -28,6 +28,10 @@ this device's Expo push token, registering it for the signed-in profile, and
 disabling the device record before sign out. Token records stay separate from
 active shifts and patient data.
 
-Do not add notification delivery events, tap routing, offline queues, deep
-links, drag-and-drop overrides, board sharing, tablet layout, AI, or other
-future task infrastructure here until the matching task starts.
+Phase 7 notification taps use `serverWorkspaceRepository` to confirm current
+shift or nurse-access state before navigation. Notification payloads are only
+pointers; they never replace a current server read.
+
+Do not add offline queues, deep links, drag-and-drop overrides, board sharing,
+tablet layout, AI, or other future task infrastructure here until the matching
+task starts.

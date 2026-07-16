@@ -82,6 +82,16 @@ type ShiftNurseAccessSnapshot = {
   updated_at?: string;
 };
 
+type NotificationTargetAccessRow = {
+  id: string;
+  shift_id: string;
+  status: ShiftAccessStatus;
+};
+
+export type JoinedNurseNotificationTargetState =
+  | { assignmentView: JoinedNurseAssignmentView; status: "ready" }
+  | { status: "shift_ended" | "access_removed" };
+
 type SubmitJoinedNurseIssueRequestInput = {
   message: string;
 };
@@ -456,6 +466,42 @@ export async function loadJoinedNurseAssignmentView(
     data as JoinedNurseAssignmentRpcResult,
     profile,
   );
+}
+
+export async function loadJoinedNurseNotificationTargetState(
+  supabase: SupabaseClient,
+  profile: UserProfile,
+  target: { accessId: string; shiftId: string },
+): Promise<JoinedNurseNotificationTargetState> {
+  const { data: access, error } = await supabase
+    .from("shift_nurse_access")
+    .select("id, shift_id, status")
+    .eq("id", target.accessId)
+    .eq("shift_id", target.shiftId)
+    .eq("nurse_profile_id", profile.id)
+    .maybeSingle<NotificationTargetAccessRow>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!access || access.status !== "linked") {
+    return { status: "access_removed" };
+  }
+
+  const assignmentView = await loadJoinedNurseAssignmentView(
+    supabase,
+    profile,
+  );
+
+  if (
+    assignmentView?.access.id === access.id &&
+    assignmentView.shiftId === access.shift_id
+  ) {
+    return { assignmentView, status: "ready" };
+  }
+
+  return { status: "shift_ended" };
 }
 
 export async function submitJoinedNurseIssueRequest(

@@ -28,6 +28,10 @@ function isJoinRoute(pathname: string) {
   return pathname === "/join-active-session";
 }
 
+function isNotificationRecoveryRoute(pathname: string) {
+  return pathname === "/notification-recovery";
+}
+
 function getSingleParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
@@ -38,7 +42,7 @@ function getNextPath(
   code?: string,
 ): RedirectTarget | undefined {
   if (authState.status === "signed_out") {
-    if (isAuthRoute(pathname)) {
+    if (isAuthRoute(pathname) || isNotificationRecoveryRoute(pathname)) {
       return undefined;
     }
 

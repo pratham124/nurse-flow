@@ -2427,3 +2427,36 @@ For each task, add a dated section with:
   - [ ] Code-specific question or walkthrough completed.
   - [ ] Supabase SQL manual checks completed.
 - Status: in progress
+
+### 2026-07-14 - Add Notification Tap Routing and Recovery
+
+- Task: Implement Phase 7 Task 2.7 only by routing notification taps through
+  current server state and safe recovery states.
+- Problem understanding:
+  - [ ] A notification payload can be stale, malformed, or opened by a user who
+    is signed out or no longer has access.
+  - [ ] Notification text and payload data are pointers, not authorization or
+    the source of current shift truth.
+  - [ ] Request, charge-board, and joined-nurse targets require different
+    server checks before navigation.
+- Solution understanding:
+  - [ ] `src/utils/notificationTap.ts` accepts only supported route keys and
+    the identifiers required by each target.
+  - [ ] `src/store/NotificationTapContext.tsx` listens for warm and cold taps,
+    refreshes server state, checks the target, and then navigates.
+  - [ ] `src/services/serverWorkspaceRepository.ts` distinguishes a current
+    joined assignment from ended-shift and removed-access recovery.
+  - [ ] `src/screens/NotificationRecoveryScreen.tsx` shows safe sign-in,
+    ended-shift, removed-access, missing-request, malformed-payload, and retry
+    states without showing protected shift details.
+- Broader context:
+  - [ ] Background notifications now lead back to current Phase 5/6 server
+    state without changing foreground realtime behavior.
+  - [ ] The change adds no cache, offline write queue, deep link, assignment
+    override, board sharing, tablet layout, or other future feature.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Native development-build notification tap check completed.
+- Status: pending
