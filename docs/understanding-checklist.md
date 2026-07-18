@@ -2482,3 +2482,80 @@ For each task, add a dated section with:
   - [ ] Code-specific question or walkthrough completed.
   - [ ] Native development-build notification tap check completed.
 - Status: pending
+
+### 2026-07-18 - Plan Phase 8 Advanced Interaction and Polish
+
+- Task: Create the five Phase 8 planning documents without writing implementation code.
+- Problem understanding:
+  - [x] `docs/phases.md` defines Phase 8 as manual assignment overrides, request-scoped follow-up, board sharing, responsive/tablet polish, accessibility, and large-floor performance cleanup.
+  - [x] Phase 8 must extend the connected Phase 1-7 workflow without replacing the current assignment or break algorithms.
+  - [x] Phase 9 production assignment optimization and Phase 10 advanced break optimization remain later work.
+- Solution understanding:
+  - [x] `docs/phase-8/user-stories.md` defines nine scoped stories with acceptance criteria and manual checks.
+  - [x] `docs/phase-8/data-model.md` keeps the generated assignment as a baseline, stores immutable override history as server rows, and exposes current overrides through `activeAssignmentOverridesByBedId` for efficient effective-assignment reads.
+  - [x] Request messages belong to one authorized request thread; issue review state stays separate from swap acceptance and completion.
+  - [x] Human identified that issue requests use a follow-up thread and that swap completion connects to a manual assignment override.
+  - [x] Clarified that both request types have threads, while accepting a swap remains separate from completing its assignment change through a linked override.
+  - [x] Board snapshots are temporary local share artifacts, and tablet layout is presentation state rather than shift data.
+  - [x] `docs/phase-8/mobile-design.md` and `docs/phase-8/screens.md` document phone-first, accessible, responsive flows.
+  - [x] `docs/phase-8/tasks.md` orders small implementation tasks and gives every task a manual validation block; only planning Task 0.1 is marked done.
+  - [x] Workload-limit and imbalance results are non-blocking warnings: the charge nurse may confirm after acknowledgement, and the resulting flag remains visible.
+- Broader context:
+  - [x] The override overlay lets a future assignment engine change without erasing the distinction between generated and manual decisions.
+  - [x] Accepted and completed swaps are intentionally different so approval cannot be mistaken for a changed assignment.
+  - [x] Server-fresh authorization, realtime scoping, and disconnected-write rules from previous phases remain in force.
+- Verification:
+  - [x] Human correctly predicted the non-blocking workload-warning behavior.
+  - [x] Request-thread and swap-completion gap was explained.
+  - [x] Document-specific data-flow question completed: human chose warning and a new generated baseline that supersedes old overrides.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+### 2026-07-18 - Refine Phase 8 Override Storage Boundary
+
+- Task: Update the Phase 8 plan to separate scalable active-override reads from server-side override history.
+- Problem understanding:
+  - [x] A flat override-history array would require routine board reads to scan or ship superseded records that do not affect the current assignment.
+  - [x] Keeping only one override per bed would be fast but would destroy the history referenced by completed swap requests.
+  - [x] Concurrent same-bed changes must not create two active overrides.
+- Solution understanding:
+  - [x] Durable override history is stored as indexed server rows with at most one active row per shift and bed.
+  - [x] `activeAssignmentOverridesByBedId` exposes only current active overrides to routine app reads.
+  - [x] Effective assignment uses a direct bed-key lookup and falls back to the generated assignment when the dictionary has no entry.
+  - [x] A later same-bed move atomically supersedes the previous server row and replaces that bed's active dictionary value.
+  - [x] A completed swap whose override is later superseded remains historical and displays `Completed — assignment later changed`.
+- Broader context:
+  - [x] The board and realtime payload stay small while authorized request or audit views can still query history.
+  - [x] The generated assignment remains the baseline, and Phase 9 can later replace its generator without changing this boundary.
+  - [x] No runtime code, database migration, or dependency was added during this planning update.
+- Verification:
+  - [x] Human restated that history rows preserve past data while the floor-board dictionary exists for performance.
+  - [x] Gaps were explained.
+  - [x] Document-specific data-flow question completed: human correctly identified the generated assignment as the fallback when no active dictionary entry exists.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
+
+### 2026-07-18 - Confirm Phase 8 App and Server Touchpoints
+
+- Task: Complete Phase 8 Task 0.2 by documenting current code/server boundaries and compatibility risks without changing runtime behavior.
+- Problem understanding:
+  - [x] Current board, workload, joined-nurse RPC, swap-source validation, and Phase 7 assignment notifications read generated bed assignments directly.
+  - [x] Current requests live in `shift_snapshot.nurseRequests`, while Phase 8 thread messages need a separate append-only server boundary.
+  - [x] Broad `saveActiveShift` writes must not overwrite focused override-history or thread-message records.
+- Solution understanding:
+  - [x] `docs/phase-8/app-touchpoints.md` maps the current models, utilities, screens, routes, context, repositories, RPCs, realtime listeners, notification trigger, sharing boundary, responsive primitives, and performance risks.
+  - [x] One future pure effective-assignment helper must serve every current ownership consumer while leaving `generateLocalAssignmentResult` unchanged.
+  - [x] `activeAssignmentOverridesByBedId` should be exposed beside the persisted `Shift` snapshot so `getActiveShiftPayload` cannot serialize server-owned history accidentally.
+  - [x] The joined-nurse assignment RPC and swap-request RPC must validate effective ownership without exposing the full override dictionary or history.
+  - [x] A valid bed-only override preserves the current Phase 4 break schedule because generated room coverage does not change; a full assignment rerun still regenerates breaks.
+  - [x] Task 0.2 is marked done, and no runtime code, schema, dependency, or configuration changed.
+- Broader context:
+  - [x] Focused server transactions protect same-bed concurrency, swap completion, authorization, and notification correctness.
+  - [x] Request-thread state should stay request-scoped instead of bloating the global workspace or joined-nurse assignment payload.
+  - [x] Measuring the current nested board and request lists comes before performance refactoring.
+- Verification:
+  - [x] Human said the persistence-boundary distinction was not yet clear, then correctly identified the override table as authoritative when stale shift state disagrees.
+  - [x] The broad-snapshot overwrite risk and derived-dictionary role were explained.
+  - [x] File-specific data-flow question completed: human correctly said `getActiveShiftPayload` must not include the active override dictionary because overrides use a separate table.
+  - [x] Quiz or walkthrough completed.
+- Status: verified
