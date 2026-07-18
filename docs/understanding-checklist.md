@@ -40,6 +40,28 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-07-18 - Review Phase 7 Connection and Cache Tasks
+
+- Task: Review Phase 7 Tasks 3.1, 3.2, and 3.3 and avoid adding redundant connection UI or unvalidated offline caching.
+- Problem understanding:
+  - [x] Phase 6 already shows connecting, live, reconnecting, disconnected, and error states on both affected screens.
+  - [x] Persistent board and assignment caches would add privacy, lifecycle, and testing responsibilities.
+  - [x] There is not yet product evidence that offline cached clinical views are necessary for this prototype.
+- Solution understanding:
+  - [x] The existing `LiveStatusChip` remains unchanged and continues to provide connection feedback and manual refresh.
+  - [x] Tasks 3.2 and 3.3 are deferred until real hospital testing demonstrates a need.
+  - [x] No patient, board, or assignment snapshot is written to device storage.
+- Broader context:
+  - [x] Reusing the Phase 6 status boundary keeps NurseFlow smaller and easier to test.
+  - [x] Offline caching can be reconsidered later without changing the current server model.
+  - [x] No offline writes, pending sync, queued actions, or other future feature was introduced.
+- Verification:
+  - [x] Human challenged the need for offline caching before accepting the implementation.
+  - [x] Gaps were explained: this would have been read-only resilience, not full offline use.
+  - [x] Code-specific check completed: human recognized the existing connection-status component.
+  - [x] Product decision completed: keep Phase 6 status UI and defer both cache tasks.
+- Status: verified
+
 ### 2026-07-10 - Add Notification Permission State
 
 - Task: Complete Phase 7 Task 1.1 by reading the signed-in device's notification permission and showing its status on Home.

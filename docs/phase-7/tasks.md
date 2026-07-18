@@ -285,7 +285,7 @@ Validation check:
 
 ## Read-Only Connection Resilience
 
-### Task 3.1: Add Connection and Cached-View Status UI State
+### Done Task 3.1: Add Connection and Cached-View Status UI State
 
 Story coverage: US5, US6, US7
 
@@ -295,6 +295,9 @@ Build:
 - Keep these states separate from saved active shift data.
 - Show the status on charge board and joined nurse assignment screens.
 - Do not add pending-sync or queued-write states.
+- Product review on 2026-07-18 confirmed the existing Phase 6 `LiveStatusChip`
+  already covers connecting, live, reconnecting, disconnected, error, and
+  manual refresh states on both affected screens. No duplicate UI was added.
 
 Validation check:
 
@@ -313,6 +316,8 @@ Build:
 - Show a cached/stale banner when offline.
 - Clear or lock protected cache on sign out.
 - Keep cached board data read-only.
+- Product decision on 2026-07-18: defer this cache until real hospital testing
+  shows that read-only offline access is necessary.
 
 Validation check:
 
@@ -331,6 +336,8 @@ Build:
 - Show cached/stale copy when offline.
 - Do not expose the full charge board through the nurse cache.
 - Keep cached nurse data read-only.
+- Product decision on 2026-07-18: defer this cache with Task 3.2 rather than
+  storing protected assignment data without a validated need.
 
 Validation check:
 
