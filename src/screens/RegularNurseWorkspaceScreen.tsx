@@ -200,15 +200,6 @@ function AssignmentSummary({ assignmentView }: AssignmentSummaryProps) {
         )}
       </View>
 
-      <View style={styles.breakList}>
-        <Text style={styles.sectionLabel}>Breaks</Text>
-        <View style={styles.breakRow}>
-          <Text style={styles.bedDetail}>
-            {assignmentView.breakTimeLabel ?? "No break info yet."}
-          </Text>
-        </View>
-      </View>
-
       <View style={styles.requestList}>
         <View style={styles.requestHeaderRow}>
           <Text style={styles.sectionLabel}>Request updates</Text>
@@ -655,16 +646,6 @@ const styles = StyleSheet.create({
   },
   bedList: {
     gap: spacing.sm,
-  },
-  breakList: {
-    gap: spacing.sm,
-  },
-  breakRow: {
-    backgroundColor: colors.neutral.surface,
-    borderColor: colors.neutral.borderTertiary,
-    borderRadius: radius.md,
-    borderWidth: 0.5,
-    padding: spacing.md,
   },
   bedRow: {
     backgroundColor: colors.neutral.surface,

@@ -47,7 +47,7 @@ Planned fields or derived values:
 | --- | --- |
 | `id` | Existing active shift ID. |
 | `status` | Existing setup, active, or ended state. Invites are valid only while active. |
-| `shiftSnapshot` | Existing source of truth for floor, nurses, beds, assignments, requests, and breaks. |
+| `shiftSnapshot` | Existing source of truth for floor, nurses, beds, assignments, and requests. |
 | `updatedAt` | Existing or backend-maintained timestamp used to recognize fresh server data. |
 | `endedAt` | Existing end time. If present, invite links and live participation should stop. |
 

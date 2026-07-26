@@ -4,7 +4,7 @@ These user stories cover Phase 5 only: backend, auth, and server-side persistenc
 
 Phase source note: `docs/phases.md` defines Phase 5 as Backend, Auth, and Server Persistence. Realtime collaboration, nurse invite links, and deep linking belong to Phase 6 in that file, so they are intentionally excluded here.
 
-Phase 5 preserves the Phase 1 charge nurse assignment workflow, Phase 2 carry-over behavior through server snapshots, Phase 3 simulated nurse view and local request behavior, and Phase 4 local break scheduling. It adds real accounts and server storage without making the app feel realtime yet.
+Phase 5 preserves the Phase 1 charge nurse assignment workflow, Phase 2 carry-over behavior through server snapshots, and Phase 3 simulated nurse view and local request behavior. It adds real accounts and server storage without making the app feel realtime yet.
 
 ## Story 1: Choose and Document the Backend Approach
 
@@ -65,14 +65,14 @@ As a charge nurse, I want my reusable floor templates saved to my account so I c
 
 ## Story 4: Save Active Shifts to the Server
 
-As a charge nurse, I want active shift setup, assignment, requests, and break schedule data saved on the server so the shift is not trapped in one local app install.
+As a charge nurse, I want active shift setup, assignment, and request data saved on the server so the shift is not trapped in one local app install.
 
 ### Acceptance Criteria
 
 - A signed-in charge nurse can start a shift from a server floor template.
 - Active shift data is saved to the server after meaningful changes.
 - Server-backed changes use a request-then-refresh pattern: submit the change, then reload the relevant active-shift data before the next screen depends on it.
-- Server active shift data includes the current Phase 1-4 shift shape: copied floor structure, nurses, bed states, assignment result, flags, local nurse requests, and break schedule.
+- Server active shift data includes copied floor structure, nurses, bed states, assignment result, flags, and local nurse requests.
 - The charge nurse can reopen the app and restore the current active shift from the server.
 - Ending a shift stores enough previous-shift snapshot data for carry-over suggestions.
 
@@ -81,7 +81,7 @@ As a charge nurse, I want active shift setup, assignment, requests, and break sc
 - If a server save fails, the app shows an unsaved state and lets the charge nurse retry.
 - If adding nurses succeeds, the next screen should show nurses fetched from the current server shift, not only the pre-submit local form array.
 - If a restored active shift references a missing template, the app shows a recovery state.
-- Existing assignment, local request, and break scheduling behavior still works after server persistence is added.
+- Existing assignment and local request behavior still works after server persistence is added.
 - Do not add realtime refresh, offline write queueing, conflict resolution, or push notifications in Phase 5.
 
 ## Story 5: Add Shift Access Boundaries
@@ -113,7 +113,6 @@ As a learner, I want Phase 5 to remove the old local storage state path so the a
 - Phase 1 floor setup, assignment, board, census, imbalance flags, and unassigned-bed flags still work.
 - Phase 2 reusable templates, active shift restore, and carry-over suggestions are backed by server storage instead of local app-state storage.
 - Phase 3 nurse-facing assignment derivation and request records still use the active shift as their source of truth.
-- Phase 4 break schedules still belong to the active shift.
 - Fetched server data uses normal backend `id` fields for templates, shifts, nurses, rooms, beds, and relationships.
 - Old local testing data does not need to be imported.
 - The old local storage repository and local storage-backed state context are removed or bypassed for Phase 5 runtime flows.
@@ -123,4 +122,4 @@ As a learner, I want Phase 5 to remove the old local storage state path so the a
 - Existing locally saved testing data may be discarded because it was only used before server persistence.
 - A new account with no server data should show an empty workspace state.
 - A server account with templates but no active shift should still let the charge nurse start a shift.
-- Phase 5 should not force a large rewrite of assignment, break scheduling, or nurse request logic.
+- Phase 5 should not force a large rewrite of assignment or nurse request logic.

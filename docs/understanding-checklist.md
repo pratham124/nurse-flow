@@ -2559,3 +2559,36 @@ For each task, add a dated section with:
   - [x] File-specific data-flow question completed: human correctly said `getActiveShiftPayload` must not include the active override dictionary because overrides use a separate table.
   - [x] Quiz or walkthrough completed.
 - Status: verified
+
+### 2026-07-26 - Remove Break Scheduling
+
+- Task: Remove break scheduling from the mobile app, shared data model,
+  deployed Supabase behavior, and current roadmap without affecting assignment,
+  request, realtime, invite, notification, or floor-board workflows.
+- Problem understanding:
+  - [x] Why removing only the visible screen would leave assignment generation,
+    server payloads, notification logic, and legacy snapshots coupled to the
+    retired feature.
+  - [ ] Why historical checklist entries remain as an audit trail even though
+    their referenced implementation no longer exists.
+  - [ ] Why the roadmap keeps Phase 9 production assignment optimization while
+    retiring the separate future scheduling optimizer.
+- Solution understanding:
+  - [ ] The route, screen, scheduler, types, UI summaries, assignment hook,
+    joined-nurse response field, and notification event were removed together.
+  - [x] `requireShiftSnapshot` now reconstructs the supported `Shift` shape so
+    unknown retired snapshot fields cannot be written back to Supabase.
+  - [ ] Supabase removed the retired event constraint option, rewrote both
+    affected functions, and cleaned five legacy active-shift snapshots.
+  - [ ] TypeScript, lint, stale-reference checks, and an Android Hermes
+    production export passed.
+- Broader context:
+  - [ ] Assignment generation still saves assignment results and flags, and
+    nurse-scoped access still returns assigned beds and request history.
+  - [ ] The removal reduces the server and app contract without changing the
+    unrelated Phase 9 optimizer plan.
+- Verification:
+  - [x] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [x] Code-specific question or walkthrough completed.
+- Status: in progress

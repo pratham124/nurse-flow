@@ -26,7 +26,6 @@ create table if not exists public.notification_events (
     'issue_submitted',
     'swap_requested',
     'assignment_updated',
-    'break_updated',
     'admission_added',
     'patient_discharged',
     'imbalance_detected',
@@ -188,7 +187,7 @@ full shift snapshot.
 Run this after creating `enqueue_notification_event`. The trigger compares the
 last committed shift snapshot with the newly saved snapshot inside the same
 database transaction. It creates outbox events only for newly added requests,
-linked nurses whose own assignment or break changed, new admissions or
+linked nurses whose own assignment changed, new admissions or
 discharges, and newly meaningful safety flags.
 
 Keeping this comparison on the server means a failed shift write cannot create
@@ -206,8 +205,6 @@ declare
   v_access public.shift_nurse_access%rowtype;
   v_new_assignment jsonb;
   v_old_assignment jsonb;
-  v_new_break jsonb;
-  v_old_break jsonb;
   v_new_patient jsonb;
   v_old_patient jsonb;
   v_record jsonb;
@@ -302,47 +299,6 @@ begin
       );
     end if;
 
-    select jsonb_build_object(
-      'startTime', break_entry ->> 'startTime',
-      'durationMinutes', break_entry -> 'durationMinutes'
-    )
-    into v_old_break
-    from jsonb_array_elements(
-      coalesce(
-        old.shift_snapshot -> 'breakSchedule' -> 'entries',
-        '[]'::jsonb
-      )
-    ) break_entry
-    where break_entry ->> 'nurseId' = v_access.nurse_id
-    limit 1;
-
-    select jsonb_build_object(
-      'startTime', break_entry ->> 'startTime',
-      'durationMinutes', break_entry -> 'durationMinutes'
-    )
-    into v_new_break
-    from jsonb_array_elements(
-      coalesce(
-        new.shift_snapshot -> 'breakSchedule' -> 'entries',
-        '[]'::jsonb
-      )
-    ) break_entry
-    where break_entry ->> 'nurseId' = v_access.nurse_id
-    limit 1;
-
-    if v_new_break is distinct from v_old_break then
-      perform public.enqueue_notification_event(
-        new.id,
-        v_access.nurse_profile_id,
-        v_access.id,
-        'break_updated',
-        'joined_nurse_assignment',
-        'Break schedule updated',
-        'Open NurseFlow to review your current break time.',
-        null,
-        null
-      );
-    end if;
   end loop;
 
   -- Task 2.6: patient presence changes are enough; never copy patient details.
@@ -468,9 +424,9 @@ execute function public.enqueue_active_shift_change_notifications();
 ```
 
 The assignment comparison sorts bed IDs, so regenerating the same assignment
-in a different JSON order does not notify anyone. The break comparison includes
-only start time and duration. The safety comparison uses stable bed IDs and flag
-content so saving an unchanged flag does not create another event.
+in a different JSON order does not notify anyone. The safety comparison uses
+stable bed IDs and flag content so saving an unchanged flag does not create
+another event.
 
 ## Manual Validation
 
@@ -502,14 +458,11 @@ After installing the active-shift notification hook:
 9. Change assignments for one linked nurse. Confirm only that nurse receives an
    `assignment_updated` event. Save the same assignment again and confirm no
    duplicate event is created.
-10. Change one linked nurse's break start time. Confirm only that nurse receives
-    a `break_updated` event. Changes to warnings or covered rooms alone should
-    not create a break event.
-11. Add and remove a patient from a bed. Confirm the charge nurse receives
+10. Add and remove a patient from a bed. Confirm the charge nurse receives
     generic admission and discharge events with a bed routing ID but no patient
     data.
-12. Add an unassigned-bed flag and a team-imbalance flag. Confirm each creates a
+11. Add an unassigned-bed flag and a team-imbalance flag. Confirm each creates a
     charge event. Save the identical flags again and confirm no duplicate event
     is created.
-13. Remove a nurse's linked access, change that nurse's assignment or break,
-    and confirm no nurse-scoped event is created for that profile.
+12. Remove a nurse's linked access, change that nurse's assignment, and confirm
+    no nurse-scoped event is created for that profile.

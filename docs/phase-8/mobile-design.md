@@ -232,4 +232,4 @@ Review at minimum:
 
 ## Phase Boundary
 
-This design must not introduce production optimizer controls, advanced break optimization, AI recommendations, EHR/EMR data, automated acuity, global chat, offline write queues, or persistent board-sharing history.
+This design must not introduce production optimizer controls, AI recommendations, EHR/EMR data, automated acuity, global chat, offline write queues, or persistent board-sharing history.

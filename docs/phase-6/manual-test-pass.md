@@ -46,8 +46,6 @@ Expected Phase 6 boundaries are still in place:
   refresh.
 - [ ] Change assignments in session A and confirm session B updates without
   manual refresh.
-- [ ] Change breaks in session A and confirm session B updates without manual
-  refresh.
 - [ ] Submit or resolve a flag/request change and confirm the other session
   updates without manual refresh.
 

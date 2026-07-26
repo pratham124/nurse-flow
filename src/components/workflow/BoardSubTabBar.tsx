@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { colors, fontWeight, radius, shadows, spacing, textSize } from "../../theme/tokens";
 
-type BoardSubTab = "board" | "breaks" | "flags" | "invites";
+type BoardSubTab = "board" | "flags" | "invites";
 
 type BoardSubTabBarProps = {
   activeTab: BoardSubTab;
@@ -11,7 +11,7 @@ type BoardSubTabBarProps = {
 
 type BoardSubTabItem = {
   label: string;
-  route: "/floor-board" | "/break-schedule" | "/flags" | "/nurse-invites";
+  route: "/floor-board" | "/flags" | "/nurse-invites";
   tab: BoardSubTab;
 };
 
@@ -22,7 +22,6 @@ type BoardSubTabButtonProps = {
 
 const boardSubTabs: BoardSubTabItem[] = [
   { label: "Board", route: "/floor-board", tab: "board" },
-  { label: "Breaks", route: "/break-schedule", tab: "breaks" },
   { label: "Flags", route: "/flags", tab: "flags" },
   { label: "Invites", route: "/nurse-invites", tab: "invites" },
 ];
@@ -70,15 +69,6 @@ function BoardSubTabIcon({ active, tab }: BoardSubTabIconProps) {
   const iconColor = active
     ? colors.brand.burgundy
     : colors.neutral.textSecondary;
-
-  if (tab === "breaks") {
-    return (
-      <View style={[styles.iconFrame, { borderColor: iconColor }]}>
-        <View style={[styles.breakNeedle, { backgroundColor: iconColor }]} />
-        <View style={[styles.breakDot, { backgroundColor: iconColor }]} />
-      </View>
-    );
-  }
 
   if (tab === "flags") {
     return (
@@ -169,26 +159,6 @@ const styles = StyleSheet.create({
   activeTabLabel: {
     color: colors.brand.burgundy,
     fontWeight: fontWeight.bold,
-  },
-  iconFrame: {
-    alignItems: "center",
-    borderRadius: 9,
-    borderWidth: 1.5,
-    height: 20,
-    justifyContent: "center",
-    width: 20,
-  },
-  breakNeedle: {
-    borderRadius: 1,
-    height: 7,
-    transform: [{ rotate: "35deg" }],
-    width: 1.5,
-  },
-  breakDot: {
-    borderRadius: 2,
-    height: 4,
-    position: "absolute",
-    width: 4,
   },
   flagIcon: {
     height: 21,

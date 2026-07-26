@@ -2,7 +2,7 @@
 
 This document defines the planning model for Phase 5 backend, auth, and server-side persistence. The TypeScript-like shapes below are documentation examples, not implementation code.
 
-Phase 5 builds on the Phase 1 model in `docs/phase-1/data-model.md`, the Phase 2 persisted local model in `docs/phase-2/data-model.md`, the Phase 3 local nurse simulation model in `docs/phase-3/data-model.md`, and the Phase 4 break schedule model in `docs/phase-4/data-model.md`.
+Phase 5 builds on the Phase 1 model in `docs/phase-1/data-model.md`, the Phase 2 persisted local model in `docs/phase-2/data-model.md`, and the Phase 3 local nurse simulation model in `docs/phase-3/data-model.md`.
 
 ## Modeling Rules
 
@@ -14,7 +14,7 @@ Phase 5 builds on the Phase 1 model in `docs/phase-1/data-model.md`, the Phase 2
 - Keep account roles simple: every signed-in Phase 5 profile is `charge_nurse`.
 - Treat regular nurse access as a shift-specific participation state, not a permanent account role.
 - Store reusable floor templates separately from active shifts.
-- Store active shift data as the source of truth for shift-specific nurses, patients, acuity, assignments, requests, and breaks.
+- Store active shift data as the source of truth for shift-specific nurses, patients, acuity, assignments, and requests.
 - Use server authorization rules so joined-shift nurse views cannot read full charge nurse data.
 - Keep old local IDs and old local persisted app state out of the normal Phase 5 app model.
 - Do not add invite tokens, deep link records, realtime channel metadata, push tokens, offline queue records, drag-and-drop override records, tablet layout fields, or AI fields.
@@ -31,7 +31,7 @@ For Phase 5, server-backed create, update, and delete actions should follow a si
 ### Rules
 
 - Adding nurses should create nurse records for the current active shift on the backend, then fetch the current shift's nurses or active shift snapshot before showing the next screen.
-- Adding patients, updating acuity, changing max loads, resolving local requests, and generating or saving break schedules should follow the same pattern.
+- Adding patients, updating acuity, changing max loads, and resolving local requests should follow the same pattern.
 - Local screen state can hold temporary form input before submit.
 - After submit, avoid treating the temporary form state as saved truth.
 - If a request fails, keep the user on the current screen with a readable retry path.
@@ -125,7 +125,7 @@ interface FloorTemplateRecord {
 
 - `templateSnapshot` stores reusable structure only: floor name, doctor sides, rooms, and beds.
 - IDs inside `templateSnapshot` should be backend IDs after the template is fetched from the server.
-- Patient data, acuity, nurses, assignments, requests, and breaks do not belong on the template.
+- Patient data, acuity, nurses, assignments, and requests do not belong on the template.
 - Only the owning charge nurse can create, edit, or delete the template in Phase 5.
 
 ## Active Shift Record
@@ -149,7 +149,7 @@ interface ActiveShiftRecord {
 ### Rules
 
 - `shiftSnapshot` keeps the existing active shift model understandable.
-- The snapshot can include copied floor structure, nurses, bed states, assignment result, flags, nurse requests, and break schedule.
+- The snapshot can include copied floor structure, nurses, bed states, assignment result, flags, and nurse requests.
 - IDs inside `shiftSnapshot` should be backend IDs after the shift is fetched from the server.
 - `floorTemplateId` identifies which server template started the shift.
 - Phase 5 can use a simple foreground save and manual retry. It should not add offline write queues or conflict resolution yet.
@@ -174,7 +174,7 @@ interface ServerPreviousShiftSnapshot {
 - Store only the carry-over data needed to start the next shift.
 - Keep the snapshot tied to one charge nurse account and one floor template.
 - This is not a full audit log or analytics model.
-- Break schedules and nurse request history do not need to carry over unless a later phase explicitly adds that history.
+- Nurse request history does not need to carry over unless a later phase explicitly adds that history.
 
 ## Shift Nurse Access
 
@@ -233,7 +233,6 @@ interface JoinedNurseAssignmentView {
   floorName: string;
   nurseName: string;
   assignedBeds: NurseAssignedBed[];
-  breakTimeLabel?: string;
   requestHistory: NurseRequest[];
 }
 ```
@@ -255,7 +254,7 @@ The normal Phase 5 app model should not carry both local and server IDs, and it 
 - Do not keep `serverId` and `localId` pairs in normal screen state, domain records, or task plans.
 - Do not keep the old local storage repository or local storage-backed state context in the Phase 5 runtime path.
 - Temporary screen state is still allowed for unsaved form input.
-- Keep assignment and break scheduling helpers focused on fetched shift data.
+- Keep assignment helpers focused on fetched shift data.
 
 ## Authorization Summary
 

@@ -22,7 +22,7 @@ Reuse the existing NurseFlow visual system:
 - Status chips.
 - Plain form rows.
 - Bottom action bars where already used.
-- Board-context tabs for board, flags, requests, breaks, and invites.
+- Board-context tabs for board, flags, requests, and invites.
 - Clear empty and recovery states.
 
 Phase 6 labels can include:
@@ -299,14 +299,13 @@ Layout:
 - Assigned room and bed list.
 - Patient info already allowed by previous phases.
 - Acuity color per bed.
-- Own break time.
 - Issue and swap request actions.
 - Request history.
 
 Rules:
 
 - Show only this nurse's assignment.
-- Update in place when charge nurse changes assignment, breaks, acuity, patients, or request status.
+- Update in place when charge nurse changes assignment, acuity, patients, or request status.
 - Show safe ended or access-removed state if the shift changes.
 
 ### Flags and Requests

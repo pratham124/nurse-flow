@@ -16,7 +16,7 @@ Phase 8 builds on the authenticated, server-backed active shift and nurse-scoped
 - Keep issue review state separate from swap decision and completion state.
 - Generate board snapshots locally and ephemerally; do not add snapshot records to shift data.
 - Keep responsive layout, accessibility, focus, and drag state as UI state rather than domain data.
-- Do not add Phase 9 optimizer fields, Phase 10 break optimizer fields, AI fields, offline queues, or conflict-merge records.
+- Do not add Phase 9 optimizer fields, AI fields, offline queues, or conflict-merge records.
 
 ## Existing Records Extended
 
@@ -38,7 +38,6 @@ Rules:
 - The generated `assignmentResult` is not rewritten when one bed is moved manually.
 - A successful assignment rerun creates a new baseline and supersedes prior active server override records only after explicit charge-nurse confirmation; the new active dictionary initially omits those beds.
 - Assignment flags and board views are calculated from the effective assignment.
-- Break schedules are not silently recalculated or marked stale by a valid bed-only override because generated room coverage does not change. An assignment rerun continues to generate a new schedule; any future break optimization based on assigned-bed load belongs to Phase 10.
 
 ### Assignment Result
 
@@ -71,7 +70,7 @@ Compatibility rules:
 - `status: accepted` with a valid linked override is displayed as `Completed`.
 - Declined swaps cannot have completion fields.
 - Existing issue records do not need migration: missing `issueReviewStatus` derives as `open`.
-- Issue review or resolution never changes assignments, patient data, acuity, or breaks.
+- Issue review or resolution never changes assignments, patient data, acuity, or flags.
 
 ## New Server Record: Manual Assignment Override
 
@@ -221,7 +220,6 @@ Consumers:
 - Joined nurse assignment.
 - Assignment flags.
 - Board snapshot.
-- Break schedule compatibility display; a valid bed-only override does not change the Phase 4 schedule.
 - Swap completion display.
 
 ### Proposed Override Preview
@@ -295,12 +293,10 @@ The following remain local UI state and are not stored in server models:
 - Existing assignment results remain valid and do not require conversion.
 - Existing app reads fall back to generated assignments until active override rows exist.
 - Existing joined-nurse authorization continues to return only nurse-scoped data.
-- Existing break schedules remain unchanged after a valid bed-only override. Assignment reruns continue to regenerate them, and Phase 8 does not implement a new scheduler.
 
 ## Explicitly Not Modeled in Phase 8
 
 - Production optimizer jobs, objective weights, or solver traces.
-- Advanced break optimization or multi-break records.
 - AI suggestions.
 - Offline write queues or conflict-merging logs.
 - Global chat conversations, channels, attachments, reactions, or read receipts.

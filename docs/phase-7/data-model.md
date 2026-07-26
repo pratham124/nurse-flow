@@ -125,7 +125,7 @@ Planned fields:
 | `shiftId` | Active shift related to the event, when applicable. |
 | `recipientProfileId` | Profile intended to receive the notification. |
 | `recipientAccessId` | Optional shift nurse access ID for nurse-scoped notifications. |
-| `type` | Issue, swap, assignment update, break update, admission, discharge, imbalance, or unassigned bed. |
+| `type` | Issue, swap, assignment update, admission, discharge, imbalance, or unassigned bed. |
 | `targetRoute` | Safe app route or route key to open after tap. |
 | `relatedRequestId` | Optional nurse request ID. |
 | `relatedBedId` | Optional bed ID for charge-safe routing. |
@@ -205,7 +205,6 @@ Planned notification event types:
 | `swapRequested` | Charge nurse | Request detail or requests list. |
 | `swapResolved` | Requesting nurse | Joined nurse assignment or request status. |
 | `assignmentUpdated` | Affected joined nurse | Joined nurse assignment. |
-| `breakUpdated` | Affected joined nurse | Joined nurse assignment break section. |
 | `admissionAdded` | Charge nurse | Floor board or bed detail when available. |
 | `patientDischarged` | Charge nurse | Floor board. |
 | `imbalanceDetected` | Charge nurse | Flags screen. |
@@ -222,7 +221,7 @@ Rules:
 This model supports:
 
 - Push permission and token registration.
-- Push notifications for requests, assignment updates, break updates, admissions, discharges, imbalance alerts, and unassigned beds.
+- Push notifications for requests, assignment updates, admissions, discharges, imbalance alerts, and unassigned beds.
 - Notification tap routing and safe recovery.
 - Read-only access to cached charge and joined nurse views during brief disconnects.
 - Clear disabled-action states while disconnected.
@@ -240,4 +239,3 @@ These are intentionally not part of the revised Phase 7 model:
 - Request-thread message records.
 - AI-generated recommendations.
 - Production assignment optimizer records.
-- Advanced break scheduling optimizer records.

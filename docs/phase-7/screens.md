@@ -81,8 +81,8 @@ Keep the charge nurse board useful while connected, background-notified, offline
 
 - Board header with floor name, census, live/offline status, and cache banner when needed.
 - Existing doctor-side and nurse grouping.
-- Existing nurse cards, room coverage, assigned beds, acuity, patient info, flags, and breaks.
-- Entry points to Flags and Requests, Nurse Invites, and Breaks where already appropriate.
+- Existing nurse cards, room coverage, assigned beds, acuity, patient info, and flags.
+- Entry points to Flags and Requests and Nurse Invites where already appropriate.
 
 ### Components
 
@@ -105,7 +105,6 @@ Keep the charge nurse board useful while connected, background-notified, offline
 - Flags and Requests.
 - Nurse Invites.
 - Existing setup or edit screens where already supported.
-- Existing break schedule screen.
 - Notification Tap Recovery when opened from a stale notification.
 
 ### Validation and Error States
@@ -138,7 +137,6 @@ Show a joined nurse their nurse-scoped assignment with notification routing and 
 - Cached view banner when needed.
 - Assigned rooms and beds.
 - Patient info and acuity.
-- Own break time.
 - Issue and swap request actions.
 - Request history.
 
@@ -335,7 +333,7 @@ Show a safe recovery state when a push notification target cannot be opened dire
 4. Add notification registration UI.
 5. Add server notification event boundary.
 6. Add request notifications.
-7. Add assignment, break, and safety flag notifications.
+7. Add assignment and safety flag notifications.
 8. Add notification tap routing and recovery states.
 9. Add cached charge board and joined nurse views.
 10. Add disconnected-state UI and disabled-action helpers.

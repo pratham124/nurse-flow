@@ -15,12 +15,6 @@ import {
   WorkflowSection,
 } from "../components/workflow";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
-import {
-  getBreakEntryForNurse,
-  getBreakWarningsForNurse,
-  getBreakScheduleView,
-  getFloorActivityLabel,
-} from "../utils/breakSchedule";
 import { getShiftCensus, isOccupiedBedState } from "../utils/census";
 import { assignmentFlow } from "../utils/workflowFlows";
 import {
@@ -93,8 +87,6 @@ type NurseWorkloadViewModel = {
   experience: string;
   team: string;
   roomCoverage: string;
-  breakLabel: string;
-  hasBreakWarning: boolean;
   currentLoad: number;
   flags: InlineFlagViewModel[];
   maxLoad: number;
@@ -108,7 +100,6 @@ type BoardBedProps = BoardBedViewModel;
 
 type FloorBoardListHeaderProps = {
   admittingSideName: string;
-  breakWarningCount: number;
   flagCount: number;
   nurseWorkloads: NurseWorkloadViewModel[];
   onFilterPress: (filter: BoardFilter) => void;
@@ -116,24 +107,18 @@ type FloorBoardListHeaderProps = {
   occupiedBedCount: number;
   realtimeConnectionState: RealtimeConnectionState;
   selectedFilter: BoardFilter;
-  shiftStartTimeLabel: string;
-  floorActivityLabel: string;
   totalBedCount: number;
 };
 
 type BoardSummaryCardProps = {
   admittingSideName: string;
-  breakWarningCount: number;
   flagCount: number;
-  floorActivityLabel: string;
   occupiedBedCount: number;
-  shiftStartTimeLabel: string;
   totalBedCount: number;
 };
 
 function FloorBoardListHeader({
   admittingSideName,
-  breakWarningCount,
   flagCount,
   nurseWorkloads,
   onFilterPress,
@@ -141,8 +126,6 @@ function FloorBoardListHeader({
   occupiedBedCount,
   realtimeConnectionState,
   selectedFilter,
-  shiftStartTimeLabel,
-  floorActivityLabel,
   totalBedCount,
 }: FloorBoardListHeaderProps) {
   return (
@@ -155,11 +138,8 @@ function FloorBoardListHeader({
       <WorkflowSection title="Board summary">
         <BoardSummaryCard
           admittingSideName={admittingSideName}
-          breakWarningCount={breakWarningCount}
           flagCount={flagCount}
-          floorActivityLabel={floorActivityLabel}
           occupiedBedCount={occupiedBedCount}
-          shiftStartTimeLabel={shiftStartTimeLabel}
           totalBedCount={totalBedCount}
         />
       </WorkflowSection>
@@ -184,11 +164,8 @@ function FloorBoardListHeader({
 
 function BoardSummaryCard({
   admittingSideName,
-  breakWarningCount,
   flagCount,
-  floorActivityLabel,
   occupiedBedCount,
-  shiftStartTimeLabel,
   totalBedCount,
 }: BoardSummaryCardProps) {
   return (
@@ -213,19 +190,7 @@ function BoardSummaryCard({
 
       <View style={styles.boardSummaryDetails}>
         <BoardSummaryDetail label="Admitting" value={admittingSideName} />
-        <BoardSummaryDetail label="Activity" value={floorActivityLabel} />
-        <BoardSummaryDetail label="Shift start" value={shiftStartTimeLabel} />
       </View>
-
-      {breakWarningCount > 0 ? (
-        <View style={styles.breakWarningStrip}>
-          <Text style={styles.breakWarningStripText}>
-            {breakWarningCount}{" "}
-            {breakWarningCount === 1 ? "break warning" : "break warnings"} need
-            review.
-          </Text>
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -301,12 +266,6 @@ function NurseWorkloadRow({ nurseWorkload }: NurseWorkloadRowProps) {
         </Text>
       </View>
 
-      <View style={styles.workloadBreakRow}>
-        <Text style={styles.workloadBreakText}>{nurseWorkload.breakLabel}</Text>
-        {nurseWorkload.hasBreakWarning ? (
-          <Text style={styles.workloadWarningText}>Needs review</Text>
-        ) : null}
-      </View>
       <InlineFlagList flags={nurseWorkload.flags} />
     </View>
   );
@@ -579,9 +538,6 @@ function getNurseWorkloads(activeShift?: Shift): NurseWorkloadViewModel[] {
       activeShift.assignmentResult?.bedAssignments.filter(
         (assignment) => assignment.nurseId === nurse.id,
       ).length ?? 0;
-    const breakEntry = getBreakEntryForNurse(activeShift, nurse.id);
-    const breakWarnings = getBreakWarningsForNurse(activeShift, nurse.id);
-
     return {
       id: nurse.id,
       name: nurse.name,
@@ -591,10 +547,6 @@ function getNurseWorkloads(activeShift?: Shift): NurseWorkloadViewModel[] {
       roomCoverage: coveredRoomLabels.length
         ? coveredRoomLabels.join(", ")
         : "No rooms",
-      breakLabel: breakEntry
-        ? `Break ${breakEntry.startTime}`
-        : "Break not scheduled",
-      hasBreakWarning: breakWarnings.length > 0,
       currentLoad,
       flags: getNurseInlineFlags(activeShift, nurse.id),
       maxLoad: nurse.maxPatientLoad,
@@ -642,8 +594,6 @@ export default function FloorBoardScreen() {
     type: "side",
     side,
   }));
-  const breakScheduleView = getBreakScheduleView(activeShift);
-
   return (
     <WorkflowListScreen
       activeStep="Board"
@@ -654,7 +604,6 @@ export default function FloorBoardScreen() {
       listHeader={
         <FloorBoardListHeader
           admittingSideName={admittingDoctorSide?.name ?? "-"}
-          breakWarningCount={breakScheduleView.warnings.length}
           flagCount={activeShift?.flags.length ?? 0}
           nurseWorkloads={getNurseWorkloads(activeShift)}
           onFilterPress={setSelectedFilter}
@@ -662,10 +611,6 @@ export default function FloorBoardScreen() {
           occupiedBedCount={occupiedBedCount}
           realtimeConnectionState={realtimeConnectionState}
           selectedFilter={selectedFilter}
-          shiftStartTimeLabel={breakScheduleView.shiftStartTime}
-          floorActivityLabel={getFloorActivityLabel(
-            breakScheduleView.activityLevel,
-          )}
           totalBedCount={totalBedCount}
         />
       }
@@ -840,20 +785,6 @@ const styles = StyleSheet.create({
     fontSize: textSize.md,
     fontWeight: fontWeight.bold,
   },
-  breakWarningStrip: {
-    backgroundColor: colors.status.amber50,
-    borderColor: colors.status.amber800,
-    borderRadius: radius.sm,
-    borderWidth: 0.5,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-  },
-  breakWarningStripText: {
-    color: colors.status.amber800,
-    fontSize: textSize.sm,
-    fontWeight: fontWeight.semibold,
-    lineHeight: 18,
-  },
   inlineFlagList: {
     maxWidth: "100%",
   },
@@ -914,22 +845,6 @@ const styles = StyleSheet.create({
     fontSize: textSize.sm,
     fontWeight: fontWeight.semibold,
     lineHeight: 18,
-  },
-  workloadBreakRow: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  workloadBreakText: {
-    color: colors.neutral.textPrimary,
-    fontSize: textSize.sm,
-    fontWeight: fontWeight.bold,
-  },
-  workloadWarningText: {
-    color: colors.status.amber800,
-    fontSize: textSize.sm,
-    fontWeight: fontWeight.semibold,
   },
   nurseWorkloadLoad: {
     color: colors.brand.burgundy,

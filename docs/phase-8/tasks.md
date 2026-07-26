@@ -2,7 +2,7 @@
 
 This task list plans Phase 8 in small, ordered, independently testable steps. No implementation code is part of the planning task.
 
-Phase 8 adds manual assignment overrides, request-scoped threads and lifecycle clarity, local board snapshot sharing, responsive tablet layouts, accessibility improvements, and measured large-floor performance cleanup. It does not add the Phase 9 production assignment optimizer or Phase 10 advanced break optimizer.
+Phase 8 adds manual assignment overrides, request-scoped threads and lifecycle clarity, local board snapshot sharing, responsive tablet layouts, accessibility improvements, and measured large-floor performance cleanup. It does not add the Phase 9 production assignment optimizer.
 
 Status legend:
 
@@ -15,7 +15,7 @@ Status legend:
 2. Define effective-assignment derivation and override validation.
 3. Add the server-owned manual override write boundary.
 4. Add accessible move selection, drag interaction, confirmation, and warnings.
-5. Handle reruns and break-schedule refresh after overrides.
+5. Handle assignment reruns after overrides.
 6. Add request-thread storage and authorization.
 7. Add charge and nurse thread UI.
 8. Add issue review/resolution and swap completion.
@@ -34,7 +34,7 @@ Build:
 
 - Add Phase 8 user stories, data model, mobile design, screens, and task documents.
 - Treat `docs/phases.md` as the canonical current roadmap.
-- Preserve Phase 1-7 behavior and document Phase 9-10 exclusions.
+- Preserve the remaining Phase 1-7 behavior and document Phase 9 exclusions.
 - Write no app implementation code.
 
 Manual validation:
@@ -48,19 +48,38 @@ Story coverage: US1-US9
 
 Build:
 
-- Review the active shift model, effective board derivation, assignment flags, assignment rerun, break schedule refresh, request repositories, request detail routes, joined nurse scoped view, realtime refresh, notification routing, and connection-disabled actions.
+- Review the active shift model, effective board derivation, assignment flags, assignment rerun, request repositories, request detail routes, joined nurse scoped view, realtime refresh, notification routing, and connection-disabled actions.
 - Identify the smallest files and server functions each Phase 8 feature will affect.
 - Record compatibility risks before runtime changes.
 - Added `docs/phase-8/app-touchpoints.md` with the current app/server boundaries, likely files, focused server operations, and compatibility risks.
 - Confirmed that routine effective-assignment reads need one shared helper and a bed-keyed active projection, while override history stays in indexed server rows.
 - Confirmed that request lifecycle data remains in the active-shift snapshot while request-thread messages use separate append-only server rows.
-- Confirmed that a valid bed-only override preserves the Phase 4 break schedule because generated room coverage does not change.
 
 Manual validation:
 
 - Explain where generated assignment data ends and Phase 8 override data begins.
 - Explain which request data is shift snapshot data and which thread data is append-only server data.
 - Confirm no runtime behavior changed.
+
+### Done Maintenance Task: Remove Break Scheduling
+
+Build:
+
+- Remove the route, screen, scheduler, data types, assignment hook, board and
+  nurse-view presentation, notification event, and joined-nurse RPC field.
+- Update the Supabase joined-nurse RPC, active-shift notification trigger, event
+  constraint, and existing active-shift snapshots.
+- Remove the retired phase from the roadmap while preserving Phase 9 production
+  assignment optimization.
+
+Validation:
+
+- TypeScript and lint pass.
+- Android production export and Hermes compilation pass.
+- App and current Supabase setup definitions contain no stale route, type,
+  payload, event, or function references.
+- Deployed Supabase verification reports zero legacy shift snapshots, zero
+  legacy notification events, and clean function and constraint definitions.
 
 ## Manual Assignment Override Foundation
 
@@ -200,7 +219,7 @@ Manual validation:
 - Joined nurse still cannot read the full board or override history.
 - TypeScript, lint, and two-session check pass.
 
-### Task 1.8: Handle Assignment Rerun and Preserve the Break Boundary
+### Task 1.8: Handle Assignment Rerun
 
 Story coverage: US1, US2, US9
 
@@ -208,16 +227,12 @@ Build:
 
 - Warn before rerunning assignment when active overrides exist.
 - On confirmation, create the new generated baseline, supersede prior active server rows, and remove them from the active bed-keyed projection.
-- Keep the existing Phase 4 break schedule unchanged after a valid bed-only override because generated room coverage is unchanged.
-- Continue to regenerate the break schedule when the full assignment is rerun, matching current behavior.
-- Do not implement a new assignment or break algorithm.
+- Do not implement a new assignment algorithm.
 
 Manual validation:
 
 - Cancelling rerun keeps overrides effective.
 - Confirming rerun restores the generated result as the new baseline.
-- A valid bed-only move leaves existing break times unchanged.
-- A confirmed full assignment rerun regenerates the break schedule with the new generated teams and room coverage.
 - TypeScript, targeted tests, and lint pass.
 
 ## Request Threads and Lifecycle
@@ -302,7 +317,7 @@ Build:
 - Add optional issue lifecycle fields with existing issues defaulting to open.
 - Add charge-only server actions for reviewed, resolved, and reopened transitions.
 - Display the current state in charge and nurse views.
-- Do not touch assignments, patients, acuity, flags, or breaks.
+- Do not touch assignments, patients, acuity, or flags.
 
 Manual validation:
 
@@ -539,7 +554,7 @@ Manual validation:
 Build:
 
 - No new feature work.
-- Validate eligible moves, blocked moves, warning acknowledgement, stale writes, realtime refresh, rerun behavior, and break refresh state.
+- Validate eligible moves, blocked moves, warning acknowledgement, stale writes, realtime refresh, and rerun behavior.
 
 Manual validation:
 
@@ -586,7 +601,7 @@ Manual validation:
 Build:
 
 - No new feature work.
-- Recheck floor setup, shift setup, assignment, carry-over, break scheduling, auth, server persistence, realtime, invites, joined-nurse scoping, requests, notifications, and connection-disabled actions.
+- Recheck floor setup, shift setup, assignment, carry-over, auth, server persistence, realtime, invites, joined-nurse scoping, requests, notifications, and connection-disabled actions.
 
 Manual validation:
 
@@ -604,13 +619,12 @@ Build:
 
 Manual validation:
 
-- No Phase 9 optimizer, Phase 10 break optimizer, AI, EHR/EMR, automated acuity, multi-hospital, handoff-note, global-chat, offline-write-queue, or snapshot-history code exists.
+- No Phase 9 optimizer, AI, EHR/EMR, automated acuity, multi-hospital, handoff-note, global-chat, offline-write-queue, or snapshot-history code exists.
 - A beginner can explain generated versus effective assignment, active bed-keyed lookup versus server override history, accepted versus completed swap, request-scoped authorization, and why snapshots are local and temporary.
 
 ## Later, Not Phase 8
 
 - Production backend assignment optimizer, solver objectives, and complex optimizer suite (Phase 9).
-- Advanced break scheduling optimizer, multi-break rules, or AI-assisted break suggestions (Phase 10).
 - AI staffing or acuity recommendations.
 - EHR/EMR integration or automated acuity from vitals.
 - Multi-hospital administration.

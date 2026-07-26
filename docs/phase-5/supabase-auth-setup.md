@@ -410,16 +410,6 @@ as $$
       coalesce(linked_access.shift_snapshot -> 'nurseRequests', '[]'::jsonb)
     ) request on request.value ->> 'requestingNurseId' = linked_access.nurse_id
     group by linked_access.id
-  ),
-  break_entry as (
-    select
-      linked_access.id as access_id,
-      break_entry.value ->> 'startTime' as start_time
-    from linked_access
-    left join lateral jsonb_array_elements(
-      coalesce(linked_access.shift_snapshot #> '{breakSchedule,entries}', '[]'::jsonb)
-    ) break_entry on break_entry.value ->> 'nurseId' = linked_access.nurse_id
-    limit 1
   )
   select jsonb_build_object(
     'access', jsonb_build_object(
@@ -437,16 +427,13 @@ as $$
     'floorName', linked_access.shift_snapshot ->> 'floorName',
     'nurseName', linked_access.nurse_name,
     'assignedBeds', assigned_beds.value,
-    'breakTimeLabel', break_entry.start_time,
     'requestHistory', request_history.value
   )
   from linked_access
   left join assigned_beds
     on assigned_beds.access_id = linked_access.id
   left join request_history
-    on request_history.access_id = linked_access.id
-  left join break_entry
-    on break_entry.access_id = linked_access.id;
+    on request_history.access_id = linked_access.id;
 $$;
 
 revoke all on function public.get_joined_nurse_assignment_view() from public;

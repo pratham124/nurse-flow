@@ -36,7 +36,7 @@ Build:
 
 - Add Phase 6 planning docs for user stories, data model, mobile design, screens, and implementation tasks.
 - Confirm Phase 6 is realtime collaboration and nurse invites based on `docs/phases.md`.
-- Preserve Phase 1 assignment behavior, Phase 2 carry-over behavior through server snapshots, Phase 3 request behavior, Phase 4 break scheduling, and Phase 5 auth/server persistence.
+- Preserve Phase 1 assignment behavior, Phase 2 carry-over behavior through server snapshots, Phase 3 request behavior, and Phase 5 auth/server persistence.
 - Keep push notifications, offline write queues, conflict resolution, drag-and-drop, board sharing, tablet layout, and AI out of Phase 6.
 
 Validation check:
@@ -78,7 +78,7 @@ Build:
 Validation check:
 
 - TypeScript compiles.
-- Existing auth, server workspace, active shift, assignment, request, and break types still compile.
+- Existing auth, server workspace, active shift, assignment, and request types still compile.
 
 ### Done Task 1.2: Add Charge Active Shift Realtime Subscription Boundary
 
@@ -282,7 +282,7 @@ Build:
 
 Validation check:
 
-- Joined nurse assignment updates when the charge nurse changes patient, acuity, assignment, request, or break data.
+- Joined nurse assignment updates when the charge nurse changes patient, acuity, assignment, or request data.
 - Signing out stops the joined nurse listener.
 - Server authorization still blocks full shift reads.
 - TypeScript, lint, and Expo export pass.
@@ -463,7 +463,7 @@ Build:
 
 Validation check:
 
-- Change acuity, patients, assignments, breaks, and flags from one session.
+- Change acuity, patients, assignments, and flags from one session.
 - Confirm another connected session updates without manual refresh.
 
 ### Task 7.2: Invite Link Manual Test
@@ -490,7 +490,7 @@ Validation check:
 
 - Join as a nurse from a link.
 - Confirm only the nurse-scoped assignment is visible.
-- Confirm assignment, break, patient, acuity, request, and resolution updates appear live.
+- Confirm assignment, patient, acuity, request, and resolution updates appear live.
 
 ### Task 7.4: Authorization Manual Test
 

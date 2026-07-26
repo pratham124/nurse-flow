@@ -112,7 +112,6 @@ Current screens that save active shift changes:
 - `src/screens/NursesScreen.tsx`
 - `src/screens/PatientsAndAcuityScreen.tsx`
 - `src/screens/AssignmentReviewScreen.tsx`
-- `src/screens/BreakScheduleScreen.tsx`
 - `src/screens/SimulatedNurseIssueScreen.tsx`
 - `src/screens/SimulatedNurseSwapScreen.tsx`
 - `src/screens/RequestDetailScreen.tsx`
@@ -169,7 +168,7 @@ Likely Phase 6 UI touchpoints later:
 Compatibility risk:
 
 - Live status chips should be small foreground UI, not a new saved data field.
-- The floor board must keep existing census, flags, unassigned-bed, workload, break, and local simulation behavior until each later Phase 6 task changes one behavior explicitly.
+- The floor board must keep existing census, flags, unassigned-bed, workload, and local simulation behavior until each later Phase 6 task changes one behavior explicitly.
 
 ## Compatibility Risks To Watch Later
 

@@ -77,7 +77,7 @@ Keep the charge nurse board current while connected devices update the active sh
 
 - Board header with floor name, census, and live status.
 - Existing doctor-side and nurse grouping.
-- Existing nurse cards, room coverage, assigned beds, acuity, patient info, flags, and breaks.
+- Existing nurse cards, room coverage, assigned beds, acuity, patient info, and flags.
 - Entry point to Nurse Invites.
 - Entry point to Flags and Requests.
 
@@ -102,7 +102,6 @@ Keep the charge nurse board current while connected devices update the active sh
 - Nurse Invites.
 - Flags and Requests.
 - Existing setup or edit screens where already supported.
-- Existing break schedule screen.
 
 ### Validation and Error States
 
@@ -240,7 +239,6 @@ Show a joined nurse their nurse-scoped live assignment on their own device.
 - Live status chip.
 - Assigned rooms and beds.
 - Patient info and acuity.
-- Own break time.
 - Issue and swap request actions.
 - Request history.
 

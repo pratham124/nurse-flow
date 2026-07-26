@@ -51,8 +51,6 @@ type JoinedNurseAssignmentRpcResult = {
   access: unknown;
   assignedBeds?: unknown;
   assigned_beds?: unknown;
-  breakTimeLabel?: string | null;
-  break_time_label?: string | null;
   floorName?: string;
   floor_name?: string;
   nurseName?: string;
@@ -169,7 +167,24 @@ function requireShiftSnapshot(value: unknown) {
     throw new Error("The active shift has an invalid server shape.");
   }
 
-  return shift;
+  return {
+    admittingDoctorSideId: shift.admittingDoctorSideId,
+    assignmentResult: shift.assignmentResult,
+    bedStates: shift.bedStates,
+    beds: shift.beds,
+    carryOverReviewedAt: shift.carryOverReviewedAt,
+    doctorSides: shift.doctorSides,
+    flags: shift.flags,
+    floorName: shift.floorName,
+    floorTemplateId: shift.floorTemplateId,
+    id: shift.id,
+    nurseRequests: shift.nurseRequests,
+    nurses: shift.nurses,
+    rooms: shift.rooms,
+    sideLoadLimits: shift.sideLoadLimits,
+    startedAt: shift.startedAt,
+    status: shift.status,
+  };
 }
 
 function getActiveShiftPayload(activeShift: Shift) {
@@ -316,8 +331,6 @@ function mapJoinedNurseAssignmentView(
   return {
     access: requireShiftNurseAccess(result.access, profile, shiftId),
     assignedBeds: requireNurseAssignedBeds(assignedBeds),
-    breakTimeLabel:
-      result.breakTimeLabel ?? result.break_time_label ?? undefined,
     floorName,
     nurseName,
     requestHistory: Array.isArray(requestHistory) ? requestHistory : [],

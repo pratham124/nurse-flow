@@ -23,7 +23,7 @@ Reuse the existing NurseFlow visual system:
 - Status chips.
 - Plain form rows.
 - Bottom action bars where already used.
-- Board-context tabs for board, flags, requests, breaks, and invites.
+- Board-context tabs for board, flags, requests, and invites.
 - Clear empty, offline, reconnecting, stale-copy, and refresh-failed states.
 
 Phase 7 labels can include:
@@ -302,7 +302,7 @@ Rules:
 - Turn notifications on for a signed-in charge nurse and confirm status changes.
 - Deny notification permission and confirm the app still works while connected.
 - Submit an issue from a joined nurse and confirm the charge nurse can receive or route from a notification.
-- Update a joined nurse assignment or break time and confirm only affected nurse notification routing is planned/testable.
+- Update a joined nurse assignment and confirm only affected nurse notification routing is planned/testable.
 - Background the app, open a notification, and confirm the target screen refreshes current server data.
 - Turn off network while viewing the floor board and confirm the cached board stays visible with stale copy.
 - Turn off network while viewing the joined nurse assignment and confirm the cached nurse view stays scoped.
@@ -324,5 +324,4 @@ Do not design Phase 7 UI for:
 - Global chat.
 - AI suggestions.
 - Production assignment optimizer controls.
-- Advanced break scheduling optimizer controls.
 - Hospital or organization admin management.

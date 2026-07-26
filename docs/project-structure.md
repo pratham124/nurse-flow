@@ -4,7 +4,7 @@ This structure is for the actual NurseFlow app described in `docs/product-spec.m
 
 The app now follows the React Native folder responsibilities from the referenced DEV guide: assets, components, screens, navigation, store, hooks, services, helpers, and utils. Because this is an Expo Router app, `src/app/` stays as the route registry and points to screen files.
 
-NurseFlow starts as a local charge nurse prototype, then grows toward the full product: charge nurse workflows, regular nurse views, break scheduling, auth, backend persistence, realtime collaboration, invite links, push notifications, offline resilience, drag-and-drop overrides, sharing, and tablet polish.
+NurseFlow starts as a local charge nurse prototype, then grows toward the full product: charge nurse workflows, regular nurse views, auth, backend persistence, realtime collaboration, invite links, push notifications, offline resilience, drag-and-drop overrides, sharing, and tablet polish.
 
 ## Current Folders
 
@@ -65,7 +65,6 @@ Add feature folders only when a task needs them:
     - `assignment`
     - `floor-board`
     - `nurse-view`
-    - `break-scheduling`
     - `auth`
     - `invites`
     - `notifications`
@@ -75,7 +74,7 @@ Add feature folders only when a task needs them:
 
 - `src/types/`
   - Shared TypeScript types for local app data.
-  - Examples: floor templates, rooms, beds, shifts, nurses, patients, assignments, flags, nurse views, break schedules.
+  - Examples: floor templates, rooms, beds, shifts, nurses, patients, assignments, flags, and nurse views.
 
 - `src/storage/`
   - Local persistence code.
@@ -90,7 +89,6 @@ Use this map when deciding where new code belongs:
 - Balanced teams, room coverage, bed assignments, deterministic tie-breakers, and assignment flags belong in `assignment`.
 - Charge nurse board, board filters, inline flags, and workload summaries belong in `floor-board`.
 - Regular nurse assignment, issue flags, and swap requests belong in `nurse-view` when that phase starts.
-- Break generation and break visibility belong in `break-scheduling`.
 - Login, signup, sessions, real roles, backend persistence, realtime updates, invite links, push notifications, offline queues, sharing, and tablet layout are future-phase areas. Add their folders only when those phases begin.
 
 ## Rule Of Thumb

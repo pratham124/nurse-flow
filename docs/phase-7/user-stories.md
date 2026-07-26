@@ -4,7 +4,7 @@ These user stories cover the revised Phase 7 scope: push notifications and light
 
 Phase source note: `docs/phases.md` originally listed a full offline write queue for Phase 7. Based on product review, this plan narrows Phase 7 to the parts that are most useful in a hospital setting: background alerts, notification routing, clear reconnect states, and read-only access to the most recently loaded board or nurse assignment.
 
-Phase 7 preserves the Phase 1 charge nurse assignment workflow, Phase 2 persistence and carry-over behavior, Phase 3 nurse request concepts, Phase 4 break scheduling, Phase 5 auth/server persistence, and Phase 6 realtime/invite behavior.
+Phase 7 preserves the Phase 1 charge nurse assignment workflow, Phase 2 persistence and carry-over behavior, Phase 3 nurse request concepts, Phase 5 auth/server persistence, and Phase 6 realtime/invite behavior.
 
 ## Story 1: Enable Push Notifications Safely
 
@@ -46,14 +46,13 @@ As a charge nurse, I want push notifications for issue flags and swap requests s
 - If the request is already resolved before the notification is opened, the app shows the current request state.
 - Do not add threaded conversations or global chat.
 
-## Story 3: Notify Joined Nurses About Assignment and Break Updates
+## Story 3: Notify Joined Nurses About Assignment Updates
 
-As a joined nurse, I want push notifications when my assignment or break changes so I know to reopen the app and review my current shift view.
+As a joined nurse, I want push notifications when my assignment changes so I know to reopen the app and review my current shift view.
 
 ### Acceptance Criteria
 
 - Assignment updates can notify affected joined nurses only.
-- Break schedule updates can notify affected joined nurses only.
 - Notification taps route to the joined nurse assignment screen when access is still valid.
 - Notifications never expose another nurse's full assignment.
 - Ended shifts or removed access show a safe recovery state.
@@ -61,7 +60,6 @@ As a joined nurse, I want push notifications when my assignment or break changes
 ### Validation and Edge Cases
 
 - Rerunning assignment notifies only nurses whose nurse-scoped assignment changed.
-- Updating a nurse's break time can notify that nurse.
 - A notification opened after shift end shows `Shift ended`.
 - A notification opened after access removal shows `Access removed`.
 
@@ -126,14 +124,14 @@ As a user in an active shift, I want the app to tell me when I am disconnected a
 
 ## Story 7: Preserve Previous Phase Behavior
 
-As a learner building NurseFlow, I want notifications and lightweight resilience added without breaking the proven realtime, invite, assignment, request, and break workflows.
+As a learner building NurseFlow, I want notifications and lightweight resilience added without disrupting the proven realtime, invite, assignment, and request workflows.
 
 ### Acceptance Criteria
 
 - Phase 6 foreground realtime still works when the app is connected.
 - Nurse invite links, join codes, and access rules still work.
 - Server state remains the source of truth after reconnect.
-- Existing assignment, request, break, flag, and carry-over flows still work.
+- Existing assignment, request, flag, and carry-over flows still work.
 - Notification and connection-state code paths are understandable and separately testable.
 
 ### Validation and Edge Cases

@@ -32,7 +32,6 @@ import {
 } from "../utils/assignmentNeedSummary";
 import { generateAssignmentFlags } from "../utils/assignmentFlags";
 import { generateLocalAssignmentResult } from "../utils/assignmentTeams";
-import { generateLocalBreakSchedule } from "../utils/breakSchedule";
 
 type AssignmentReviewListHeaderProps = {
   admittingSideName: string;
@@ -198,7 +197,6 @@ export default function AssignmentReviewScreen() {
     const nextShift = {
       ...activeShift,
       assignmentResult,
-      breakSchedule: generateLocalBreakSchedule(activeShift, assignmentResult),
       flags: generateAssignmentFlags(activeShift, assignmentResult),
       status: "assigned" as const,
     };

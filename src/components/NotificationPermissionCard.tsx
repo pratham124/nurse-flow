@@ -98,7 +98,7 @@ const registrationStatusContent: Record<
 
 const notificationCategories = [
   "Nurse requests",
-  "Assignments & breaks",
+  "Assignment updates",
   "Floor activity & safety",
 ] as const;
 

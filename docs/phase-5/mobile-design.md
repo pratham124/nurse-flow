@@ -168,7 +168,7 @@ Phase 5 can keep the existing Expo Router stack and add an auth/session gate:
 5. Existing Floor Template Setup and Template Review
 6. Existing Start Shift and Carry-Over Review
 7. Existing Nurses, Patients, Acuity, Assignment Review
-8. Existing Floor Board, Breaks, and Flags
+8. Existing Floor Board and Flags
 9. Joined Nurse Access Empty State
 10. Joined Nurse Assignment View when a linked server access record exists
 
@@ -248,7 +248,7 @@ Updated behavior:
 - Show server save status where useful.
 - Show retry after save failure.
 - Keep existing local validation and board layout.
-- Preserve floor board, flags, breaks, and simulated nurse testing flows.
+- Preserve floor board, flags, and simulated nurse testing flows.
 
 Rules:
 
@@ -264,7 +264,7 @@ Keep joined nurse access safely scoped.
 Layout:
 
 - If no linked access exists: `No shift access yet`.
-- If linked access exists: nurse assignment summary, assigned beds, own break time, and own request history.
+- If linked access exists: nurse assignment summary, assigned beds, and own request history.
 - Sign out action.
 
 Rules:
@@ -281,7 +281,6 @@ Rules:
 - Create a floor template and confirm it appears after app reload.
 - Start a shift, run assignment, and confirm the active shift restores after app reload.
 - Submit local nurse requests through the existing simulated flow and confirm request records persist with the active shift.
-- Generate breaks and confirm break schedule state persists with the active shift.
 - Link a signed-in test account to one shift nurse and confirm the full charge nurse board is not visible from joined nurse access.
 - Confirm a new account with no data shows an empty workspace, not a crash.
 - Confirm the UI does not mention realtime, invite links, deep links, push notifications, offline queueing, drag-and-drop, tablet layout, or AI.

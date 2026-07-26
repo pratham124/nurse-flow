@@ -1,6 +1,6 @@
 NurseFlow — Product Specification
 Overview
-NurseFlow is a React Native mobile app for hospital charge nurses to manage shift assignments, patient acuity, and break scheduling. It supports two roles — charge nurse and regular nurse — with real-time collaboration during an active shift. Targets both iOS and Android.
+NurseFlow is a React Native mobile app for hospital charge nurses to manage shift assignments and patient acuity. It supports two roles — charge nurse and regular nurse — with real-time collaboration during an active shift. Targets both iOS and Android.
 
 Tech Stack
 
@@ -14,7 +14,7 @@ Backend: To be defined — spec is backend-agnostic
 Roles
 Charge Nurse
 
-Full control over floor setup, shift management, nurse assignments, patient acuity, and break scheduling
+Full control over floor setup, shift management, nurse assignments, and patient acuity
 Drag and drop to override auto-assignments
 Sees the full floor board
 Receives flags and swap requests as push notifications
@@ -22,7 +22,7 @@ Receives flags and swap requests as push notifications
 Regular Nurse
 
 Joins a shift via a unique deep link (opens the app directly to the shift)
-Sees their own assignment — rooms, beds, patients, acuity, break time
+Sees their own assignment — rooms, beds, patients, and acuity
 Can flag issues or request patient swaps
 
 Auth & Onboarding
@@ -185,42 +185,17 @@ Nurse covering rooms across both doctor sides
 If a nurse has even one generated room on the admitting side → the admitting-side nurse load limit applies
 May cause slight under-utilization when generated room coverage straddles sides
 
-All nurses covering a shared room zone near break simultaneously
-
-Break scheduler prevents this by default
-If a drag-and-drop assignment override causes it, app flags immediately
-At least 1 experienced nurse per zone must always be active
-
 Drag-and-Drop Assignment Override
 
 Charge nurse can drag and drop beds/patients between nurses on the floor board
 After any move, app flags load imbalances inline on affected nurse cards
 Flags are non-blocking — charge nurse can acknowledge and keep the override
 
-Night Shift Break Scheduler
-Inputs
-
-Floor activity level: Low / Moderate / High
-Shift start time
-
-Rules
-
-At least 1 experienced nurse per doctor side at all times
-No two nurses covering the same rooms on break simultaneously
-Breaks staggered across the shift
-
-Output
-
-Break schedule per nurse with suggested times (e.g. "Nurse A: 0100, Nurse B: 0230")
-Refresh button to recalculate mid-shift if activity level changes
-Charge nurse sees full schedule, each nurse sees only their own break time
-
 Nurse-Facing View
 Accessed after joining via deep link:
 
 Generated balanced team, generated room coverage, and assigned beds with individual acuity colors per bed
 Patient info per bed — initials, age, sex, diagnosis
-Scheduled break time
 Flag Issue — short form describing a concern, sent to charge nurse as push notification
 Request Swap — nominate a specific bed/patient and send swap request to charge nurse
 
@@ -238,7 +213,7 @@ Imbalance flags shown inline on affected nurse cards
 Share button — snapshots the board via react-native-view-shot and shares via native share sheet
 
 Push Notifications & Alerts
-EventRecipientNurse joins via invite linkCharge nurseSwap request submittedCharge nurseIssue flaggedCharge nurseSwap accepted / declinedRequesting nurseAssignment updatedAffected nurseBreak time approaching (15 min)Individual nurseLoad imbalance detectedCharge nurseAdmission — new patient addedCharge nurseDischarge — bed now emptyCharge nurseBed unassigned — needs manual resolutionCharge nurse
+EventRecipientNurse joins via invite linkCharge nurseSwap request submittedCharge nurseIssue flaggedCharge nurseSwap accepted / declinedRequesting nurseAssignment updatedAffected nurseLoad imbalance detectedCharge nurseAdmission — new patient addedCharge nurseDischarge — bed now emptyCharge nurseBed unassigned — needs manual resolutionCharge nurse
 Notifications delivered via FCM when app is backgrounded or closed.
 
 Mobile-Specific Considerations

@@ -46,7 +46,6 @@ export type NotificationEventType =
   | "issueSubmitted"
   | "swapRequested"
   | "assignmentUpdated"
-  | "breakUpdated"
   | "admissionAdded"
   | "patientDischarged"
   | "imbalanceDetected"
@@ -65,20 +64,6 @@ export type NotificationEventStatus =
   | "failed"
   | "skipped"
   | "cancelled";
-
-export type FloorActivityLevel = "low" | "moderate" | "high";
-
-export type BreakScheduleStatus =
-  | "not_started"
-  | "generated"
-  | "needs_refresh";
-
-export type BreakWarningType =
-  | "no_experienced_nurse_for_side"
-  | "overlapping_room_coverage"
-  | "missing_assignment_result"
-  | "missing_nurse"
-  | "unable_to_schedule_break";
 
 export type FlagSeverity = "info" | "warning" | "critical";
 
@@ -135,7 +120,6 @@ export interface Shift {
   assignmentResult?: AssignmentResult;
   flags: Flag[];
   nurseRequests?: NurseRequest[];
-  breakSchedule?: BreakSchedule;
   carryOverReviewedAt?: string;
 }
 
@@ -205,35 +189,6 @@ export interface Flag {
   roomId?: LocalId;
   bedId?: LocalId;
   teamId?: LocalId;
-}
-
-export interface BreakSchedule {
-  status: BreakScheduleStatus;
-  shiftStartTime: string;
-  activityLevel: FloorActivityLevel;
-  generatedAt?: string;
-  entries: BreakScheduleEntry[];
-  warnings: BreakScheduleWarning[];
-}
-
-export interface BreakScheduleEntry {
-  id: LocalId;
-  nurseId: LocalId;
-  nurseName: string;
-  startTime: string;
-  durationMinutes: number;
-  doctorSideIds: LocalId[];
-  coveredRoomIds: LocalId[];
-  warningIds: LocalId[];
-}
-
-export interface BreakScheduleWarning {
-  id: LocalId;
-  type: BreakWarningType;
-  message: string;
-  nurseIds: LocalId[];
-  doctorSideIds: LocalId[];
-  roomIds: LocalId[];
 }
 
 export interface NurseRequest {
@@ -371,7 +326,6 @@ export interface JoinedNurseAssignedBed {
 export interface JoinedNurseAssignmentView {
   access: ShiftNurseAccess;
   assignedBeds: JoinedNurseAssignedBed[];
-  breakTimeLabel?: string;
   floorName: string;
   nurseName: string;
   requestHistory: NurseRequest[];

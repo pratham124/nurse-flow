@@ -33,7 +33,7 @@ Show the current effective floor assignment, support deliberate manual moves, su
 - Live connection state.
 - Admitting doctor side.
 - Nurse credentials, generated team, coverage, load, and max load.
-- Rooms, beds, patient display, acuity, breaks, and flags.
+- Rooms, beds, patient display, acuity, and flags.
 - Links to flags/requests, invites, and other existing active-shift actions.
 
 ### Phase 8 Additions
@@ -310,7 +310,6 @@ If active overrides exist, the existing rerun action must explain that rerunning
 ## Phase 8 Exclusions
 
 - Production assignment optimizer UI or services.
-- Advanced break optimizer UI or services.
 - Global chat or a messaging inbox.
 - Offline write queue.
 - Board snapshot history or server upload.

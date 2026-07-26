@@ -204,7 +204,6 @@ Keep Phase 1-4 workflows intact while saving to the server.
 - Patients and Acuity.
 - Assignment Review.
 - Floor Board.
-- Breaks.
 - Flags and Requests.
 - Simulated Nurse screens used by charge nurse for testing.
 
@@ -270,7 +269,6 @@ Provide a safe joined nurse access boundary before a future join-code or invite 
 - If access exists:
   - Nurse assignment summary.
   - Assigned room and bed list.
-  - Own break time.
   - Own request history.
 
 ### Components

@@ -4,7 +4,7 @@ These user stories cover Phase 6 only: realtime collaboration and nurse invite l
 
 Phase source note: `docs/phases.md` defines Phase 6 as Realtime Collaboration and Nurse Invites. Push notifications, offline write queues, conflict resolution, drag-and-drop assignment override, AI, board sharing, and tablet layout belong to later phases and are intentionally excluded here.
 
-Phase 6 preserves the Phase 1 charge nurse assignment workflow, Phase 2 carry-over behavior through server snapshots, Phase 3 nurse-facing request concepts, Phase 4 break scheduling, and Phase 5 auth/server persistence. It adds live multi-device participation for the active shift.
+Phase 6 preserves the Phase 1 charge nurse assignment workflow, Phase 2 carry-over behavior through server snapshots, Phase 3 nurse-facing request concepts, and Phase 5 auth/server persistence. It adds live multi-device participation for the active shift.
 
 ## Story 1: Enable Realtime Active Shift Updates
 
@@ -13,7 +13,7 @@ As a charge nurse, I want active shift changes to appear on connected devices wi
 ### Acceptance Criteria
 
 - Connected charge nurse and nurse devices receive active shift updates while the app is open.
-- Realtime updates cover the current active shift snapshot, nurse-scoped assignment views, request status, break schedule data, and assignment flags.
+- Realtime updates cover the current active shift snapshot, nurse-scoped assignment views, request status, and assignment flags.
 - Server state remains the source of truth after each write.
 - Existing Phase 5 request-then-refresh behavior remains valid as a fallback for direct user actions.
 - The UI shows a simple connection state such as connecting, live, reconnecting, or disconnected.
@@ -49,7 +49,7 @@ As a charge nurse, I want to generate an invite link for a specific nurse so tha
 
 ## Story 3: Join a Shift From an Invite Link
 
-As a regular nurse, I want to open an invite link and join my nurse assignment so I can view my current rooms, beds, patients, acuity, requests, and break time on my own device.
+As a regular nurse, I want to open an invite link and join my nurse assignment so I can view my current rooms, beds, patients, acuity, and requests on my own device.
 
 ### Acceptance Criteria
 
@@ -75,7 +75,7 @@ As a joined nurse, I want assignment updates to appear while I am viewing my nur
 ### Acceptance Criteria
 
 - Joined nurses receive live updates to their nurse-scoped assignment view.
-- Assignment changes, patient changes, acuity changes, break schedule changes, and request status changes update in the nurse view.
+- Assignment changes, patient changes, acuity changes, and request status changes update in the nurse view.
 - The nurse view remains scoped to the joined nurse's access record after each update.
 - If the nurse's access is removed or the shift ends, the nurse sees a safe ended or access-removed state.
 - Live updates should not expose other nurses' full assignments.
@@ -83,7 +83,6 @@ As a joined nurse, I want assignment updates to appear while I am viewing my nur
 ### Validation and Edge Cases
 
 - When the charge nurse reruns assignment, the affected joined nurse sees updated beds.
-- When the charge nurse updates break scheduling, the joined nurse sees their own break time update.
 - When the charge nurse resolves a swap request, the requesting nurse sees the status change.
 - If the nurse is no longer part of the active shift, the view exits to a clear access state.
 - Do not add background push notifications for updates in this story.
@@ -136,7 +135,6 @@ As a learner building NurseFlow, I want realtime and invite behavior added witho
 - Phase 1 floor setup, assignment, board, census, imbalance flags, and unassigned-bed flags still work.
 - Phase 2 carry-over snapshots still work through server-backed previous shift data.
 - Phase 3 nurse request behavior still maps to active-shift request records.
-- Phase 4 break schedules still belong to active shifts and update live when changed.
 - Phase 5 auth, sessions, server templates, server active shifts, and nurse-scoped access boundaries remain intact.
 - Realtime subscriptions are cleaned up when leaving a shift or signing out.
 

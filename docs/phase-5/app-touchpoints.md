@@ -22,7 +22,6 @@ Current route files:
 - `src/app/patients-and-acuity.tsx`
 - `src/app/assignment-review.tsx`
 - `src/app/floor-board.tsx`
-- `src/app/break-schedule.tsx`
 - `src/app/flags.tsx`
 - `src/app/simulated-nurse-picker.tsx`
 - `src/app/simulated-nurse-assignment.tsx`
@@ -121,7 +120,7 @@ Likely files to remove, shrink, or disconnect from runtime flows:
 Removal rules:
 
 - Do not import old local testing data.
-- Do not keep two sources of truth for templates, active shifts, snapshots, nurses, patients, requests, or breaks.
+- Do not keep two sources of truth for templates, active shifts, snapshots, nurses, patients, or requests.
 - Keep temporary form state local only until submit.
 - Fetch server data after successful mutations and render from fetched server state.
 - Sign out should clear in-memory server workspace state; it should not depend on local app-state storage.
@@ -135,8 +134,7 @@ Current screens that will need careful server-backed changes later:
 - `src/screens/StartShiftScreen.tsx`: sets shift-side and load-limit setup.
 - `src/screens/NursesScreen.tsx`: edits active-shift nurses.
 - `src/screens/PatientsAndAcuityScreen.tsx`: edits bed states, patients, and acuity.
-- `src/screens/AssignmentReviewScreen.tsx`: writes assignment result, flags, and generated break schedule.
-- `src/screens/BreakScheduleScreen.tsx`: refreshes break schedule.
+- `src/screens/AssignmentReviewScreen.tsx`: writes assignment results and flags.
 - `src/screens/RequestDetailScreen.tsx`: resolves local swap requests.
 - `src/screens/SimulatedNurseIssueScreen.tsx` and `src/screens/SimulatedNurseSwapScreen.tsx`: append local nurse requests to the active shift.
 

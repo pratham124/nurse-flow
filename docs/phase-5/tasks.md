@@ -36,7 +36,7 @@ Build:
 
 - Added Phase 5 planning docs for user stories, data model, mobile design, screens, and implementation tasks.
 - Confirmed Phase 5 is backend, auth, and server persistence based on `docs/phases.md`.
-- Preserved Phase 1 assignment behavior, Phase 2 carry-over behavior through server snapshots, Phase 3 local nurse simulation and requests, and Phase 4 local break scheduling in the plan.
+- Preserved Phase 1 assignment behavior, Phase 2 carry-over behavior through server snapshots, and Phase 3 local nurse simulation and requests in the plan.
 - Kept realtime collaboration, nurse invite links, deep links, push notifications, offline sync queues, drag-and-drop, board sharing, tablet layout, and AI out of Phase 5.
 
 Validation check:
@@ -96,7 +96,7 @@ Build:
 Validation check:
 
 - TypeScript compiles.
-- Existing local shift, assignment, request, and break schedule types still compile.
+- Existing local shift, assignment, and request types still compile.
 
 ### Done Task 1.2: Add Session Gate
 
@@ -256,7 +256,7 @@ Story coverage: US4, US6
 Build:
 
 - Save meaningful active shift changes to the server.
-- Include nurses, bed states, assignment result, flags, nurse requests, and break schedule when present.
+- Include nurses, bed states, assignment result, flags, and nurse requests when present.
 - Use the general mutation pattern: submit the focused server request, then refresh the relevant active-shift data from the backend before the next screen depends on it.
 - Show `Saving`, `Saved to account`, and `Save failed` states.
 - Add retry for failed saves.
@@ -266,7 +266,7 @@ Validation check:
 - Add nurses, go to the next screen, and confirm the UI shows nurses fetched for the current server shift.
 - Add nurses and patients, reload, and confirm they restore.
 - Run assignment, reload, and confirm assignment result and flags restore.
-- Submit local requests and generate breaks, reload, and confirm they restore.
+- Submit local requests, reload, and confirm they restore.
 
 ### Done Task 3.2a: Add Server-Backed Nurse Save and Refresh
 
@@ -316,7 +316,7 @@ Validation check:
 
 - End a shift and start another shift on the same template.
 - Confirm nurse and patient carry-over suggestions appear from server data.
-- Confirm request history and break schedules are not treated as carry-over suggestions.
+- Confirm request history is not treated as carry-over suggestions.
 
 ## Roles and Authorization
 
@@ -395,7 +395,7 @@ Build:
 - Removed the local workspace mirror so screens read server-backed templates, active shift, and snapshots from `ServerWorkspaceContext`.
 - Added a small draft-only context for unsaved floor-template setup and simulated nurse testing state.
 - Deleted runtime migration/import handling for old Phase 1-4 testing data.
-- Kept templates, active shifts, previous-shift snapshots, nurses, patients, assignment results, requests, and breaks on server-backed reads and writes.
+- Kept templates, active shifts, previous-shift snapshots, nurses, patients, assignment results, and requests on server-backed reads and writes.
 - Kept temporary screen/form state only for unsaved input before submit.
 - Made sign out clear in-memory server workspace state without relying on local persisted app data.
 
@@ -403,7 +403,7 @@ Validation check:
 
 - Search the codebase and confirm old local app-state storage helpers are no longer used by Phase 5 flows.
 - Restart the app and confirm the workspace restores from the server session and server data, not local app-state storage.
-- Create/edit templates, start/restore shifts, add nurses/patients, run assignment, submit requests, and generate breaks through server-backed state.
+- Create/edit templates, start/restore shifts, add nurses/patients, run assignment, and submit requests through server-backed state.
 - Confirm deleting old local test data does not affect server-backed account data.
 
 ### Done Task 5.2: Review Previous Phase Workflows
@@ -422,7 +422,6 @@ Validation check:
 - Start shift and carry-over works.
 - Assignment and flags work.
 - Simulated nurse requests work.
-- Break schedule works.
 
 ## Manual Testing Pass
 
@@ -462,7 +461,7 @@ Validation check:
 Build:
 
 - No new feature work.
-- Reviewed active-shift start, save, refresh, restore, request, assignment, flag, and break-schedule save paths.
+- Reviewed active-shift start, save, refresh, restore, request, assignment, and flag save paths.
 - Confirmed setup screens save through `saveActiveShift` before moving to the next server-backed screen.
 
 Validation check:
@@ -471,7 +470,7 @@ Validation check:
 - Add nurses, patients, and acuity.
 - Run assignment.
 - Restart the app.
-- Confirm shift, assignment, flags, requests, and breaks restore.
+- Confirm shift, assignment, flags, and requests restore.
 
 ### Done Task 6.4: Role Authorization Manual Test
 
@@ -502,7 +501,6 @@ Validation check:
 - Carry-over still works.
 - Assignment still works.
 - Local request flow still works.
-- Break scheduling still works.
 
 ### Done Task 6.6: Phase 5 Scope Test
 

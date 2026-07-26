@@ -2,7 +2,7 @@
 
 Phase 8 adds advanced interaction, request follow-up, board sharing, and presentation improvements after the connected Phase 1-7 workflow is reliable.
 
-Phase 8 preserves the existing floor setup, deterministic assignment, persistence and carry-over, break scheduling, authenticated server state, realtime nurse access, requests, notifications, and connection behavior. It does not replace the assignment or break algorithms planned for Phases 9 and 10.
+Phase 8 preserves the existing floor setup, deterministic assignment, persistence and carry-over, authenticated server state, realtime nurse access, requests, notifications, and connection behavior. It does not replace the assignment algorithm planned for Phase 9.
 
 ## US1: Override a Bed Assignment by Dragging
 
@@ -75,7 +75,7 @@ As a charge nurse, I want to mark an issue as reviewed or resolved so the reques
 
 - An issue has a clear `Open`, `Reviewed`, or `Resolved` state.
 - Only the charge nurse can mark an issue reviewed or resolved.
-- Marking an issue reviewed or resolved does not alter bed assignments, patients, acuity, breaks, or assignment flags.
+- Marking an issue reviewed or resolved does not alter bed assignments, patients, acuity, or assignment flags.
 - The requesting nurse sees state changes live and can still read the thread.
 - A resolved issue remains in request history.
 - A resolved issue can be reopened only through an explicit charge-nurse action.
@@ -179,13 +179,13 @@ As a learner building NurseFlow, I want Phase 8 to extend the connected app with
 ### Acceptance Criteria
 
 - Rerunning the current deterministic assignment remains an explicit charge-nurse action.
-- Phase 8 does not change the Phase 1 assignment rules or Phase 4 break scheduler.
+- Phase 8 does not change the Phase 1 assignment rules.
 - Existing auth, server authorization, realtime scoping, invites, notification routing, and disconnected-action behavior remain intact.
 - Manual overrides and request messages use server-fresh authorization and do not introduce an offline write queue.
-- No AI, EHR/EMR integration, automated acuity, multi-hospital tools, handoff notes, production assignment optimizer, or advanced break optimizer is added.
+- No AI, EHR/EMR integration, automated acuity, multi-hospital tools, handoff notes, or production assignment optimizer is added.
 
 ### Manual Checks and Edge Cases
 
 - Run the previous-phase regression checks after Phase 8 work.
 - Confirm a joined nurse still cannot read the full floor board.
-- Confirm Phase 9 and Phase 10 data or services do not appear in the Phase 8 implementation.
+- Confirm Phase 9 data or services do not appear in the Phase 8 implementation.

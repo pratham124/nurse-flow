@@ -10,7 +10,6 @@ The app helps hospital charge nurses manage:
 - shift assignments
 - patient acuity
 - nurse workloads
-- break scheduling
 - nurse-facing shift views
 
 ## Goal

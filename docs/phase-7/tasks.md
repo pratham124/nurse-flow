@@ -2,7 +2,7 @@
 
 This task list plans push notifications and lightweight connection resilience in small, testable steps.
 
-Phase 7 adds background push notifications, notification tap routing, cached read-only views during brief disconnects, and clear reconnect/disabled-action states. Do not add offline write queues, drag-and-drop assignment override, board snapshot sharing, tablet layout, request threads, global chat, AI, production assignment optimization, or advanced break scheduling optimization.
+Phase 7 adds background push notifications, notification tap routing, cached read-only views during brief disconnects, and clear reconnect/disabled-action states. Do not add offline write queues, drag-and-drop assignment override, board snapshot sharing, tablet layout, request threads, global chat, AI, or production assignment optimization.
 
 Each task should be small enough for one focused Codex session. Each task includes a manual validation check that should be tested before moving on.
 
@@ -20,7 +20,7 @@ Status legend:
 5. Register and disable device push tokens.
 6. Add server notification event boundary.
 7. Send request notifications to charge nurses.
-8. Send assignment and break update notifications to affected joined nurses.
+8. Send assignment update notifications to affected joined nurses.
 9. Send admission, discharge, imbalance, and unassigned-bed notifications where useful.
 10. Add notification tap routing and recovery states.
 11. Cache the latest charge board and joined nurse views.
@@ -37,8 +37,8 @@ Build:
 
 - Add Phase 7 planning docs for user stories, data model, mobile design, screens, and implementation tasks.
 - Confirm Phase 7 is revised to focus on push notifications and lightweight connection resilience.
-- Preserve Phase 1 assignment behavior, Phase 2 persistence/carry-over behavior, Phase 3 request behavior, Phase 4 break scheduling, Phase 5 auth/server persistence, and Phase 6 realtime/invite behavior.
-- Keep offline write queues, drag-and-drop, board sharing, tablet layout, request threads, global chat, AI, production assignment optimization, and advanced break optimization out of Phase 7.
+- Preserve Phase 1 assignment behavior, Phase 2 persistence/carry-over behavior, Phase 3 request behavior, Phase 5 auth/server persistence, and Phase 6 realtime/invite behavior.
+- Keep offline write queues, drag-and-drop, board sharing, tablet layout, request threads, global chat, AI, and production assignment optimization out of Phase 7.
 
 Validation check:
 
@@ -165,7 +165,7 @@ Build:
 
 Validation check:
 
-- A notification event can represent a request, assignment update, break update, admission, discharge, imbalance, or unassigned-bed alert.
+- A notification event can represent a request, assignment update, admission, discharge, imbalance, or unassigned-bed alert.
 - The model can skip ended shifts and disabled recipients.
 
 ### Done Task 2.2: Notify Charge Nurses About Issue Flags
@@ -224,25 +224,6 @@ Validation check:
 - Rerun assignment or update assignment data.
 - Only affected joined nurses are targeted.
 - A nurse without access does not receive the assignment notification.
-- TypeScript and lint pass.
-
-### Done Task 2.5: Notify Joined Nurses About Break Updates
-
-Story coverage: US3, US7
-
-Build:
-
-- Notify joined nurses when their own break time changes.
-- Keep the charge nurse break schedule screen behavior unchanged.
-- Route notification taps to the joined nurse assignment break section or screen.
-- Compared each linked nurse's break start time and duration so unrelated
-  schedule changes do not notify other nurses.
-
-Validation check:
-
-- Update a break schedule.
-- The affected joined nurse is targeted.
-- Other nurses are not targeted unless their break changed.
 - TypeScript and lint pass.
 
 ### Done Task 2.6: Notify Charge Nurses About Floor Events and Safety Flags
@@ -389,12 +370,12 @@ Validation check:
 Build:
 
 - No new feature work.
-- Validate notification permission, token registration, request notifications, assignment/break notifications, floor-event notifications, and notification tap routing.
+- Validate notification permission, token registration, request notifications, assignment notifications, floor-event notifications, and notification tap routing.
 
 Validation check:
 
 - Permission granted, denied, and retry states are tested.
-- Issue, swap, assignment, break, admission, discharge, imbalance, and unassigned-bed notification paths are tested where supported by the environment.
+- Issue, swap, assignment, admission, discharge, imbalance, and unassigned-bed notification paths are tested where supported by the environment.
 - Notification taps land on current server data or safe recovery states.
 
 ### Task 4.2: Cached View Manual Test
@@ -434,7 +415,7 @@ Build:
 
 Validation check:
 
-- Floor setup, assignment, board flags, carry-over, break scheduling, auth, server persistence, realtime updates, invites, joins, and live requests still work.
+- Floor setup, assignment, board flags, carry-over, auth, server persistence, realtime updates, invites, joins, and live requests still work.
 - Notification failure does not break connected app behavior.
 - Cached view failure does not break server reads.
 
@@ -447,7 +428,7 @@ Build:
 
 Validation check:
 
-- There are no Phase 7 screens, dependencies, data fields, or service calls for offline write queues, drag-and-drop assignment override, board snapshot sharing, tablet layout, request threads, global chat, AI, production assignment optimization, or advanced break scheduling optimization.
+- There are no Phase 7 screens, dependencies, data fields, or service calls for offline write queues, drag-and-drop assignment override, board snapshot sharing, tablet layout, request threads, global chat, AI, or production assignment optimization.
 
 ### Task 4.6: Beginner Readability Pass
 
@@ -474,6 +455,5 @@ Save these for future phases only if real hospital testing proves they are worth
 - Global chat.
 - AI-assisted staffing or acuity suggestions.
 - Production assignment optimizer.
-- Advanced break scheduling optimizer.
 - EHR or EMR integration.
 - Multi-hospital admin tools.

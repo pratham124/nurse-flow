@@ -8,7 +8,7 @@ This note maps the existing NurseFlow code and server setup before Phase 8 runti
 
 Phase 8 adds charge-nurse bed assignment overrides, request-scoped threads and lifecycle clarity, a local board snapshot share flow, responsive tablet layouts, accessibility work, and measured large-floor performance cleanup.
 
-Phase 8 preserves the Phase 1 assignment generator, Phase 4 break scheduler, Phase 5 server-owned active shift, Phase 6 nurse-scoped access and realtime behavior, and Phase 7 notification routing. It does not add the Phase 9 production assignment optimizer, Phase 10 advanced break optimizer, global chat, an offline write queue, AI, EHR/EMR integration, automated acuity, multi-hospital tools, or handoff notes.
+Phase 8 preserves the Phase 1 assignment generator, Phase 5 server-owned active shift, Phase 6 nurse-scoped access and realtime behavior, and Phase 7 notification routing. It does not add the Phase 9 production assignment optimizer, global chat, an offline write queue, AI, EHR/EMR integration, automated acuity, multi-hospital tools, or handoff notes.
 
 ## Current Authoritative Data Boundaries
 
@@ -19,7 +19,6 @@ Phase 8 preserves the Phase 1 assignment generator, Phase 4 break scheduler, Pha
 - `assignmentResult`, containing generated teams, generated room coverage, and generated bed assignments.
 - `flags`, currently generated from that assignment result.
 - `nurseRequests`, currently stored as an optional array inside the shift snapshot.
-- `breakSchedule`, currently generated from Phase 4 inputs.
 
 `ActiveShiftRecord` wraps that `Shift` as `shiftSnapshot`. The Supabase `active_shifts` table in `docs/phase-5/supabase-auth-setup.md` stores the snapshot in one `jsonb` column.
 
@@ -118,14 +117,13 @@ Compatibility rules:
 `src/screens/AssignmentReviewScreen.tsx` currently performs one broad flow:
 
 1. Calls `generateLocalAssignmentResult`.
-2. Generates a new local break schedule.
-3. Generates flags.
-4. Saves the complete next `Shift` through `saveActiveShift`.
+2. Generates flags.
+3. Saves the complete next `Shift` through `saveActiveShift`.
 
 Once active override rows exist, that broad client save cannot safely supersede them by itself. Task 1.8 needs a focused charge-nurse server action that atomically:
 
 - Confirms the expected current assignment baseline and shift ownership.
-- Saves the newly generated assignment, flags, and break schedule snapshot.
+- Saves the newly generated assignment and flags snapshot.
 - Supersedes active override rows tied to the old baseline.
 - Returns the refreshed snapshot and an empty/rebuilt active override dictionary.
 
@@ -144,22 +142,6 @@ Risks:
 - Warning acknowledgement records explain why charge proceeded; they do not remove a still-active flag.
 
 Task 1.2 must choose one explicit view boundary for effective flags so derived app-only flags are not accidentally written back as override history.
-
-## Break Schedule Touchpoints
-
-`src/utils/breakSchedule.ts` currently generates Phase 4 schedules from generated room coverage, doctor sides, nurse experience, and activity inputs. `markBreakScheduleNeedsRefresh` already exists for inputs that invalidate a generated schedule.
-
-A Phase 8 bed override does not alter generated teams or room coverage, and a valid target nurse must already cover the bed's room. Therefore:
-
-- A normal bed override does not automatically regenerate the Phase 4 break schedule.
-- A normal bed override does not mark the schedule `needs_refresh` solely because bed ownership changed.
-- An assignment rerun continues to generate a new break schedule as it does today because the generated teams or room coverage may change.
-- If a future phase makes assigned-bed load or acuity a break-optimizer input, that belongs to Phase 10 rather than Phase 8.
-
-Likely existing files that should remain stable for a normal override:
-
-- `src/utils/breakSchedule.ts`
-- `src/screens/BreakScheduleScreen.tsx`
 
 ## Charge Board and Drag Touchpoints
 
@@ -350,17 +332,16 @@ Task 5.2 must measure a representative large floor and long thread before Task 5
 - Do not mark an accepted swap completed until its linked override transaction succeeds.
 - Preserve a completed request when its override is later superseded, but label that the assignment changed again.
 - Do not expose full override history, full active shift, or another nurse's thread through joined-nurse responses.
-- Do not regenerate or stale the current Phase 4 break schedule for a valid bed-only override.
 - Do not rely on current generic snapshot-diff notifications to detect separate override rows.
 - Do not permit move or message writes while disconnected or imply they are queued.
 - Do not add drag-only behavior without the accessible move picker.
 - Do not capture only the visible board viewport or persist shared images to NurseFlow.
 - Do not optimize lists before measuring a representative large floor and thread.
-- Do not add Phase 9 or Phase 10 optimizer behavior.
+- Do not add Phase 9 optimizer behavior.
 
 ## Task 0.2 Validation Result
 
 - Generated assignment ends at `AssignmentResult`; Phase 8 effective assignment begins in one pure helper that combines the generated baseline with the active bed-keyed projection.
 - Existing issue/swap request lifecycle data remains in `shift_snapshot.nurseRequests`; new thread messages are append-only server rows loaded only for an authorized request.
-- The likely app files, server functions, routes, realtime signals, notification paths, break boundary, sharing boundary, responsive primitives, and compatibility risks are documented above.
+- The likely app files, server functions, routes, realtime signals, notification paths, sharing boundary, responsive primitives, and compatibility risks are documented above.
 - No runtime implementation, schema migration, dependency, or app configuration was added.
