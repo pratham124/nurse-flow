@@ -319,6 +319,15 @@ Replace the Phase 1 frontend assignment prototype with a production-grade backen
 - Red-bed tie-breaking that prefers experienced RNs, then mid RNs, then new grad RNs when multiple eligible RNs are otherwise equal.
 - Complex scenario test suite with many rooms, nurses, bed counts, max loads, and acuity mixes.
 
+## Research References:
+
+- Google OR-Tools: Assignment with Task Sizes  
+  `https://developers.google.com/optimization/assignment/assignment_cp`
+- Google OR-Tools: Constraint Optimization  
+  `https://developers.google.com/optimization/cp/`
+- Integrated patient-to-room and nurse-to-patient assignment in hospital wards  
+  `https://link.springer.com/article/10.1007/s00291-024-00800-z`
+
 ### Excluded Features
 
 - AI-based assignment.
