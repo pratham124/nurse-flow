@@ -345,3 +345,18 @@ Task 5.2 must measure a representative large floor and long thread before Task 5
 - Existing issue/swap request lifecycle data remains in `shift_snapshot.nurseRequests`; new thread messages are append-only server rows loaded only for an authorized request.
 - The likely app files, server functions, routes, realtime signals, notification paths, sharing boundary, responsive primitives, and compatibility risks are documented above.
 - No runtime implementation, schema migration, dependency, or app configuration was added.
+
+### 2026-07-26 Revalidation
+
+- Rechecked the documented boundaries against `Shift`, `ActiveShiftRecord`, the
+  assignment generator and flag helpers, board and joined-nurse consumers,
+  request RPC wrappers, realtime subscriptions, and notification routing.
+- Confirmed that Phase 8 override, effective-assignment, and request-message
+  runtime symbols are still absent, so Tasks 1.1 and 2.1 remain the correct
+  implementation starting points.
+- Confirmed the existing gesture and animation dependencies are present and
+  that no board-capture dependency has been added early.
+- Confirmed the break-scheduling removal did not change the generated
+  assignment, request, realtime, or notification boundaries described here.
+- This revalidation changed documentation only; it added no runtime behavior,
+  schema migration, dependency, or app configuration.

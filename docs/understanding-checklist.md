@@ -2592,3 +2592,29 @@ For each task, add a dated section with:
   - [ ] Gaps were explained.
   - [x] Code-specific question or walkthrough completed.
 - Status: in progress
+
+### 2026-07-26 - Revalidate Phase 8 Task 0.2
+
+- Task: Recheck the existing Phase 8 app/server touchpoint report against the
+  post-break-removal codebase without implementing Tasks 1.1 or later.
+- Problem understanding:
+  - [ ] Why an existing `Done` marker is not evidence that an architecture
+    inventory still matches the current code.
+  - [ ] Why Task 0.2 remains documentation-only even though it identifies later
+    runtime files, server functions, and compatibility risks.
+- Solution understanding:
+  - [ ] The current model, generator, consumers, RPC wrappers, realtime
+    subscriptions, notification routing, dependencies, and absent Phase 8
+    runtime symbols were checked directly.
+  - [ ] The dated revalidation records that the report still matches the
+    post-removal app without adding runtime behavior.
+- Broader context:
+  - [ ] Task 1.1 remains the first effective-assignment implementation task;
+    Task 0.2 does not create its helper, types, tables, or actions early.
+  - [ ] Revalidation protects later implementation from relying on stale
+    architectural assumptions.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+- Status: pending

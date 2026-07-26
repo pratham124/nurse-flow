@@ -54,6 +54,8 @@ Build:
 - Added `docs/phase-8/app-touchpoints.md` with the current app/server boundaries, likely files, focused server operations, and compatibility risks.
 - Confirmed that routine effective-assignment reads need one shared helper and a bed-keyed active projection, while override history stays in indexed server rows.
 - Confirmed that request lifecycle data remains in the active-shift snapshot while request-thread messages use separate append-only server rows.
+- Revalidated these boundaries on 2026-07-26 after break scheduling was removed;
+  no Phase 8 runtime symbol, schema, dependency, or configuration was added.
 
 Manual validation:
 
