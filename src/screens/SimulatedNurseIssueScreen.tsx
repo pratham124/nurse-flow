@@ -11,7 +11,7 @@ import {
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { useWorkflowDraft } from "../store/WorkflowDraftContext";
 import { colors, fontWeight, radius, shadows, spacing, textSize } from "../theme/tokens";
-import type { LocalId, NurseRequest } from "../types/models";
+import type { NurseRequest } from "../types/models";
 import {
   getSelectedNurseAssignmentView,
   type NurseAssignedBedView,
@@ -27,7 +27,7 @@ const blankIssueMessage = "Add a short issue description.";
 const invalidBedMessage = "Choose one of your assigned beds.";
 
 type IssueBedOption = {
-  bedId?: LocalId;
+  bedId?: string;
   detail: string;
   label: string;
 };
@@ -36,8 +36,8 @@ type IssueFormContentProps = {
   message: string;
   messageError: string;
   onMessageChange: (message: string) => void;
-  onSelectBed: (bedId?: LocalId) => void;
-  selectedBedId?: LocalId;
+  onSelectBed: (bedId?: string) => void;
+  selectedBedId?: string;
   view: NurseAssignmentView;
 };
 
@@ -172,7 +172,7 @@ export default function SimulatedNurseIssueScreen() {
   const [message, setMessage] = useState("");
   const [messageError, setMessageError] = useState("");
   const [formError, setFormError] = useState("");
-  const [selectedBedId, setSelectedBedId] = useState<LocalId | undefined>();
+  const [selectedBedId, setSelectedBedId] = useState<string | undefined>();
   const assignmentResult = getSelectedNurseAssignmentView(
     activeShift,
     simulatedSessionState.selectedNurseId,
@@ -188,7 +188,7 @@ export default function SimulatedNurseIssueScreen() {
     setFormError("");
   }
 
-  function handleSelectBed(bedId?: LocalId) {
+  function handleSelectBed(bedId?: string) {
     setSelectedBedId(bedId);
     setFormError("");
   }

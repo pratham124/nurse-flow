@@ -9,7 +9,7 @@ import {
 import { createLocalId } from "../helpers/localId";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { useWorkflowDraft } from "../store/WorkflowDraftContext";
-import type { FloorTemplate, LocalId } from "../types/models";
+import type { FloorTemplate } from "../types/models";
 
 const requiredFloorNameMessage = "Floor name is required.";
 const duplicateFloorNameMessage = "A floor with this name already exists.";
@@ -17,7 +17,7 @@ const duplicateFloorNameMessage = "A floor with this name already exists.";
 function hasSavedFloorTemplateWithName(
   floorTemplates: FloorTemplate[],
   trimmedFloorName: string,
-  currentDraftId?: LocalId,
+  currentDraftId?: string,
 ) {
   return floorTemplates.some(
     (floorTemplate) =>

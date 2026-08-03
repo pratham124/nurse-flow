@@ -85,7 +85,7 @@ Validation:
 
 ## Manual Assignment Override Foundation
 
-### Task 1.1: Add Effective-Assignment Derivation
+### Done Task 1.1: Add Effective-Assignment Derivation
 
 Story coverage: US1, US2, US5, US9
 

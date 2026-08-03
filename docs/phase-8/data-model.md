@@ -129,7 +129,7 @@ Conceptual type:
 
 ```ts
 type ActiveAssignmentOverridesByBedId = Record<
-  LocalId,
+  string,
   ManualAssignmentOverride
 >;
 ```

@@ -1,9 +1,4 @@
-import type {
-  LocalId,
-  NurseRequest,
-  NurseRequestStatus,
-  Shift,
-} from "../types/models";
+import type { NurseRequest, NurseRequestStatus, Shift } from "../types/models";
 
 const nurseRequestIdPrefix = "nurse-request";
 
@@ -11,7 +6,7 @@ export function getShiftNurseRequests(activeShift?: Shift): NurseRequest[] {
   return getRequestsWithUniqueIds(activeShift?.nurseRequests ?? []);
 }
 
-export function createNurseRequestId(activeShift?: Shift): LocalId {
+export function createNurseRequestId(activeShift?: Shift): string {
   const requests = getShiftNurseRequests(activeShift);
   const usedIds = new Set(requests.map((request) => request.id));
   let nextNumber = requests.length + 1;
@@ -27,7 +22,7 @@ export function createNurseRequestId(activeShift?: Shift): LocalId {
 
 export function resolvePendingSwapRequest(
   activeShift: Shift,
-  requestId: LocalId,
+  requestId: string,
   nextStatus: Extract<NurseRequestStatus, "accepted" | "declined">,
 ): Shift {
   return {
@@ -54,7 +49,7 @@ export function resolvePendingSwapRequest(
 }
 
 function getRequestsWithUniqueIds(requests: NurseRequest[]): NurseRequest[] {
-  const usedIds = new Set<LocalId>();
+  const usedIds = new Set<string>();
   let nextNumber = requests.length + 1;
 
   return requests.map((request) => {
@@ -82,7 +77,7 @@ function getRequestsWithUniqueIds(requests: NurseRequest[]): NurseRequest[] {
 
 export function getNurseRequestsForNurse(
   activeShift: Shift | undefined,
-  nurseId: LocalId | undefined,
+  nurseId: string | undefined,
 ): NurseRequest[] {
   if (!nurseId) {
     return [];

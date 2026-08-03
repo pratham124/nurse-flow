@@ -1,5 +1,3 @@
-export type LocalId = string;
-
 export type LicenseType = "RN" | "LPN";
 
 export type ExperienceLevel = "new_grad" | "mid" | "experienced";
@@ -78,7 +76,7 @@ export type FlagType =
   | "understaffed";
 
 export interface FloorTemplate {
-  id: LocalId;
+  id: string;
   name: string;
   doctorSides: DoctorSide[];
   rooms: Room[];
@@ -86,31 +84,31 @@ export interface FloorTemplate {
 }
 
 export interface DoctorSide {
-  id: LocalId;
+  id: string;
   name: string;
 }
 
 export interface Room {
-  id: LocalId;
-  doctorSideId: LocalId;
+  id: string;
+  doctorSideId: string;
   label: string;
   bedCount: number;
 }
 
 export interface Bed {
-  id: LocalId;
-  roomId: LocalId;
+  id: string;
+  roomId: string;
   label: string;
   bedNumber: number;
 }
 
 export interface Shift {
-  id: LocalId;
-  floorTemplateId: LocalId;
+  id: string;
+  floorTemplateId: string;
   floorName: string;
   startedAt?: string;
   status: ShiftStatus;
-  admittingDoctorSideId: LocalId;
+  admittingDoctorSideId: string;
   doctorSides: DoctorSide[];
   rooms: Room[];
   beds: Bed[];
@@ -134,7 +132,7 @@ export interface LoadLimitRange {
 }
 
 export interface Nurse {
-  id: LocalId;
+  id: string;
   name: string;
   licenseType: LicenseType;
   experienceLevel: ExperienceLevel;
@@ -142,8 +140,8 @@ export interface Nurse {
 }
 
 export interface BedState {
-  id: LocalId;
-  bedId: LocalId;
+  id: string;
+  bedId: string;
   patient?: Patient;
   acuity?: Acuity;
 }
@@ -156,75 +154,106 @@ export interface Patient {
 }
 
 export interface AssignmentResult {
-  id: LocalId;
+  id: string;
   generatedTeams: GeneratedTeam[];
   roomCoverage: RoomCoverage[];
   bedAssignments: BedAssignment[];
 }
 
 export interface GeneratedTeam {
-  id: LocalId;
+  id: string;
   label: string;
-  nurseIds: LocalId[];
+  nurseIds: string[];
 }
 
 export interface RoomCoverage {
-  id: LocalId;
-  roomId: LocalId;
-  nurseIds: LocalId[];
+  id: string;
+  roomId: string;
+  nurseIds: string[];
 }
 
 export interface BedAssignment {
-  id: LocalId;
-  bedId: LocalId;
-  nurseId: LocalId;
+  id: string;
+  bedId: string;
+  nurseId: string;
 }
 
+export interface OverrideWarningAcknowledgement {
+  id: string;
+  warningType: FlagType;
+  message: string;
+  nurseId?: string;
+  bedId?: string;
+  acknowledgedByProfileId: string;
+  acknowledgedAt: string;
+}
+
+export interface ManualAssignmentOverride {
+  id: string;
+  shiftId: string;
+  baselineAssignmentResultId: string;
+  bedId: string;
+  fromNurseId: string;
+  toNurseId: string;
+  createdByProfileId: string;
+  createdAt: string;
+  status: "active" | "superseded";
+  supersededAt?: string;
+  serverSequence: number;
+  relatedSwapRequestId?: string;
+  warningAcknowledgements: OverrideWarningAcknowledgement[];
+}
+
+export type ActiveAssignmentOverridesByBedId = Record<
+  string,
+  ManualAssignmentOverride
+>;
+
 export interface Flag {
-  id: LocalId;
+  id: string;
   type: FlagType;
   severity: FlagSeverity;
   message: string;
-  nurseId?: LocalId;
-  roomId?: LocalId;
-  bedId?: LocalId;
-  teamId?: LocalId;
+  nurseId?: string;
+  roomId?: string;
+  bedId?: string;
+  teamId?: string;
 }
 
 export interface NurseRequest {
-  id: LocalId;
+  id: string;
   type: NurseRequestType;
   status: NurseRequestStatus;
-  requestingNurseId: LocalId;
+  requestingNurseId: string;
   requestingNurseName: string;
   message: string;
   createdAt: string;
-  sourceBedId?: LocalId;
-  targetNurseId?: LocalId;
-  targetBedId?: LocalId;
+  sourceBedId?: string;
+  targetNurseId?: string;
+  targetBedId?: string;
   resolvedAt?: string;
   resolutionNote?: string;
 }
 
 export interface NurseCarryOverSuggestion {
-  id: LocalId;
-  previousNurseId: LocalId;
+  id: string;
+  previousNurseId: string;
   name: string;
   licenseType: LicenseType;
   experienceLevel: ExperienceLevel;
 }
 
 export interface PatientCarryOverSuggestion {
-  id: LocalId;
-  previousBedId: LocalId;
+  id: string;
+  previousBedId: string;
   previousBedLabel: string;
   patient: Patient;
   acuity?: Acuity;
 }
 
 export interface PreviousShiftSnapshot {
-  id: LocalId;
-  floorTemplateId: LocalId;
+  id: string;
+  floorTemplateId: string;
   completedAt: string;
   nurseSuggestions: NurseCarryOverSuggestion[];
   patientSuggestions: PatientCarryOverSuggestion[];
@@ -232,7 +261,7 @@ export interface PreviousShiftSnapshot {
 
 export interface SimulatedSessionState {
   role: SimulatedRole;
-  selectedNurseId?: LocalId;
+  selectedNurseId?: string;
 }
 
 export interface UserProfile {
@@ -259,6 +288,7 @@ export interface ActiveShiftRecord {
   floorTemplateId: string;
   status: ShiftStatus;
   shiftSnapshot: Shift;
+  activeAssignmentOverridesByBedId?: ActiveAssignmentOverridesByBedId;
   createdAt: string;
   updatedAt: string;
   endedAt?: string;
@@ -276,7 +306,7 @@ export interface ServerPreviousShiftSnapshot {
 export interface ShiftNurseAccess {
   id: string;
   shiftId: string;
-  nurseId: LocalId;
+  nurseId: string;
   nurseName: string;
   nurseProfileId?: string;
   nurseEmail?: string;
@@ -292,8 +322,8 @@ export interface NotificationEventRecord {
   recipientAccessId?: string;
   type: NotificationEventType;
   targetRoute: NotificationEventTargetRoute;
-  relatedRequestId?: LocalId;
-  relatedBedId?: LocalId;
+  relatedRequestId?: string;
+  relatedBedId?: string;
   title: string;
   body: string;
   status: NotificationEventStatus;
@@ -305,7 +335,7 @@ export interface NotificationEventRecord {
 export interface ShiftNurseInviteRecord {
   id: string;
   shiftId: string;
-  nurseId: LocalId;
+  nurseId: string;
   createdByProfileId: string;
   tokenHash: string;
   status: ShiftNurseInviteStatus;

@@ -29,6 +29,7 @@ import {
 import { getSupabaseClient } from "../services/supabaseClient";
 import { useAuthSession } from "./AuthSessionContext";
 import type {
+  ActiveAssignmentOverridesByBedId,
   FloorTemplate,
   FloorTemplateRecord,
   JoinedNurseAssignmentView,
@@ -67,6 +68,7 @@ type ActiveParticipation =
   | { nurseId: string; shiftId: string; type: "joined_nurse" };
 
 type ServerWorkspaceContextValue = {
+  activeAssignmentOverridesByBedId: ActiveAssignmentOverridesByBedId;
   activeParticipation: ActiveParticipation;
   activeShift?: Shift;
   deleteFloorTemplate: (floorTemplateId: string) => Promise<void>;
@@ -156,6 +158,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 function getWorkspaceSnapshots(workspaceState: ServerWorkspaceState) {
   if (workspaceState.status !== "ready" && workspaceState.status !== "empty") {
     return {
+      activeAssignmentOverridesByBedId: {},
       activeShift: undefined,
       floorTemplates: [],
       previousShiftSnapshots: [],
@@ -163,6 +166,9 @@ function getWorkspaceSnapshots(workspaceState: ServerWorkspaceState) {
   }
 
   return {
+    activeAssignmentOverridesByBedId:
+      workspaceState.workspace.activeShift
+        ?.activeAssignmentOverridesByBedId ?? {},
     activeShift: workspaceState.workspace.activeShift?.shiftSnapshot,
     floorTemplates: workspaceState.workspace.floorTemplates.map(
       (record) => record.templateSnapshot,

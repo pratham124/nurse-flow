@@ -2618,3 +2618,33 @@ For each task, add a dated section with:
   - [ ] Gaps were explained.
   - [ ] Code-specific question or walkthrough completed.
 - Status: pending
+
+### 2026-08-03 - Add Effective-Assignment Derivation
+
+- Task: Implement Phase 8 Task 1.1 without adding override persistence or
+  changing the assignment generator.
+- Problem understanding:
+  - [x] Why generated bed assignments must remain an unchanged baseline.
+  - [x] Why routine assignment reads use one active override per bed instead
+    of scanning override history.
+  - [x] Why the active override dictionary belongs beside `Shift` rather than
+    inside the persisted shift snapshot.
+- Solution understanding:
+  - [x] `getEffectiveAssignmentResult` performs one optional dictionary lookup
+    per generated bed assignment and changes only the returned nurse ID.
+  - [x] A missing dictionary or missing bed key falls back to the generated
+    nurse, and the helper does not mutate its input.
+  - [x] The focused tests cover zero, one, replaced same-bed, and
+    removed-after-rerun active overrides.
+- Broader context:
+  - [x] Task 1.2 can use this single derivation boundary for loads and flags.
+  - [x] Task 1.3 can populate the context projection from server-owned active
+    rows without placing superseded history in routine board state.
+- Verification:
+  - [x] Human restated that an active override wins and removing its dictionary
+    entry falls back to the current generated baseline.
+  - [x] Clarified that `LocalId` provided readability but no distinct runtime
+    value or nominal type safety, then simplified the models to plain strings.
+  - [x] Human correctly identified the override's `toNurseId` as the effective
+    nurse when a bed has an active override.
+- Status: verified

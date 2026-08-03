@@ -11,7 +11,7 @@ import {
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { useWorkflowDraft } from "../store/WorkflowDraftContext";
 import { colors, fontWeight, radius, shadows, spacing, textSize } from "../theme/tokens";
-import type { LocalId, NurseRequest } from "../types/models";
+import type { NurseRequest } from "../types/models";
 import {
   getSelectedNurseAssignmentView,
   type NurseAssignedBedView,
@@ -28,17 +28,17 @@ const blankReasonMessage = "Add a short reason for the request.";
 const invalidSourceBedMessage = "Choose one of your assigned beds.";
 
 type SwapBedOption = {
-  bedId: LocalId;
+  bedId: string;
   detail: string;
   label: string;
 };
 
 type SwapFormContentProps = {
   onReasonChange: (reason: string) => void;
-  onSelectSourceBed: (bedId: LocalId) => void;
+  onSelectSourceBed: (bedId: string) => void;
   reason: string;
   reasonError: string;
-  selectedSourceBedId?: LocalId;
+  selectedSourceBedId?: string;
   view: NurseAssignmentView;
 };
 
@@ -177,7 +177,7 @@ export default function SimulatedNurseSwapScreen() {
   const [reasonError, setReasonError] = useState("");
   const [formError, setFormError] = useState("");
   const [selectedSourceBedId, setSelectedSourceBedId] = useState<
-    LocalId | undefined
+    string | undefined
   >();
   const assignmentResult = getSelectedNurseAssignmentView(
     activeShift,
@@ -194,7 +194,7 @@ export default function SimulatedNurseSwapScreen() {
     setFormError("");
   }
 
-  function handleSelectSourceBed(bedId: LocalId) {
+  function handleSelectSourceBed(bedId: string) {
     setSelectedSourceBedId(bedId);
     setFormError("");
   }

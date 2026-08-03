@@ -1,8 +1,6 @@
-import type { LocalId } from "../types/models";
-
 let nextLocalIdNumber = 1;
 
-export function createLocalId(prefix = "local"): LocalId {
+export function createLocalId(prefix = "local"): string {
   const safePrefix = prefix.trim() || "local";
   const id = `${safePrefix}-${nextLocalIdNumber}`;
 

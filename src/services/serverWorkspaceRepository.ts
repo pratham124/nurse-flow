@@ -7,7 +7,6 @@ import type {
   FloorTemplateRecord,
   JoinedNurseAssignedBed,
   JoinedNurseAssignmentView,
-  LocalId,
   NurseRequestStatus,
   PreviousShiftSnapshot,
   ServerPreviousShiftSnapshot,
@@ -96,12 +95,12 @@ type SubmitJoinedNurseIssueRequestInput = {
 
 type SubmitJoinedNurseSwapRequestInput = {
   message: string;
-  sourceBedId: LocalId;
+  sourceBedId: string;
 };
 
 type ResolveShiftNurseSwapRequestInput = {
   nextStatus: Extract<NurseRequestStatus, "accepted" | "declined">;
-  requestId: LocalId;
+  requestId: string;
 };
 
 type ChargeProfileIdentifier = Pick<UserProfile, "id" | "role">;
