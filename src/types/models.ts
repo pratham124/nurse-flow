@@ -178,9 +178,22 @@ export interface BedAssignment {
   nurseId: string;
 }
 
+export type OverrideWarningType = Extract<
+  FlagType,
+  "over_side_load_limit" | "over_max_load" | "team_imbalance"
+>;
+
+export interface OverrideWarningAcknowledgementInput {
+  id?: string;
+  warningType: OverrideWarningType;
+  message?: string;
+  nurseId?: string;
+  bedId?: string;
+}
+
 export interface OverrideWarningAcknowledgement {
   id: string;
-  warningType: FlagType;
+  warningType: OverrideWarningType;
   message: string;
   nurseId?: string;
   bedId?: string;

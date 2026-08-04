@@ -2669,6 +2669,8 @@ For each task, add a dated section with:
     transaction before superseding and inserting history rows.
   - [ ] Load-warning audit messages are generated from server-verified nurse,
     load, and limit values instead of trusting client-provided wording.
+  - [ ] The client acknowledgement input excludes the profile and timestamp
+    fields that only the server is allowed to establish.
   - [ ] Routine app reads load only the active bed-keyed projection; superseded
     rows remain server history.
 - Broader context:

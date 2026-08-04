@@ -9,7 +9,7 @@ import type {
   JoinedNurseAssignedBed,
   JoinedNurseAssignmentView,
   ManualAssignmentOverride,
-  OverrideWarningAcknowledgement,
+  OverrideWarningAcknowledgementInput,
   NurseRequestStatus,
   PreviousShiftSnapshot,
   ServerPreviousShiftSnapshot,
@@ -140,7 +140,7 @@ export type ConfirmManualAssignmentOverrideInput = {
   relatedSwapRequestId?: string;
   shiftId: string;
   toNurseId: string;
-  warningAcknowledgements: OverrideWarningAcknowledgement[];
+  warningAcknowledgements: OverrideWarningAcknowledgementInput[];
 };
 
 export type ConfirmManualAssignmentOverrideResult = {
