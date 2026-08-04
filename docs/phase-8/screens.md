@@ -6,7 +6,7 @@ This document maps Phase 8 changes onto the existing NurseFlow app. It describes
 
 ```text
 Charge Floor Board
-  ├─ Adjust assignments
+  ├─ Swipe bed row → Move
   │    └─ Override confirmation / warning review
   ├─ Flags and Requests
   │    └─ Request Detail + Thread
@@ -38,10 +38,10 @@ Show the current effective floor assignment, support deliberate manual moves, su
 
 ### Phase 8 Additions
 
-- `Adjust assignments` entry action.
+- Swipe-reveal `Move` action on eligible occupied assigned-bed rows.
 - `Share board` action.
 - Effective-assignment labels or subtle manual-move marker where useful.
-- Drag handle and accessible `Move assignment` action on eligible occupied-bed rows while in move mode.
+- Tap-only eligible-nurse picker after the `Move` action.
 - Eligible/ineligible nurse target states.
 - Current override-related flags remain inline.
 - Tablet selected-nurse pane.
@@ -49,7 +49,6 @@ Show the current effective floor assignment, support deliberate manual moves, su
 ### Compact Layout
 
 - Existing vertical doctor-side and nurse-card flow.
-- Sticky or easily reachable move-mode header.
 - Bed rows remain readable during scrolling.
 - Confirmation appears as a bottom sheet or full-screen modal.
 
@@ -57,7 +56,7 @@ Show the current effective floor assignment, support deliberate manual moves, su
 
 - Left pane: floor summary, doctor sides, compact nurse list.
 - Right pane: selected nurse detail, rooms, beds, and flags.
-- Drag between visible nurse targets only when behavior remains predictable; the accessible picker always remains available.
+- Keep the same tap-only picker in expanded layouts rather than adding a second gesture model.
 
 ### States
 
@@ -66,8 +65,8 @@ Show the current effective floor assignment, support deliberate manual moves, su
 - Loading current server state.
 - Live/connected.
 - Reconnecting or disconnected: board follows existing Phase 7 behavior; move and share actions requiring fresh data explain availability.
-- Move mode idle.
-- Dragging or choosing a target.
+- Move action hidden or revealed.
+- Choosing a nurse target.
 - Confirming a valid move.
 - Blocking eligibility error.
 - Non-blocking warnings awaiting acknowledgement.
@@ -78,7 +77,7 @@ Show the current effective floor assignment, support deliberate manual moves, su
 
 ### Manual Checks
 
-- Existing board remains usable without entering move mode.
+- Existing board remains usable while move actions stay tucked behind assigned-bed rows.
 - Moving one bed updates affected loads, beds, and flags after server confirmation.
 - Joined nurses do not gain full-board access.
 - Tablet rotation preserves a sensible selected nurse.
@@ -97,7 +96,10 @@ Make the consequences of one proposed bed move clear before it becomes server st
 - Blocking reasons, if any.
 - New or worsened non-blocking warnings.
 - Warning acknowledgement control.
-- Optional accepted swap request link.
+
+The generic move dialog does not display swap requests. A request-specific
+`Complete with assignment move` action will provide the link automatically in
+Task 2.6.
 
 ### Actions
 
@@ -301,7 +303,7 @@ If active overrides exist, the existing rerun action must explain that rerunning
 
 - Logical screen-reader heading order.
 - Accessible labels for acuity, warnings, request states, and manual-move markers.
-- Non-drag assignment move path.
+- Swipe-reveal move action and tap-only nurse selection.
 - Predictable modal focus and return focus.
 - Keyboard-safe thread composer.
 - Dynamic type without fixed-height clipping.

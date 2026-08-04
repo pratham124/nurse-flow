@@ -14,7 +14,7 @@ Status legend:
 1. Confirm scope, current touchpoints, and compatibility risks.
 2. Define effective-assignment derivation and override validation.
 3. Add the server-owned manual override write boundary.
-4. Add accessible move selection, drag interaction, confirmation, and warnings.
+4. Add swipe-reveal move entry, accessible nurse selection, confirmation, and warnings.
 5. Handle assignment reruns after overrides.
 6. Add request-thread storage and authorization.
 7. Add charge and nurse thread UI.
@@ -105,7 +105,7 @@ Manual validation:
 - The generated baseline remains inspectable and unchanged.
 - TypeScript, targeted tests, and lint pass.
 
-### Task 1.2: Recalculate Loads and Flags from Effective Assignment
+### Done Task 1.2: Recalculate Loads and Flags from Effective Assignment
 
 Story coverage: US2, US8, US9
 
@@ -123,7 +123,7 @@ Manual validation:
 - Existing unassigned and imbalance flags still work with no overrides.
 - TypeScript, targeted tests, and lint pass.
 
-### Task 1.3: Add Server Manual-Override Transaction
+### Done Task 1.3: Add Server Manual-Override Transaction
 
 Story coverage: US1, US2, US5, US9
 
@@ -145,45 +145,44 @@ Manual validation:
 - Routine board reads receive only the active bed-keyed projection, while authorized history queries retain superseded rows.
 - TypeScript, server checks, and lint pass.
 
-### Task 1.4: Add Accessible Move-Assignment Picker
+### Done Task 1.4: Add Accessible Move-Assignment Picker
 
 Story coverage: US1, US2, US8
 
 Build:
 
-- Add `Adjust assignments` mode to the charge board.
-- Add a named-props bed-row action that opens eligible nurse choices.
+- Add a swipe-reveal `Move` action to occupied assigned-bed rows.
+- Open the named-props eligible-nurse picker from that action.
 - Show why ineligible nurse targets cannot be chosen.
-- Reuse the same preview and confirmation boundary planned for drag-and-drop.
+- Route every move through the same preview and confirmation boundary.
 
 Manual validation:
 
-- Complete a move without a drag gesture.
+- Reveal `Move`, tap an eligible nurse, and complete a move.
 - Screen reader identifies the bed, current nurse, target choices, and disabled reasons.
 - Cancelling leaves the board unchanged.
 - TypeScript and lint pass.
 
-### Task 1.5: Add Bed Drag-and-Drop Interaction
+### Done Task 1.5: Add Bed-Row Swipe Move Action
 
 Story coverage: US1, US8
 
 Build:
 
-- Make one occupied bed row draggable from a dedicated handle or intentional long press.
-- Highlight eligible nurse targets and preserve normal board scrolling.
-- Return invalid or cancelled drags to the origin.
-- Send valid drops into the same confirmation used by the accessible picker.
-- Use existing gesture dependencies where sufficient; justify any new dependency before adding it.
+- Wrap occupied assigned-bed rows in the existing horizontal swipe-reveal primitive.
+- Reveal one `Move` action without interfering with normal vertical board scrolling.
+- Open the same eligible-nurse picker and confirmation used by the accessible path.
+- Keep empty and unassigned beds non-moveable.
 
 Manual validation:
 
-- Drag a valid bed to an eligible nurse and reach confirmation.
-- Scroll the board without accidental drags.
-- Invalid target and cancelled drag make no saved change.
-- Accessible picker still works when dragging is unavailable.
+- Swipe a valid bed row, tap `Move`, and reach nurse selection.
+- Scroll the board without accidentally revealing actions.
+- Disabled target and cancelled selection make no saved change.
+- Screen-reader users can identify the bed, action, choices, and disabled reasons.
 - TypeScript, lint, and device interaction checks pass.
 
-### Task 1.6: Add Override Confirmation and Warning Acknowledgement
+### Done Task 1.6: Add Override Confirmation and Warning Acknowledgement
 
 Story coverage: US1, US2, US5, US8
 
@@ -191,7 +190,8 @@ Build:
 
 - Show before/after nurse loads, blocking reasons, and non-blocking warnings.
 - Require explicit acknowledgement for non-blocking warnings.
-- Allow an eligible accepted swap request to be linked deliberately.
+- Keep generic board moves independent from swap requests; request-specific
+  linking belongs to Task 2.6's `Complete with assignment move` flow.
 - Add saving, success, stale-state, and retry states.
 
 Manual validation:
@@ -202,7 +202,7 @@ Manual validation:
 - In-flight duplicate confirmation is prevented.
 - TypeScript and lint pass.
 
-### Task 1.7: Refresh Charge and Joined-Nurse Views After a Move
+### Done Task 1.7: Refresh Charge and Joined-Nurse Views After a Move
 
 Story coverage: US1, US2, US5, US9
 
@@ -221,7 +221,7 @@ Manual validation:
 - Joined nurse still cannot read the full board or override history.
 - TypeScript, lint, and two-session check pass.
 
-### Task 1.8: Handle Assignment Rerun
+### Done Task 1.8: Handle Assignment Rerun
 
 Story coverage: US1, US2, US9
 
@@ -451,7 +451,7 @@ Build:
 
 - Add doctor-side/nurse summary pane and selected-nurse detail pane.
 - Keep board-level warnings visible.
-- Support move mode and accessible move controls in expanded layout.
+- Support swipe-reveal move actions and the same accessible picker in expanded layout.
 - Avoid rendering every nurse's full detail simultaneously.
 
 Manual validation:
@@ -509,7 +509,7 @@ Build:
 
 Manual validation:
 
-- Complete a manual move without dragging using VoiceOver or TalkBack.
+- Complete a swipe-and-tap manual move using VoiceOver or TalkBack.
 - Read and reply to a request thread with a screen reader.
 - Use larger text without clipped lifecycle or share controls.
 - Confirm key tap targets meet 44-point minimum.
@@ -521,7 +521,7 @@ Story coverage: US8, US9
 Build:
 
 - Define a representative large-floor fixture for development measurement only.
-- Measure board render/scroll, drag responsiveness, thread scroll, and snapshot capture before optimizing.
+- Measure board render/scroll, swipe responsiveness, thread scroll, and snapshot capture before optimizing.
 - Record the actual bottleneck and baseline results.
 - Do not change the assignment algorithm.
 
@@ -561,7 +561,7 @@ Build:
 Manual validation:
 
 - Complete all US1 and US2 checks on at least one physical or representative native device.
-- Verify both drag and non-drag move paths.
+- Verify the swipe reveal, tap selection, and confirmation path.
 
 ### Task 6.2: Request Thread and Lifecycle Pass
 

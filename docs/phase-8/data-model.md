@@ -15,7 +15,7 @@ Phase 8 builds on the authenticated, server-backed active shift and nurse-scoped
 - Keep request conversations scoped to one request; do not create a global chat model.
 - Keep issue review state separate from swap decision and completion state.
 - Generate board snapshots locally and ephemerally; do not add snapshot records to shift data.
-- Keep responsive layout, accessibility, focus, and drag state as UI state rather than domain data.
+- Keep responsive layout, accessibility, focus, and swipe-reveal state as UI state rather than domain data.
 - Do not add Phase 9 optimizer fields, AI fields, offline queues, or conflict-merge records.
 
 ## Existing Records Extended
@@ -257,7 +257,7 @@ Derived from existing and new request fields:
 
 The following remain local UI state and are not stored in server models:
 
-- Dragging bed ID and hovered drop target.
+- Revealed bed-row action and selected move bed ID.
 - Move-picker open/closed state for the accessible alternative.
 - Override confirmation and warning acknowledgement state before save.
 - Selected nurse or doctor side in tablet split view.

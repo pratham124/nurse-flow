@@ -2,7 +2,7 @@
 
 NurseFlow should be built in small, testable phases. Each phase should prove one clear product capability before moving to the next one.
 
-Phase 1 is intentionally local and charge-nurse-only. Backend, auth, realtime collaboration, push notifications, deep links, drag-and-drop, offline sync, and AI are future work.
+Phase 1 is intentionally local and charge-nurse-only. Backend, auth, realtime collaboration, push notifications, deep links, manual assignment overrides, offline sync, and AI are future work.
 
 ## Phase 1: Local Charge Nurse Prototype
 
@@ -43,7 +43,7 @@ Prove the core charge nurse workflow on one device using local in-memory state o
 - Regular nurse invite flow.
 - Regular nurse app experience.
 - Multi-device collaboration.
-- Drag-and-drop assignment override.
+- Manual assignment override.
 - Offline sync or write queue.
 - AI or external assignment services.
 - Board snapshot sharing.
@@ -182,7 +182,7 @@ Introduce real accounts and server-side data only after the local product flow i
 - Push notifications.
 - Deep links.
 - Offline write queue.
-- Drag-and-drop assignment override.
+- Manual assignment override.
 - Production assignment optimizer.
 - AI.
 
@@ -216,7 +216,7 @@ Allow multiple devices to participate in the same active shift.
 
 - Push notifications.
 - Offline write queue.
-- Drag-and-drop assignment override.
+- Manual assignment override.
 - AI.
 - Tablet layout.
 
@@ -248,7 +248,7 @@ Improve awareness when users are backgrounded and keep the app readable during b
 ### Excluded Features
 
 - Offline write queue.
-- Drag-and-drop assignment override.
+- Manual assignment override.
 - Share board snapshot.
 - Tablet layout.
 - Request threads.
@@ -264,7 +264,7 @@ Improve awareness when users are backgrounded and keep the app readable during b
 - Reconnect refreshes from server state.
 - No offline writes are queued or synced in this phase.
 
-## Phase 8: Drag-and-Drop, Request Threads, Sharing, and Polish
+## Phase 8: Manual Assignment Moves, Request Threads, Sharing, and Polish
 
 ### Goal
 
@@ -272,7 +272,7 @@ Add advanced interaction, request follow-up, and presentation improvements after
 
 ### Included Features
 
-- Drag-and-drop assignment override.
+- Swipe-to-reveal assignment override with tap-only nurse selection.
 - Inline imbalance flags after manual moves.
 - Non-blocking acknowledgement of override warnings.
 - Threaded conversations attached to issue and swap requests, not a global chat inbox.
@@ -295,8 +295,8 @@ Add advanced interaction, request follow-up, and presentation improvements after
 
 ### Success Criteria
 
-- A charge nurse can adjust assignments with drag-and-drop.
-- The app clearly flags risky or imbalanced drag-and-drop assignment changes.
+- A charge nurse can swipe an occupied bed row, reveal `Move`, and choose an eligible nurse.
+- The app clearly flags risky or imbalanced manual assignment changes.
 - A charge nurse and regular nurse can follow up on a request inside that request's thread.
 - Issue requests can be marked reviewed or resolved without changing assignment data.
 - Swap requests clearly show the difference between accepted, declined, and assignment changes that have actually been completed.

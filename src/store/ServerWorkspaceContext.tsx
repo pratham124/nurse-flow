@@ -16,6 +16,7 @@ import {
   loadJoinedNurseAssignmentView,
   loadServerActiveShift,
   loadServerWorkspace,
+  rerunActiveShiftAssignment as rerunActiveShiftAssignmentOnServer,
   resolveShiftNurseSwapRequest as resolveShiftNurseSwapRequestOnServer,
   saveServerActiveShift,
   saveServerFloorTemplate,
@@ -24,6 +25,7 @@ import {
   submitJoinedNurseSwapRequest as submitJoinedNurseSwapRequestToServer,
   type ConfirmManualAssignmentOverrideInput,
   type ConfirmManualAssignmentOverrideResult,
+  type RerunActiveShiftAssignmentResult,
 } from "../services/serverWorkspaceRepository";
 import {
   subscribeToChargeActiveShift,
@@ -96,6 +98,9 @@ type ServerWorkspaceContextValue = {
     requestId: string,
     nextStatus: Extract<NurseRequestStatus, "accepted" | "declined">,
   ) => Promise<void>;
+  rerunActiveShiftAssignment: (
+    nextShift: Shift,
+  ) => Promise<RerunActiveShiftAssignmentResult>;
   saveActiveShift: (activeShift: Shift) => Promise<Shift>;
   saveErrorMessage: string;
   saveFloorTemplate: (
@@ -757,6 +762,53 @@ export function ServerWorkspaceProvider({
     [applyWorkspace, authState],
   );
 
+  const rerunActiveShiftAssignment = useCallback(
+    async (nextShift: Shift) => {
+      if (
+        authState.status !== "signed_in" ||
+        authState.profile.role !== "charge_nurse"
+      ) {
+        throw new Error("Sign in as a charge nurse to rerun assignment.");
+      }
+
+      const currentActiveShift = getWorkspaceSnapshots(workspaceState).activeShift;
+
+      if (!currentActiveShift?.assignmentResult) {
+        throw new Error("Run the first assignment before using the rerun action.");
+      }
+
+      const supabase = getSupabaseClient();
+
+      if (!supabase) {
+        throw new Error("Supabase is not configured yet.");
+      }
+
+      setSaveErrorMessage("");
+      setSaveStatus("saving");
+
+      try {
+        const result = await rerunActiveShiftAssignmentOnServer(supabase, {
+          expectedBaselineAssignmentResultId:
+            currentActiveShift.assignmentResult.id,
+          nextShift,
+        });
+        const workspace = await loadServerWorkspace(supabase, authState.profile);
+
+        applyWorkspace(workspace);
+        setSaveStatus(result.status === "saved" ? "saved" : "idle");
+
+        return result;
+      } catch (error) {
+        setSaveErrorMessage(
+          getErrorMessage(error, "Assignment could not be rerun."),
+        );
+        setSaveStatus("error");
+        throw error;
+      }
+    },
+    [applyWorkspace, authState, workspaceState],
+  );
+
   const endActiveShift = useCallback(
     async (activeShift: Shift) => {
       if (
@@ -967,6 +1019,7 @@ export function ServerWorkspaceProvider({
       realtimeConnectionState,
       retryLoadJoinedNurseAccess: loadJoinedNurseAccess,
       retryLoadWorkspace: loadWorkspace,
+      rerunActiveShiftAssignment,
       resolveNurseSwapRequest,
       saveActiveShift,
       saveErrorMessage,
@@ -987,6 +1040,7 @@ export function ServerWorkspaceProvider({
       loadJoinedNurseAccess,
       loadWorkspace,
       realtimeConnectionState,
+      rerunActiveShiftAssignment,
       resolveNurseSwapRequest,
       saveActiveShift,
       saveErrorMessage,

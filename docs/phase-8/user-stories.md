@@ -4,16 +4,16 @@ Phase 8 adds advanced interaction, request follow-up, board sharing, and present
 
 Phase 8 preserves the existing floor setup, deterministic assignment, persistence and carry-over, authenticated server state, realtime nurse access, requests, notifications, and connection behavior. It does not replace the assignment algorithm planned for Phase 9.
 
-## US1: Override a Bed Assignment by Dragging
+## US1: Override a Bed Assignment from the Floor Board
 
-As a charge nurse, I want to drag an occupied bed from one nurse to another so I can make a deliberate assignment adjustment without rerunning the whole assignment.
+As a charge nurse, I want to swipe an occupied bed row to reveal a move action and choose its new nurse so I can make a deliberate assignment adjustment without rerunning the whole assignment.
 
 ### Acceptance Criteria
 
-- Drag mode is available only to the charge nurse on an active, connected shift with an assignment result.
-- The draggable item is one bed assignment, not an entire room or nurse card.
-- Valid drop targets are active nurses whose generated room coverage includes the bed's room.
-- Red-acuity beds cannot be dropped onto an LPN.
+- The move action is available only to the charge nurse on an active, connected shift with an assignment result.
+- Swiping one occupied assigned bed row reveals a `Move` action without interfering with vertical board scrolling.
+- Eligible choices are active nurses whose generated room coverage includes the bed's room.
+- A red-acuity bed cannot be moved to an LPN.
 - The move is confirmed before it is saved.
 - A saved override updates the effective board assignment for connected charge and joined-nurse views.
 - The generated assignment result remains available as the baseline; the manual move is stored as a server history record and exposed to routine board reads through a bed-keyed active-override dictionary.
@@ -21,9 +21,9 @@ As a charge nurse, I want to drag an occupied bed from one nurse to another so I
 ### Manual Checks and Edge Cases
 
 - Move an eligible green or yellow bed and confirm both affected nurse cards update.
-- Try to move a red bed to an LPN and confirm the drop is blocked with a plain explanation.
-- Try to drop outside a valid nurse target and confirm nothing changes.
-- Lose the connection during a drag and confirm no local-only move is shown as saved.
+- Try to move a red bed to an LPN and confirm the choice is disabled with a plain explanation.
+- Cancel before choosing or confirming and confirm nothing changes.
+- Lose the connection before confirmation and confirm no local-only move is shown as saved.
 - Cancel the confirmation and confirm the original assignment remains effective.
 
 ## US2: Understand and Acknowledge Override Warnings
@@ -157,7 +157,7 @@ As a user, I want the refined screens to remain readable, operable, and responsi
 
 ### Acceptance Criteria
 
-- Drag-and-drop has a non-drag accessible alternative for moving a bed.
+- Swipe-reveal move actions have an accessible action and a tap-only nurse picker.
 - Acuity and warning meaning never rely on color alone.
 - Interactive controls have accessible names, roles, states, and at least 44-point targets.
 - Screen-reader focus moves predictably when a confirmation, warning, or error appears.
@@ -167,7 +167,7 @@ As a user, I want the refined screens to remain readable, operable, and responsi
 
 ### Manual Checks and Edge Cases
 
-- Complete a manual move using the accessible `Move assignment` action without dragging.
+- Complete a manual move by revealing `Move` and tapping an eligible nurse.
 - Check the main Phase 8 flow with VoiceOver or TalkBack.
 - Check larger text settings for clipped controls and unreadable cards.
 - Scroll a representative large floor and long request thread and confirm interaction remains responsive.

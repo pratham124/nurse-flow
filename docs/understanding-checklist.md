@@ -2683,3 +2683,91 @@ For each task, add a dated section with:
   - [ ] Gaps were explained.
   - [ ] Code-specific question or walkthrough completed.
 - Status: pending
+
+### 2026-08-04 - Add Assignment Move UX, Refresh, and Safe Reruns
+
+- Task: Implement Phase 8 Tasks 1.4 through 1.8 as one shared manual-assignment
+  workflow.
+- Problem understanding:
+  - [x] Why swipe reveal is only an entry action while nurse selection and
+    confirmation stay in one accessible tap-only flow.
+  - [x] Why a local preview may show warnings but the server must recheck
+    ownership, freshness, eligibility, and acknowledgements.
+  - [x] Why rerunning assignment must replace the baseline and supersede active
+    overrides in one transaction.
+- Solution understanding:
+  - [x] `AssignmentMoveDialog` explains disabled targets, supports tap-only
+    selection, previews before/after loads, requires warning acknowledgement,
+    and handles saving, success, stale, and retry states.
+  - [x] `FloorBoardScreen` reads the effective assignment and wraps occupied
+    assigned beds in the swipe-reveal `Move` action.
+  - [x] Realtime listeners reload the active projection, while the joined-nurse
+    RPC returns only that nurse's effective beds and no override history.
+  - [x] `rerun_active_shift_assignment` locks the shift, checks the expected
+    baseline, saves the new generated snapshot, and supersedes prior active
+    override rows atomically.
+- Broader context:
+  - [x] The Phase 1 generator remains unchanged; Phase 8 layers deliberate
+    manual decisions over its baseline.
+  - [x] Swipe reveal keeps the board compact while the picker remains
+    accessible, and joined nurses never receive the full board or audit history.
+- Verification:
+  - [x] Human restated the stale-baseline and atomic-rerun behavior first.
+  - [x] Rerun SQL gaps were explained.
+  - [x] Code-specific walkthrough covered rerun inputs, stale baseline checks,
+    and current-effective-nurse freshness checks.
+  - [x] Human reported completing the interactive feature test.
+- Status: verified
+
+### 2026-08-04 - Prevent Duplicate Local Nurse IDs After Reload
+
+- Task: Fix the duplicate React key warning that appeared after reloading the
+  app and adding a nurse while editing an active shift.
+- Problem understanding:
+  - [ ] Why the old module counter could generate `nurse-1` again after a page
+    reload or Fast Refresh even when the active shift already contained it.
+  - [ ] Why changing the `FlatList` key to the row index would only hide the
+    warning while leaving duplicate nurse IDs in assignment data.
+- Solution understanding:
+  - [ ] `createLocalId` now combines the readable prefix with an Expo Crypto
+    UUID, so newly created IDs remain unique across reloads.
+  - [ ] `formatLocalId` keeps the small formatting rule independently testable
+    without loading React Native modules in the Node test runner.
+  - [ ] An already-persisted duplicate cannot be repaired automatically because
+    assignment references cannot reveal which same-ID nurse was intended.
+- Broader context:
+  - [ ] The shared helper protects nurses, rooms, beds, shifts, and other local
+    entities that use `createLocalId`, not only the nurse list's React keys.
+  - [ ] Stable unique domain IDs let React preserve row identity and let the app
+    safely reference the same entity from assignments and other records.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+- Status: pending
+
+### 2026-08-04 - Remove Swap Selection From Generic Bed Moves
+
+- Task: Simplify the assignment move review by removing the optional accepted
+  swap selector.
+- Problem understanding:
+  - [x] Why asking the charge nurse to manually associate a routine bed move
+    with a swap request was confusing and unnecessary.
+  - [x] Why the app still needs a request-to-override link when an accepted swap
+    is deliberately completed.
+- Solution understanding:
+  - [x] `AssignmentMoveDialog` no longer finds, displays, selects, or submits an
+    accepted swap request during a generic board move.
+  - [x] The backend `relatedSwapRequestId` capability remains available for the
+    future request-specific `Complete with assignment move` action.
+- Broader context:
+  - [x] A normal board move and completing an accepted swap are separate user
+    intentions and should begin from separate screens/actions.
+  - [x] Task 2.6 can supply the request ID automatically instead of asking the
+    user to choose it again.
+- Verification:
+  - [x] Human explained that swap completion starts from the nurse request page.
+  - [x] Clarified that the request page already knows which request to link.
+  - [x] Human correctly confirmed that `AssignmentMoveDialog` should not send
+    `relatedSwapRequestId` for an ordinary board move.
+- Status: verified

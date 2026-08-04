@@ -6,7 +6,7 @@ Phase 8 refines NurseFlow's established mobile visual language while adding manu
 
 - Keep phone as the primary experience.
 - Preserve familiar routes, labels, card hierarchy, acuity colors, and live-status treatment from earlier phases.
-- Make high-risk actions deliberate: enter move mode, select a target, review consequences, then confirm.
+- Make high-risk actions deliberate: reveal `Move`, select a target, review consequences, then confirm.
 - Use color plus labels and icons; never encode acuity, eligibility, warning severity, or status with color alone.
 - Keep tap targets at least 44 points and primary actions about 52-56 points high.
 - Use the existing spacing and typography system, with consistent horizontal padding and safe-area handling.
@@ -28,7 +28,7 @@ Implementation should choose and document one breakpoint after checking represen
 
 - One doctor-side section at a time in the normal vertical board flow.
 - Nurse cards contain compact bed rows and current flags.
-- Drag targets scroll into view, with auto-scroll only if it can be implemented predictably.
+- Nurse choices remain in a normal scrollable picker without gesture-driven auto-scroll.
 - Confirmation and warning review use a bottom sheet or full-screen modal.
 - Request thread is a full-screen detail view.
 - Share preview is full screen so the user can inspect the entire capture.
@@ -41,28 +41,25 @@ Implementation should choose and document one breakpoint after checking represen
 - Joined-nurse assignment uses a readable centered content region or two balanced columns.
 - Setup forms that are not otherwise changed remain centered with a readable maximum width.
 
-## Drag-and-Drop Interaction
+## Swipe-to-Move Interaction
 
 ### Entry
 
-- Add a clear `Adjust assignments` action to the charge board.
-- Entering move mode changes the header treatment and shows a short instruction.
-- A visible `Done` or `Cancel` exits move mode.
-- Do not make normal scrolling accidentally start a drag; use a dedicated drag handle or intentional long press.
+- Swipe an occupied assigned bed row horizontally to reveal one `Move` action.
+- Keep normal vertical board scrolling dominant so a small diagonal movement does not reveal the action.
+- Tapping `Move` opens the eligible-nurse picker as a page sheet or full-screen modal.
 
-### Drag Item
+### Bed Row
 
-- Move one occupied bed assignment at a time.
+- Reveal a move action for one occupied bed assignment at a time.
 - Show bed label, patient initials when already visible, acuity label, and current nurse.
-- Lifted state uses elevation/scale and a concise accessible announcement.
-- The original row remains as a placeholder so the board does not jump unpredictably.
+- The row slides only far enough to expose the action and does not leave the board.
 
-### Drop Targets
+### Nurse Choices
 
-- Eligible nurse cards receive a clear outline and `Move here` label.
+- Eligible nurse choices are tappable and receive a clear selected outline.
 - Ineligible targets remain visually present but show why they are unavailable when focused or selected.
-- Hard-invalid drops return the item to its origin and announce the reason.
-- A non-drag `Move assignment` action on each bed opens the same eligible-nurse picker and confirmation flow.
+- Hard-invalid choices remain disabled and announce the reason.
 
 ### Confirmation
 
@@ -72,8 +69,10 @@ Show:
 - Current nurse → proposed nurse.
 - Before/after loads for both nurses.
 - Any new or worsened warnings.
-- Optional accepted swap request to link, when the move is intentionally completing one.
 - `Cancel` and `Confirm move` actions.
+
+The generic board move does not ask the charge nurse to select a swap request.
+Task 2.6's request-specific completion flow supplies that link automatically.
 
 Warnings use checkboxes or a single explicit acknowledgement only when required. Acknowledging risk does not visually dismiss the resulting board flag.
 
@@ -196,8 +195,8 @@ Out of scope:
 
 ## Accessibility Requirements
 
-- Every move has a non-drag alternative.
-- Drag handles, move targets, lifecycle controls, composer, and share actions have accessible names and roles.
+- Every move can be completed through swipe reveal and tap-only selection.
+- Move actions, nurse choices, lifecycle controls, composer, and share actions have accessible names and roles.
 - Announce selected bed, eligible target, blocking reason, saving result, and current request state.
 - Use visible focus and logical focus order in expanded layouts.
 - Return focus to the initiating control when a modal closes.

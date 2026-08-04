@@ -20,6 +20,8 @@ type SwipeRevealActionProps = {
   actionWidth?: number;
   actionIcon?: ReactNode;
   actionSide?: "left" | "right";
+  actionTone?: "brand" | "danger";
+  enableAccessibilityReveal?: boolean;
 };
 
 export function SwipeRevealAction({
@@ -30,6 +32,8 @@ export function SwipeRevealAction({
   actionWidth = defaultActionWidth,
   actionIcon,
   actionSide = "right",
+  actionTone = "danger",
+  enableAccessibilityReveal = false,
 }: SwipeRevealActionProps) {
   const rowTranslateX = useRef(new Animated.Value(0)).current;
   const [isActionRevealed, setIsActionRevealed] = useState(false);
@@ -97,6 +101,7 @@ export function SwipeRevealAction({
           onPress={onActionPress}
           style={({ pressed }) => [
             styles.actionButton,
+            actionTone === "brand" ? styles.brandActionButton : null,
             { width: actionWidth },
             pressed ? styles.actionButtonPressed : null,
           ]}
@@ -111,6 +116,25 @@ export function SwipeRevealAction({
 
       <Animated.View
         {...panResponder.panHandlers}
+        accessibilityActions={
+          enableAccessibilityReveal
+            ? [{ label: `Reveal ${actionLabel}`, name: "revealAction" }]
+            : undefined
+        }
+        accessibilityHint={
+          enableAccessibilityReveal
+            ? `Use the Reveal ${actionLabel} action to show the button.`
+            : undefined
+        }
+        accessibilityLabel={
+          enableAccessibilityReveal ? accessibilityLabel : undefined
+        }
+        accessible={enableAccessibilityReveal}
+        onAccessibilityAction={(event) => {
+          if (event.nativeEvent.actionName === "revealAction") {
+            animateRow(revealedTranslateX);
+          }
+        }}
         style={[
           styles.content,
           {
@@ -151,6 +175,9 @@ const styles = StyleSheet.create({
   },
   actionButtonPressed: {
     backgroundColor: colors.status.red800,
+  },
+  brandActionButton: {
+    backgroundColor: colors.brand.burgundy,
   },
   actionButtonText: {
     color: colors.neutral.surface,

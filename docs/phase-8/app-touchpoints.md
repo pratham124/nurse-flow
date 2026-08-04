@@ -143,14 +143,14 @@ Risks:
 
 Task 1.2 must choose one explicit view boundary for effective flags so derived app-only flags are not accidentally written back as override history.
 
-## Charge Board and Drag Touchpoints
+## Charge Board and Swipe-Move Touchpoints
 
 `src/screens/FloorBoardScreen.tsx` currently:
 
 - Uses `WorkflowListScreen` with one outer item per doctor side.
 - Builds all rooms and beds inside each side with nested array mapping.
 - Builds the nurse workload summary in the list header.
-- Has no move mode, selected bed, drop target, share action, or responsive split view.
+- Has no selected move bed, swipe action, share action, or responsive split view.
 
 Phase 8 likely changes this screen and may extract focused components or view-model helpers. Named prop types should be used for new component boundaries.
 
@@ -159,7 +159,7 @@ Existing packages already include:
 - `react-native-gesture-handler`
 - `react-native-reanimated`
 
-Task 1.5 should verify that the existing versions and app root are sufficient before adding anything. The accessible move picker from Task 1.4 remains required even when drag gestures work.
+Task 1.5 should reuse the existing swipe-reveal row primitive and avoid adding a gesture dependency. The accessible move picker from Task 1.4 remains the only nurse-selection and confirmation flow.
 
 ## Request Screen and Route Touchpoints
 
@@ -334,7 +334,7 @@ Task 5.2 must measure a representative large floor and long thread before Task 5
 - Do not expose full override history, full active shift, or another nurse's thread through joined-nurse responses.
 - Do not rely on current generic snapshot-diff notifications to detect separate override rows.
 - Do not permit move or message writes while disconnected or imply they are queued.
-- Do not add drag-only behavior without the accessible move picker.
+- Do not make swipe the only screen-reader path into the accessible move picker.
 - Do not capture only the visible board viewport or persist shared images to NurseFlow.
 - Do not optimize lists before measuring a representative large floor and thread.
 - Do not add Phase 9 optimizer behavior.

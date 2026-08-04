@@ -10,6 +10,7 @@ import {
   WorkflowSection,
   WorkflowScreen,
 } from "../components/workflow";
+import { ConfirmationDialog } from "../components/workflow/ConfirmationDialog";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { assignmentFlow } from "../utils/workflowFlows";
 import {
@@ -34,6 +35,7 @@ import { generateAssignmentFlags } from "../utils/assignmentFlags";
 import { generateLocalAssignmentResult } from "../utils/assignmentTeams";
 
 type AssignmentReviewListHeaderProps = {
+  activeOverrideCount: number;
   admittingSideName: string;
   blockers: AssignmentValidationBlocker[];
   nurseCount: number;
@@ -116,6 +118,7 @@ function PatientNeedRoomRow({ room }: PatientNeedRoomRowProps) {
 }
 
 function AssignmentReviewListHeader({
+  activeOverrideCount,
   admittingSideName,
   blockers,
   nurseCount,
@@ -161,13 +164,33 @@ function AssignmentReviewListHeader({
           ))}
         </WorkflowSection>
       ) : null}
+
+      {activeOverrideCount > 0 ? (
+        <WorkflowSection
+          note="A confirmed rerun starts a new generated baseline."
+          title="Manual overrides"
+        >
+          <View style={styles.overrideWarning}>
+            <Text style={styles.overrideWarningText}>
+              {activeOverrideCount} active {activeOverrideCount === 1 ? "move" : "moves"} will be cleared when assignment is rerun.
+            </Text>
+          </View>
+        </WorkflowSection>
+      ) : null}
     </View>
   );
 }
 
 export default function AssignmentReviewScreen() {
-  const { activeShift, saveActiveShift, saveStatus } = useServerWorkspace();
+  const {
+    activeAssignmentOverridesByBedId,
+    activeShift,
+    rerunActiveShiftAssignment,
+    saveActiveShift,
+    saveStatus,
+  } = useServerWorkspace();
   const [serverSaveError, setServerSaveError] = useState("");
+  const [showRerunConfirmation, setShowRerunConfirmation] = useState(false);
   const nurses = activeShift?.nurses ?? [];
   const validation = getAssignmentValidation(activeShift);
   const patientNeedSummary = getAssignmentNeedSummary(activeShift);
@@ -176,6 +199,7 @@ export default function AssignmentReviewScreen() {
   );
   const { occupiedBedCount, totalBedCount } = getShiftCensus(activeShift);
   const firstBlockerMessage = validation.blockers[0]?.message ?? "";
+  const activeOverrideCount = Object.keys(activeAssignmentOverridesByBedId).length;
 
   useEffect(() => {
     if (!activeShift) {
@@ -183,7 +207,7 @@ export default function AssignmentReviewScreen() {
     }
   }, [activeShift]);
 
-  async function handlePrimaryPress() {
+  async function runAndSaveAssignment() {
     if (!activeShift) {
       router.replace("/");
       return;
@@ -203,7 +227,18 @@ export default function AssignmentReviewScreen() {
 
     try {
       setServerSaveError("");
-      await saveActiveShift(nextShift);
+      if (activeShift.assignmentResult) {
+        const result = await rerunActiveShiftAssignment(nextShift);
+
+        if (result.status === "stale") {
+          setServerSaveError(
+            result.message ?? "The assignment changed. Review the refreshed shift and try again.",
+          );
+          return;
+        }
+      } else {
+        await saveActiveShift(nextShift);
+      }
     } catch (error) {
       const message =
         error instanceof Error
@@ -217,8 +252,27 @@ export default function AssignmentReviewScreen() {
     router.push("/floor-board");
   }
 
+  function handlePrimaryPress() {
+    if (!activeShift || !validation.canRunAssignment) {
+      return;
+    }
+
+    if (activeShift.assignmentResult && activeOverrideCount > 0) {
+      setShowRerunConfirmation(true);
+      return;
+    }
+
+    void runAndSaveAssignment();
+  }
+
+  function handleConfirmRerun() {
+    setShowRerunConfirmation(false);
+    void runAndSaveAssignment();
+  }
+
   return (
-    <WorkflowScreen
+    <>
+      <WorkflowScreen
       activeStep="Assign"
       actionErrorText={serverSaveError || firstBlockerMessage}
       flow={assignmentFlow}
@@ -231,12 +285,15 @@ export default function AssignmentReviewScreen() {
           ? "Saving..."
           : serverSaveError
             ? "Retry save"
-            : "Run assignment"
+            : activeShift?.assignmentResult
+              ? "Rerun assignment"
+              : "Run assignment"
       }
       subtitle=""
       title={activeShift?.floorName ?? "Assignment review"}
     >
       <AssignmentReviewListHeader
+        activeOverrideCount={activeOverrideCount}
         admittingSideName={admittingDoctorSide?.name ?? "-"}
         blockers={validation.blockers}
         nurseCount={nurses.length}
@@ -246,7 +303,17 @@ export default function AssignmentReviewScreen() {
         totalNurseCapacity={validation.totalNurseCapacity}
         totalBedCount={totalBedCount}
       />
-    </WorkflowScreen>
+      </WorkflowScreen>
+      <ConfirmationDialog
+        confirmLabel="Rerun and clear moves"
+        confirmTone="danger"
+        message={`This will create a new generated assignment and clear ${activeOverrideCount} active manual ${activeOverrideCount === 1 ? "move" : "moves"}. The assignment algorithm itself will not change.`}
+        onCancel={() => setShowRerunConfirmation(false)}
+        onConfirm={handleConfirmRerun}
+        title="Rerun assignment?"
+        visible={showRerunConfirmation}
+      />
+    </>
   );
 }
 
@@ -263,6 +330,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: 10,
     ...shadows.sm,
+  },
+  overrideWarning: {
+    backgroundColor: colors.status.amber50,
+    borderColor: colors.status.amber800,
+    borderRadius: radius.md,
+    borderWidth: 0.5,
+    padding: spacing.md,
+  },
+  overrideWarningText: {
+    color: colors.status.amber800,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
+    lineHeight: 19,
   },
   blockerText: {
     color: colors.status.amber800,

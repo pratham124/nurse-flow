@@ -2,6 +2,8 @@ import { useState } from "react";
 import { router } from "expo-router";
 import { FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { AssignmentMoveDialog } from "../components/assignment/AssignmentMoveDialog";
+
 import {
   BedChip,
   BoardSubTabBar,
@@ -11,6 +13,7 @@ import {
   SeverityBadge,
   StatusPill,
   SummaryChip,
+  SwipeRevealAction,
   WorkflowListScreen,
   WorkflowSection,
 } from "../components/workflow";
@@ -93,6 +96,7 @@ type NurseWorkloadViewModel = {
 };
 
 type BoardSideSectionProps = {
+  onMoveBed: (bedId: string) => void;
   side: BoardSide;
 };
 
@@ -587,6 +591,7 @@ export default function FloorBoardScreen() {
     retryLoadWorkspace,
   } = useServerWorkspace();
   const [selectedFilter, setSelectedFilter] = useState<BoardFilter>("All");
+  const [selectedMoveBedId, setSelectedMoveBedId] = useState<string>();
   const effectiveShift = activeShift
     ? {
         ...activeShift,
@@ -607,7 +612,8 @@ export default function FloorBoardScreen() {
     side,
   }));
   return (
-    <WorkflowListScreen
+    <>
+      <WorkflowListScreen
       activeStep="Board"
       data={boardListItems}
       flow={assignmentFlow}
@@ -628,23 +634,37 @@ export default function FloorBoardScreen() {
       }
       onHeaderActionPress={() => router.push("/")}
       bottomAccessory={<BoardSubTabBar activeTab="board" />}
-      renderItem={renderFloorBoardItem}
+      renderItem={({ item }) => (
+        <BoardSideSection
+          onMoveBed={setSelectedMoveBedId}
+          side={item.side}
+        />
+      )}
       ListEmptyComponent={<EmptyBoardMessage selectedFilter={selectedFilter} />}
       subtitle=""
       title={activeShift?.floorName ?? "Floor board"}
-    />
+      />
+      {activeShift && effectiveAssignmentResult ? (
+        <AssignmentMoveDialog
+          activeShift={activeShift}
+          bedId={selectedMoveBedId}
+          effectiveAssignmentResult={effectiveAssignmentResult}
+          onClose={() => setSelectedMoveBedId(undefined)}
+          visible={Boolean(selectedMoveBedId)}
+        />
+      ) : null}
+    </>
   );
-}
-
-function renderFloorBoardItem({ item }: { item: FloorBoardListItem }) {
-  return <BoardSideSection side={item.side} />;
 }
 
 function getFloorBoardItemKey(item: FloorBoardListItem) {
   return `side-${item.side.id}`;
 }
 
-function BoardSideSection({ side }: BoardSideSectionProps) {
+function BoardSideSection({
+  onMoveBed,
+  side,
+}: BoardSideSectionProps) {
   return (
     <WorkflowSection
       note={side.admitting ? "Admitting side" : "Non-admitting side"}
@@ -660,9 +680,22 @@ function BoardSideSection({ side }: BoardSideSectionProps) {
           </View>
           <InlineFlagList flags={room.flags} />
 
-          {room.beds.map((bed) => (
-            <BoardBed key={bed.id} {...bed} />
-          ))}
+          {room.beds.map((bed) =>
+            bed.state === "assigned" ? (
+              <SwipeRevealAction
+                accessibilityLabel={`Move bed ${bed.label}, currently assigned to ${bed.nurse}`}
+                actionLabel="Move"
+                actionTone="brand"
+                enableAccessibilityReveal
+                key={bed.id}
+                onActionPress={() => onMoveBed(bed.id)}
+              >
+                <BoardBed {...bed} />
+              </SwipeRevealAction>
+            ) : (
+              <BoardBed key={bed.id} {...bed} />
+            ),
+          )}
         </View>
       ))}
     </WorkflowSection>

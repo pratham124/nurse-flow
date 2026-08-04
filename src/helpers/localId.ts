@@ -1,10 +1,7 @@
-let nextLocalIdNumber = 1;
+import { randomUUID } from "expo-crypto";
+
+import { formatLocalId } from "./localIdCore";
 
 export function createLocalId(prefix = "local"): string {
-  const safePrefix = prefix.trim() || "local";
-  const id = `${safePrefix}-${nextLocalIdNumber}`;
-
-  nextLocalIdNumber += 1;
-
-  return id;
+  return formatLocalId(prefix, randomUUID());
 }

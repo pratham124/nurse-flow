@@ -626,6 +626,257 @@ The row lock on `active_shifts` serializes competing writes for the same shift.
 The partial unique index independently guarantees that concurrent or faulty
 writes cannot leave two active rows for one `(shift_id, bed_id)` pair.
 
+## Assignment Rerun Transaction
+
+The review screen must not use the broad active-shift update once a generated
+baseline already exists. Install this focused action so the new snapshot and
+the clearing of active overrides commit together.
+
+```sql
+create or replace function public.rerun_active_shift_assignment(
+  p_shift_id uuid,
+  p_expected_baseline_assignment_result_id text,
+  p_next_shift_snapshot jsonb
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  active_projection jsonb;
+  current_baseline_id text;
+  current_profile_id uuid;
+  rerun_at timestamptz := now();
+  shift_row public.active_shifts%rowtype;
+begin
+  select profiles.id
+  into current_profile_id
+  from public.profiles
+  where profiles.auth_user_id = auth.uid()
+    and profiles.role = 'charge_nurse'
+  limit 1;
+
+  if current_profile_id is null then
+    raise exception 'Sign in as a charge nurse to rerun assignment.';
+  end if;
+
+  select active_shift.*
+  into shift_row
+  from public.active_shifts active_shift
+  where active_shift.id = p_shift_id
+  for update;
+
+  if not found
+    or shift_row.charge_profile_id <> current_profile_id
+    or shift_row.ended_at is not null then
+    raise exception 'This active shift is not available for assignment rerun.';
+  end if;
+
+  current_baseline_id := shift_row.shift_snapshot #>> '{assignmentResult,id}';
+
+  select coalesce(
+    jsonb_object_agg(
+      active_override.bed_id,
+      jsonb_build_object(
+        'id', active_override.id,
+        'shiftId', active_override.shift_id,
+        'baselineAssignmentResultId', active_override.baseline_assignment_result_id,
+        'bedId', active_override.bed_id,
+        'fromNurseId', active_override.from_nurse_id,
+        'toNurseId', active_override.to_nurse_id,
+        'createdByProfileId', active_override.created_by_profile_id,
+        'createdAt', active_override.created_at,
+        'status', active_override.status,
+        'serverSequence', active_override.server_sequence,
+        'relatedSwapRequestId', active_override.related_swap_request_id,
+        'warningAcknowledgements', active_override.warning_acknowledgements
+      )
+    ),
+    '{}'::jsonb
+  )
+  into active_projection
+  from public.manual_assignment_overrides active_override
+  where active_override.shift_id = p_shift_id
+    and active_override.status = 'active';
+
+  if current_baseline_id is distinct from p_expected_baseline_assignment_result_id then
+    return jsonb_build_object(
+      'status', 'stale',
+      'message', 'The assignment baseline changed. Review the refreshed shift and try again.',
+      'activeAssignmentOverridesByBedId', active_projection
+    );
+  end if;
+
+  if p_next_shift_snapshot ->> 'id' is distinct from p_shift_id::text
+    or coalesce(btrim(p_next_shift_snapshot #>> '{assignmentResult,id}'), '') = ''
+    or p_next_shift_snapshot ->> 'status' <> 'assigned' then
+    raise exception 'The rerun snapshot is invalid.';
+  end if;
+
+  update public.manual_assignment_overrides
+  set status = 'superseded', superseded_at = rerun_at
+  where shift_id = p_shift_id
+    and status = 'active';
+
+  update public.active_shifts
+  set
+    shift_snapshot = p_next_shift_snapshot,
+    status = 'assigned',
+    updated_at = rerun_at
+  where id = p_shift_id;
+
+  return jsonb_build_object(
+    'status', 'saved',
+    'shiftSnapshot', p_next_shift_snapshot,
+    'activeAssignmentOverridesByBedId', '{}'::jsonb
+  );
+end;
+$$;
+
+revoke all on function public.rerun_active_shift_assignment(
+  uuid,
+  text,
+  jsonb
+) from public, anon;
+
+grant execute on function public.rerun_active_shift_assignment(
+  uuid,
+  text,
+  jsonb
+) to authenticated;
+```
+
+## Joined-Nurse Effective Assignment Read
+
+Install this complete replacement for
+`public.get_joined_nurse_assignment_view()`. It overlays only the active row
+for each generated bed and filters to the signed-in nurse. The response still
+contains neither the projection dictionary nor override history.
+
+```sql
+create or replace function public.get_joined_nurse_assignment_view()
+returns jsonb
+language sql
+security definer
+set search_path = ''
+as $$
+  with signed_in_profile as (
+    select id
+    from public.profiles
+    where auth_user_id = auth.uid()
+      and role = 'charge_nurse'
+    limit 1
+  ),
+  linked_access as (
+    select
+      shift_nurse_access.*,
+      active_shifts.shift_snapshot
+    from public.shift_nurse_access
+    join public.active_shifts
+      on active_shifts.id = shift_nurse_access.shift_id
+    join signed_in_profile
+      on signed_in_profile.id = shift_nurse_access.nurse_profile_id
+    where shift_nurse_access.status = 'linked'
+      and active_shifts.ended_at is null
+    order by shift_nurse_access.updated_at desc
+    limit 1
+  ),
+  assigned_beds as (
+    select
+      linked_access.id as access_id,
+      coalesce(
+        jsonb_agg(
+          jsonb_build_object(
+            'bed', bed.value,
+            'bedState', bed_state.value,
+            'doctorSide', doctor_side.value,
+            'room', room.value
+          )
+        ) filter (
+          where bed.value is not null
+            and room.value is not null
+            and doctor_side.value is not null
+        ),
+        '[]'::jsonb
+      ) as value
+    from linked_access
+    left join lateral jsonb_array_elements(
+      coalesce(
+        linked_access.shift_snapshot #> '{assignmentResult,bedAssignments}',
+        '[]'::jsonb
+      )
+    ) assignment on true
+    left join public.manual_assignment_overrides active_override
+      on active_override.shift_id = linked_access.shift_id
+      and active_override.bed_id = assignment.value ->> 'bedId'
+      and active_override.status = 'active'
+    left join lateral jsonb_array_elements(
+      coalesce(linked_access.shift_snapshot -> 'beds', '[]'::jsonb)
+    ) bed on bed.value ->> 'id' = assignment.value ->> 'bedId'
+    left join lateral jsonb_array_elements(
+      coalesce(linked_access.shift_snapshot -> 'rooms', '[]'::jsonb)
+    ) room on room.value ->> 'id' = bed.value ->> 'roomId'
+    left join lateral jsonb_array_elements(
+      coalesce(linked_access.shift_snapshot -> 'doctorSides', '[]'::jsonb)
+    ) doctor_side on doctor_side.value ->> 'id' = room.value ->> 'doctorSideId'
+    left join lateral jsonb_array_elements(
+      coalesce(linked_access.shift_snapshot -> 'bedStates', '[]'::jsonb)
+    ) bed_state on bed_state.value ->> 'bedId' = bed.value ->> 'id'
+    where coalesce(
+      active_override.to_nurse_id,
+      assignment.value ->> 'nurseId'
+    ) = linked_access.nurse_id
+    group by linked_access.id
+  ),
+  request_history as (
+    select
+      linked_access.id as access_id,
+      coalesce(
+        jsonb_agg(request.value) filter (where request.value is not null),
+        '[]'::jsonb
+      ) as value
+    from linked_access
+    left join lateral jsonb_array_elements(
+      coalesce(linked_access.shift_snapshot -> 'nurseRequests', '[]'::jsonb)
+    ) request on request.value ->> 'requestingNurseId' = linked_access.nurse_id
+    group by linked_access.id
+  )
+  select jsonb_build_object(
+    'access', jsonb_build_object(
+      'id', linked_access.id,
+      'shiftId', linked_access.shift_id,
+      'nurseId', linked_access.nurse_id,
+      'nurseName', linked_access.nurse_name,
+      'nurseProfileId', linked_access.nurse_profile_id,
+      'nurseEmail', linked_access.nurse_email,
+      'status', linked_access.status,
+      'createdAt', linked_access.created_at,
+      'updatedAt', linked_access.updated_at
+    ),
+    'shiftId', linked_access.shift_id,
+    'floorName', linked_access.shift_snapshot ->> 'floorName',
+    'nurseName', linked_access.nurse_name,
+    'assignedBeds', assigned_beds.value,
+    'requestHistory', request_history.value
+  )
+  from linked_access
+  left join assigned_beds
+    on assigned_beds.access_id = linked_access.id
+  left join request_history
+    on request_history.access_id = linked_access.id;
+$$;
+
+revoke all on function public.get_joined_nurse_assignment_view() from public;
+grant execute on function public.get_joined_nurse_assignment_view() to authenticated;
+```
+
+Enable Realtime for `manual_assignment_overrides` in the Supabase dashboard.
+The charge subscription can then refresh immediately from active rows. The
+transaction also updates `active_shifts.updated_at`, which wakes the existing
+joined-nurse subscription without granting joined nurses access to override
+rows.
+
 ## Manual Server Checks
 
 Run these after exercising the RPC with an owning charge account:

@@ -86,6 +86,20 @@ export function subscribeToChargeActiveShift({
         }
       },
     )
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        filter: `shift_id=eq.${activeShiftId}`,
+        schema: "public",
+        table: "manual_assignment_overrides",
+      },
+      () => {
+        if (isActive) {
+          onShiftChanged();
+        }
+      },
+    )
     .subscribe((status, error) => {
       if (isActive) {
         onConnectionStateChange(getConnectionState(status), error);
@@ -120,6 +134,20 @@ export function subscribeToJoinedNurseAssignmentView({
         filter: `id=eq.${shiftId}`,
         schema: "public",
         table: "active_shifts",
+      },
+      () => {
+        if (isActive) {
+          onShiftChanged();
+        }
+      },
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        filter: `shift_id=eq.${shiftId}`,
+        schema: "public",
+        table: "manual_assignment_overrides",
       },
       () => {
         if (isActive) {
