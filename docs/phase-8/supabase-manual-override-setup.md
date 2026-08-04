@@ -468,7 +468,27 @@ begin
             'override-warning-' || replace(gen_random_uuid()::text, '-', '')
           ),
           'warningType', acknowledgement.value ->> 'warningType',
-          'message', acknowledgement.value ->> 'message',
+          'message', case acknowledgement.value ->> 'warningType'
+            when 'over_max_load' then format(
+              '%s has %s assigned patients, above their max load of %s.',
+              coalesce(
+                nullif(btrim(target_nurse ->> 'name'), ''),
+                'The selected nurse'
+              ),
+              target_load_after,
+              target_max_load
+            )
+            when 'over_side_load_limit' then format(
+              '%s has %s assigned patients, above the side load limit of %s.',
+              coalesce(
+                nullif(btrim(target_nurse ->> 'name'), ''),
+                'The selected nurse'
+              ),
+              target_load_after,
+              target_side_limit
+            )
+            else acknowledgement.value ->> 'message'
+          end,
           'nurseId', acknowledgement.value ->> 'nurseId',
           'bedId', acknowledgement.value ->> 'bedId',
           'acknowledgedByProfileId', current_profile_id,
@@ -485,7 +505,13 @@ begin
     'over_max_load',
     'team_imbalance'
   )
-    and coalesce(btrim(acknowledgement.value ->> 'message'), '') <> '';
+    and (
+      acknowledgement.value ->> 'warningType' in (
+        'over_side_load_limit',
+        'over_max_load'
+      )
+      or coalesce(btrim(acknowledgement.value ->> 'message'), '') <> ''
+    );
 
   update public.manual_assignment_overrides
   set

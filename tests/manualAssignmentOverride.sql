@@ -272,8 +272,8 @@ begin
     'nurse-a',
     'nurse-b',
     '[
-      { "id": "ack-max", "warningType": "over_max_load", "message": "Over max" },
-      { "id": "ack-side", "warningType": "over_side_load_limit", "message": "Over side" }
+      { "id": "ack-max", "warningType": "over_max_load" },
+      { "id": "ack-side", "warningType": "over_side_load_limit" }
     ]'::jsonb,
     null,
     'mutation-warning-acknowledged'
@@ -286,6 +286,30 @@ begin
   if result #>> '{override,warningAcknowledgements,0,acknowledgedByProfileId}'
     <> 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' then
     raise exception 'Expected the server to own acknowledgement identity.';
+  end if;
+
+  if not exists (
+    select 1
+    from jsonb_array_elements(
+      result #> '{override,warningAcknowledgements}'
+    ) acknowledgement
+    where acknowledgement.value ->> 'warningType' = 'over_max_load'
+      and acknowledgement.value ->> 'message' =
+        'Blake has 2 assigned patients, above their max load of 1.'
+  ) then
+    raise exception 'Expected the server-generated max-load message.';
+  end if;
+
+  if not exists (
+    select 1
+    from jsonb_array_elements(
+      result #> '{override,warningAcknowledgements}'
+    ) acknowledgement
+    where acknowledgement.value ->> 'warningType' = 'over_side_load_limit'
+      and acknowledgement.value ->> 'message' =
+        'Blake has 2 assigned patients, above the side load limit of 1.'
+  ) then
+    raise exception 'Expected the server-generated side-load message.';
   end if;
 end;
 $$;

@@ -2667,6 +2667,8 @@ For each task, add a dated section with:
   - [ ] `confirm_manual_assignment_override` checks ownership, freshness,
     coverage, occupancy, eligibility, and acknowledgements inside one locked
     transaction before superseding and inserting history rows.
+  - [ ] Load-warning audit messages are generated from server-verified nurse,
+    load, and limit values instead of trusting client-provided wording.
   - [ ] Routine app reads load only the active bed-keyed projection; superseded
     rows remain server history.
 - Broader context:
