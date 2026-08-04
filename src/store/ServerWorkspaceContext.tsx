@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import {
+  confirmManualAssignmentOverride as confirmManualAssignmentOverrideOnServer,
   createServerActiveShift,
   deleteServerFloorTemplate,
   endServerActiveShift,
@@ -21,6 +22,8 @@ import {
   saveServerPreviousShiftSnapshot,
   submitJoinedNurseIssueRequest as submitJoinedNurseIssueRequestToServer,
   submitJoinedNurseSwapRequest as submitJoinedNurseSwapRequestToServer,
+  type ConfirmManualAssignmentOverrideInput,
+  type ConfirmManualAssignmentOverrideResult,
 } from "../services/serverWorkspaceRepository";
 import {
   subscribeToChargeActiveShift,
@@ -28,8 +31,12 @@ import {
 } from "../services/realtimeWorkspaceRepository";
 import { getSupabaseClient } from "../services/supabaseClient";
 import { useAuthSession } from "./AuthSessionContext";
+import { generateAssignmentFlags } from "../utils/assignmentFlags";
+import { getEffectiveAssignmentResult } from "../utils/effectiveAssignment";
 import type {
   ActiveAssignmentOverridesByBedId,
+  AssignmentResult,
+  Flag,
   FloorTemplate,
   FloorTemplateRecord,
   JoinedNurseAssignmentView,
@@ -71,8 +78,13 @@ type ServerWorkspaceContextValue = {
   activeAssignmentOverridesByBedId: ActiveAssignmentOverridesByBedId;
   activeParticipation: ActiveParticipation;
   activeShift?: Shift;
+  confirmManualAssignmentOverride: (
+    input: ConfirmManualAssignmentOverrideInput,
+  ) => Promise<ConfirmManualAssignmentOverrideResult>;
   deleteFloorTemplate: (floorTemplateId: string) => Promise<void>;
   endActiveShift: (activeShift: Shift) => Promise<void>;
+  effectiveAssignmentFlags: Flag[];
+  effectiveAssignmentResult?: AssignmentResult;
   floorTemplates: FloorTemplate[];
   joinedNurseAccessState: JoinedNurseAccessState;
   joinedNurseRealtimeConnectionState: RealtimeConnectionState;
@@ -160,16 +172,32 @@ function getWorkspaceSnapshots(workspaceState: ServerWorkspaceState) {
     return {
       activeAssignmentOverridesByBedId: {},
       activeShift: undefined,
+      effectiveAssignmentFlags: [],
+      effectiveAssignmentResult: undefined,
       floorTemplates: [],
       previousShiftSnapshots: [],
     };
   }
 
+  const activeShiftRecord = workspaceState.workspace.activeShift;
+  const activeShift = activeShiftRecord?.shiftSnapshot;
+  const activeAssignmentOverridesByBedId =
+    activeShiftRecord?.activeAssignmentOverridesByBedId ?? {};
+  const effectiveAssignmentResult = activeShift?.assignmentResult
+    ? getEffectiveAssignmentResult(
+        activeShift.assignmentResult,
+        activeAssignmentOverridesByBedId,
+      )
+    : undefined;
+
   return {
-    activeAssignmentOverridesByBedId:
-      workspaceState.workspace.activeShift
-        ?.activeAssignmentOverridesByBedId ?? {},
-    activeShift: workspaceState.workspace.activeShift?.shiftSnapshot,
+    activeAssignmentOverridesByBedId,
+    activeShift,
+    effectiveAssignmentFlags:
+      activeShift && effectiveAssignmentResult
+        ? generateAssignmentFlags(activeShift, effectiveAssignmentResult)
+        : (activeShift?.flags ?? []),
+    effectiveAssignmentResult,
     floorTemplates: workspaceState.workspace.floorTemplates.map(
       (record) => record.templateSnapshot,
     ),
@@ -689,6 +717,46 @@ export function ServerWorkspaceProvider({
     [applyWorkspace, authState],
   );
 
+  const confirmManualAssignmentOverride = useCallback(
+    async (input: ConfirmManualAssignmentOverrideInput) => {
+      if (
+        authState.status !== "signed_in" ||
+        authState.profile.role !== "charge_nurse"
+      ) {
+        throw new Error("Sign in as a charge nurse to adjust assignments.");
+      }
+
+      const supabase = getSupabaseClient();
+
+      if (!supabase) {
+        throw new Error("Supabase is not configured yet.");
+      }
+
+      setSaveErrorMessage("");
+      setSaveStatus("saving");
+
+      try {
+        const result = await confirmManualAssignmentOverrideOnServer(
+          supabase,
+          input,
+        );
+        const workspace = await loadServerWorkspace(supabase, authState.profile);
+
+        applyWorkspace(workspace);
+        setSaveStatus(result.status === "saved" ? "saved" : "idle");
+
+        return result;
+      } catch (error) {
+        setSaveErrorMessage(
+          getErrorMessage(error, "Assignment move could not be saved."),
+        );
+        setSaveStatus("error");
+        throw error;
+      }
+    },
+    [applyWorkspace, authState],
+  );
+
   const endActiveShift = useCallback(
     async (activeShift: Shift) => {
       if (
@@ -891,6 +959,7 @@ export function ServerWorkspaceProvider({
         joinedNurseAccessState,
       ),
       ...getWorkspaceSnapshots(workspaceState),
+      confirmManualAssignmentOverride,
       deleteFloorTemplate,
       endActiveShift,
       joinedNurseAccessState,
@@ -910,6 +979,7 @@ export function ServerWorkspaceProvider({
       workspaceState,
     }),
     [
+      confirmManualAssignmentOverride,
       deleteFloorTemplate,
       endActiveShift,
       joinedNurseAccessState,

@@ -3,6 +3,20 @@ import type {
   AssignmentResult,
 } from "../types/models";
 
+export function getAssignmentLoadsByNurseId(
+  assignmentResult: AssignmentResult,
+): Record<string, number> {
+  return assignmentResult.bedAssignments.reduce<Record<string, number>>(
+    (loadsByNurseId, bedAssignment) => {
+      loadsByNurseId[bedAssignment.nurseId] =
+        (loadsByNurseId[bedAssignment.nurseId] ?? 0) + 1;
+
+      return loadsByNurseId;
+    },
+    {},
+  );
+}
+
 export function getEffectiveAssignmentResult(
   generatedAssignmentResult: AssignmentResult,
   activeAssignmentOverridesByBedId?: ActiveAssignmentOverridesByBedId,

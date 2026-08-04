@@ -2648,3 +2648,34 @@ For each task, add a dated section with:
   - [x] Human correctly identified the override's `toNurseId` as the effective
     nurse when a bed has an active override.
 - Status: verified
+
+### 2026-08-03 - Recalculate Effective Loads and Add the Override Transaction
+
+- Task: Implement Phase 8 Tasks 1.2 and 1.3 while keeping the generated
+  assignment result as the unchanged baseline.
+- Problem understanding:
+  - [ ] Why loads and assignment flags must use effective assignments rather
+    than the generated baseline after an override exists.
+  - [ ] Why move previews can run locally but confirmed moves must be
+    revalidated and serialized by the server.
+  - [ ] Why blocking reasons differ from warnings that may be acknowledged.
+- Solution understanding:
+  - [ ] `getAssignmentMovePreview` returns blocking reasons, new or worsened
+    warnings, before/after loads, and a proposed result without mutating state.
+  - [ ] The board and flags screens derive their display from the shared
+    effective result while `activeShift.assignmentResult` remains unchanged.
+  - [ ] `confirm_manual_assignment_override` checks ownership, freshness,
+    coverage, occupancy, eligibility, and acknowledgements inside one locked
+    transaction before superseding and inserting history rows.
+  - [ ] Routine app reads load only the active bed-keyed projection; superseded
+    rows remain server history.
+- Broader context:
+  - [ ] Task 1.4 can reuse the same preview for an accessible picker, and Task
+    1.6 can call the same confirmation boundary for warning acknowledgement.
+  - [ ] The partial unique index, row lock, and idempotency key prevent two
+    active same-bed rows and duplicate confirmations.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+- Status: pending

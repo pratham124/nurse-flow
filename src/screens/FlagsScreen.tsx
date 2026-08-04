@@ -264,12 +264,15 @@ function getFlagTarget(activeShift: Shift, flag: Flag) {
   return "Floor";
 }
 
-function getFlagRows(activeShift?: Shift): FlagRowViewModel[] {
+function getFlagRows(
+  activeShift: Shift | undefined,
+  effectiveAssignmentFlags: Flag[],
+): FlagRowViewModel[] {
   if (!activeShift) {
     return [];
   }
 
-  return activeShift.flags.map((flag) => ({
+  return effectiveAssignmentFlags.map((flag) => ({
     id: flag.id,
     message: flag.message,
     severity: flag.severity,
@@ -401,14 +404,14 @@ function renderFlagItem({ item }: { item: FlagListItem }) {
 }
 
 export default function FlagsScreen() {
-  const { activeShift } = useServerWorkspace();
+  const { activeShift, effectiveAssignmentFlags } = useServerWorkspace();
   const [activeReviewTab, setActiveReviewTab] = useState<"Flags" | "Requests">("Flags");
   const [selectedFilter, setSelectedFilter] = useState<FlagFilter>("All");
   const [selectedRequestFilter, setSelectedRequestFilter] =
     useState<RequestFilter>("All");
   const [selectedRequestStatusFilter, setSelectedRequestStatusFilter] =
     useState<RequestStatusFilter>("All");
-  const flags = getFlagRows(activeShift);
+  const flags = getFlagRows(activeShift, effectiveAssignmentFlags);
   const requests = getNurseRequestDisplays(activeShift);
   const filteredFlags = filterFlagRows(flags, selectedFilter);
   const filteredRequests = filterNurseRequestRows(

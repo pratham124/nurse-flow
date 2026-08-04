@@ -579,15 +579,27 @@ function EmptyBoardMessage({
 }
 
 export default function FloorBoardScreen() {
-  const { activeShift, realtimeConnectionState, retryLoadWorkspace } =
-    useServerWorkspace();
+  const {
+    activeShift,
+    effectiveAssignmentFlags,
+    effectiveAssignmentResult,
+    realtimeConnectionState,
+    retryLoadWorkspace,
+  } = useServerWorkspace();
   const [selectedFilter, setSelectedFilter] = useState<BoardFilter>("All");
-  const { occupiedBedCount, totalBedCount } = getShiftCensus(activeShift);
-  const admittingDoctorSide = activeShift?.doctorSides.find(
-    (doctorSide) => doctorSide.id === activeShift.admittingDoctorSideId,
+  const effectiveShift = activeShift
+    ? {
+        ...activeShift,
+        assignmentResult: effectiveAssignmentResult,
+        flags: effectiveAssignmentFlags,
+      }
+    : undefined;
+  const { occupiedBedCount, totalBedCount } = getShiftCensus(effectiveShift);
+  const admittingDoctorSide = effectiveShift?.doctorSides.find(
+    (doctorSide) => doctorSide.id === effectiveShift.admittingDoctorSideId,
   );
   const activeBoardSides = getFilteredBoardSides(
-    getBoardSides(activeShift),
+    getBoardSides(effectiveShift),
     selectedFilter,
   );
   const boardListItems: FloorBoardListItem[] = activeBoardSides.map((side) => ({
@@ -604,8 +616,8 @@ export default function FloorBoardScreen() {
       listHeader={
         <FloorBoardListHeader
           admittingSideName={admittingDoctorSide?.name ?? "-"}
-          flagCount={activeShift?.flags.length ?? 0}
-          nurseWorkloads={getNurseWorkloads(activeShift)}
+          flagCount={effectiveAssignmentFlags.length}
+          nurseWorkloads={getNurseWorkloads(effectiveShift)}
           onFilterPress={setSelectedFilter}
           onRefreshLiveStatus={retryLoadWorkspace}
           occupiedBedCount={occupiedBedCount}

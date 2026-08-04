@@ -2,11 +2,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { expireActiveShiftNurseInvites } from "./shiftInviteRepository";
 import type {
+  ActiveAssignmentOverridesByBedId,
   ActiveShiftRecord,
   FloorTemplate,
   FloorTemplateRecord,
   JoinedNurseAssignedBed,
   JoinedNurseAssignmentView,
+  ManualAssignmentOverride,
+  OverrideWarningAcknowledgement,
   NurseRequestStatus,
   PreviousShiftSnapshot,
   ServerPreviousShiftSnapshot,
@@ -35,6 +38,32 @@ type ActiveShiftRow = {
   shift_snapshot: unknown;
   status: string;
   updated_at: string;
+};
+
+type ManualAssignmentOverrideRow = {
+  baseline_assignment_result_id: string;
+  bed_id: string;
+  client_mutation_id: string | null;
+  created_at: string;
+  created_by_profile_id: string;
+  from_nurse_id: string;
+  id: string;
+  related_swap_request_id: string | null;
+  server_sequence: number;
+  shift_id: string;
+  status: "active" | "superseded";
+  superseded_at: string | null;
+  to_nurse_id: string;
+  warning_acknowledgements: unknown;
+};
+
+type ManualAssignmentOverrideRpcResult = {
+  activeAssignmentOverridesByBedId?: unknown;
+  currentBaselineAssignmentResultId?: string;
+  currentEffectiveNurseId?: string;
+  message?: string;
+  override?: unknown;
+  status?: string;
 };
 
 type PreviousShiftSnapshotRow = {
@@ -103,12 +132,34 @@ type ResolveShiftNurseSwapRequestInput = {
   requestId: string;
 };
 
+export type ConfirmManualAssignmentOverrideInput = {
+  baselineAssignmentResultId: string;
+  bedId: string;
+  clientMutationId: string;
+  fromNurseId: string;
+  relatedSwapRequestId?: string;
+  shiftId: string;
+  toNurseId: string;
+  warningAcknowledgements: OverrideWarningAcknowledgement[];
+};
+
+export type ConfirmManualAssignmentOverrideResult = {
+  activeAssignmentOverridesByBedId: ActiveAssignmentOverridesByBedId;
+  currentBaselineAssignmentResultId?: string;
+  currentEffectiveNurseId?: string;
+  message?: string;
+  override?: ManualAssignmentOverride;
+  status: "saved" | "stale";
+};
+
 type ChargeProfileIdentifier = Pick<UserProfile, "id" | "role">;
 
 const templateColumns =
   "id, owner_profile_id, name, template_snapshot, created_at, updated_at";
 const activeShiftColumns =
   "id, charge_profile_id, floor_template_id, status, shift_snapshot, created_at, updated_at, ended_at";
+const activeAssignmentOverrideColumns =
+  "id, shift_id, baseline_assignment_result_id, bed_id, from_nurse_id, to_nurse_id, created_by_profile_id, created_at, status, superseded_at, server_sequence, related_swap_request_id, warning_acknowledgements, client_mutation_id";
 const previousShiftColumns =
   "id, charge_profile_id, floor_template_id, completed_at, nurse_suggestions, patient_suggestions";
 const uuidPattern =
@@ -230,6 +281,99 @@ function mapActiveShiftRow(row: ActiveShiftRow): ActiveShiftRecord {
     status: row.status,
     updatedAt: row.updated_at,
   };
+}
+
+function mapManualAssignmentOverrideRow(
+  row: ManualAssignmentOverrideRow,
+): ManualAssignmentOverride {
+  return {
+    baselineAssignmentResultId: row.baseline_assignment_result_id,
+    bedId: row.bed_id,
+    createdAt: row.created_at,
+    createdByProfileId: row.created_by_profile_id,
+    fromNurseId: row.from_nurse_id,
+    id: row.id,
+    relatedSwapRequestId: row.related_swap_request_id ?? undefined,
+    serverSequence: row.server_sequence,
+    shiftId: row.shift_id,
+    status: row.status,
+    supersededAt: row.superseded_at ?? undefined,
+    toNurseId: row.to_nurse_id,
+    warningAcknowledgements: Array.isArray(row.warning_acknowledgements)
+      ? row.warning_acknowledgements
+      : [],
+  } as ManualAssignmentOverride;
+}
+
+function requireManualAssignmentOverride(
+  value: unknown,
+): ManualAssignmentOverride {
+  const override = value as Partial<ManualAssignmentOverride> | undefined;
+
+  if (
+    !override?.id ||
+    !override.shiftId ||
+    !override.baselineAssignmentResultId ||
+    !override.bedId ||
+    !override.fromNurseId ||
+    !override.toNurseId ||
+    !override.createdByProfileId ||
+    !override.createdAt ||
+    (override.status !== "active" && override.status !== "superseded") ||
+    typeof override.serverSequence !== "number"
+  ) {
+    throw new Error("A manual assignment override has an invalid server shape.");
+  }
+
+  return {
+    ...override,
+    warningAcknowledgements: Array.isArray(override.warningAcknowledgements)
+      ? override.warningAcknowledgements
+      : [],
+  } as ManualAssignmentOverride;
+}
+
+function requireActiveAssignmentOverrideProjection(
+  value: unknown,
+): ActiveAssignmentOverridesByBedId {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).map(([bedId, override]) => [
+      bedId,
+      requireManualAssignmentOverride(override),
+    ]),
+  );
+}
+
+async function loadActiveAssignmentOverrides(
+  supabase: SupabaseClient,
+  shiftId: string,
+) {
+  const { data, error } = await supabase
+    .from("manual_assignment_overrides")
+    .select(activeAssignmentOverrideColumns)
+    .eq("shift_id", shiftId)
+    .eq("status", "active")
+    .overrideTypes<ManualAssignmentOverrideRow[]>();
+
+  if (error) {
+    if (error.code === "42P01" || error.code === "PGRST205") {
+      return {};
+    }
+
+    throw new Error(error.message);
+  }
+
+  return Object.fromEntries(
+    data.map((row) => {
+      const override = mapManualAssignmentOverrideRow(row);
+
+      return [override.bedId, override];
+    }),
+  );
 }
 
 function mapPreviousShiftRow(
@@ -400,7 +544,57 @@ export async function loadServerActiveShift(
     "A server shift was returned for the wrong account.",
   );
 
-  return activeShift;
+  return {
+    ...activeShift,
+    activeAssignmentOverridesByBedId: await loadActiveAssignmentOverrides(
+      supabase,
+      activeShift.id,
+    ),
+  };
+}
+
+export async function confirmManualAssignmentOverride(
+  supabase: SupabaseClient,
+  input: ConfirmManualAssignmentOverrideInput,
+): Promise<ConfirmManualAssignmentOverrideResult> {
+  const { data, error } = await supabase.rpc(
+    "confirm_manual_assignment_override",
+    {
+      p_baseline_assignment_result_id: input.baselineAssignmentResultId,
+      p_bed_id: input.bedId,
+      p_client_mutation_id: input.clientMutationId,
+      p_from_nurse_id: input.fromNurseId,
+      p_related_swap_request_id: input.relatedSwapRequestId ?? null,
+      p_shift_id: input.shiftId,
+      p_to_nurse_id: input.toNurseId,
+      p_warning_acknowledgements: input.warningAcknowledgements,
+    },
+  );
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const result = data as ManualAssignmentOverrideRpcResult | null;
+
+  if (result?.status !== "saved" && result?.status !== "stale") {
+    throw new Error("The manual assignment override returned an invalid result.");
+  }
+
+  return {
+    activeAssignmentOverridesByBedId:
+      requireActiveAssignmentOverrideProjection(
+        result.activeAssignmentOverridesByBedId,
+      ),
+    currentBaselineAssignmentResultId:
+      result.currentBaselineAssignmentResultId,
+    currentEffectiveNurseId: result.currentEffectiveNurseId,
+    message: result.message,
+    override: result.override
+      ? requireManualAssignmentOverride(result.override)
+      : undefined,
+    status: result.status,
+  };
 }
 
 async function loadPreviousShiftSnapshots(
