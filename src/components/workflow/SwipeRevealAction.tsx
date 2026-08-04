@@ -51,6 +51,11 @@ export function SwipeRevealAction({
     });
   }
 
+  function handleActionPress() {
+    animateRow(0);
+    onActionPress();
+  }
+
   const panResponder = PanResponder.create({
     onMoveShouldSetPanResponder: (_, gestureState) => {
       const isHorizontalSwipe =
@@ -98,7 +103,7 @@ export function SwipeRevealAction({
           accessibilityLabel={accessibilityLabel}
           accessibilityRole="button"
           disabled={!isActionRevealed}
-          onPress={onActionPress}
+          onPress={handleActionPress}
           style={({ pressed }) => [
             styles.actionButton,
             actionTone === "brand" ? styles.brandActionButton : null,

@@ -2771,3 +2771,24 @@ For each task, add a dated section with:
   - [x] Human correctly confirmed that `AssignmentMoveDialog` should not send
     `relatedSwapRequestId` for an ordinary board move.
 - Status: verified
+
+### 2026-08-04 - Close Swipe Row When Its Action Is Pressed
+
+- Task: Reset a revealed bed row before opening the assignment move dialog.
+- Problem understanding:
+  - [x] Why closing the modal did not reset the still-mounted swipe component.
+  - [x] Why the initial `false` state only applies when the component mounts.
+- Solution understanding:
+  - [x] `handleActionPress` animates `rowTranslateX` back to zero before calling
+    the existing `onActionPress` callback.
+  - [x] The reset belongs inside `SwipeRevealAction` because that component owns
+    both the reveal state and animated value.
+- Broader context:
+  - [x] Other consumers of the reusable swipe action also return to a closed row
+    after their action is consumed.
+  - [x] No modal, floor-board, or navigation state was added for this behavior.
+- Verification:
+  - [x] Human identified that swipe behavior belongs to the swipe component.
+  - [x] Clarified that the component owns both its reveal state and animation.
+  - [x] Human correctly identified `0` as the closed `rowTranslateX` value.
+- Status: verified
