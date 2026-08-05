@@ -248,6 +248,16 @@ export interface NurseRequest {
   resolutionNote?: string;
 }
 
+export interface NurseRequestMessage {
+  id: string;
+  shiftId: string;
+  requestId: string;
+  authorProfileId: string;
+  body: string;
+  createdAt: string;
+  clientMutationId?: string;
+}
+
 export interface NurseCarryOverSuggestion {
   id: string;
   previousNurseId: string;

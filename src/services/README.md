@@ -32,6 +32,11 @@ Phase 7 notification taps use `serverWorkspaceRepository` to confirm current
 shift or nurse-access state before navigation. Notification payloads are only
 pointers; they never replace a current server read.
 
+Phase 8 request threads use `requestMessageRepository` as the only app-facing
+boundary for listing and appending request messages. The server derives the
+author and request access from the signed-in session; screens never choose an
+author identity or query another nurse's thread directly.
+
 Do not add offline queues, deep links, drag-and-drop overrides, board sharing,
 tablet layout, AI, or other future task infrastructure here until the matching
 task starts.

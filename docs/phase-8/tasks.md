@@ -239,13 +239,14 @@ Manual validation:
 
 ## Request Threads and Lifecycle
 
-### Task 2.1: Add Request-Message Server Model and Authorization
+### Done Task 2.1: Add Request-Message Server Model and Authorization
 
 Story coverage: US3, US9
 
 Build:
 
-- Add append-only request message records with request, shift, author, role, body, server time, and optional idempotency key.
+- Add append-only request message records with request, shift, author profile,
+  body, server time, and optional idempotency key.
 - Authorize only the shift owner and the request's linked nurse.
 - Add server actions for listing and appending messages.
 - Keep message bodies out of notification payloads.

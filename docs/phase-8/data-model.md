@@ -172,7 +172,6 @@ Purpose: store one chronological message in one issue or swap request thread.
 | `shiftId` | Active shift owning the request. |
 | `requestId` | Existing nurse request that owns the thread. |
 | `authorProfileId` | Signed-in author. |
-| `authorRole` | `charge_nurse` or `requesting_nurse`. |
 | `body` | Trimmed message body within a documented length limit. |
 | `createdAt` | Server timestamp used for ordering. |
 | `clientMutationId` | Optional short-lived idempotency key to prevent duplicate retries. |
@@ -181,6 +180,10 @@ Authorization rules:
 
 - The shift's owning charge profile can read and add messages for that shift's requests.
 - A linked nurse profile can read and add messages only when the request's `requestingNurseId` matches that nurse access record.
+- `authorProfileId` is derived from the signed-in session; the client cannot
+  choose another author.
+- Phase 8 does not store a separate author-role label because message UI does
+  not distinguish participants with role labels.
 - Signed-out users, unrelated nurses, and users from another shift cannot read or post.
 - Messages are append-only in Phase 8: no editing, deletion, reactions, attachments, mentions, or read receipts.
 - Message bodies are not copied into push payloads.

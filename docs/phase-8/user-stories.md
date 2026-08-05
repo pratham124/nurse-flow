@@ -54,7 +54,7 @@ As a charge nurse or requesting nurse, I want a conversation attached to one iss
 
 - Each issue or swap request has its own chronological message thread.
 - Only the shift's charge nurse and the linked nurse who created the request can read or add messages.
-- A message has an author, role, body, and server timestamp.
+- A message has an author profile, body, and server timestamp.
 - Blank messages and duplicate in-flight submissions are prevented.
 - New messages appear through the existing connected realtime experience.
 - Notification behavior may alert an eligible participant to a new message, but the thread always reloads current server data when opened.

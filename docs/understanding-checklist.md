@@ -2792,3 +2792,43 @@ For each task, add a dated section with:
   - [x] Clarified that the component owns both its reveal state and animation.
   - [x] Human correctly identified `0` as the closed `rowTranslateX` value.
 - Status: verified
+
+### 2026-08-05 - Add Request-Message Server Model and Authorization
+
+- Task: Implement Phase 8 Task 2.1 without adding realtime thread refresh,
+  request UI, lifecycle changes, or notification content.
+- Problem understanding:
+  - [x] Why request metadata can remain in the active-shift snapshot while
+    append-only conversation messages need a separate server table.
+  - [x] Why the server must derive the author profile and thread access instead
+    of accepting an author identity from the client.
+  - [x] Why a retry identifier prevents duplicate sends without treating two
+    intentional messages with the same body as duplicates.
+- Solution understanding:
+  - [x] `NurseRequestMessage` represents one server-timestamped message with a
+    verified `authorProfileId`; it does not duplicate an unused role label.
+  - [x] `requestMessageRepository` provides the narrow app-facing list and
+    append actions, trims and validates input, and strictly validates the
+    camelCase result contract returned by both RPCs.
+  - [x] `get_nurse_request_thread_actor` finds the request in the current shift
+    snapshot, then authorizes only the shift owner or the linked access row
+    whose `nurse_id` matches the request's `requestingNurseId`.
+  - [x] The append RPC owns author identity and time; the partial unique index
+    and mutation-key check return an identical retry without inserting a
+    second row.
+  - [x] The table grants no direct insert, update, or delete access, and this
+    task creates no notification payload containing message bodies.
+- Broader context:
+  - [x] Task 2.2 can add narrow realtime refresh on top of this authorized
+    record without exposing full active-shift data to joined nurses.
+  - [x] Tasks 2.3 and 2.4 can share this repository while keeping their charge
+    and nurse screens separate.
+- Verification:
+  - [x] Human explained that the authorization helper checks access, the list
+    RPC returns ordered messages, and the append RPC adds one new row.
+  - [x] Clarified that separate rows avoid full-shift JSON rewrites and support
+    safe concurrent, nurse-scoped message operations.
+  - [x] Human identified the signed-in profile as the author source and an
+    identical mutation retry as one duplicate result; clarified that reusing
+    the key for different content is rejected.
+- Status: verified
