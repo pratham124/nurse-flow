@@ -1,12 +1,22 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
+import { RequestThread } from "../components/requests/RequestThread";
 import {
   SummaryChip,
   WorkflowScreen,
   WorkflowSection,
 } from "../components/workflow";
+import { useRequestThread } from "../hooks/useRequestThread";
+import { useAuthSession } from "../store/AuthSessionContext";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { colors, fontWeight, radius, shadows, spacing, textSize } from "../theme/tokens";
 import { getNurseRequestDisplayById } from "../utils/nurseRequestDisplay";
@@ -30,7 +40,8 @@ function DetailRow({ label, value }: DetailRowProps) {
   );
 }
 
-export default function RequestDetailScreen() {
+export default function ChargeNurseRequestDetailScreen() {
+  const { authState } = useAuthSession();
   const { activeShift, resolveNurseSwapRequest } = useServerWorkspace();
   const [serverSaveError, setServerSaveError] = useState("");
   const [isResolving, setIsResolving] = useState(false);
@@ -42,6 +53,15 @@ export default function RequestDetailScreen() {
     activeShift,
     selectedRequestId,
   );
+  const currentProfileId =
+    authState.status === "signed_in" ? authState.profile.id : "";
+  const thread = useRequestThread({
+    enabled: Boolean(
+      currentProfileId && activeShift && request && selectedRequestId,
+    ),
+    requestId: selectedRequestId,
+    shiftId: activeShift?.id,
+  });
   const showSwapActions =
     Boolean(request) &&
     request?.requestType === "swap" &&
@@ -73,7 +93,11 @@ export default function RequestDetailScreen() {
   }
 
   return (
-    <WorkflowScreen
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      style={styles.keyboardAvoidingView}
+    >
+      <WorkflowScreen
       activeStep="Board"
       actionErrorText={serverSaveError}
       flow={assignmentFlow}
@@ -103,7 +127,7 @@ export default function RequestDetailScreen() {
             </View>
           </WorkflowSection>
 
-          <WorkflowSection title="Message">
+          <WorkflowSection title="Original message">
             <View style={styles.messageCard}>
               <Text style={styles.messageText}>{request.message}</Text>
             </View>
@@ -159,6 +183,21 @@ export default function RequestDetailScreen() {
               </View>
             </WorkflowSection>
           ) : null}
+
+          <RequestThread
+            canSend={thread.canSend}
+            connectionState={thread.connectionState}
+            currentProfileId={currentProfileId}
+            draft={thread.draft}
+            isLoading={thread.isLoading}
+            isSending={thread.isSending}
+            loadError={thread.loadError}
+            messages={thread.messages}
+            onDraftChange={thread.changeDraft}
+            onRetryThread={thread.retryThread}
+            onSend={thread.sendMessage}
+            sendError={thread.sendError}
+          />
         </View>
       ) : (
         <View style={styles.emptyCard}>
@@ -168,11 +207,15 @@ export default function RequestDetailScreen() {
           </Text>
         </View>
       )}
-    </WorkflowScreen>
+      </WorkflowScreen>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  keyboardAvoidingView: {
+    flex: 1,
+  },
   content: {
     gap: spacing.cardGap,
   },

@@ -271,8 +271,8 @@ For each task, add a dated section with:
   - [ ] `src/screens/RegularNurseWorkspaceScreen.tsx` adds issue and swap request forms for the real joined nurse workspace.
   - [ ] The joined nurse request UI now uses plain nurse-facing copy and two simple action cards instead of technical helper text.
   - [ ] The joined nurse assignment summary groups beds by room, puts break info in a separate `Breaks` section, and keeps longer room/request lists in contained scroll areas.
-  - [ ] `src/screens/RequestDetailScreen.tsx` resolves only pending swap requests through the focused charge action.
-  - [ ] `src/screens/RequestDetailScreen.tsx` shows issue requests as review-only charge items and request timestamps no longer include seconds.
+  - [ ] `src/screens/ChargeNurseRequestDetailScreen.tsx` resolves only pending swap requests through the focused charge action.
+  - [ ] `src/screens/ChargeNurseRequestDetailScreen.tsx` shows issue requests as review-only charge items and request timestamps no longer include seconds.
   - [ ] `docs/phase-6/supabase-request-setup.md` documents the required server functions and validation rules.
 - Broader context:
   - [ ] This makes Phase 6 nurse requests live while keeping request records on the active shift snapshot.
@@ -2213,7 +2213,7 @@ For each task, add a dated section with:
   - [ ] The charge nurse needs more room to read one request without changing request status yet.
   - [ ] Accept, decline, reassignment, backend, notification, and sync behavior must stay out of this task.
 - Solution understanding:
-  - [ ] `src/screens/RequestDetailScreen.tsx` shows a read-only detail view for one local request.
+  - [ ] `src/screens/ChargeNurseRequestDetailScreen.tsx` shows a read-only detail view for one local request.
   - [ ] `src/screens/FlagsScreen.tsx` makes local request rows tappable and routes by request ID.
   - [ ] `src/utils/nurseRequestDisplay.ts` centralizes request labels, timestamps, and bed context so list rows and detail view stay consistent.
   - [ ] Missing or stale request IDs show a safe recovery state.
@@ -2238,7 +2238,7 @@ For each task, add a dated section with:
   - [ ] Already accepted or declined requests should not show active decision controls again.
 - Solution understanding:
   - [ ] `src/utils/nurseRequests.ts` updates only pending swap requests to `accepted` or `declined`.
-  - [ ] `src/screens/RequestDetailScreen.tsx` shows Accept and Decline only for pending mock swaps.
+  - [ ] `src/screens/ChargeNurseRequestDetailScreen.tsx` shows Accept and Decline only for pending mock swaps.
   - [ ] Resolving a swap stores `resolvedAt` and a short local `resolutionNote`.
   - [ ] `src/screens/SimulatedNurseAssignmentScreen.tsx` already reads request status from the active shift, so the selected nurse sees accepted, declined, and pending statuses from the same request list.
   - [ ] Bed assignments stay unchanged.
@@ -2832,3 +2832,35 @@ For each task, add a dated section with:
     identical mutation retry as one duplicate result; clarified that reusing
     the key for different content is rejected.
 - Status: verified
+
+### 2026-08-05 - Add Realtime Charge and Nurse Request Threads
+
+- Tasks: Implement Phase 8 Tasks 2.2 through 2.4: narrow realtime refresh,
+  the charge thread UI, and the joined-nurse scoped detail/thread UI.
+- Problem understanding:
+  - [ ] Why a request thread should subscribe to one request-message table
+    instead of refreshing the full active-shift snapshot.
+  - [ ] Why leaving the screen, losing nurse access, ending the shift, or
+    signing out must stop the listener and disable message sending.
+  - [ ] Why a route parameter alone is not proof that a joined nurse owns a
+    request.
+- Solution understanding:
+  - [ ] `useRequestThread` owns authorized loading, listener lifecycle,
+    chronological merging, connection state, and idempotent send retries.
+  - [ ] `RequestThread` is shared presentation; it aligns messages by comparing
+    `authorProfileId` with the signed-in profile and does not need role labels.
+  - [ ] `JoinedNurseRequestDetailScreen` looks up the route ID only inside the
+    nurse-scoped `requestHistory` before enabling the message hook.
+  - [ ] A failed connected send retains the draft and mutation ID, while a
+    disconnected composer creates no offline queue.
+- Broader context:
+  - [ ] Charge and requesting nurse now share one server-ordered conversation
+    without exposing the full board to the joined nurse.
+  - [ ] Request metadata and lifecycle state remain separate from append-only
+    conversation rows so later lifecycle tasks can evolve independently.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [ ] Two authorized sessions completed the send/receive manual check.
+- Status: pending

@@ -24,6 +24,16 @@ type JoinedNurseAssignmentSubscriptionOptions = {
   supabase: SupabaseClient;
 };
 
+type RequestThreadSubscriptionOptions = {
+  onConnectionStateChange: (
+    connectionState: RealtimeConnectionState,
+    error?: Error,
+  ) => void;
+  onMessageChanged: () => void;
+  requestId: string;
+  supabase: SupabaseClient;
+};
+
 function getConnectionState(
   status: "SUBSCRIBED" | "TIMED_OUT" | "CLOSED" | "CHANNEL_ERROR",
 ): RealtimeConnectionState {
@@ -166,6 +176,45 @@ export function subscribeToJoinedNurseAssignmentView({
       () => {
         if (isActive) {
           onNurseAccessChanged();
+        }
+      },
+    )
+    .subscribe((status, error) => {
+      if (isActive) {
+        onConnectionStateChange(getConnectionState(status), error);
+      }
+    });
+
+  return () => {
+    isActive = false;
+    void supabase.removeChannel(channel);
+  };
+}
+
+export function subscribeToRequestThread({
+  onConnectionStateChange,
+  onMessageChanged,
+  requestId,
+  supabase,
+}: RequestThreadSubscriptionOptions) {
+  let isActive = true;
+  const topicPrefix = `request-thread:${requestId}`;
+
+  removeStaleChannels(supabase, topicPrefix);
+
+  const channel: RealtimeChannel = supabase
+    .channel(createSubscriptionTopic(topicPrefix))
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        filter: `request_id=eq.${requestId}`,
+        schema: "public",
+        table: "nurse_request_messages",
+      },
+      () => {
+        if (isActive) {
+          onMessageChanged();
         }
       },
     )

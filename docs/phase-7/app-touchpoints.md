@@ -25,7 +25,7 @@ Expo Router routes in `src/app/` stay thin and point to `src/screens/`.
   `src/screens/RegularNurseWorkspaceScreen.tsx` are the future nurse-scoped
   cache/status touchpoint.
 - `src/app/flags.tsx`, `src/screens/FlagsScreen.tsx`,
-  `src/app/request-detail.tsx`, and `src/screens/RequestDetailScreen.tsx` are
+  `src/app/charge-request-detail.tsx`, and `src/screens/ChargeNurseRequestDetailScreen.tsx` are
   likely notification-tap targets.
 - `src/app/nurse-invites.tsx` and `src/screens/NurseInvitesScreen.tsx` contain
   server-required invite actions that a later disconnected state must disable.
@@ -114,7 +114,7 @@ Risks to preserve:
 - `src/types/models.ts`
 - `src/screens/HomeScreen.tsx`, `FloorBoardScreen.tsx`,
   `RegularNurseWorkspaceScreen.tsx`, `FlagsScreen.tsx`,
-  `RequestDetailScreen.tsx`, and `NurseInvitesScreen.tsx`
+  `ChargeNurseRequestDetailScreen.tsx`, and `NurseInvitesScreen.tsx`
 - `app.json`, only when the later notification config plugin is introduced.
 
 ## Task 0.2 Guardrail

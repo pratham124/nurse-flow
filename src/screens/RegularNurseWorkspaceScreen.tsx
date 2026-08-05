@@ -27,6 +27,7 @@ import type { JoinedNurseAssignmentView } from "../types/models";
 
 type AssignmentSummaryProps = {
   assignmentView: JoinedNurseAssignmentView;
+  onOpenRequest: (requestId: string) => void;
 };
 
 type RequestActionsProps = {
@@ -143,7 +144,10 @@ function hasDuplicatePendingRequest(
   });
 }
 
-function AssignmentSummary({ assignmentView }: AssignmentSummaryProps) {
+function AssignmentSummary({
+  assignmentView,
+  onOpenRequest,
+}: AssignmentSummaryProps) {
   const roomGroups = getAssignedRoomGroups(assignmentView);
   const hasManyRooms = roomGroups.length > 3;
   const hasManyRequests = assignmentView.requestHistory.length > 3;
@@ -219,12 +223,22 @@ function AssignmentSummary({ assignmentView }: AssignmentSummaryProps) {
             contentContainerStyle={styles.requestScrollContent}
           >
             {assignmentView.requestHistory.map((request) => (
-              <View key={request.id} style={styles.requestRow}>
+              <Pressable
+                accessibilityLabel={`Open ${getRequestUpdateTitle(request)}: ${request.message}`}
+                accessibilityRole="button"
+                key={request.id}
+                onPress={() => onOpenRequest(request.id)}
+                style={({ pressed }) => [
+                  styles.requestRow,
+                  pressed ? styles.requestRowPressed : null,
+                ]}
+              >
                 <Text style={styles.requestTitle}>
                   {getRequestUpdateTitle(request)}
                 </Text>
                 <Text style={styles.bedDetail}>{request.message}</Text>
-              </View>
+                <Text style={styles.openRequestText}>Open conversation</Text>
+              </Pressable>
             ))}
           </ScrollView>
         ) : (
@@ -450,6 +464,13 @@ export default function RegularNurseWorkspaceScreen() {
     router.replace("/");
   }
 
+  function handleOpenRequest(requestId: string) {
+    router.push({
+      params: { requestId },
+      pathname: "/joined-request-detail",
+    });
+  }
+
   async function handleSubmitIssue() {
     if (!assignmentView) {
       return;
@@ -568,6 +589,7 @@ export default function RegularNurseWorkspaceScreen() {
             <>
               <AssignmentSummary
                 assignmentView={joinedNurseAccessState.assignmentView}
+                onOpenRequest={handleOpenRequest}
               />
               <RequestActions
                 assignmentView={joinedNurseAccessState.assignmentView}
@@ -738,6 +760,14 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     gap: spacing.xs,
     padding: spacing.md,
+  },
+  requestRowPressed: {
+    opacity: 0.8,
+  },
+  openRequestText: {
+    color: colors.brand.burgundy,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.semibold,
   },
   requestPanel: {
     backgroundColor: colors.neutral.surface,

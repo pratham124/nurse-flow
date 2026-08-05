@@ -209,7 +209,7 @@ export function NotificationTapProvider({
 
         if (payload.targetRoute === "requestDetail") {
           router.replace({
-            pathname: "/request-detail",
+            pathname: "/charge-request-detail",
             params: { requestId: payload.relatedRequestId! },
           });
         } else if (

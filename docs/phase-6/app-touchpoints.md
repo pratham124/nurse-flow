@@ -38,7 +38,7 @@ Relevant current routes:
 - `src/app/index.tsx` opens the charge nurse account workspace.
 - `src/app/floor-board.tsx` opens the charge nurse floor board.
 - `src/app/flags.tsx` opens charge nurse flags and request review.
-- `src/app/request-detail.tsx` opens one request detail.
+- `src/app/charge-request-detail.tsx` opens one charge request detail.
 - `src/app/join-active-session.tsx` opens the current placeholder join shell.
 - `src/app/regular-nurse-workspace.tsx` opens the joined nurse workspace shell.
 - `src/screens/SimulatedNurse*` screens are legacy local simulation reference code.
@@ -114,7 +114,7 @@ Current screens that save active shift changes:
 - `src/screens/AssignmentReviewScreen.tsx`
 - `src/screens/SimulatedNurseIssueScreen.tsx`
 - `src/screens/SimulatedNurseSwapScreen.tsx`
-- `src/screens/RequestDetailScreen.tsx`
+- `src/screens/ChargeNurseRequestDetailScreen.tsx`
 
 Compatibility risk:
 
@@ -148,7 +148,7 @@ Current request behavior stores nurse requests inside the active shift snapshot:
 - `src/utils/nurseRequestDisplay.ts` prepares request display data.
 - `SimulatedNurseIssueScreen` appends issue requests with `saveActiveShift`.
 - `SimulatedNurseSwapScreen` appends swap requests with `saveActiveShift`.
-- `RequestDetailScreen` resolves pending swap requests with `saveActiveShift`.
+- `ChargeNurseRequestDetailScreen` resolves pending swap requests with `saveActiveShift`.
 
 Compatibility risk:
 

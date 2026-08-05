@@ -165,8 +165,8 @@ Task 1.5 should reuse the existing swipe-reveal row primitive and avoid adding a
 
 ### Charge Flow
 
-- `src/screens/FlagsScreen.tsx` lists requests and opens `/request-detail?requestId=...`.
-- `src/screens/RequestDetailScreen.tsx` reads the selected request from the charge `activeShift` and currently offers Accept/Decline only for pending swaps.
+- `src/screens/FlagsScreen.tsx` lists requests and opens `/charge-request-detail?requestId=...`.
+- `src/screens/ChargeNurseRequestDetailScreen.tsx` reads the selected request from the charge `activeShift` and currently offers Accept/Decline only for pending swaps.
 - `src/utils/nurseRequestDisplay.ts` derives the current request labels and bed context.
 - `src/utils/nurseRequests.ts` contains local compatibility helpers for request lists and status changes.
 
@@ -185,7 +185,7 @@ Phase 8 should make those nurse-owned rows open a nurse-scoped request detail/th
 
 Route decision for Task 2.4:
 
-- Either make `src/app/request-detail.tsx` role-aware with explicitly separate charge and nurse loaders, or add a dedicated nurse request route.
+- Keep the dedicated `src/app/charge-request-detail.tsx` and `src/app/joined-request-detail.tsx` routes so their loaders and authorization boundaries stay explicit.
 - Do not infer authorization from a route parameter; the server request-thread function must authorize the signed-in profile.
 
 ## Request Thread Service and Realtime Touchpoints
@@ -274,7 +274,7 @@ The snapshot remains a temporary local file. No server table, upload service, sh
 Likely Phase 8 touchpoints:
 
 - Add a small reusable responsive content boundary or hook only after Task 4.1 defines one breakpoint.
-- Adapt `FloorBoardScreen`, `RequestDetailScreen`, and `RegularNurseWorkspaceScreen` without changing their authorization boundaries.
+- Adapt `FloorBoardScreen`, `ChargeNurseRequestDetailScreen`, and `RegularNurseWorkspaceScreen` without changing their authorization boundaries.
 - Keep setup routes readable with a centered maximum width rather than redesigning them.
 
 Performance risk:
@@ -301,11 +301,11 @@ Task 5.2 must measure a representative large floor and long thread before Task 5
 - `src/screens/AssignmentReviewScreen.tsx`
 - `src/screens/FloorBoardScreen.tsx`
 - `src/screens/FlagsScreen.tsx`
-- `src/screens/RequestDetailScreen.tsx`
+- `src/screens/ChargeNurseRequestDetailScreen.tsx`
 - `src/screens/RegularNurseWorkspaceScreen.tsx`
 - `src/components/workflow/WorkflowScreen.tsx`
 - `src/components/workflow/WorkflowListScreen.tsx`
-- `src/app/request-detail.tsx` or a new nurse request-detail route
+- `src/app/charge-request-detail.tsx` and `src/app/joined-request-detail.tsx`
 
 ### Likely new focused files
 

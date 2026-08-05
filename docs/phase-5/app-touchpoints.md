@@ -27,7 +27,7 @@ Current route files:
 - `src/app/simulated-nurse-assignment.tsx`
 - `src/app/simulated-nurse-issue.tsx`
 - `src/app/simulated-nurse-swap.tsx`
-- `src/app/request-detail.tsx`
+- `src/app/charge-request-detail.tsx`
 
 Phase 5 should keep this pattern. New auth route files can be thin wrappers around `src/screens` files when implementation begins.
 
@@ -135,7 +135,7 @@ Current screens that will need careful server-backed changes later:
 - `src/screens/NursesScreen.tsx`: edits active-shift nurses.
 - `src/screens/PatientsAndAcuityScreen.tsx`: edits bed states, patients, and acuity.
 - `src/screens/AssignmentReviewScreen.tsx`: writes assignment results and flags.
-- `src/screens/RequestDetailScreen.tsx`: resolves local swap requests.
+- `src/screens/ChargeNurseRequestDetailScreen.tsx`: resolves local swap requests.
 - `src/screens/SimulatedNurseIssueScreen.tsx` and `src/screens/SimulatedNurseSwapScreen.tsx`: append local nurse requests to the active shift.
 
 These screens should keep their existing behavior until each matching Phase 5 task replaces one persistence path, then the old local storage path should be removed instead of kept as a fallback.

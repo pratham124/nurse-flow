@@ -384,7 +384,9 @@ function getFlagItemKey(item: FlagListItem) {
 }
 
 function openRequestDetail(requestId: string) {
-  router.push(`/request-detail?requestId=${encodeURIComponent(requestId)}`);
+  router.push(
+    `/charge-request-detail?requestId=${encodeURIComponent(requestId)}`,
+  );
 }
 
 function renderFlagItem({ item }: { item: FlagListItem }) {

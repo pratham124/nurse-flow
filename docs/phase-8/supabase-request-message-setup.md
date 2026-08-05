@@ -394,7 +394,71 @@ setup. It verifies:
 4. Blank messages and mutation-key collisions are rejected.
 5. Retrying the same mutation returns `duplicate` and leaves one row.
 
-Before Task 2.2, do not add `nurse_request_messages` to the Realtime
-publication. Before notification work, verify every event payload remains a
-pointer containing IDs and safe display text only, never `body` from this
-table.
+## Task 2.2 Realtime Publication
+
+Task 2.2 has two realtime paths:
+
+- A new issue or swap updates `active_shifts.shift_snapshot`, so the charge
+  workspace listener needs `active_shifts` in the publication.
+- A conversation reply inserts into `nurse_request_messages`, so the open
+  request thread needs that table in the publication.
+
+Run this block once to enable both paths safely. Each check makes the setup
+idempotent when a table was enabled during an earlier phase:
+
+```sql
+do $$
+begin
+  if exists (
+    select 1
+    from pg_publication
+    where pubname = 'supabase_realtime'
+  ) and not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'active_shifts'
+  ) then
+    alter publication supabase_realtime
+    add table public.active_shifts;
+  end if;
+
+  if exists (
+    select 1
+    from pg_publication
+    where pubname = 'supabase_realtime'
+  ) and not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'nurse_request_messages'
+  ) then
+    alter publication supabase_realtime
+    add table public.nurse_request_messages;
+  end if;
+end;
+$$;
+```
+
+Confirm both tables are enabled:
+
+```sql
+select schemaname, tablename
+from pg_publication_tables
+where pubname = 'supabase_realtime'
+  and schemaname = 'public'
+  and tablename in ('active_shifts', 'nurse_request_messages')
+order by tablename;
+```
+
+The result should contain two rows, one for each table.
+
+The subscription filter uses only the current request ID, and the existing RLS
+policy authorizes each delivered row. Opening a screen starts one listener;
+leaving it removes that channel. A Realtime event is only a refetch signal, not
+a second message store.
+
+Before notification work, verify every event payload remains a pointer
+containing IDs and safe display text only, never `body` from this table.
