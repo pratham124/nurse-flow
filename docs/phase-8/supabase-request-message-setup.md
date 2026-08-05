@@ -394,71 +394,250 @@ setup. It verifies:
 4. Blank messages and mutation-key collisions are rejected.
 5. Retrying the same mutation returns `duplicate` and leaves one row.
 
-## Task 2.2 Realtime Publication
+## Task 2.2 Private Realtime Broadcast
 
-Task 2.2 has two realtime paths:
+Task 2.2 uses Supabase's recommended Database Broadcast path. The database
+sends pointer-only events to private topics, and each authorized client
+refetches through its existing narrow server boundary.
 
-- A new issue or swap updates `active_shifts.shift_snapshot`, so the charge
-  workspace listener needs `active_shifts` in the publication.
-- A conversation reply inserts into `nurse_request_messages`, so the open
-  request thread needs that table in the publication.
+The authorization helper recognizes three topic shapes:
 
-Run this block once to enable both paths safely. Each check makes the setup
-idempotent when a table was enabled during an earlier phase:
+- `nurseflow:active-shift:<shiftId>` for the owning charge nurse.
+- `nurseflow:nurse-access:<shiftId>:<accessId>` for the linked nurse profile.
+- `nurseflow:request-thread:<shiftId>:<requestId>` for the charge owner or the
+  request's linked nurse.
 
 ```sql
-do $$
+create or replace function public.can_receive_nurseflow_broadcast(
+  p_topic text
+)
+returns boolean
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  current_profile_id uuid;
+  target_access_id uuid;
+  target_request_id text;
+  target_shift_id uuid;
+  topic_parts text[] := string_to_array(coalesce(p_topic, ''), ':');
 begin
-  if exists (
-    select 1
-    from pg_publication
-    where pubname = 'supabase_realtime'
-  ) and not exists (
-    select 1
-    from pg_publication_tables
-    where pubname = 'supabase_realtime'
-      and schemaname = 'public'
-      and tablename = 'active_shifts'
-  ) then
-    alter publication supabase_realtime
-    add table public.active_shifts;
+  if cardinality(topic_parts) < 3 or topic_parts[1] <> 'nurseflow' then
+    return false;
   end if;
 
-  if exists (
-    select 1
-    from pg_publication
-    where pubname = 'supabase_realtime'
-  ) and not exists (
-    select 1
-    from pg_publication_tables
-    where pubname = 'supabase_realtime'
-      and schemaname = 'public'
-      and tablename = 'nurse_request_messages'
-  ) then
-    alter publication supabase_realtime
-    add table public.nurse_request_messages;
+  select profile.id
+  into current_profile_id
+  from public.profiles profile
+  where profile.auth_user_id = auth.uid()
+  limit 1;
+
+  if current_profile_id is null then
+    return false;
   end if;
+
+  begin
+    target_shift_id := topic_parts[3]::uuid;
+  exception when invalid_text_representation then
+    return false;
+  end;
+
+  if topic_parts[2] = 'active-shift'
+    and cardinality(topic_parts) = 3 then
+    return exists (
+      select 1
+      from public.active_shifts active_shift
+      join public.profiles profile
+        on profile.id = active_shift.charge_profile_id
+      where active_shift.id = target_shift_id
+        and profile.id = current_profile_id
+        and profile.role = 'charge_nurse'
+    );
+  end if;
+
+  if topic_parts[2] = 'nurse-access'
+    and cardinality(topic_parts) = 4 then
+    begin
+      target_access_id := topic_parts[4]::uuid;
+    exception when invalid_text_representation then
+      return false;
+    end;
+
+    return exists (
+      select 1
+      from public.shift_nurse_access access
+      where access.id = target_access_id
+        and access.shift_id = target_shift_id
+        and access.nurse_profile_id = current_profile_id
+    );
+  end if;
+
+  if topic_parts[2] = 'request-thread'
+    and cardinality(topic_parts) = 4 then
+    target_request_id := topic_parts[4];
+
+    return public.get_nurse_request_thread_actor(
+      target_shift_id,
+      target_request_id
+    ) = current_profile_id;
+  end if;
+
+  return false;
 end;
 $$;
+
+revoke all on function public.can_receive_nurseflow_broadcast(text)
+from public, anon;
+
+grant execute on function public.can_receive_nurseflow_broadcast(text)
+to authenticated;
+
+drop policy if exists "NurseFlow users can receive scoped broadcasts"
+on realtime.messages;
+
+create policy "NurseFlow users can receive scoped broadcasts"
+on realtime.messages
+for select
+to authenticated
+using (
+  realtime.messages.extension = 'broadcast'
+  and public.can_receive_nurseflow_broadcast(
+    (select realtime.topic())
+  )
+);
 ```
 
-Confirm both tables are enabled:
+The active-shift trigger wakes the owning charge topic and every nurse-access
+topic for that shift. It sends identifiers only, never the shift snapshot.
 
 ```sql
-select schemaname, tablename
-from pg_publication_tables
-where pubname = 'supabase_realtime'
-  and schemaname = 'public'
-  and tablename in ('active_shifts', 'nurse_request_messages')
-order by tablename;
+create or replace function public.broadcast_nurseflow_active_shift_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  access_row record;
+begin
+  perform realtime.send(
+    jsonb_build_object('shiftId', new.id),
+    'active-shift-changed',
+    'nurseflow:active-shift:' || new.id::text,
+    true
+  );
+
+  for access_row in
+    select access.id
+    from public.shift_nurse_access access
+    where access.shift_id = new.id
+  loop
+    perform realtime.send(
+      jsonb_build_object(
+        'accessId', access_row.id,
+        'shiftId', new.id
+      ),
+      'active-shift-changed',
+      'nurseflow:nurse-access:' || new.id::text || ':' ||
+        access_row.id::text,
+      true
+    );
+  end loop;
+
+  return null;
+end;
+$$;
+
+revoke all on function public.broadcast_nurseflow_active_shift_change()
+from public, anon, authenticated;
+
+drop trigger if exists broadcast_nurseflow_active_shift_change
+on public.active_shifts;
+
+create trigger broadcast_nurseflow_active_shift_change
+after update on public.active_shifts
+for each row
+execute function public.broadcast_nurseflow_active_shift_change();
 ```
 
-The result should contain two rows, one for each table.
+Access changes use the same nurse-scoped topic so removed access reaches an
+already-connected nurse and moves the app to its safe state.
 
-The subscription filter uses only the current request ID, and the existing RLS
-policy authorizes each delivered row. Opening a screen starts one listener;
-leaving it removes that channel. A Realtime event is only a refetch signal, not
-a second message store.
+```sql
+create or replace function public.broadcast_nurseflow_access_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  perform realtime.send(
+    jsonb_build_object(
+      'accessId', new.id,
+      'shiftId', new.shift_id
+    ),
+    'nurse-access-changed',
+    'nurseflow:nurse-access:' || new.shift_id::text || ':' || new.id::text,
+    true
+  );
 
-Before notification work, verify every event payload remains a pointer
-containing IDs and safe display text only, never `body` from this table.
+  return null;
+end;
+$$;
+
+revoke all on function public.broadcast_nurseflow_access_change()
+from public, anon, authenticated;
+
+drop trigger if exists broadcast_nurseflow_access_change
+on public.shift_nurse_access;
+
+create trigger broadcast_nurseflow_access_change
+after update on public.shift_nurse_access
+for each row
+execute function public.broadcast_nurseflow_access_change();
+```
+
+Request-message inserts emit only shift, request, and message IDs. The message
+body remains available only through the authorized list RPC.
+
+```sql
+create or replace function public.broadcast_nurseflow_request_message()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  perform realtime.send(
+    jsonb_build_object(
+      'messageId', new.id,
+      'requestId', new.request_id,
+      'shiftId', new.shift_id
+    ),
+    'request-message-inserted',
+    'nurseflow:request-thread:' || new.shift_id::text || ':' ||
+      new.request_id,
+    true
+  );
+
+  return null;
+end;
+$$;
+
+revoke all on function public.broadcast_nurseflow_request_message()
+from public, anon, authenticated;
+
+drop trigger if exists broadcast_nurseflow_request_message
+on public.nurse_request_messages;
+
+create trigger broadcast_nurseflow_request_message
+after insert on public.nurse_request_messages
+for each row
+execute function public.broadcast_nurseflow_request_message();
+```
+
+Opening a screen starts one private topic listener; leaving removes that
+channel. Broadcast events remain refetch signals rather than a second app data
+store or notification payload.

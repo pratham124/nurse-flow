@@ -162,6 +162,7 @@ export function useRequestThread({
         void refreshMessages(false);
       },
       requestId: activeRequestId,
+      shiftId: activeShiftId,
       supabase: activeSupabase,
     });
 

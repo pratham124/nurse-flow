@@ -2838,13 +2838,17 @@ For each task, add a dated section with:
 - Tasks: Implement Phase 8 Tasks 2.2 through 2.4: narrow realtime refresh,
   the charge thread UI, and the joined-nurse scoped detail/thread UI.
 - Problem understanding:
-  - [ ] Why a request thread should subscribe to one request-message table
-    instead of refreshing the full active-shift snapshot.
+  - [x] Why original requests and conversation replies need separate realtime
+    signals because they are stored in `active_shifts` and
+    `nurse_request_messages`, respectively.
   - [ ] Why leaving the screen, losing nurse access, ending the shift, or
     signing out must stop the listener and disable message sending.
   - [ ] Why a route parameter alone is not proof that a joined nurse owns a
     request.
 - Solution understanding:
+  - [ ] Private Database Broadcast triggers emit pointer-only events, topic RLS
+    authorizes the signed-in participant, and the client refetches through its
+    existing authorized server boundary.
   - [ ] `useRequestThread` owns authorized loading, listener lifecycle,
     chronological merging, connection state, and idempotent send retries.
   - [ ] `RequestThread` is shared presentation; it aligns messages by comparing
@@ -2859,8 +2863,10 @@ For each task, add a dated section with:
   - [ ] Request metadata and lifecycle state remain separate from append-only
     conversation rows so later lifecycle tasks can evolve independently.
 - Verification:
-  - [ ] Human restated understanding first.
+  - [x] Human explained the distinction between watching `active_shifts` for
+    original requests and `nurse_request_messages` for replies, and identified
+    that both a server signal and client subscriber are required.
   - [ ] Gaps were explained.
   - [ ] Code-specific question or walkthrough completed.
-  - [ ] Two authorized sessions completed the send/receive manual check.
-- Status: pending
+  - [x] Two authorized sessions completed the send/receive manual check.
+- Status: in progress

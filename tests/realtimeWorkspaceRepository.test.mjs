@@ -3,15 +3,21 @@ import test from "node:test";
 
 import { subscribeToRequestThread } from "../src/services/realtimeWorkspaceRepository.ts";
 
-test("scopes a request listener and removes it when the screen leaves", () => {
+test("scopes a private request broadcast and removes it when the screen leaves", async () => {
   const removedChannels = [];
   const connectionStates = [];
   const registrations = [];
+  let channelOptions;
   let messageChangeCount = 0;
+  let realtimeAuthCount = 0;
   let statusListener;
 
-  const staleChannel = { topic: "realtime:request-thread:request-1:old" };
-  const unrelatedChannel = { topic: "realtime:request-thread:request-2:open" };
+  const staleChannel = {
+    topic: "realtime:nurseflow:request-thread:shift-1:request-1",
+  };
+  const unrelatedChannel = {
+    topic: "realtime:nurseflow:request-thread:shift-2:request-2",
+  };
   const channel = {
     topic: "",
     on(event, filter, listener) {
@@ -24,8 +30,9 @@ test("scopes a request listener and removes it when the screen leaves", () => {
     },
   };
   const supabase = {
-    channel(topic) {
+    channel(topic, options) {
       channel.topic = `realtime:${topic}`;
+      channelOptions = options;
       return channel;
     },
     getChannels() {
@@ -34,6 +41,12 @@ test("scopes a request listener and removes it when the screen leaves", () => {
     removeChannel(channelToRemove) {
       removedChannels.push(channelToRemove);
       return Promise.resolve("ok");
+    },
+    realtime: {
+      setAuth() {
+        realtimeAuthCount += 1;
+        return Promise.resolve();
+      },
     },
   };
 
@@ -45,16 +58,22 @@ test("scopes a request listener and removes it when the screen leaves", () => {
       messageChangeCount += 1;
     },
     requestId: "request-1",
+    shiftId: "shift-1",
     supabase,
   });
 
+  await Promise.resolve();
+
+  assert.equal(realtimeAuthCount, 1);
+  assert.deepEqual(channelOptions, { config: { private: true } });
+  assert.equal(
+    channel.topic,
+    "realtime:nurseflow:request-thread:shift-1:request-1",
+  );
   assert.equal(registrations.length, 1);
-  assert.equal(registrations[0].event, "postgres_changes");
+  assert.equal(registrations[0].event, "broadcast");
   assert.deepEqual(registrations[0].filter, {
-    event: "INSERT",
-    filter: "request_id=eq.request-1",
-    schema: "public",
-    table: "nurse_request_messages",
+    event: "request-message-inserted",
   });
   assert.deepEqual(removedChannels, [staleChannel]);
 
