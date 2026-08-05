@@ -264,7 +264,7 @@ Improve awareness when users are backgrounded and keep the app readable during b
 - Reconnect refreshes from server state.
 - No offline writes are queued or synced in this phase.
 
-## Phase 8: Manual Assignment Moves, Request Threads, Sharing, and Polish
+## Phase 8: Manual Assignment Moves, Request Threads, and Polish
 
 ### Goal
 
@@ -278,7 +278,6 @@ Add advanced interaction, request follow-up, and presentation improvements after
 - Threaded conversations attached to issue and swap requests, not a global chat inbox.
 - Issue acknowledgement or resolution so charge nurses can mark an issue as reviewed or resolved.
 - Clear swap completion flow that separates accepting a swap request from actually changing assignments.
-- Share board snapshot.
 - Improved visual polish for the charge nurse floor board.
 - Tablet layout.
 - Responsive layout improvements.
@@ -300,7 +299,6 @@ Add advanced interaction, request follow-up, and presentation improvements after
 - A charge nurse and regular nurse can follow up on a request inside that request's thread.
 - Issue requests can be marked reviewed or resolved without changing assignment data.
 - Swap requests clearly show the difference between accepted, declined, and assignment changes that have actually been completed.
-- The charge nurse can share a readable board snapshot.
 - The app remains usable on phone screens and gains a better tablet experience.
 - The UI feels polished without changing the proven core workflow.
 

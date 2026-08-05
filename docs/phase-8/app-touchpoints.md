@@ -6,7 +6,7 @@ This note maps the existing NurseFlow code and server setup before Phase 8 runti
 
 ## Scope Reminder
 
-Phase 8 adds charge-nurse bed assignment overrides, request-scoped threads and lifecycle clarity, a local board snapshot share flow, responsive tablet layouts, accessibility work, and measured large-floor performance cleanup.
+Phase 8 adds charge-nurse bed assignment overrides, request-scoped threads and lifecycle clarity, responsive tablet layouts, accessibility work, and measured large-floor performance cleanup.
 
 Phase 8 preserves the Phase 1 assignment generator, Phase 5 server-owned active shift, Phase 6 nurse-scoped access and realtime behavior, and Phase 7 notification routing. It does not add the Phase 9 production assignment optimizer, global chat, an offline write queue, AI, EHR/EMR integration, automated acuity, multi-hospital tools, or handoff notes.
 
@@ -110,7 +110,6 @@ Compatibility rules:
 | `get_joined_nurse_assignment_view` in `docs/phase-5/supabase-auth-setup.md` | Builds `assignedBeds` from `shift_snapshot.assignmentResult.bedAssignments`. | Overlay the authorized active override rows before returning one nurse's beds. Never return the full dictionary or history to the joined nurse. |
 | `submit_joined_nurse_swap_request` in `docs/phase-6/supabase-request-setup.md` | Validates that `sourceBedId` belongs to the nurse by scanning generated bed assignments. | Validate against effective ownership so a nurse cannot request a swap for a bed moved away, and can request one for a bed moved to them. |
 | `docs/phase-7/supabase-notification-event-setup.md` | Detects assignment changes by diffing generated bed-assignment arrays in old/new shift snapshots. | Override completion must enqueue affected-nurse assignment events from the successful focused transaction or an override-table hook; the unchanged baseline snapshot cannot prove the move. |
-| Board snapshot preview | Does not exist. | Render the effective board, not the generated baseline or override history. |
 
 ## Assignment Rerun Touchpoint
 
@@ -150,7 +149,7 @@ Task 1.2 must choose one explicit view boundary for effective flags so derived a
 - Uses `WorkflowListScreen` with one outer item per doctor side.
 - Builds all rooms and beds inside each side with nested array mapping.
 - Builds the nurse workload summary in the list header.
-- Has no selected move bed, swipe action, share action, or responsive split view.
+- Has no selected move bed, swipe action, or responsive split view.
 
 Phase 8 likely changes this screen and may extract focused components or view-model helpers. Named prop types should be used for new component boundaries.
 
@@ -250,21 +249,6 @@ Phase 8 compatibility risks:
 - Notification payloads should contain route IDs and generic copy, never message bodies, patient details, the active override dictionary, or override history.
 - A joined-nurse thread notification needs a nurse-authorized target path; the current charge request-detail recovery logic reads `activeShift.nurseRequests` and cannot be reused blindly for joined access.
 
-## Board Sharing Touchpoints
-
-The app already uses React Native's native `Share` API in `src/screens/NurseInvitesScreen.tsx`, and a reusable `ShareIcon` exists in `src/components/workflow/Icons.tsx`.
-
-There is no board-capture dependency or preview route. `react-native-view-shot` is not currently installed.
-
-Likely Phase 8 touchpoints:
-
-- `src/screens/FloorBoardScreen.tsx` for the charge-only entry action.
-- A new board snapshot preview screen and thin route under `src/app/`.
-- A focused static snapshot component that receives an effective board view model rather than capturing interactive scroll chrome.
-- `package.json` and Expo dependency installation only after Task 3.1 verifies current official compatibility.
-
-The snapshot remains a temporary local file. No server table, upload service, share-history state, or request attachment belongs in Phase 8.
-
 ## Responsive Layout and Performance Touchpoints
 
 `src/components/workflow/WorkflowScreen.tsx` and `WorkflowListScreen.tsx` currently use fixed spacing and do not provide a shared maximum-width or compact/expanded boundary.
@@ -312,7 +296,6 @@ Task 5.2 must measure a representative large floor and long thread before Task 5
 - `src/utils/effectiveAssignment.ts`
 - A manual-override repository or focused functions in the existing server workspace repository.
 - A request-thread repository and request-scoped subscription helper.
-- A board snapshot component, preview screen, and route.
 - A small responsive layout helper or primitive if Task 4.1 justifies it.
 - A Phase 8 Supabase setup note for override history, request messages, authorization, indexes, transactions, and realtime behavior.
 
@@ -327,7 +310,7 @@ Task 5.2 must measure a representative large floor and long thread before Task 5
 - Do not mutate the generated `AssignmentResult` when applying an override.
 - Do not serialize `activeAssignmentOverridesByBedId` or override history into `shift_snapshot`.
 - Do not let broad `saveActiveShift` writes delete or overwrite focused override rows or thread messages.
-- Do not let board, workload, flags, joined-nurse view, swap-source validation, notifications, or sharing disagree about effective bed ownership.
+- Do not let board, workload, flags, joined-nurse view, swap-source validation, or notifications disagree about effective bed ownership.
 - Do not allow more than one active override per shift and bed.
 - Do not mark an accepted swap completed until its linked override transaction succeeds.
 - Preserve a completed request when its override is later superseded, but label that the assignment changed again.
@@ -335,7 +318,6 @@ Task 5.2 must measure a representative large floor and long thread before Task 5
 - Do not rely on current generic snapshot-diff notifications to detect separate override rows.
 - Do not permit move or message writes while disconnected or imply they are queued.
 - Do not make swipe the only screen-reader path into the accessible move picker.
-- Do not capture only the visible board viewport or persist shared images to NurseFlow.
 - Do not optimize lists before measuring a representative large floor and thread.
 - Do not add Phase 9 optimizer behavior.
 
@@ -343,7 +325,7 @@ Task 5.2 must measure a representative large floor and long thread before Task 5
 
 - Generated assignment ends at `AssignmentResult`; Phase 8 effective assignment begins in one pure helper that combines the generated baseline with the active bed-keyed projection.
 - Existing issue/swap request lifecycle data remains in `shift_snapshot.nurseRequests`; new thread messages are append-only server rows loaded only for an authorized request.
-- The likely app files, server functions, routes, realtime signals, notification paths, sharing boundary, responsive primitives, and compatibility risks are documented above.
+- The likely app files, server functions, routes, realtime signals, notification paths, responsive primitives, and compatibility risks are documented above.
 - No runtime implementation, schema migration, dependency, or app configuration was added.
 
 ### 2026-07-26 Revalidation
@@ -354,8 +336,7 @@ Task 5.2 must measure a representative large floor and long thread before Task 5
 - Confirmed that Phase 8 override, effective-assignment, and request-message
   runtime symbols are still absent, so Tasks 1.1 and 2.1 remain the correct
   implementation starting points.
-- Confirmed the existing gesture and animation dependencies are present and
-  that no board-capture dependency has been added early.
+- Confirmed the existing gesture and animation dependencies are present.
 - Confirmed the break-scheduling removal did not change the generated
   assignment, request, realtime, or notification boundaries described here.
 - This revalidation changed documentation only; it added no runtime behavior,

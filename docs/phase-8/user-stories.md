@@ -1,6 +1,6 @@
 # NurseFlow Phase 8 User Stories
 
-Phase 8 adds advanced interaction, request follow-up, board sharing, and presentation improvements after the connected Phase 1-7 workflow is reliable.
+Phase 8 adds advanced interaction, request follow-up, and presentation improvements after the connected Phase 1-7 workflow is reliable.
 
 Phase 8 preserves the existing floor setup, deterministic assignment, persistence and carry-over, authenticated server state, realtime nurse access, requests, notifications, and connection behavior. It does not replace the assignment algorithm planned for Phase 9.
 
@@ -110,28 +110,7 @@ As a charge nurse and requesting nurse, I want a swap request to distinguish app
 - Confirm an unrelated manual move cannot silently complete the request.
 - Reverse the same bed through a later request and confirm the earlier request says its completed move was later superseded.
 
-## US6: Share a Readable Board Snapshot
-
-As a charge nurse, I want to preview and share a current floor-board image so I can use the device share sheet for an intentional point-in-time handoff.
-
-### Acceptance Criteria
-
-- Sharing is available only from a loaded charge nurse floor board.
-- A preview identifies the floor, census, capture time, doctor sides, nurse assignments, beds, acuity, and current flags in a readable static layout.
-- The snapshot is generated locally and is not uploaded to NurseFlow or saved as shift state.
-- The user sees a privacy reminder and must choose the native share action explicitly.
-- Cancelling the native share sheet is not treated as an error.
-- Capture or share failure leaves the active board unchanged and shows a retryable message.
-- Joined nurses cannot share the full charge board.
-
-### Manual Checks and Edge Cases
-
-- Preview a small and a large floor and confirm no nurse or occupied bed is clipped.
-- Cancel sharing and confirm no error banner appears.
-- Force capture failure and confirm the board remains usable.
-- Confirm the snapshot reflects the current effective assignment, including saved overrides.
-
-## US7: Use the Active Shift on Phone and Tablet
+## US6: Use the Active Shift on Phone and Tablet
 
 As a charge nurse or joined nurse, I want the active-shift screens to adapt to phone and tablet widths so the same workflow remains clear on both form factors.
 
@@ -151,7 +130,7 @@ As a charge nurse or joined nurse, I want the active-shift screens to adapt to p
 - Confirm long nurse names, room labels, diagnoses, and messages wrap without overlap.
 - Confirm no tablet preference is saved in active shift or profile data.
 
-## US8: Improve Accessibility, Polish, and Large-Floor Performance
+## US7: Improve Accessibility, Polish, and Large-Floor Performance
 
 As a user, I want the refined screens to remain readable, operable, and responsive so the new interactions do not reduce safety or usability.
 
@@ -172,7 +151,7 @@ As a user, I want the refined screens to remain readable, operable, and responsi
 - Check larger text settings for clipped controls and unreadable cards.
 - Scroll a representative large floor and long request thread and confirm interaction remains responsive.
 
-## US9: Preserve Previous and Later Phase Boundaries
+## US8: Preserve Previous and Later Phase Boundaries
 
 As a learner building NurseFlow, I want Phase 8 to extend the connected app without replacing proven behavior or implementing later optimizers early.
 

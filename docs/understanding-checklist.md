@@ -2487,16 +2487,16 @@ For each task, add a dated section with:
 
 - Task: Create the five Phase 8 planning documents without writing implementation code.
 - Problem understanding:
-  - [x] `docs/phases.md` defines Phase 8 as manual assignment overrides, request-scoped follow-up, board sharing, responsive/tablet polish, accessibility, and large-floor performance cleanup.
+  - [x] `docs/phases.md` defines Phase 8 as manual assignment overrides, request-scoped follow-up, responsive/tablet polish, accessibility, and large-floor performance cleanup.
   - [x] Phase 8 must extend the connected Phase 1-7 workflow without replacing the current assignment or break algorithms.
   - [x] Phase 9 production assignment optimization and Phase 10 advanced break optimization remain later work.
 - Solution understanding:
-  - [x] `docs/phase-8/user-stories.md` defines nine scoped stories with acceptance criteria and manual checks.
+  - [x] `docs/phase-8/user-stories.md` defines eight scoped stories with acceptance criteria and manual checks.
   - [x] `docs/phase-8/data-model.md` keeps the generated assignment as a baseline, stores immutable override history as server rows, and exposes current overrides through `activeAssignmentOverridesByBedId` for efficient effective-assignment reads.
   - [x] Request messages belong to one authorized request thread; issue review state stays separate from swap acceptance and completion.
   - [x] Human identified that issue requests use a follow-up thread and that swap completion connects to a manual assignment override.
   - [x] Clarified that both request types have threads, while accepting a swap remains separate from completing its assignment change through a linked override.
-  - [x] Board snapshots are temporary local share artifacts, and tablet layout is presentation state rather than shift data.
+  - [x] Board sharing was removed from Phase 8 because an operating-system screenshot is sufficient for the current product scope; tablet layout remains presentation state rather than shift data.
   - [x] `docs/phase-8/mobile-design.md` and `docs/phase-8/screens.md` document phone-first, accessible, responsive flows.
   - [x] `docs/phase-8/tasks.md` orders small implementation tasks and gives every task a manual validation block; only planning Task 0.1 is marked done.
   - [x] Workload-limit and imbalance results are non-blocking warnings: the charge nurse may confirm after acknowledgement, and the resulting flag remains visible.
@@ -2543,7 +2543,7 @@ For each task, add a dated section with:
   - [x] Current requests live in `shift_snapshot.nurseRequests`, while Phase 8 thread messages need a separate append-only server boundary.
   - [x] Broad `saveActiveShift` writes must not overwrite focused override-history or thread-message records.
 - Solution understanding:
-  - [x] `docs/phase-8/app-touchpoints.md` maps the current models, utilities, screens, routes, context, repositories, RPCs, realtime listeners, notification trigger, sharing boundary, responsive primitives, and performance risks.
+  - [x] `docs/phase-8/app-touchpoints.md` maps the current models, utilities, screens, routes, context, repositories, RPCs, realtime listeners, notification trigger, responsive primitives, and performance risks.
   - [x] One future pure effective-assignment helper must serve every current ownership consumer while leaving `generateLocalAssignmentResult` unchanged.
   - [x] `activeAssignmentOverridesByBedId` should be exposed beside the persisted `Shift` snapshot so `getActiveShiftPayload` cannot serialize server-owned history accidentally.
   - [x] The joined-nurse assignment RPC and swap-request RPC must validate effective ownership without exposing the full override dictionary or history.

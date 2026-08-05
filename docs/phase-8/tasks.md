@@ -2,7 +2,7 @@
 
 This task list plans Phase 8 in small, ordered, independently testable steps. No implementation code is part of the planning task.
 
-Phase 8 adds manual assignment overrides, request-scoped threads and lifecycle clarity, local board snapshot sharing, responsive tablet layouts, accessibility improvements, and measured large-floor performance cleanup. It does not add the Phase 9 production assignment optimizer.
+Phase 8 adds manual assignment overrides, request-scoped threads and lifecycle clarity, responsive tablet layouts, accessibility improvements, and measured large-floor performance cleanup. It does not add the Phase 9 production assignment optimizer.
 
 Status legend:
 
@@ -19,16 +19,15 @@ Status legend:
 6. Add request-thread storage and authorization.
 7. Add charge and nurse thread UI.
 8. Add issue review/resolution and swap completion.
-9. Add local board snapshot preview and native sharing.
-10. Add responsive layout foundations and tablet active-shift layouts.
-11. Complete accessibility, visual polish, and measured performance cleanup.
-12. Run Phase 8 manual and regression passes.
+9. Add responsive layout foundations and tablet active-shift layouts.
+10. Complete accessibility, visual polish, and measured performance cleanup.
+11. Run Phase 8 manual and regression passes.
 
 ## Planning and Guardrails
 
 ### Done Task 0.1: Create Phase 8 Planning Docs
 
-Story coverage: US1-US9
+Story coverage: US1-US8
 
 Build:
 
@@ -44,7 +43,7 @@ Manual validation:
 
 ### Done Task 0.2: Confirm Existing App and Server Touchpoints
 
-Story coverage: US1-US9
+Story coverage: US1-US8
 
 Build:
 
@@ -87,7 +86,7 @@ Validation:
 
 ### Done Task 1.1: Add Effective-Assignment Derivation
 
-Story coverage: US1, US2, US5, US9
+Story coverage: US1, US2, US5, US8
 
 Build:
 
@@ -107,7 +106,7 @@ Manual validation:
 
 ### Done Task 1.2: Recalculate Loads and Flags from Effective Assignment
 
-Story coverage: US2, US8, US9
+Story coverage: US2, US7, US8
 
 Build:
 
@@ -125,7 +124,7 @@ Manual validation:
 
 ### Done Task 1.3: Add Server Manual-Override Transaction
 
-Story coverage: US1, US2, US5, US9
+Story coverage: US1, US2, US5, US8
 
 Build:
 
@@ -147,7 +146,7 @@ Manual validation:
 
 ### Done Task 1.4: Add Accessible Move-Assignment Picker
 
-Story coverage: US1, US2, US8
+Story coverage: US1, US2, US7
 
 Build:
 
@@ -165,7 +164,7 @@ Manual validation:
 
 ### Done Task 1.5: Add Bed-Row Swipe Move Action
 
-Story coverage: US1, US8
+Story coverage: US1, US7
 
 Build:
 
@@ -184,7 +183,7 @@ Manual validation:
 
 ### Done Task 1.6: Add Override Confirmation and Warning Acknowledgement
 
-Story coverage: US1, US2, US5, US8
+Story coverage: US1, US2, US5, US7
 
 Build:
 
@@ -204,7 +203,7 @@ Manual validation:
 
 ### Done Task 1.7: Refresh Charge and Joined-Nurse Views After a Move
 
-Story coverage: US1, US2, US5, US9
+Story coverage: US1, US2, US5, US8
 
 Build:
 
@@ -223,7 +222,7 @@ Manual validation:
 
 ### Done Task 1.8: Handle Assignment Rerun
 
-Story coverage: US1, US2, US9
+Story coverage: US1, US2, US8
 
 Build:
 
@@ -241,7 +240,7 @@ Manual validation:
 
 ### Done Task 2.1: Add Request-Message Server Model and Authorization
 
-Story coverage: US3, US9
+Story coverage: US3, US8
 
 Build:
 
@@ -258,9 +257,9 @@ Manual validation:
 - Blank and duplicate messages are rejected safely.
 - Server checks and lint pass.
 
-### Task 2.2: Add Realtime Request-Thread Refresh
+### Done Task 2.2: Add Realtime Request-Thread Refresh
 
-Story coverage: US3, US9
+Story coverage: US3, US8
 
 Build:
 
@@ -275,9 +274,9 @@ Manual validation:
 - Removed access and ended shift move the nurse to a safe state.
 - TypeScript, lint, and two-session check pass.
 
-### Task 2.3: Add Charge Request Thread UI
+### Done Task 2.3: Add Charge Request Thread UI
 
-Story coverage: US3, US4, US5, US7, US8
+Story coverage: US3, US4, US5, US6, US7
 
 Build:
 
@@ -294,9 +293,9 @@ Manual validation:
 - Larger text and keyboard do not hide the send action.
 - TypeScript and lint pass.
 
-### Task 2.4: Add Joined-Nurse Request Detail and Thread UI
+### Done Task 2.4: Add Joined-Nurse Request Detail and Thread UI
 
-Story coverage: US3, US5, US7, US8
+Story coverage: US3, US5, US6, US7
 
 Build:
 
@@ -313,7 +312,7 @@ Manual validation:
 
 ### Task 2.5: Add Issue Reviewed, Resolved, and Reopened States
 
-Story coverage: US4, US9
+Story coverage: US4, US8
 
 Build:
 
@@ -332,7 +331,7 @@ Manual validation:
 
 ### Task 2.6: Add Accepted-Swap Completion State
 
-Story coverage: US5, US9
+Story coverage: US5, US8
 
 Build:
 
@@ -353,7 +352,7 @@ Manual validation:
 
 ### Task 2.7: Add Safe Request-Activity Notifications
 
-Story coverage: US3, US4, US5, US9
+Story coverage: US3, US4, US5, US8
 
 Build:
 
@@ -369,66 +368,11 @@ Manual validation:
 - Ended shift, removed access, or resolved/missing target uses safe recovery.
 - Notification failure does not break request writes.
 
-## Board Snapshot Sharing
-
-### Task 3.1: Confirm Capture Dependency and Static Snapshot Boundary
-
-Story coverage: US6, US8, US9
-
-Build:
-
-- Review current official Expo and capture-library guidance.
-- Confirm whether the product-spec `react-native-view-shot` approach is compatible with the current Expo version.
-- Add only the minimal justified dependency during implementation.
-- Define a purpose-built static board layout separate from interactive scroll chrome.
-
-Manual validation:
-
-- Explain why the chosen capture boundary can include the full board rather than only the visible viewport.
-- Confirm no image upload, database record, share history, or request attachment is added.
-- Dependency install, TypeScript, and lint pass when implementation begins.
-
-### Task 3.2: Add Board Snapshot Preview
-
-Story coverage: US6, US7, US8
-
-Build:
-
-- Render floor, census, captured time, sides, nurses, effective assignments, acuity labels, and concise flags into a static preview.
-- Add privacy and point-in-time copy.
-- Add generating, ready, failed, and retry states.
-- Keep capture available only to the charge nurse with a loaded board.
-
-Manual validation:
-
-- Small and representative large floors render without clipped nurse or occupied-bed rows.
-- Manual overrides appear in the snapshot.
-- Joined nurse cannot open the full-board preview.
-- TypeScript and lint pass.
-
-### Task 3.3: Add Native Share Action and Temporary-File Cleanup
-
-Story coverage: US6, US9
-
-Build:
-
-- Open the native share sheet only after explicit user action.
-- Treat cancellation as a normal outcome.
-- Show a retryable capture/share error without changing board state.
-- Clean up temporary capture files when safe.
-
-Manual validation:
-
-- Share through at least one supported destination on iOS or Android.
-- Cancel without an error banner.
-- Force failure and confirm the floor board remains usable.
-- Confirm NurseFlow stores no snapshot record.
-
 ## Responsive Layout and Polish
 
 ### Task 4.1: Add Shared Compact and Expanded Layout Boundary
 
-Story coverage: US7, US8, US9
+Story coverage: US6, US7, US8
 
 Build:
 
@@ -446,7 +390,7 @@ Manual validation:
 
 ### Task 4.2: Add Expanded Charge Floor Board
 
-Story coverage: US1, US2, US6, US7, US8
+Story coverage: US1, US2, US6, US7
 
 Build:
 
@@ -464,7 +408,7 @@ Manual validation:
 
 ### Task 4.3: Add Expanded Request and Joined-Nurse Layouts
 
-Story coverage: US3, US4, US5, US7, US8
+Story coverage: US3, US4, US5, US6, US7
 
 Build:
 
@@ -481,7 +425,7 @@ Manual validation:
 
 ### Task 4.4: Complete Visual Consistency Pass
 
-Story coverage: US7, US8
+Story coverage: US6, US7
 
 Build:
 
@@ -500,7 +444,7 @@ Manual validation:
 
 ### Task 5.1: Run Phase 8 Accessibility Pass
 
-Story coverage: US8
+Story coverage: US7
 
 Build:
 
@@ -512,17 +456,17 @@ Manual validation:
 
 - Complete a swipe-and-tap manual move using VoiceOver or TalkBack.
 - Read and reply to a request thread with a screen reader.
-- Use larger text without clipped lifecycle or share controls.
+- Use larger text without clipped lifecycle controls.
 - Confirm key tap targets meet 44-point minimum.
 
 ### Task 5.2: Measure Representative Large-Floor Performance
 
-Story coverage: US8, US9
+Story coverage: US7, US8
 
 Build:
 
 - Define a representative large-floor fixture for development measurement only.
-- Measure board render/scroll, swipe responsiveness, thread scroll, and snapshot capture before optimizing.
+- Measure board render/scroll, swipe responsiveness, and thread scroll before optimizing.
 - Record the actual bottleneck and baseline results.
 - Do not change the assignment algorithm.
 
@@ -534,7 +478,7 @@ Manual validation:
 
 ### Task 5.3: Apply Focused Performance Cleanup
 
-Story coverage: US8, US9
+Story coverage: US7, US8
 
 Build:
 
@@ -576,18 +520,7 @@ Manual validation:
 - Complete all US3-US5 checks.
 - Verify no thread leaks between requests or nurses.
 
-### Task 6.3: Sharing Pass
-
-Build:
-
-- No new feature work.
-- Validate small/large snapshot capture, privacy copy, share success, cancellation, failure, and lack of server persistence.
-
-Manual validation:
-
-- Complete all US6 checks on supported iOS and Android environments where available.
-
-### Task 6.4: Responsive, Accessibility, and Performance Pass
+### Task 6.3: Responsive, Accessibility, and Performance Pass
 
 Build:
 
@@ -599,7 +532,7 @@ Manual validation:
 - Complete the design review matrix in `mobile-design.md`.
 - Record any environment-specific limitations rather than marking unchecked behavior done.
 
-### Task 6.5: Previous-Phase Regression Pass
+### Task 6.4: Previous-Phase Regression Pass
 
 Build:
 
@@ -610,9 +543,9 @@ Manual validation:
 
 - Core Phase 1-7 workflows still work.
 - Manual overrides do not mutate floor templates or previous-shift snapshots unexpectedly.
-- Notification or share failure does not break connected writes.
+- Notification failure does not break connected writes.
 
-### Task 6.6: Scope and Beginner-Readability Pass
+### Task 6.5: Scope and Beginner-Readability Pass
 
 Build:
 
@@ -622,8 +555,8 @@ Build:
 
 Manual validation:
 
-- No Phase 9 optimizer, AI, EHR/EMR, automated acuity, multi-hospital, handoff-note, global-chat, offline-write-queue, or snapshot-history code exists.
-- A beginner can explain generated versus effective assignment, active bed-keyed lookup versus server override history, accepted versus completed swap, request-scoped authorization, and why snapshots are local and temporary.
+- No Phase 9 optimizer, AI, EHR/EMR, automated acuity, multi-hospital, handoff-note, global-chat, or offline-write-queue code exists.
+- A beginner can explain generated versus effective assignment, active bed-keyed lookup versus server override history, accepted versus completed swap, and request-scoped authorization.
 
 ## Later, Not Phase 8
 
@@ -634,4 +567,3 @@ Manual validation:
 - Shift handoff notes.
 - Global chat, direct messaging, attachments, reactions, or read receipts.
 - Offline write queues or conflict merging.
-- Persisted board snapshot gallery or share history.

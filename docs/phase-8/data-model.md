@@ -14,7 +14,6 @@ Phase 8 builds on the authenticated, server-backed active shift and nurse-scoped
 - Validate every override against current server state before saving it.
 - Keep request conversations scoped to one request; do not create a global chat model.
 - Keep issue review state separate from swap decision and completion state.
-- Generate board snapshots locally and ephemerally; do not add snapshot records to shift data.
 - Keep responsive layout, accessibility, focus, and swipe-reveal state as UI state rather than domain data.
 - Do not add Phase 9 optimizer fields, AI fields, offline queues, or conflict-merge records.
 
@@ -222,7 +221,6 @@ Consumers:
 - Charge floor board.
 - Joined nurse assignment.
 - Assignment flags.
-- Board snapshot.
 - Swap completion display.
 
 ### Proposed Override Preview
@@ -265,18 +263,9 @@ The following remain local UI state and are not stored in server models:
 - Override confirmation and warning acknowledgement state before save.
 - Selected nurse or doctor side in tablet split view.
 - Current window width, orientation, and layout breakpoint.
-- Share preview open/closed, capture progress, and temporary image URI.
 - Screen-reader focus targets.
 - List measurement or performance diagnostics.
 - Superseded override history that has not been explicitly requested by an authorized detail view.
-
-## Board Snapshot Data Boundary
-
-- The snapshot renders from the current effective charge board already authorized on the device.
-- It is a temporary local image used by the native share sheet.
-- NurseFlow does not upload it, add a database record, add thread attachments, or store a share history.
-- The OS or chosen destination may retain a shared file after the user confirms sharing; the preview must explain this boundary.
-- Temporary capture cleanup is an implementation detail, not shift state.
 
 ## Realtime and Notification Effects
 
@@ -303,6 +292,5 @@ The following remain local UI state and are not stored in server models:
 - AI suggestions.
 - Offline write queues or conflict-merging logs.
 - Global chat conversations, channels, attachments, reactions, or read receipts.
-- Persisted board snapshots or share history.
 - Tablet preferences in shift, profile, or floor-template records.
 - EHR/EMR, automated acuity, multi-hospital, or handoff-note records.

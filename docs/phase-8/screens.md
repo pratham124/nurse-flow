@@ -11,21 +11,19 @@ Charge Floor Board
   ├─ Flags and Requests
   │    └─ Request Detail + Thread
   │         └─ Complete accepted swap with assignment move
-  └─ Share Board
-       └─ Board Snapshot Preview
 
 Joined Nurse Assignment
   └─ Request history
        └─ Request Detail + Thread (nurse-scoped)
 ```
 
-No global chat, board gallery, or new top-level tablet-only navigation is added.
+No global chat or new top-level tablet-only navigation is added.
 
 ## 1. Charge Nurse Floor Board
 
 ### Purpose
 
-Show the current effective floor assignment, support deliberate manual moves, surface resulting warnings, and provide board sharing.
+Show the current effective floor assignment, support deliberate manual moves, and surface resulting warnings.
 
 ### Existing Content Preserved
 
@@ -39,7 +37,6 @@ Show the current effective floor assignment, support deliberate manual moves, su
 ### Phase 8 Additions
 
 - Swipe-reveal `Move` action on eligible occupied assigned-bed rows.
-- `Share board` action.
 - Effective-assignment labels or subtle manual-move marker where useful.
 - Tap-only eligible-nurse picker after the `Move` action.
 - Eligible/ineligible nurse target states.
@@ -64,7 +61,7 @@ Show the current effective floor assignment, support deliberate manual moves, su
 - Active shift without assignment result.
 - Loading current server state.
 - Live/connected.
-- Reconnecting or disconnected: board follows existing Phase 7 behavior; move and share actions requiring fresh data explain availability.
+- Reconnecting or disconnected: board follows existing Phase 7 behavior; move actions requiring fresh data explain availability.
 - Move action hidden or revealed.
 - Choosing a nurse target.
 - Confirming a valid move.
@@ -73,7 +70,6 @@ Show the current effective floor assignment, support deliberate manual moves, su
 - Saving move.
 - Stale move rejected and refreshed.
 - Move saved.
-- Share capture in progress or failed.
 
 ### Manual Checks
 
@@ -207,7 +203,6 @@ Preserve the nurse-scoped live assignment while adding access to that nurse's ow
 ### Restrictions
 
 - No charge-only lifecycle actions.
-- No full-board share action.
 - No override audit history.
 - No access to another nurse's requests or thread messages.
 
@@ -245,40 +240,7 @@ Let the requesting nurse follow one request without exposing charge-only control
 - Open from an eligible notification route after server authorization.
 - Back returns to the joined nurse assignment.
 
-## 7. Board Snapshot Preview
-
-### Purpose
-
-Let the charge nurse inspect the exact point-in-time board image before opening the native share sheet.
-
-### Content
-
-- Static preview generated from the current effective board.
-- Floor name, census, captured time, doctor sides, nurse assignments, beds, acuity, and concise flags.
-- Privacy reminder and point-in-time disclaimer.
-
-### Actions
-
-- Share snapshot.
-- Retry capture.
-- Back to board.
-
-### States
-
-- Generating.
-- Ready.
-- Capture failed.
-- Native share sheet opened.
-- Share cancelled without error.
-- Share failed with retry.
-
-### Restrictions
-
-- No edit or annotation tools.
-- No upload, server record, gallery, history, or request-thread attachment.
-- No joined-nurse access to the full-board preview.
-
-## 8. Assignment Rerun Confirmation Update
+## 7. Assignment Rerun Confirmation Update
 
 ### Purpose
 
@@ -314,5 +276,4 @@ If active overrides exist, the existing rerun action must explain that rerunning
 - Production assignment optimizer UI or services.
 - Global chat or a messaging inbox.
 - Offline write queue.
-- Board snapshot history or server upload.
 - AI, EHR/EMR, automated acuity, multi-hospital tools, or handoff notes.

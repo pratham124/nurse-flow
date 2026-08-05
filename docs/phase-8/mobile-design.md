@@ -1,6 +1,6 @@
 # Phase 8 Mobile Design
 
-Phase 8 refines NurseFlow's established mobile visual language while adding manual assignment moves, request threads, board sharing, and tablet layouts. This is design guidance only; no prototype or implementation is part of the planning task.
+Phase 8 refines NurseFlow's established mobile visual language while adding manual assignment moves, request threads, and tablet layouts. This is design guidance only; no prototype or implementation is part of the planning task.
 
 ## Design Principles
 
@@ -31,7 +31,6 @@ Implementation should choose and document one breakpoint after checking represen
 - Nurse choices remain in a normal scrollable picker without gesture-driven auto-scroll.
 - Confirmation and warning review use a bottom sheet or full-screen modal.
 - Request thread is a full-screen detail view.
-- Share preview is full screen so the user can inspect the entire capture.
 
 ### Expanded Layout
 
@@ -132,31 +131,6 @@ For swaps:
 
 Controls stay separate from the message composer so sending a message cannot accidentally change lifecycle state.
 
-## Board Share Preview
-
-The shared image should be a purpose-built static layout, not a screenshot of scroll chrome.
-
-### Preview Content
-
-- NurseFlow and floor name.
-- `Captured` timestamp and current census.
-- Doctor-side headings, including admitting-side label.
-- Nurse name, credentials, load/max, and current break when relevant.
-- Assigned rooms and beds from the effective assignment.
-- Acuity shown with color and a text or symbol label.
-- Current safety flags in a concise summary.
-- A footer stating that the image is a point-in-time snapshot.
-
-### Preview Screen
-
-- Privacy reminder before the share action.
-- Scrollable or zoomable preview for large captures.
-- Primary `Share snapshot` action.
-- Secondary `Back to board` action.
-- Generating, ready, failed, and retry states.
-
-Do not include editing, annotations, branding customization, upload history, or thread attachments.
-
 ## Tablet Floor Board
 
 ### Left Pane
@@ -196,7 +170,7 @@ Out of scope:
 ## Accessibility Requirements
 
 - Every move can be completed through swipe reveal and tap-only selection.
-- Move actions, nurse choices, lifecycle controls, composer, and share actions have accessible names and roles.
+- Move actions, nurse choices, lifecycle controls, and composer actions have accessible names and roles.
 - Announce selected bed, eligible target, blocking reason, saving result, and current request state.
 - Use visible focus and logical focus order in expanded layouts.
 - Return focus to the initiating control when a modal closes.
@@ -212,8 +186,7 @@ Out of scope:
 - Virtualize genuinely large board or message lists where measurement shows dropped frames or excessive rendering.
 - Keep row props stable and avoid recalculating the complete effective board for unrelated local UI changes.
 - Render only the selected detail pane on tablet rather than duplicating every nurse's full detail.
-- Avoid capturing the live interactive tree if a purpose-built static share view is more reliable.
-- Preserve readable fallbacks while capture or list optimization work is in progress.
+- Preserve readable fallbacks while list optimization work is in progress.
 
 ## Manual Design Review Matrix
 
@@ -231,4 +204,4 @@ Review at minimum:
 
 ## Phase Boundary
 
-This design must not introduce production optimizer controls, AI recommendations, EHR/EMR data, automated acuity, global chat, offline write queues, or persistent board-sharing history.
+This design must not introduce production optimizer controls, AI recommendations, EHR/EMR data, automated acuity, global chat, or offline write queues.
