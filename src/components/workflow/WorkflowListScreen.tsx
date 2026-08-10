@@ -9,6 +9,7 @@ import {
 import { floorTemplateFlow } from "../../utils/workflowFlows";
 import type { WorkflowFlowStep } from "../../utils/workflowFlows";
 import { spacing } from "../../theme/tokens";
+import { expandedContentMaxWidth } from "../../hooks/useResponsiveLayout";
 import { StepIndicator } from "./StepIndicator";
 import type { WorkflowStep } from "./types";
 import { WorkflowScreen } from "./WorkflowScreen";
@@ -81,12 +82,18 @@ export function WorkflowListScreen<ItemT>({
         ListFooterComponent={listFooter}
         ListEmptyComponent={ListEmptyComponent}
         renderItem={renderItem}
+        style={styles.list}
       />
     </WorkflowScreen>
   );
 }
 
 const styles = StyleSheet.create({
+  list: {
+    alignSelf: "center",
+    maxWidth: expandedContentMaxWidth,
+    width: "100%",
+  },
   listContent: {
     gap: spacing.md,
     padding: spacing.xl,

@@ -13,8 +13,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import { RequestThread } from "../components/requests/RequestThread";
-import { SummaryChip } from "../components/workflow";
+import { ResponsiveContent, SummaryChip } from "../components/workflow";
 import { useRequestThread } from "../hooks/useRequestThread";
+import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { useAuthSession } from "../store/AuthSessionContext";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import {
@@ -105,6 +106,7 @@ function SafeState({ message, title }: SafeStateProps) {
 }
 
 export default function JoinedNurseRequestDetailScreen() {
+  const { isExpanded } = useResponsiveLayout();
   const { authState } = useAuthSession();
   const {
     joinedNurseAccessState,
@@ -165,6 +167,8 @@ export default function JoinedNurseRequestDetailScreen() {
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
+          <ResponsiveContent expanded>
+            <View style={styles.contentColumn}>
           {joinedNurseAccessState.status === "idle" ||
           joinedNurseAccessState.status === "loading" ? (
             <LoadingState message="Loading request" />
@@ -207,59 +211,72 @@ export default function JoinedNurseRequestDetailScreen() {
           ) : null}
 
           {assignmentView && request ? (
-            <>
-              <View style={styles.summaryCard}>
-                <View style={styles.chipRow}>
-                  <SummaryChip label={getRequestTitle(request)} />
-                  <SummaryChip label={getNurseRequestLifecycleLabel(request)} />
-                </View>
-                <DetailRow
-                  label="Created"
-                  value={getCreatedAtLabel(request.createdAt)}
-                />
-                <DetailRow
-                  label="Bed context"
-                  value={getBedContext(assignmentView, request)}
-                />
-                {request.swapCompletedAt ? (
+            <View
+              style={[
+                styles.requestContent,
+                isExpanded ? styles.expandedRequestContent : null,
+              ]}
+            >
+              <View style={styles.metadataColumn}>
+                <View style={styles.summaryCard}>
+                  <View style={styles.chipRow}>
+                    <SummaryChip label={getRequestTitle(request)} />
+                    <SummaryChip
+                      label={getNurseRequestLifecycleLabel(request)}
+                    />
+                  </View>
                   <DetailRow
-                    label="Assignment completed"
-                    value={getCreatedAtLabel(request.swapCompletedAt)}
+                    label="Created"
+                    value={getCreatedAtLabel(request.createdAt)}
                   />
-                ) : null}
-                <Text style={styles.readOnlyNote}>
-                  Request status is managed by charge. Messages do not change
-                  assignments or request status.
-                </Text>
-                {wasSwapAssignmentChangedLater ? (
-                  <Text style={styles.lifecycleNote}>
-                    The swap was completed, but a later move changed that bed
-                    assignment again.
+                  <DetailRow
+                    label="Bed context"
+                    value={getBedContext(assignmentView, request)}
+                  />
+                  {request.swapCompletedAt ? (
+                    <DetailRow
+                      label="Assignment completed"
+                      value={getCreatedAtLabel(request.swapCompletedAt)}
+                    />
+                  ) : null}
+                  <Text style={styles.readOnlyNote}>
+                    Request status is managed by charge. Messages do not change
+                    assignments or request status.
                   </Text>
-                ) : null}
+                  {wasSwapAssignmentChangedLater ? (
+                    <Text style={styles.lifecycleNote}>
+                      The swap was completed, but a later move changed that bed
+                      assignment again.
+                    </Text>
+                  ) : null}
+                </View>
+
+                <View style={styles.originalMessageCard}>
+                  <Text style={styles.sectionTitle}>Original message</Text>
+                  <Text style={styles.originalMessage}>{request.message}</Text>
+                </View>
               </View>
 
-              <View style={styles.originalMessageCard}>
-                <Text style={styles.sectionTitle}>Original message</Text>
-                <Text style={styles.originalMessage}>{request.message}</Text>
+              <View style={styles.threadColumn}>
+                <RequestThread
+                  canSend={thread.canSend}
+                  connectionState={thread.connectionState}
+                  currentProfileId={currentProfileId}
+                  draft={thread.draft}
+                  isLoading={thread.isLoading}
+                  isSending={thread.isSending}
+                  loadError={thread.loadError}
+                  messages={thread.messages}
+                  onDraftChange={thread.changeDraft}
+                  onRetryThread={thread.retryThread}
+                  onSend={thread.sendMessage}
+                  sendError={thread.sendError}
+                />
               </View>
-
-              <RequestThread
-                canSend={thread.canSend}
-                connectionState={thread.connectionState}
-                currentProfileId={currentProfileId}
-                draft={thread.draft}
-                isLoading={thread.isLoading}
-                isSending={thread.isSending}
-                loadError={thread.loadError}
-                messages={thread.messages}
-                onDraftChange={thread.changeDraft}
-                onRetryThread={thread.retryThread}
-                onSend={thread.sendMessage}
-                sendError={thread.sendError}
-              />
-            </>
+            </View>
           ) : null}
+            </View>
+          </ResponsiveContent>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -310,9 +327,27 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
   },
   content: {
-    gap: spacing.cardGap,
     padding: spacing.xl,
     paddingBottom: spacing.xxl,
+  },
+  contentColumn: {
+    gap: spacing.cardGap,
+  },
+  requestContent: {
+    gap: spacing.cardGap,
+  },
+  expandedRequestContent: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+  },
+  metadataColumn: {
+    flex: 1,
+    gap: spacing.cardGap,
+    minWidth: 0,
+  },
+  threadColumn: {
+    flex: 1.15,
+    minWidth: 0,
   },
   summaryCard: {
     backgroundColor: colors.neutral.surface,

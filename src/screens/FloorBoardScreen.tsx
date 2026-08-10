@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { router } from "expo-router";
-import { FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  FlatList,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import { AssignmentMoveDialog } from "../components/assignment/AssignmentMoveDialog";
 
@@ -15,8 +22,13 @@ import {
   SummaryChip,
   SwipeRevealAction,
   WorkflowListScreen,
+  WorkflowScreen,
   WorkflowSection,
 } from "../components/workflow";
+import {
+  expandedContentMaxWidth,
+  useResponsiveLayout,
+} from "../hooks/useResponsiveLayout";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { getShiftCensus, isOccupiedBedState } from "../utils/census";
 import { assignmentFlow } from "../utils/workflowFlows";
@@ -58,6 +70,7 @@ type BoardBedViewModel = {
   flags: InlineFlagViewModel[];
   state: BoardBedState;
   nurse?: string;
+  nurseId?: string;
 };
 type BoardRoom = {
   id: string;
@@ -219,6 +232,23 @@ type NurseWorkloadSectionProps = {
 
 type NurseWorkloadRowProps = {
   nurseWorkload: NurseWorkloadViewModel;
+};
+
+type ExpandedFloorBoardProps = {
+  activeShift?: Shift;
+  activeBoardSides: BoardSide[];
+  admittingSideName: string;
+  flagCount: number;
+  nurseWorkloads: NurseWorkloadViewModel[];
+  occupiedBedCount: number;
+  onFilterPress: (filter: BoardFilter) => void;
+  onMoveBed: (bedId: string) => void;
+  onRefreshLiveStatus: () => void;
+  onSelectNurse: (nurseId: string) => void;
+  realtimeConnectionState: RealtimeConnectionState;
+  selectedFilter: BoardFilter;
+  selectedNurseId?: string;
+  totalBedCount: number;
 };
 
 function NurseWorkloadSection({ nurseWorkloads }: NurseWorkloadSectionProps) {
@@ -404,13 +434,17 @@ function getNurseInlineFlags(activeShift: Shift, nurseId: string) {
     .map(getInlineFlag);
 }
 
-function getBedAssignmentNurseName(activeShift: Shift, bedId: string) {
+function getBedAssignment(activeShift: Shift, bedId: string) {
   const bedAssignment = activeShift.assignmentResult?.bedAssignments.find(
     (assignment) => assignment.bedId === bedId,
   );
 
-  return activeShift.nurses.find((nurse) => nurse.id === bedAssignment?.nurseId)
-    ?.name;
+  return {
+    nurseId: bedAssignment?.nurseId,
+    nurseName: activeShift.nurses.find(
+      (nurse) => nurse.id === bedAssignment?.nurseId,
+    )?.name,
+  };
 }
 
 function getBoardSides(activeShift?: Shift): BoardSide[] {
@@ -434,7 +468,7 @@ function getBoardSides(activeShift?: Shift): BoardSide[] {
               (shiftBedState) => shiftBedState.bedId === bed.id,
             );
             const isOccupied = isOccupiedBedState(bedState);
-            const nurseName = getBedAssignmentNurseName(activeShift, bed.id);
+            const { nurseId, nurseName } = getBedAssignment(activeShift, bed.id);
             const bedFlags = getBedInlineFlags(activeShift, bed.id);
 
             if (!isOccupied) {
@@ -456,6 +490,7 @@ function getBoardSides(activeShift?: Shift): BoardSide[] {
               acuityValue: bedState?.acuity,
               flags: bedFlags,
               nurse: nurseName,
+              nurseId,
               state: nurseName ? "assigned" : "unassigned",
             };
           });
@@ -582,7 +617,194 @@ function EmptyBoardMessage({
   );
 }
 
+function getNurseBoardSides(boardSides: BoardSide[], nurseId: string) {
+  return boardSides.flatMap((side) => {
+    const rooms = side.rooms.flatMap((room) => {
+      const beds = room.beds.filter((bed) => bed.nurseId === nurseId);
+
+      return beds.length ? [{ ...room, beds }] : [];
+    });
+
+    return rooms.length ? [{ ...side, rooms }] : [];
+  });
+}
+
+function getSideNurseWorkloads(
+  side: BoardSide,
+  nurseWorkloads: NurseWorkloadViewModel[],
+) {
+  const nurseIds = new Set(
+    side.rooms.flatMap((room) =>
+      room.beds.flatMap((bed) => (bed.nurseId ? [bed.nurseId] : [])),
+    ),
+  );
+
+  return nurseWorkloads.filter((nurse) => nurseIds.has(nurse.id));
+}
+
+function ExpandedFloorBoard({
+  activeShift,
+  activeBoardSides,
+  admittingSideName,
+  flagCount,
+  nurseWorkloads,
+  occupiedBedCount,
+  onFilterPress,
+  onMoveBed,
+  onRefreshLiveStatus,
+  onSelectNurse,
+  realtimeConnectionState,
+  selectedFilter,
+  selectedNurseId,
+  totalBedCount,
+}: ExpandedFloorBoardProps) {
+  const selectedNurse = nurseWorkloads.find(
+    (nurse) => nurse.id === selectedNurseId,
+  );
+  const selectedNurseSides = selectedNurse
+    ? getNurseBoardSides(activeBoardSides, selectedNurse.id)
+    : [];
+
+  return (
+    <WorkflowScreen
+      activeStep="Board"
+      bottomAccessory={<BoardSubTabBar activeTab="board" />}
+      flow={assignmentFlow}
+      headerActionLabel="Floors"
+      managesOwnScrolling
+      onHeaderActionPress={() => router.push("/")}
+      subtitle=""
+      title={activeShift?.floorName ?? "Floor board"}
+    >
+      <View style={styles.expandedContent}>
+        <ScrollView
+          contentContainerStyle={styles.expandedPaneContent}
+          keyboardShouldPersistTaps="handled"
+          style={styles.expandedSummaryPane}
+        >
+          <LiveStatusChip
+            connectionState={realtimeConnectionState}
+            onRefresh={onRefreshLiveStatus}
+          />
+          <WorkflowSection title="Board summary">
+            <BoardSummaryCard
+              admittingSideName={admittingSideName}
+              flagCount={flagCount}
+              occupiedBedCount={occupiedBedCount}
+              totalBedCount={totalBedCount}
+            />
+          </WorkflowSection>
+          <WorkflowSection title="Filters">
+            <FilterChipRow>
+              {boardFilters.map((filter) => (
+                <FilterChip
+                  key={filter}
+                  label={filter}
+                  onPress={() => onFilterPress(filter)}
+                  selected={filter === selectedFilter}
+                />
+              ))}
+            </FilterChipRow>
+          </WorkflowSection>
+          {activeBoardSides.map((side) => {
+            const sideNurses = getSideNurseWorkloads(side, nurseWorkloads);
+
+            return (
+              <WorkflowSection
+                key={side.id}
+                note={side.admitting ? "Admitting side" : "Non-admitting side"}
+                title={side.name}
+              >
+                {sideNurses.length ? (
+                  sideNurses.map((nurse) => {
+                    const isSelected = nurse.id === selectedNurse?.id;
+
+                    return (
+                      <Pressable
+                        accessibilityLabel={`${nurse.name}, ${nurse.currentLoad} of ${nurse.maxLoad} patients`}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: isSelected }}
+                        key={nurse.id}
+                        onPress={() => onSelectNurse(nurse.id)}
+                        style={({ pressed }) => [
+                          styles.expandedNurseRow,
+                          isSelected ? styles.selectedExpandedNurseRow : null,
+                          pressed ? styles.expandedNurseRowPressed : null,
+                        ]}
+                      >
+                        <View style={styles.expandedNurseCopy}>
+                          <Text style={styles.nurseWorkloadName}>{nurse.name}</Text>
+                          <Text style={styles.nurseWorkloadMeta}>
+                            {nurse.licenseType} · {nurse.roomCoverage}
+                          </Text>
+                        </View>
+                        <Text style={styles.nurseWorkloadLoad}>
+                          {nurse.currentLoad}/{nurse.maxLoad}
+                        </Text>
+                      </Pressable>
+                    );
+                  })
+                ) : (
+                  <Text style={styles.emptyWorkloadText}>
+                    No assigned nurses match this filter.
+                  </Text>
+                )}
+              </WorkflowSection>
+            );
+          })}
+        </ScrollView>
+
+        <ScrollView
+          contentContainerStyle={styles.expandedPaneContent}
+          keyboardShouldPersistTaps="handled"
+          style={styles.expandedDetailPane}
+        >
+          {selectedNurse ? (
+            <>
+              <WorkflowSection
+                note={`${selectedNurse.currentLoad} of ${selectedNurse.maxLoad} patients`}
+                title={selectedNurse.name}
+              >
+                <Text style={styles.selectedNurseMeta}>
+                  {selectedNurse.licenseType} · {selectedNurse.experience}
+                </Text>
+                <Text style={styles.selectedNurseMeta}>
+                  Coverage: {selectedNurse.roomCoverage}
+                </Text>
+                <InlineFlagList flags={selectedNurse.flags} />
+              </WorkflowSection>
+              {selectedNurseSides.map((side) => (
+                <BoardSideSection
+                  key={side.id}
+                  onMoveBed={onMoveBed}
+                  side={side}
+                />
+              ))}
+              {!selectedNurseSides.length ? (
+                <View style={styles.emptyBoard}>
+                  <Text style={styles.emptyBoardTitle}>No matching beds</Text>
+                  <Text style={styles.emptyBoardText}>
+                    This nurse has no beds in the current board filter.
+                  </Text>
+                </View>
+              ) : null}
+            </>
+          ) : (
+            <View style={styles.emptyBoard}>
+              <Text style={styles.emptyBoardTitle}>Choose a nurse</Text>
+              <Text style={styles.emptyBoardText}>
+                Select a nurse summary to review rooms, beds, and move actions.
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+      </View>
+    </WorkflowScreen>
+  );
+}
+
 export default function FloorBoardScreen() {
+  const { isExpanded } = useResponsiveLayout();
   const {
     activeShift,
     effectiveAssignmentFlags,
@@ -592,6 +814,7 @@ export default function FloorBoardScreen() {
   } = useServerWorkspace();
   const [selectedFilter, setSelectedFilter] = useState<BoardFilter>("All");
   const [selectedMoveBedId, setSelectedMoveBedId] = useState<string>();
+  const [selectedNurseId, setSelectedNurseId] = useState<string>();
   const effectiveShift = activeShift
     ? {
         ...activeShift,
@@ -611,39 +834,67 @@ export default function FloorBoardScreen() {
     type: "side",
     side,
   }));
+  const nurseWorkloads = getNurseWorkloads(effectiveShift);
+  const effectiveSelectedNurseId = nurseWorkloads.some(
+    (nurse) => nurse.id === selectedNurseId,
+  )
+    ? selectedNurseId
+    : nurseWorkloads[0]?.id;
+
   return (
     <>
-      <WorkflowListScreen
-      activeStep="Board"
-      data={boardListItems}
-      flow={assignmentFlow}
-      headerActionLabel="Floors"
-      keyExtractor={getFloorBoardItemKey}
-      listHeader={
-        <FloorBoardListHeader
+      {isExpanded ? (
+        <ExpandedFloorBoard
+          activeBoardSides={activeBoardSides}
+          activeShift={activeShift}
           admittingSideName={admittingDoctorSide?.name ?? "-"}
           flagCount={effectiveAssignmentFlags.length}
-          nurseWorkloads={getNurseWorkloads(effectiveShift)}
-          onFilterPress={setSelectedFilter}
-          onRefreshLiveStatus={retryLoadWorkspace}
+          nurseWorkloads={nurseWorkloads}
           occupiedBedCount={occupiedBedCount}
+          onFilterPress={setSelectedFilter}
+          onMoveBed={setSelectedMoveBedId}
+          onRefreshLiveStatus={retryLoadWorkspace}
+          onSelectNurse={setSelectedNurseId}
           realtimeConnectionState={realtimeConnectionState}
           selectedFilter={selectedFilter}
+          selectedNurseId={effectiveSelectedNurseId}
           totalBedCount={totalBedCount}
         />
-      }
-      onHeaderActionPress={() => router.push("/")}
-      bottomAccessory={<BoardSubTabBar activeTab="board" />}
-      renderItem={({ item }) => (
-        <BoardSideSection
-          onMoveBed={setSelectedMoveBedId}
-          side={item.side}
+      ) : (
+        <WorkflowListScreen
+          activeStep="Board"
+          bottomAccessory={<BoardSubTabBar activeTab="board" />}
+          data={boardListItems}
+          flow={assignmentFlow}
+          headerActionLabel="Floors"
+          keyExtractor={getFloorBoardItemKey}
+          ListEmptyComponent={
+            <EmptyBoardMessage selectedFilter={selectedFilter} />
+          }
+          listHeader={
+            <FloorBoardListHeader
+              admittingSideName={admittingDoctorSide?.name ?? "-"}
+              flagCount={effectiveAssignmentFlags.length}
+              nurseWorkloads={nurseWorkloads}
+              occupiedBedCount={occupiedBedCount}
+              onFilterPress={setSelectedFilter}
+              onRefreshLiveStatus={retryLoadWorkspace}
+              realtimeConnectionState={realtimeConnectionState}
+              selectedFilter={selectedFilter}
+              totalBedCount={totalBedCount}
+            />
+          }
+          onHeaderActionPress={() => router.push("/")}
+          renderItem={({ item }) => (
+            <BoardSideSection
+              onMoveBed={setSelectedMoveBedId}
+              side={item.side}
+            />
+          )}
+          subtitle=""
+          title={activeShift?.floorName ?? "Floor board"}
         />
       )}
-      ListEmptyComponent={<EmptyBoardMessage selectedFilter={selectedFilter} />}
-      subtitle=""
-      title={activeShift?.floorName ?? "Floor board"}
-      />
       {activeShift && effectiveAssignmentResult ? (
         <AssignmentMoveDialog
           activeShift={activeShift}
@@ -767,6 +1018,55 @@ function getAcuityColor(acuity: string) {
 }
 
 const styles = StyleSheet.create({
+  expandedContent: {
+    alignSelf: "center",
+    flex: 1,
+    flexDirection: "row",
+    gap: spacing.lg,
+    maxWidth: expandedContentMaxWidth,
+    padding: spacing.xl,
+    width: "100%",
+  },
+  expandedSummaryPane: {
+    flex: 0.9,
+  },
+  expandedDetailPane: {
+    flex: 1.4,
+  },
+  expandedPaneContent: {
+    gap: spacing.cardGap,
+    paddingBottom: spacing.xl,
+  },
+  expandedNurseRow: {
+    alignItems: "center",
+    backgroundColor: colors.neutral.backgroundTertiary,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: spacing.md,
+    justifyContent: "space-between",
+    minHeight: 56,
+    padding: spacing.md,
+  },
+  selectedExpandedNurseRow: {
+    backgroundColor: colors.brand.burgundy10,
+    borderColor: colors.brand.burgundy,
+    borderWidth: 2,
+  },
+  expandedNurseRowPressed: {
+    opacity: 0.82,
+  },
+  expandedNurseCopy: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  selectedNurseMeta: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.medium,
+    lineHeight: 18,
+  },
   headerContent: {
     gap: spacing.cardGap,
   },

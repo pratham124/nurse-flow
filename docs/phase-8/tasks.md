@@ -310,10 +310,7 @@ Manual validation:
 - Back returns to the nurse-scoped assignment.
 - TypeScript and lint pass.
 
-### In Progress Task 2.5: Add Issue Reviewed, Resolved, and Reopened States
-
-Status: implementation and local validation complete; hosted Supabase setup,
-two-session manual validation, and understanding checkpoint remain.
+### Done Task 2.5: Add Issue Reviewed, Resolved, and Reopened States
 
 Story coverage: US4, US8
 
@@ -332,10 +329,7 @@ Manual validation:
 - Assignment data remains byte-for-byte unchanged by lifecycle actions where practical to verify.
 - TypeScript, targeted tests, and lint pass.
 
-### In Progress Task 2.6: Add Accepted-Swap Completion State
-
-Status: implementation and local validation complete; hosted Supabase setup,
-two-session manual validation, and understanding checkpoint remain.
+### Done Task 2.6: Add Accepted-Swap Completion State
 
 Story coverage: US5, US8
 
@@ -356,10 +350,7 @@ Manual validation:
 - Reversing the same bed through a later completed request preserves both request histories while only the newest override remains active.
 - TypeScript, targeted tests, and lint pass.
 
-### In Progress Task 2.7: Add Safe Request-Activity Notifications
-
-Status: implementation and local validation complete; hosted Supabase setup,
-notification delivery validation, and understanding checkpoint remain.
+### Done Task 2.7: Add Safe Request-Activity Notifications
 
 Story coverage: US3, US4, US5, US8
 
@@ -379,7 +370,11 @@ Manual validation:
 
 ## Responsive Layout and Polish
 
-### Task 4.1: Add Shared Compact and Expanded Layout Boundary
+### Done Task 4.1: Add Shared Compact and Expanded Layout Boundary
+
+Status: implementation, breakpoint regression coverage, TypeScript, lint, and
+compact browser validation complete; native tablet validation and the shared
+understanding checkpoint remain.
 
 Story coverage: US6, US7, US8
 
@@ -397,7 +392,11 @@ Manual validation:
 - Existing setup screens remain readable at a centered maximum width.
 - TypeScript and lint pass.
 
-### Task 4.2: Add Expanded Charge Floor Board
+### Done Task 4.2: Add Expanded Charge Floor Board
+
+Status: implementation, TypeScript, lint, and existing assignment regression
+coverage complete; native tablet interaction validation and the shared
+understanding checkpoint remain.
 
 Story coverage: US1, US2, US6, US7
 
@@ -415,7 +414,11 @@ Manual validation:
 - Phone board remains unchanged in structure.
 - TypeScript, lint, and tablet interaction checks pass.
 
-### Task 4.3: Add Expanded Request and Joined-Nurse Layouts
+### Done Task 4.3: Add Expanded Request and Joined-Nurse Layouts
+
+Status: implementation, TypeScript, lint, request regression coverage, and
+compact two-session browser validation complete; native tablet and keyboard
+validation plus the shared understanding checkpoint remain.
 
 Story coverage: US3, US4, US5, US6, US7
 
@@ -432,7 +435,11 @@ Manual validation:
 - Joined nurse never sees charge-only controls or full-board data.
 - TypeScript and lint pass.
 
-### Task 4.4: Complete Visual Consistency Pass
+### Done Task 4.4: Complete Visual Consistency Pass
+
+Status: the changed screens now reuse the responsive boundary, current tokens,
+cards, chips, warning states, and pressed/disabled treatments; native tablet,
+long-text review, and the shared understanding checkpoint remain.
 
 Story coverage: US6, US7
 

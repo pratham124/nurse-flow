@@ -12,7 +12,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
-import { LiveStatusChip } from "../components/workflow";
+import { LiveStatusChip, ResponsiveContent } from "../components/workflow";
+import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { useAuthSession } from "../store/AuthSessionContext";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import {
@@ -414,6 +415,7 @@ function RequestActions({
 }
 
 export default function RegularNurseWorkspaceScreen() {
+  const { isExpanded } = useResponsiveLayout();
   const { authState } = useAuthSession();
   const {
     joinedNurseAccessState,
@@ -532,7 +534,8 @@ export default function RegularNurseWorkspaceScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.card}>
+        <ResponsiveContent expanded>
+          <View style={styles.card}>
           <Text style={styles.eyebrow}>My shift</Text>
           <Text style={styles.title}>{displayName}</Text>
 
@@ -579,27 +582,46 @@ export default function RegularNurseWorkspaceScreen() {
           ) : null}
 
           {joinedNurseAccessState.status === "ready" ? (
-            <>
-              <AssignmentSummary
-                assignmentView={joinedNurseAccessState.assignmentView}
-                onOpenRequest={handleOpenRequest}
-              />
-              <RequestActions
-                assignmentView={joinedNurseAccessState.assignmentView}
-                formError={requestFormError}
-                formSuccess={requestFormSuccess}
-                issueMessage={issueMessage}
-                isSubmittingIssue={isSubmittingIssue}
-                isSubmittingSwap={isSubmittingSwap}
-                onIssueMessageChange={setIssueMessage}
-                onSelectSwapBed={setSelectedSwapBedId}
-                onSubmitIssue={handleSubmitIssue}
-                onSubmitSwap={handleSubmitSwap}
-                onSwapMessageChange={setSwapMessage}
-                selectedSwapBedId={selectedSwapBedId}
-                swapMessage={swapMessage}
-              />
-            </>
+            <View
+              style={[
+                styles.readyContent,
+                isExpanded ? styles.expandedReadyContent : null,
+              ]}
+            >
+              <View
+                style={[
+                  styles.readyColumn,
+                  isExpanded ? styles.expandedReadyColumn : null,
+                ]}
+              >
+                <AssignmentSummary
+                  assignmentView={joinedNurseAccessState.assignmentView}
+                  onOpenRequest={handleOpenRequest}
+                />
+              </View>
+              <View
+                style={[
+                  styles.readyColumn,
+                  isExpanded ? styles.expandedReadyColumn : null,
+                ]}
+              >
+                <RequestActions
+                  assignmentView={joinedNurseAccessState.assignmentView}
+                  formError={requestFormError}
+                  formSuccess={requestFormSuccess}
+                  issueMessage={issueMessage}
+                  isSubmittingIssue={isSubmittingIssue}
+                  isSubmittingSwap={isSubmittingSwap}
+                  onIssueMessageChange={setIssueMessage}
+                  onSelectSwapBed={setSelectedSwapBedId}
+                  onSubmitIssue={handleSubmitIssue}
+                  onSubmitSwap={handleSubmitSwap}
+                  onSwapMessageChange={setSwapMessage}
+                  selectedSwapBedId={selectedSwapBedId}
+                  swapMessage={swapMessage}
+                />
+              </View>
+            </View>
           ) : null}
 
           {joinedNurseAccessState.status === "error" ? (
@@ -620,7 +642,8 @@ export default function RegularNurseWorkspaceScreen() {
           >
             <Text style={styles.homeButtonText}>Back to home</Text>
           </Pressable>
-        </View>
+          </View>
+        </ResponsiveContent>
       </ScrollView>
     </SafeAreaView>
   );
@@ -644,6 +667,21 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     padding: spacing.xl,
     ...shadows.sm,
+  },
+  readyContent: {
+    gap: spacing.cardGap,
+  },
+  expandedReadyContent: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+  },
+  readyColumn: {
+    width: "100%",
+  },
+  expandedReadyColumn: {
+    flex: 1,
+    minWidth: 0,
+    width: "auto",
   },
   assignmentPanel: {
     backgroundColor: colors.neutral.backgroundSecondary,

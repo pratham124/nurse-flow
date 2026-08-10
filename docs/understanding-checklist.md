@@ -2908,5 +2908,47 @@ For each task, add a dated section with:
   - [x] Human explained what proves an accepted swap was actually completed.
   - [x] Code-specific walkthrough of `getNurseRequestLifecycleState` or the
     swap-completion trigger completed.
-  - [ ] Hosted two-session lifecycle and notification checks completed.
-- Status: in progress
+  - [x] Hosted two-session lifecycle and notification checks completed.
+- Status: verified
+
+### 2026-08-09 - Add Phase 8 Responsive Layout and Visual Polish
+
+- Tasks: Implement Phase 8 Tasks 4.1 through 4.4 without changing domain data,
+  nurse authorization, request behavior, or the assignment algorithm.
+- Problem understanding:
+  - [ ] Why layout mode must come from current content width instead of device
+    type or persisted shift data.
+  - [ ] Why the phone floor board stays a vertical list while tablet shows only
+    one selected nurse's full detail.
+  - [ ] Why charge and joined-nurse request layouts can share a breakpoint but
+    must keep separate authorization boundaries.
+- Solution understanding:
+  - [ ] `getResponsiveLayoutMode` defines one 768-point boundary, while
+    `useResponsiveLayout` derives the current mode from `useWindowDimensions`.
+  - [ ] `ResponsiveContent` centers unchanged setup flows and allows the
+    Phase 8 screens to use a readable expanded maximum width.
+  - [ ] `FloorBoardScreen` owns selected nurse state above its compact/expanded
+    render branch, so resizing does not change shift data or lose selection.
+  - [ ] Charge request, joined request, and joined workspace screens use
+    balanced columns only in expanded mode and preserve the compact order.
+  - [ ] `WorkflowScreen` keeps prominent actions full width by default, while
+    `ChargeNurseRequestDetailScreen` opts its navigation-only `Back to flags`
+    control into the 144-by-44 compact secondary appearance.
+- Broader context:
+  - [ ] Responsive presentation remains independent of the server-owned shift,
+    effective assignment, realtime refresh, and nurse-scoped access model.
+  - [ ] Phase 9 can replace assignment generation without changing this layout
+    boundary or the Phase 8 manual-move interaction.
+- Verification:
+  - [ ] Human restated current understanding before explanation.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific walkthrough of `useResponsiveLayout` and selected nurse
+    behavior completed.
+  - [x] TypeScript, Expo lint, responsive breakpoint tests, and targeted
+    assignment/request regression tests passed.
+  - [x] Signed-in compact charge board, charge request, joined assignment, and
+    joined request flows were checked in the browser with no app-origin errors.
+  - [x] The rendered `Back to flags` button measured 144 by 44 points with the
+    intended secondary surface and outline treatment.
+  - [ ] Native tablet portrait/landscape, keyboard, and long-text checks passed.
+- Status: pending

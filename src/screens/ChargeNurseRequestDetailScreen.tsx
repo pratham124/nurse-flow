@@ -17,6 +17,7 @@ import {
   WorkflowSection,
 } from "../components/workflow";
 import { useRequestThread } from "../hooks/useRequestThread";
+import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { useAuthSession } from "../store/AuthSessionContext";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import {
@@ -51,6 +52,7 @@ function DetailRow({ label, value }: DetailRowProps) {
 }
 
 export default function ChargeNurseRequestDetailScreen() {
+  const { isExpanded } = useResponsiveLayout();
   const { authState } = useAuthSession();
   const {
     activeAssignmentOverridesByBedId,
@@ -159,12 +161,16 @@ export default function ChargeNurseRequestDetailScreen() {
         headerActionLabel="Floors"
         onHeaderActionPress={() => router.push("/")}
         onPrimaryPress={() => router.push("/flags")}
+        primaryAppearance="compactSecondary"
         primaryLabel="Back to flags"
         subtitle=""
         title={request ? request.typeLabel : "Request"}
       >
         {request ? (
-          <View style={styles.content}>
+          <View
+            style={[styles.content, isExpanded ? styles.expandedContent : null]}
+          >
+            <View style={styles.metadataColumn}>
             <WorkflowSection title="Request summary">
               <View style={styles.summaryCard}>
                 <View style={styles.chipRow}>
@@ -351,21 +357,24 @@ export default function ChargeNurseRequestDetailScreen() {
                 </View>
               </WorkflowSection>
             ) : null}
+            </View>
 
-            <RequestThread
-              canSend={thread.canSend}
-              connectionState={thread.connectionState}
-              currentProfileId={currentProfileId}
-              draft={thread.draft}
-              isLoading={thread.isLoading}
-              isSending={thread.isSending}
-              loadError={thread.loadError}
-              messages={thread.messages}
-              onDraftChange={thread.changeDraft}
-              onRetryThread={thread.retryThread}
-              onSend={thread.sendMessage}
-              sendError={thread.sendError}
-            />
+            <View style={styles.threadColumn}>
+              <RequestThread
+                canSend={thread.canSend}
+                connectionState={thread.connectionState}
+                currentProfileId={currentProfileId}
+                draft={thread.draft}
+                isLoading={thread.isLoading}
+                isSending={thread.isSending}
+                loadError={thread.loadError}
+                messages={thread.messages}
+                onDraftChange={thread.changeDraft}
+                onRetryThread={thread.retryThread}
+                onSend={thread.sendMessage}
+                sendError={thread.sendError}
+              />
+            </View>
           </View>
         ) : (
           <View style={styles.emptyCard}>
@@ -398,6 +407,19 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: spacing.cardGap,
+  },
+  expandedContent: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+  },
+  metadataColumn: {
+    flex: 1,
+    gap: spacing.cardGap,
+    minWidth: 0,
+  },
+  threadColumn: {
+    flex: 1.15,
+    minWidth: 0,
   },
   summaryCard: {
     backgroundColor: colors.neutral.surface,

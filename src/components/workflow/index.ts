@@ -34,6 +34,8 @@ export {
   SegmentedPlaceholder,
 } from "./PlaceholderControls";
 export { ScrollableList } from "./ScrollableList";
+export { ResponsiveContent } from "./ResponsiveContent";
+export type { ResponsiveContentProps } from "./ResponsiveContent";
 export { StepIndicator } from "./StepIndicator";
 export { SwipeRevealAction } from "./SwipeRevealAction";
 export type { WorkflowStep } from "./types";

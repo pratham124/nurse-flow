@@ -7,6 +7,7 @@ import type { WorkflowFlowStep } from "../../utils/workflowFlows";
 import { colors, radius, spacing, textSize, fontWeight, shadows } from "../../theme/tokens";
 import { StepIndicator } from "./StepIndicator";
 import { HomeIcon } from "./Icons";
+import { ResponsiveContent } from "./ResponsiveContent";
 import type { WorkflowStep } from "./types";
 
 type WorkflowScreenProps = {
@@ -21,6 +22,7 @@ type WorkflowScreenProps = {
   primaryLabel?: string;
   onPrimaryPress?: () => void;
   primaryDisabled?: boolean;
+  primaryAppearance?: "prominent" | "compactSecondary";
   actionErrorText?: string;
   managesOwnScrolling?: boolean;
   bottomAccessory?: ReactNode;
@@ -43,6 +45,7 @@ export function WorkflowScreen({
   primaryLabel,
   onPrimaryPress,
   primaryDisabled = false,
+  primaryAppearance = "prominent",
   actionErrorText,
   managesOwnScrolling = false,
   bottomAccessory,
@@ -86,8 +89,14 @@ export function WorkflowScreen({
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-          {hideStepIndicator ? null : <StepIndicator activeStep={activeStep} flow={flow} />}
-          {children}
+          <ResponsiveContent expanded>
+            <View style={styles.contentColumn}>
+              {hideStepIndicator ? null : (
+                <StepIndicator activeStep={activeStep} flow={flow} />
+              )}
+              {children}
+            </View>
+          </ResponsiveContent>
         </ScrollView>
       )}
 
@@ -107,11 +116,23 @@ export function WorkflowScreen({
               onPress={onPrimaryPress}
               style={({ pressed }) => [
                 styles.primaryButton,
+                primaryAppearance === "compactSecondary"
+                  ? styles.compactSecondaryButton
+                  : null,
                 primaryDisabled ? styles.disabledPrimaryButton : null,
                 pressed && !primaryDisabled ? styles.pressedPrimaryButton : null,
               ]}
             >
-              <Text style={styles.primaryButtonText}>{primaryLabel}</Text>
+              <Text
+                style={[
+                  styles.primaryButtonText,
+                  primaryAppearance === "compactSecondary"
+                    ? styles.compactSecondaryButtonText
+                    : null,
+                ]}
+              >
+                {primaryLabel}
+              </Text>
             </Pressable>
           </View>
         ) : null}
@@ -208,9 +229,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brand.burgundyLight,
   },
   content: {
-    gap: spacing.cardGap,
     padding: spacing.xl,
     paddingBottom: spacing.xl,
+  },
+  contentColumn: {
+    gap: spacing.cardGap,
   },
   managedContent: {
     flex: 1,
@@ -224,6 +247,7 @@ const styles = StyleSheet.create({
   actionRow: {
     flexDirection: "row",
     gap: spacing.sm,
+    justifyContent: "center",
   },
   actionErrorText: {
     color: colors.status.red700,
@@ -243,6 +267,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     ...shadows.sm,
   },
+  compactSecondaryButton: {
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.brand.burgundy,
+    borderWidth: 1,
+    flex: 0,
+    height: 44,
+    minWidth: 144,
+  },
   disabledPrimaryButton: {
     opacity: 0.48,
   },
@@ -253,6 +285,9 @@ const styles = StyleSheet.create({
     color: colors.neutral.surface,
     fontSize: textSize.action,
     fontWeight: fontWeight.semibold,
+  },
+  compactSecondaryButtonText: {
+    color: colors.brand.burgundy,
   },
 });
 
