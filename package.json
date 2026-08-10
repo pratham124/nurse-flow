@@ -13,7 +13,9 @@
     "test:effective-assignment": "tsx --test tests/effectiveAssignment.test.mjs tests/assignmentMovePreview.test.mjs",
     "test:request-realtime": "tsx --test tests/realtimeWorkspaceRepository.test.mjs",
     "test:request-lifecycle": "tsx --test tests/nurseRequestLifecycle.test.mjs tests/notificationTap.test.mjs",
-    "test:responsive-layout": "tsx --test tests/responsiveLayout.test.mjs"
+    "test:responsive-layout": "tsx --test tests/responsiveLayout.test.mjs",
+    "test:phase8-performance": "tsx --test tests/floorBoardLookup.test.mjs",
+    "measure:phase8": "tsx scripts/measure-phase8-performance.ts"
   },
   "dependencies": {
     "@react-navigation/bottom-tabs": "^7.15.5",

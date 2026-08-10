@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { colors, radius, textSize, fontWeight, shadows } from "../../theme/tokens";
 
 const defaultActionWidth = 96;
@@ -35,12 +36,19 @@ export function SwipeRevealAction({
   actionTone = "danger",
   enableAccessibilityReveal = false,
 }: SwipeRevealActionProps) {
+  const isReducedMotionEnabled = useReducedMotion();
   const rowTranslateX = useRef(new Animated.Value(0)).current;
   const [isActionRevealed, setIsActionRevealed] = useState(false);
   const revealDirection = actionSide === "left" ? 1 : -1;
   const revealedTranslateX = actionWidth * revealDirection;
 
   function animateRow(toValue: number) {
+    if (isReducedMotionEnabled) {
+      rowTranslateX.setValue(toValue);
+      setIsActionRevealed(toValue !== 0);
+      return;
+    }
+
     Animated.spring(rowTranslateX, {
       bounciness: 0,
       speed: 18,

@@ -458,7 +458,11 @@ Manual validation:
 
 ## Accessibility and Performance
 
-### Task 5.1: Run Phase 8 Accessibility Pass
+### Done Task 5.1: Run Phase 8 Accessibility Pass
+
+Status: the Phase 8 code audit and focused fixes are complete. Native
+VoiceOver/TalkBack, larger-text, modal focus-return, and rotation checks remain
+for Task 6.3 and are recorded in `accessibility-and-performance-pass.md`.
 
 Story coverage: US7
 
@@ -475,7 +479,12 @@ Manual validation:
 - Use larger text without clipped lifecycle controls.
 - Confirm key tap targets meet 44-point minimum.
 
-### Task 5.2: Measure Representative Large-Floor Performance
+### Done Task 5.2: Measure Representative Large-Floor Performance
+
+Status: a development-only 400-bed, 250-message fixture and repeatable
+JavaScript preparation baseline are recorded in
+`accessibility-and-performance-pass.md`. Native frame, scroll, and swipe checks
+remain for Task 6.3 and are not inferred from these measurements.
 
 Story coverage: US7, US8
 
@@ -492,7 +501,13 @@ Manual validation:
 - Explain which measured interaction needs cleanup and which does not.
 - Confirm the fixture does not become production shift data.
 
-### Task 5.3: Apply Focused Performance Cleanup
+### Done Task 5.3: Apply Focused Performance Cleanup
+
+Status: the measured timestamp-formatting bottleneck and repeated board scans
+now use a shared formatter, stable message rows, memoized board projections, and
+bed/room/nurse keyed lookup maps. No list dependency or assignment-algorithm
+change was added. Automated checks and the shared understanding checkpoint pass;
+native device checks remain for Task 6.3.
 
 Story coverage: US7, US8
 

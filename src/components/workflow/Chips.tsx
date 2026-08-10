@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 0.5,
     justifyContent: "center",
-    minHeight: 36,
+    minHeight: 44,
     paddingHorizontal: 14,
     paddingVertical: 6,
   },
@@ -356,7 +356,8 @@ const styles = StyleSheet.create({
     borderLeftColor: colors.neutral.borderSecondary,
     borderLeftWidth: 0.5,
     justifyContent: "center",
-    minHeight: 24,
+    minHeight: 44,
+    minWidth: 44,
     paddingLeft: spacing.sm,
   },
   liveStatusRefreshButtonPressed: {

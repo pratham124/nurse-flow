@@ -59,7 +59,9 @@ export function WorkflowScreen({
     <SafeAreaView style={styles.screen}>
       <View style={styles.header}>
         <View style={styles.headerTopRow}>
-          <Text style={styles.title}>{title}</Text>
+          <Text accessibilityRole="header" style={styles.title}>
+            {title}
+          </Text>
           {headerActionLabel && onHeaderActionPress ? (
             <Pressable
               accessibilityLabel={headerActionLabel}
@@ -198,9 +200,9 @@ const styles = StyleSheet.create({
     borderColor: colors.neutral.borderTertiary,
     borderRadius: 18,
     borderWidth: 0.5,
-    height: 36,
+    minHeight: 44,
     justifyContent: "center",
-    width: 36,
+    minWidth: 44,
   },
   headerActionPressed: {
     opacity: 0.7,
@@ -260,11 +262,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brand.burgundy,
     borderRadius: radius.lg,
     flex: 1,
-    height: 52,
+    minHeight: 52,
     justifyContent: "center",
     marginBottom: spacing.md,
     marginHorizontal: spacing.xl,
     paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     ...shadows.sm,
   },
   compactSecondaryButton: {
@@ -272,7 +275,7 @@ const styles = StyleSheet.create({
     borderColor: colors.brand.burgundy,
     borderWidth: 1,
     flex: 0,
-    height: 44,
+    minHeight: 44,
     minWidth: 144,
   },
   disabledPrimaryButton: {

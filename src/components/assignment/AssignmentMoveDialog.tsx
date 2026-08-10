@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  AccessibilityInfo,
+  findNodeHandle,
   Modal,
   Pressable,
   ScrollView,
@@ -9,6 +11,7 @@ import {
 } from "react-native";
 
 import { createLocalId } from "../../helpers/localId";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { useServerWorkspace } from "../../store/ServerWorkspaceContext";
 import { colors, fontWeight, radius, shadows, spacing, textSize } from "../../theme/tokens";
 import type {
@@ -131,6 +134,7 @@ export function AssignmentMoveDialog({
   relatedSwapRequestId,
   visible,
 }: AssignmentMoveDialogProps) {
+  const isReducedMotionEnabled = useReducedMotion();
   const {
     confirmManualAssignmentOverride,
     realtimeConnectionState,
@@ -144,6 +148,7 @@ export function AssignmentMoveDialog({
   const [resultState, setResultState] = useState<"editing" | "saved" | "stale" | "error">(
     "editing",
   );
+  const titleRef = useRef<Text>(null);
 
   const currentAssignment = effectiveAssignmentResult.bedAssignments.find(
     (assignment) => assignment.bedId === bedId,
@@ -239,21 +244,33 @@ export function AssignmentMoveDialog({
     }
   }
 
+  function focusDialogTitle() {
+    const titleNode = findNodeHandle(titleRef.current);
+
+    if (titleNode) {
+      AccessibilityInfo.setAccessibilityFocus(titleNode);
+    }
+  }
+
   return (
     <Modal
-      animationType="slide"
+      animationType={isReducedMotionEnabled ? "none" : "slide"}
+      onShow={focusDialogTitle}
       onRequestClose={saveStatus === "saving" ? undefined : onClose}
       presentationStyle="pageSheet"
       visible={visible}
     >
-      <View style={styles.screen}>
+      <View accessibilityViewIsModal style={styles.screen}>
         <View style={styles.dialogHeader}>
           <View style={styles.headerCopy}>
-            <Text style={styles.title}>Move bed {bedLabel}</Text>
+            <Text accessibilityRole="header" ref={titleRef} style={styles.title}>
+              Move bed {bedLabel}
+            </Text>
             <Text style={styles.subtitle}>Currently assigned to {currentNurseName}</Text>
           </View>
           <Pressable
             accessibilityRole="button"
+            accessibilityState={{ disabled: saveStatus === "saving" }}
             disabled={saveStatus === "saving"}
             onPress={resultState === "saved" ? onClose : onClose}
             style={styles.closeButton}
@@ -425,6 +442,7 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     flexDirection: "row",
     gap: spacing.sm,
+    minHeight: 44,
     padding: spacing.sm,
   },
   warningRowSelected: { borderWidth: 1.5 },

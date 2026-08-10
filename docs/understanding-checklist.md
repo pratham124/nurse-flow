@@ -2952,3 +2952,48 @@ For each task, add a dated section with:
     intended secondary surface and outline treatment.
   - [ ] Native tablet portrait/landscape, keyboard, and long-text checks passed.
 - Status: pending
+
+### 2026-08-09 - Complete Phase 8 Accessibility and Performance Work
+
+- Tasks: Implement Phase 8 Tasks 5.1 through 5.3 without changing assignment
+  rules, adding a list library, or treating development fixtures as shift data.
+- Problem understanding:
+  - [x] Why acuity cannot rely on its colored rail and why a swipe cannot be the
+    only accessible path to the move dialog.
+  - [x] Why reply typing should not reformat every existing message timestamp or
+    rebuild every stable message row.
+  - [x] Why repeated array scans are avoidable after the effective shift changes,
+    while the active bed-keyed assignment remains the ownership source.
+- Solution understanding:
+  - [x] `useReducedMotion` shares one native preference listener and lets move
+    and modal transitions skip animation when the system preference is enabled.
+  - [x] `RequestThread` reuses one `Intl.DateTimeFormat` and memoizes the stable
+    history separately from the changing composer draft.
+  - [x] `createFloorBoardLookup` indexes effective assignments, beds, rooms,
+    nurses, flags, loads, teams, and coverage once per effective shift change.
+  - [x] The 400-bed and 250-message fixture lives under `tests/` and can never
+    become production or Supabase shift data.
+  - [x] Measurement justified the formatter and lookup cleanup, but did not
+    justify a new list library or a nested thread list.
+- Broader context:
+  - [x] Phase 8 remains presentation and interaction work; the Phase 1 assignment
+    generator and Phase 8 active override projection are unchanged.
+  - [x] Native VoiceOver/TalkBack, dynamic type, focus-return, scroll, swipe, and
+    rotation checks remain part of Task 6.3 rather than being claimed by headless
+    measurements.
+- Verification:
+  - [x] Human restated that Task 5 covers performance improvements and
+    accessibility changes.
+  - [x] Gaps were explained at a high level before the code-specific quiz.
+  - [x] Code-specific walkthrough of `RequestMessageList`,
+    `createFloorBoardLookup`, or the memoized `FloorBoardScreen` projections
+    completed.
+  - [x] TypeScript, Expo lint, lookup tests, and targeted assignment/request
+    regression tests passed.
+  - [x] Repeatable JavaScript measurements recorded the before/after projection
+    results in `docs/phase-8/accessibility-and-performance-pass.md`.
+  - [x] Signed-in web smoke checks loaded charge request detail and the expanded
+    floor board, exposed headings and spoken acuity, and measured the changed
+    interactive targets at 44 points or taller without app-origin errors.
+  - [ ] Native accessibility and device-interaction checks passed.
+- Status: verified

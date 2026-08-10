@@ -482,6 +482,7 @@ const styles = StyleSheet.create({
   },
   decisionButtonRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.sm,
   },
   secondaryButton: {

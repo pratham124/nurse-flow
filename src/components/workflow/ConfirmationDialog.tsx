@@ -1,5 +1,15 @@
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { useRef } from "react";
+import {
+  AccessibilityInfo,
+  findNodeHandle,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { colors, radius, spacing, textSize, fontWeight, shadows } from "../../theme/tokens";
 
 type ConfirmationDialogProps = {
@@ -24,17 +34,34 @@ export function ConfirmationDialog({
   onConfirm,
 }: ConfirmationDialogProps) {
   const isDanger = confirmTone === "danger";
+  const isReducedMotionEnabled = useReducedMotion();
+  const titleRef = useRef<Text>(null);
+
+  function focusDialogTitle() {
+    const titleNode = findNodeHandle(titleRef.current);
+
+    if (titleNode) {
+      AccessibilityInfo.setAccessibilityFocus(titleNode);
+    }
+  }
 
   return (
     <Modal
-      animationType="fade"
+      animationType={isReducedMotionEnabled ? "none" : "fade"}
+      onShow={focusDialogTitle}
       onRequestClose={onCancel}
       transparent
       visible={visible}
     >
-      <View style={styles.backdrop}>
+      <View accessibilityViewIsModal style={styles.backdrop}>
         <View style={styles.card}>
-          <Text style={styles.title}>{title}</Text>
+          <Text
+            accessibilityRole="header"
+            ref={titleRef}
+            style={styles.title}
+          >
+            {title}
+          </Text>
           <Text style={styles.message}>{message}</Text>
 
           <View style={styles.divider} />
@@ -104,6 +131,7 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.sm,
     justifyContent: "flex-end",
   },
@@ -113,7 +141,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 0.5,
     justifyContent: "center",
-    minHeight: 40,
+    minHeight: 44,
     paddingHorizontal: spacing.lg,
   },
   cancelButtonPressed: {
@@ -129,7 +157,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brand.burgundy,
     borderRadius: radius.md,
     justifyContent: "center",
-    minHeight: 40,
+    minHeight: 44,
     paddingHorizontal: spacing.lg,
   },
   confirmButtonPressed: {

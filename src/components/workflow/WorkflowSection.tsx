@@ -18,7 +18,9 @@ export function WorkflowSection({
     <View style={styles.section}>
       <View style={styles.topAccentBar} />
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>{title}</Text>
+        <Text accessibilityRole="header" style={styles.sectionTitle}>
+          {title}
+        </Text>
         {note ? <Text style={styles.sectionNote}>{note}</Text> : null}
       </View>
       {children}

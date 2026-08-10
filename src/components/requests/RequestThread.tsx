@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { ErrorState } from "../ErrorState";
@@ -47,6 +48,13 @@ type RequestMessageComposerProps = {
   sendError: string;
 };
 
+const messageTimeFormatter = new Intl.DateTimeFormat(undefined, {
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  month: "short",
+});
+
 function getMessageTime(createdAt: string) {
   const createdDate = new Date(createdAt);
 
@@ -54,15 +62,10 @@ function getMessageTime(createdAt: string) {
     return "Server time unavailable";
   }
 
-  return createdDate.toLocaleString([], {
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    month: "short",
-  });
+  return messageTimeFormatter.format(createdDate);
 }
 
-function RequestMessageRow({
+const RequestMessageRow = memo(function RequestMessageRow({
   currentProfileId,
   message,
 }: RequestMessageRowProps) {
@@ -103,7 +106,36 @@ function RequestMessageRow({
       </View>
     </View>
   );
-}
+});
+
+type RequestMessageListProps = {
+  currentProfileId: string;
+  messages: NurseRequestMessage[];
+};
+
+const RequestMessageList = memo(function RequestMessageList({
+  currentProfileId,
+  messages,
+}: RequestMessageListProps) {
+  if (!messages.length) {
+    return (
+      <View style={styles.emptyThread}>
+        <Text style={styles.emptyThreadTitle}>No replies yet</Text>
+        <Text style={styles.emptyThreadMessage}>
+          Start the conversation about this request.
+        </Text>
+      </View>
+    );
+  }
+
+  return messages.map((message) => (
+    <RequestMessageRow
+      currentProfileId={currentProfileId}
+      key={message.id}
+      message={message}
+    />
+  ));
+});
 
 function RequestMessageComposer({
   canSend,
@@ -156,7 +188,7 @@ function RequestMessageComposer({
 
       <Pressable
         accessibilityRole="button"
-        accessibilityState={{ disabled: !canSend }}
+        accessibilityState={{ busy: isSending, disabled: !canSend }}
         disabled={!canSend}
         onPress={onSend}
         style={({ pressed }) => [
@@ -209,22 +241,10 @@ export function RequestThread({
 
       {!isLoading && !loadError ? (
         <View style={styles.messageList}>
-          {messages.length ? (
-            messages.map((message) => (
-              <RequestMessageRow
-                currentProfileId={currentProfileId}
-                key={message.id}
-                message={message}
-              />
-            ))
-          ) : (
-            <View style={styles.emptyThread}>
-              <Text style={styles.emptyThreadTitle}>No replies yet</Text>
-              <Text style={styles.emptyThreadMessage}>
-                Start the conversation about this request.
-              </Text>
-            </View>
-          )}
+          <RequestMessageList
+            currentProfileId={currentProfileId}
+            messages={messages}
+          />
         </View>
       ) : null}
 

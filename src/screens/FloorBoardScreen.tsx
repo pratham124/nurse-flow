@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { router } from "expo-router";
 import {
   FlatList,
@@ -31,6 +31,10 @@ import {
 } from "../hooks/useResponsiveLayout";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { getShiftCensus, isOccupiedBedState } from "../utils/census";
+import {
+  createFloorBoardLookup,
+  type FloorBoardLookup,
+} from "../utils/floorBoardLookup";
 import { assignmentFlow } from "../utils/workflowFlows";
 import {
   colors,
@@ -113,7 +117,9 @@ type BoardSideSectionProps = {
   side: BoardSide;
 };
 
-type BoardBedProps = BoardBedViewModel;
+type BoardBedProps = BoardBedViewModel & {
+  isWrappedByMoveAction?: boolean;
+};
 
 type FloorBoardListHeaderProps = {
   admittingSideName: string;
@@ -339,25 +345,14 @@ function getAcuityLabel(acuity?: Acuity) {
   }
 }
 
-function getRoomCoverageNurseIds(activeShift: Shift, roomId: string) {
-  return (
-    activeShift.assignmentResult?.roomCoverage.find(
-      (coverage) => coverage.roomId === roomId,
-    )?.nurseIds ?? []
-  );
-}
-
 function getRoomCoverageLabel(
-  activeShift: Shift,
+  lookup: FloorBoardLookup,
   nurseIds: string[],
   occupiedBedCount: number,
 ) {
   const nurseNames =
     nurseIds
-      .map(
-        (nurseId) =>
-          activeShift.nurses.find((nurse) => nurse.id === nurseId)?.name,
-      )
+      .map((nurseId) => lookup.nurseById.get(nurseId)?.name)
       .filter(Boolean) ?? [];
 
   if (nurseNames.length) {
@@ -367,11 +362,9 @@ function getRoomCoverageLabel(
   return occupiedBedCount > 0 ? "Uncovered" : "No occupied beds";
 }
 
-function roomHasRnCoverage(activeShift: Shift, nurseIds: string[]) {
+function roomHasRnCoverage(lookup: FloorBoardLookup, nurseIds: string[]) {
   return nurseIds.some(
-    (nurseId) =>
-      activeShift.nurses.find((nurse) => nurse.id === nurseId)?.licenseType ===
-      "RN",
+    (nurseId) => lookup.nurseById.get(nurseId)?.licenseType === "RN",
   );
 }
 
@@ -416,60 +409,32 @@ function getInlineFlag(flag: Flag): InlineFlagViewModel {
   };
 }
 
-function getBedInlineFlags(activeShift: Shift, bedId: string) {
-  return activeShift.flags
-    .filter((flag) => flag.bedId === bedId)
-    .map(getInlineFlag);
-}
-
-function getRoomInlineFlags(activeShift: Shift, roomId: string) {
-  return activeShift.flags
-    .filter((flag) => flag.roomId === roomId && !flag.bedId)
-    .map(getInlineFlag);
-}
-
-function getNurseInlineFlags(activeShift: Shift, nurseId: string) {
-  return activeShift.flags
-    .filter((flag) => flag.nurseId === nurseId)
-    .map(getInlineFlag);
-}
-
-function getBedAssignment(activeShift: Shift, bedId: string) {
-  const bedAssignment = activeShift.assignmentResult?.bedAssignments.find(
-    (assignment) => assignment.bedId === bedId,
-  );
-
-  return {
-    nurseId: bedAssignment?.nurseId,
-    nurseName: activeShift.nurses.find(
-      (nurse) => nurse.id === bedAssignment?.nurseId,
-    )?.name,
-  };
-}
-
-function getBoardSides(activeShift?: Shift): BoardSide[] {
-  if (!activeShift) {
-    return [];
-  }
-
+function getBoardSides(
+  activeShift: Shift,
+  lookup: FloorBoardLookup,
+): BoardSide[] {
   return activeShift.doctorSides.map((doctorSide) => ({
     id: doctorSide.id,
     name: doctorSide.name,
     admitting: doctorSide.id === activeShift.admittingDoctorSideId,
-    rooms: activeShift.rooms
-      .filter((room) => room.doctorSideId === doctorSide.id)
+    rooms: (lookup.roomsByDoctorSideId.get(doctorSide.id) ?? [])
       .map((room) => {
-        const coverageNurseIds = getRoomCoverageNurseIds(activeShift, room.id);
-        const roomFlags = getRoomInlineFlags(activeShift, room.id);
-        const beds = activeShift.beds
-          .filter((bed) => bed.roomId === room.id)
+        const coverageNurseIds =
+          lookup.roomCoverageNurseIdsByRoomId.get(room.id) ?? [];
+        const roomFlags = (lookup.roomFlagsByRoomId.get(room.id) ?? []).map(
+          getInlineFlag,
+        );
+        const beds = (lookup.bedsByRoomId.get(room.id) ?? [])
           .map((bed): BoardBedViewModel => {
-            const bedState = activeShift.bedStates.find(
-              (shiftBedState) => shiftBedState.bedId === bed.id,
-            );
+            const bedState = lookup.bedStateByBedId.get(bed.id);
             const isOccupied = isOccupiedBedState(bedState);
-            const { nurseId, nurseName } = getBedAssignment(activeShift, bed.id);
-            const bedFlags = getBedInlineFlags(activeShift, bed.id);
+            const nurseId = lookup.assignmentByBedId.get(bed.id)?.nurseId;
+            const nurseName = nurseId
+              ? lookup.nurseById.get(nurseId)?.name
+              : undefined;
+            const bedFlags = (lookup.bedFlagsByBedId.get(bed.id) ?? []).map(
+              getInlineFlag,
+            );
 
             if (!isOccupied) {
               return {
@@ -502,7 +467,7 @@ function getBoardSides(activeShift?: Shift): BoardSide[] {
           id: room.id,
           label: room.label,
           coverage: getRoomCoverageLabel(
-            activeShift,
+            lookup,
             coverageNurseIds,
             occupiedBedCount,
           ),
@@ -510,7 +475,7 @@ function getBoardSides(activeShift?: Shift): BoardSide[] {
           flags: roomFlags,
           hasFlag:
             roomFlags.length > 0 || beds.some((bed) => bed.flags.length > 0),
-          hasRnCoverage: roomHasRnCoverage(activeShift, coverageNurseIds),
+          hasRnCoverage: roomHasRnCoverage(lookup, coverageNurseIds),
           roomHasFlag: roomFlags.length > 0,
         };
       }),
@@ -555,39 +520,25 @@ function getFilteredBoardSides(
     .filter((side) => side.rooms.length > 0);
 }
 
-function getNurseWorkloads(activeShift?: Shift): NurseWorkloadViewModel[] {
-  if (!activeShift) {
-    return [];
-  }
-
+function getNurseWorkloads(
+  activeShift: Shift,
+  lookup: FloorBoardLookup,
+): NurseWorkloadViewModel[] {
   return activeShift.nurses.map((nurse) => {
-    const team = activeShift.assignmentResult?.generatedTeams.find(
-      (generatedTeam) => generatedTeam.nurseIds.includes(nurse.id),
-    );
-    const coveredRoomLabels =
-      activeShift.assignmentResult?.roomCoverage
-        .filter((coverage) => coverage.nurseIds.includes(nurse.id))
-        .map(
-          (coverage) =>
-            activeShift.rooms.find((room) => room.id === coverage.roomId)
-              ?.label,
-        )
-        .filter(Boolean) ?? [];
-    const currentLoad =
-      activeShift.assignmentResult?.bedAssignments.filter(
-        (assignment) => assignment.nurseId === nurse.id,
-      ).length ?? 0;
+    const coveredRoomLabels = lookup.roomLabelsByNurseId.get(nurse.id) ?? [];
+
     return {
       id: nurse.id,
       name: nurse.name,
       licenseType: nurse.licenseType,
       experience: getExperienceLabel(nurse.experienceLevel),
-      team: team?.label ?? "No team yet",
+      team:
+        lookup.generatedTeamLabelByNurseId.get(nurse.id) ?? "No team yet",
       roomCoverage: coveredRoomLabels.length
         ? coveredRoomLabels.join(", ")
         : "No rooms",
-      currentLoad,
-      flags: getNurseInlineFlags(activeShift, nurse.id),
+      currentLoad: lookup.assignedBedCountByNurseId.get(nurse.id) ?? 0,
+      flags: (lookup.nurseFlagsByNurseId.get(nurse.id) ?? []).map(getInlineFlag),
       maxLoad: nurse.maxPatientLoad,
     };
   });
@@ -815,31 +766,68 @@ export default function FloorBoardScreen() {
   const [selectedFilter, setSelectedFilter] = useState<BoardFilter>("All");
   const [selectedMoveBedId, setSelectedMoveBedId] = useState<string>();
   const [selectedNurseId, setSelectedNurseId] = useState<string>();
-  const effectiveShift = activeShift
-    ? {
-        ...activeShift,
-        assignmentResult: effectiveAssignmentResult,
-        flags: effectiveAssignmentFlags,
-      }
-    : undefined;
-  const { occupiedBedCount, totalBedCount } = getShiftCensus(effectiveShift);
+  const effectiveShift = useMemo(
+    () =>
+      activeShift
+        ? {
+            ...activeShift,
+            assignmentResult: effectiveAssignmentResult,
+            flags: effectiveAssignmentFlags,
+          }
+        : undefined,
+    [activeShift, effectiveAssignmentFlags, effectiveAssignmentResult],
+  );
+  const floorBoardLookup = useMemo(
+    () => (effectiveShift ? createFloorBoardLookup(effectiveShift) : undefined),
+    [effectiveShift],
+  );
+  const { occupiedBedCount, totalBedCount } = useMemo(
+    () => getShiftCensus(effectiveShift),
+    [effectiveShift],
+  );
   const admittingDoctorSide = effectiveShift?.doctorSides.find(
     (doctorSide) => doctorSide.id === effectiveShift.admittingDoctorSideId,
   );
-  const activeBoardSides = getFilteredBoardSides(
-    getBoardSides(effectiveShift),
-    selectedFilter,
+  const boardSides = useMemo(
+    () =>
+      effectiveShift && floorBoardLookup
+        ? getBoardSides(effectiveShift, floorBoardLookup)
+        : [],
+    [effectiveShift, floorBoardLookup],
   );
-  const boardListItems: FloorBoardListItem[] = activeBoardSides.map((side) => ({
-    type: "side",
-    side,
-  }));
-  const nurseWorkloads = getNurseWorkloads(effectiveShift);
+  const activeBoardSides = useMemo(
+    () => getFilteredBoardSides(boardSides, selectedFilter),
+    [boardSides, selectedFilter],
+  );
+  const boardListItems = useMemo<FloorBoardListItem[]>(
+    () =>
+      activeBoardSides.map((side) => ({
+        type: "side",
+        side,
+      })),
+    [activeBoardSides],
+  );
+  const nurseWorkloads = useMemo(
+    () =>
+      effectiveShift && floorBoardLookup
+        ? getNurseWorkloads(effectiveShift, floorBoardLookup)
+        : [],
+    [effectiveShift, floorBoardLookup],
+  );
   const effectiveSelectedNurseId = nurseWorkloads.some(
     (nurse) => nurse.id === selectedNurseId,
   )
     ? selectedNurseId
     : nurseWorkloads[0]?.id;
+  const renderBoardSideItem = useCallback(
+    ({ item }: { item: FloorBoardListItem }) => (
+      <BoardSideSection
+        onMoveBed={setSelectedMoveBedId}
+        side={item.side}
+      />
+    ),
+    [],
+  );
 
   return (
     <>
@@ -885,12 +873,7 @@ export default function FloorBoardScreen() {
             />
           }
           onHeaderActionPress={() => router.push("/")}
-          renderItem={({ item }) => (
-            <BoardSideSection
-              onMoveBed={setSelectedMoveBedId}
-              side={item.side}
-            />
-          )}
+          renderItem={renderBoardSideItem}
           subtitle=""
           title={activeShift?.floorName ?? "Floor board"}
         />
@@ -912,7 +895,7 @@ function getFloorBoardItemKey(item: FloorBoardListItem) {
   return `side-${item.side.id}`;
 }
 
-function BoardSideSection({
+const BoardSideSection = memo(function BoardSideSection({
   onMoveBed,
   side,
 }: BoardSideSectionProps) {
@@ -934,14 +917,14 @@ function BoardSideSection({
           {room.beds.map((bed) =>
             bed.state === "assigned" ? (
               <SwipeRevealAction
-                accessibilityLabel={`Move bed ${bed.label}, currently assigned to ${bed.nurse}`}
+                accessibilityLabel={`Move bed ${bed.label}, ${bed.patient}, ${bed.acuity} acuity, currently assigned to ${bed.nurse}`}
                 actionLabel="Move"
                 actionTone="brand"
                 enableAccessibilityReveal
                 key={bed.id}
                 onActionPress={() => onMoveBed(bed.id)}
               >
-                <BoardBed {...bed} />
+                <BoardBed {...bed} isWrappedByMoveAction />
               </SwipeRevealAction>
             ) : (
               <BoardBed key={bed.id} {...bed} />
@@ -951,13 +934,14 @@ function BoardSideSection({
       ))}
     </WorkflowSection>
   );
-}
+});
 
 function BoardBed({
   label,
   patient,
   acuity,
   flags,
+  isWrappedByMoveAction = false,
   nurse,
   state,
 }: BoardBedProps) {
@@ -967,6 +951,12 @@ function BoardBed({
 
   return (
     <View
+      accessibilityLabel={`Bed ${label}, ${patient}, ${isEmpty ? "empty" : `${acuity} acuity`}, ${isUnassigned ? "unassigned" : nurse ? `assigned to ${nurse}` : "not assigned"}`}
+      accessibilityElementsHidden={isWrappedByMoveAction}
+      accessible={!isWrappedByMoveAction}
+      importantForAccessibility={
+        isWrappedByMoveAction ? "no-hide-descendants" : "auto"
+      }
       style={[
         styles.boardBed,
         isEmpty ? styles.emptyBoardBed : null,
@@ -987,6 +977,9 @@ function BoardBed({
           >
             {patient}
           </Text>
+          {!isEmpty ? (
+            <Text style={styles.acuityText}>Acuity: {acuity}</Text>
+          ) : null}
           <InlineFlagList flags={flags} />
         </View>
       </View>
@@ -1270,6 +1263,11 @@ const styles = StyleSheet.create({
     color: colors.neutral.textPrimary,
     fontSize: textSize.sm,
     fontWeight: fontWeight.semibold,
+  },
+  acuityText: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.xs,
+    fontWeight: fontWeight.medium,
   },
   emptyPatientText: {
     color: colors.neutral.textSecondary,
