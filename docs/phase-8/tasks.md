@@ -527,6 +527,11 @@ Manual validation:
 
 ## Manual and Regression Passes
 
+Task 6 execution is in progress. Automated regression, scope, native rotation,
+maximum-text-size, and signed-out accessibility checks are recorded in
+`task-6-regression-pass.md`. Authenticated manual and two-session checks remain
+open and are not marked complete.
+
 ### Task 6.1: Manual Override Pass
 
 Build:
