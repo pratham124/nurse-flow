@@ -48,7 +48,7 @@ No new Phase 8 fields are required.
 
 Purpose: preserve existing issue and swap requests while making their different lifecycles explicit.
 
-Planned optional additions:
+Optional additions:
 
 | Field | Applies To | Purpose |
 | --- | --- | --- |
@@ -60,13 +60,16 @@ Planned optional additions:
 | `swapCompletedAt` | Swap | Server time an accepted swap's assignment change was completed. |
 | `swapCompletedByProfileId` | Swap | Charge profile that completed the assignment change. |
 | `completedOverrideId` | Swap | Manual override that proves the accepted swap changed the effective assignment. |
+| `completedAssignmentChangedLater` | Swap, nurse-scoped response only | Derived marker indicating that the completion override is no longer the bed's active override. It is not stored as shift history. |
 
 Compatibility rules:
 
 - Existing `status: pending | accepted | declined` remains the swap decision field.
 - Accepting a swap does not create a bed assignment change.
 - `status: accepted` with no `completedOverrideId` is displayed as `Accepted — assignment change pending`.
-- `status: accepted` with a valid linked override is displayed as `Completed`.
+- `status: accepted` with a linked override is displayed as `Completed`; if that
+  override is no longer active, it is displayed as `Completed - assignment
+  later changed` without erasing either request's completion history.
 - Declined swaps cannot have completion fields.
 - Existing issue records do not need migration: missing `issueReviewStatus` derives as `open`.
 - Issue review or resolution never changes assignments, patient data, acuity, or flags.
@@ -271,7 +274,9 @@ The following remain local UI state and are not stored in server models:
 
 - A successful override updates the active shift and refreshes affected charge and joined-nurse views through the existing realtime boundary.
 - A successful issue-state, swap-completion, or thread-message write refreshes only authorized request consumers.
-- Existing notification routing may add safe generic event types for a new thread message, issue state change, or completed swap if implementation confirms they are useful.
+- Request-message and meaningful lifecycle writes enqueue safe generic events
+  for the other participant. Foreground realtime remains independent from push
+  delivery.
 - Notification payloads contain routing IDs and generic copy, never message bodies or patient details.
 - Push events remain background awareness; opening them reloads server-fresh state.
 

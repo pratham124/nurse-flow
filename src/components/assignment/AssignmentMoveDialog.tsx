@@ -27,6 +27,7 @@ export type AssignmentMoveDialogProps = {
   bedId?: string;
   effectiveAssignmentResult: AssignmentResult;
   onClose: () => void;
+  relatedSwapRequestId?: string;
   visible: boolean;
 };
 
@@ -127,6 +128,7 @@ export function AssignmentMoveDialog({
   bedId,
   effectiveAssignmentResult,
   onClose,
+  relatedSwapRequestId,
   visible,
 }: AssignmentMoveDialogProps) {
   const {
@@ -211,6 +213,7 @@ export function AssignmentMoveDialog({
         bedId,
         clientMutationId: createLocalId("assignment-move"),
         fromNurseId: preview.fromNurseId,
+        relatedSwapRequestId,
         shiftId: activeShift.id,
         toNurseId: preview.toNurseId,
         warningAcknowledgements: preview.warnings.map((warning) => ({
@@ -267,7 +270,9 @@ export function AssignmentMoveDialog({
         ) : (
           <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             <Text style={styles.instructions}>
-              Choose an eligible nurse, review the resulting loads and warnings, then confirm the move.
+              {relatedSwapRequestId
+                ? "Choose an eligible nurse, review the result, then confirm the move to complete this accepted swap."
+                : "Choose an eligible nurse, review the resulting loads and warnings, then confirm the move."}
             </Text>
 
             <View style={styles.targetList}>

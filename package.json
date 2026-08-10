@@ -11,7 +11,8 @@
     "lint": "expo lint",
     "test:local-id": "tsx --test tests/localId.test.mjs",
     "test:effective-assignment": "tsx --test tests/effectiveAssignment.test.mjs tests/assignmentMovePreview.test.mjs",
-    "test:request-realtime": "tsx --test tests/realtimeWorkspaceRepository.test.mjs"
+    "test:request-realtime": "tsx --test tests/realtimeWorkspaceRepository.test.mjs",
+    "test:request-lifecycle": "tsx --test tests/nurseRequestLifecycle.test.mjs tests/notificationTap.test.mjs"
   },
   "dependencies": {
     "@react-navigation/bottom-tabs": "^7.15.5",

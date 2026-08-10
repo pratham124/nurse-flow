@@ -40,9 +40,13 @@ export type NurseRequestStatus = "pending" | "accepted" | "declined";
 
 export type NurseRequestType = "issue" | "swap";
 
+export type NurseIssueReviewStatus = "open" | "reviewed" | "resolved";
+
 export type NotificationEventType =
   | "issueSubmitted"
   | "swapRequested"
+  | "requestMessageAdded"
+  | "requestStatusChanged"
   | "assignmentUpdated"
   | "admissionAdded"
   | "patientDischarged"
@@ -246,6 +250,15 @@ export interface NurseRequest {
   targetBedId?: string;
   resolvedAt?: string;
   resolutionNote?: string;
+  issueReviewStatus?: NurseIssueReviewStatus;
+  reviewedAt?: string;
+  reviewedByProfileId?: string;
+  issueResolvedAt?: string;
+  issueResolvedByProfileId?: string;
+  swapCompletedAt?: string;
+  swapCompletedByProfileId?: string;
+  completedOverrideId?: string;
+  completedAssignmentChangedLater?: boolean;
 }
 
 export interface NurseRequestMessage {

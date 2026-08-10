@@ -406,7 +406,11 @@ function renderFlagItem({ item }: { item: FlagListItem }) {
 }
 
 export default function FlagsScreen() {
-  const { activeShift, effectiveAssignmentFlags } = useServerWorkspace();
+  const {
+    activeAssignmentOverridesByBedId,
+    activeShift,
+    effectiveAssignmentFlags,
+  } = useServerWorkspace();
   const [activeReviewTab, setActiveReviewTab] = useState<"Flags" | "Requests">("Flags");
   const [selectedFilter, setSelectedFilter] = useState<FlagFilter>("All");
   const [selectedRequestFilter, setSelectedRequestFilter] =
@@ -414,7 +418,10 @@ export default function FlagsScreen() {
   const [selectedRequestStatusFilter, setSelectedRequestStatusFilter] =
     useState<RequestStatusFilter>("All");
   const flags = getFlagRows(activeShift, effectiveAssignmentFlags);
-  const requests = getNurseRequestDisplays(activeShift);
+  const requests = getNurseRequestDisplays(
+    activeShift,
+    activeAssignmentOverridesByBedId,
+  );
   const filteredFlags = filterFlagRows(flags, selectedFilter);
   const filteredRequests = filterNurseRequestRows(
     requests,

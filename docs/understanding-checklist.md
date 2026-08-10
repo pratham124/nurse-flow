@@ -2870,3 +2870,43 @@ For each task, add a dated section with:
   - [ ] Code-specific question or walkthrough completed.
   - [x] Two authorized sessions completed the send/receive manual check.
 - Status: in progress
+
+### 2026-08-08 - Add Request Lifecycle, Swap Completion, and Safe Activity Notifications
+
+- Tasks: Implement Phase 8 Tasks 2.5 through 2.7 without changing the
+  generated assignment algorithm or adding an offline queue.
+- Problem understanding:
+  - [x] Why issue acknowledgement needs its own lifecycle instead of reusing
+    the swap decision status.
+  - [x] Why accepting a swap cannot by itself prove that a bed assignment
+    changed.
+  - [x] Why push payloads must use generic copy and server-authorized routing
+    rather than message bodies or patient details.
+- Solution understanding:
+  - [x] Missing `issueReviewStatus` derives as `open`, and the charge-only RPC
+    owns reviewed, resolved, and reopened transitions.
+  - [x] `relatedSwapRequestId` enters the existing assignment transaction, and
+    the database trigger records completion only after its override is saved.
+  - [x] `getNurseRequestLifecycleState` derives the shared charge/nurse label,
+    including `Completed - assignment later changed` when the saved completion
+    override is no longer active.
+  - [x] `NURSE_REQUEST_LIFECYCLE_STATE` owns the reusable lifecycle values, and
+    `NurseRequestLifecycleState` is derived from that constant object so the
+    runtime values and TypeScript type cannot drift apart.
+  - [x] Message and meaningful lifecycle writes enqueue one generic event for
+    the other participant; enqueue failure is isolated from the request write.
+  - [x] `NotificationTapContext` reloads current authorized charge or
+    nurse-scoped state before opening request detail and otherwise uses safe
+    recovery.
+- Broader context:
+  - [x] Request decisions, assignment changes, conversation messages, realtime
+    refresh, and push awareness stay separate but connect through stable IDs.
+  - [x] Completed request history remains durable even when a later assignment
+    move becomes the active state.
+- Verification:
+  - [x] Human restated current understanding before explanation.
+  - [x] Human explained what proves an accepted swap was actually completed.
+  - [x] Code-specific walkthrough of `getNurseRequestLifecycleState` or the
+    swap-completion trigger completed.
+  - [ ] Hosted two-session lifecycle and notification checks completed.
+- Status: in progress

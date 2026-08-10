@@ -24,6 +24,7 @@ import {
   textSize,
 } from "../theme/tokens";
 import type { JoinedNurseAssignmentView } from "../types/models";
+import { getNurseRequestLifecycleLabel } from "../utils/nurseRequestLifecycle";
 
 type AssignmentSummaryProps = {
   assignmentView: JoinedNurseAssignmentView;
@@ -113,15 +114,7 @@ function getRequestUpdateTitle(
 ) {
   const requestTypeLabel = request.type === "swap" ? "Swap request" : "Issue";
 
-  if (request.status === "pending") {
-    return `${requestTypeLabel} waiting for charge`;
-  }
-
-  if (request.status === "accepted") {
-    return `${requestTypeLabel} accepted by charge`;
-  }
-
-  return `${requestTypeLabel} declined by charge`;
+  return `${requestTypeLabel}: ${getNurseRequestLifecycleLabel(request)}`;
 }
 
 function hasDuplicatePendingRequest(

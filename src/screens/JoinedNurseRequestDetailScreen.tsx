@@ -26,6 +26,11 @@ import {
   textSize,
 } from "../theme/tokens";
 import type { JoinedNurseAssignmentView, NurseRequest } from "../types/models";
+import {
+  getNurseRequestLifecycleLabel,
+  getNurseRequestLifecycleState,
+  NURSE_REQUEST_LIFECYCLE_STATE,
+} from "../utils/nurseRequestLifecycle";
 
 type DetailRowProps = {
   label: string;
@@ -47,18 +52,6 @@ function getRequestTitle(request?: NurseRequest) {
   }
 
   return request.type === "swap" ? "Swap request" : "Issue request";
-}
-
-function getRequestStatusLabel(request: NurseRequest) {
-  if (request.status === "accepted") {
-    return "Accepted";
-  }
-
-  if (request.status === "declined") {
-    return "Declined";
-  }
-
-  return "Waiting for charge";
 }
 
 function getCreatedAtLabel(createdAt: string) {
@@ -128,6 +121,12 @@ export default function JoinedNurseRequestDetailScreen() {
   const request = assignmentView?.requestHistory.find(
     (requestItem) => requestItem.id === selectedRequestId,
   );
+  const lifecycleState = request
+    ? getNurseRequestLifecycleState(request)
+    : undefined;
+  const wasSwapAssignmentChangedLater =
+    lifecycleState ===
+    NURSE_REQUEST_LIFECYCLE_STATE.SWAP_COMPLETED_ASSIGNMENT_CHANGED;
   const currentProfileId =
     authState.status === "signed_in" ? authState.profile.id : "";
   const thread = useRequestThread({
@@ -212,7 +211,7 @@ export default function JoinedNurseRequestDetailScreen() {
               <View style={styles.summaryCard}>
                 <View style={styles.chipRow}>
                   <SummaryChip label={getRequestTitle(request)} />
-                  <SummaryChip label={getRequestStatusLabel(request)} />
+                  <SummaryChip label={getNurseRequestLifecycleLabel(request)} />
                 </View>
                 <DetailRow
                   label="Created"
@@ -222,10 +221,22 @@ export default function JoinedNurseRequestDetailScreen() {
                   label="Bed context"
                   value={getBedContext(assignmentView, request)}
                 />
+                {request.swapCompletedAt ? (
+                  <DetailRow
+                    label="Assignment completed"
+                    value={getCreatedAtLabel(request.swapCompletedAt)}
+                  />
+                ) : null}
                 <Text style={styles.readOnlyNote}>
                   Request status is managed by charge. Messages do not change
                   assignments or request status.
                 </Text>
+                {wasSwapAssignmentChangedLater ? (
+                  <Text style={styles.lifecycleNote}>
+                    The swap was completed, but a later move changed that bed
+                    assignment again.
+                  </Text>
+                ) : null}
               </View>
 
               <View style={styles.originalMessageCard}>
@@ -333,6 +344,12 @@ const styles = StyleSheet.create({
   readOnlyNote: {
     color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
+    lineHeight: 18,
+  },
+  lifecycleNote: {
+    color: colors.status.amber800,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.medium,
     lineHeight: 18,
   },
   originalMessageCard: {

@@ -23,6 +23,7 @@ import {
   saveServerPreviousShiftSnapshot,
   submitJoinedNurseIssueRequest as submitJoinedNurseIssueRequestToServer,
   submitJoinedNurseSwapRequest as submitJoinedNurseSwapRequestToServer,
+  updateShiftNurseIssueStatus as updateShiftNurseIssueStatusOnServer,
   type ConfirmManualAssignmentOverrideInput,
   type ConfirmManualAssignmentOverrideResult,
   type RerunActiveShiftAssignmentResult,
@@ -42,6 +43,7 @@ import type {
   FloorTemplate,
   FloorTemplateRecord,
   JoinedNurseAssignmentView,
+  NurseIssueReviewStatus,
   NurseRequestStatus,
   PreviousShiftSnapshot,
   RealtimeConnectionState,
@@ -115,6 +117,10 @@ type ServerWorkspaceContextValue = {
   submitJoinedNurseSwapRequest: (
     sourceBedId: string,
     message: string,
+  ) => Promise<void>;
+  updateNurseIssueStatus: (
+    requestId: string,
+    nextStatus: NurseIssueReviewStatus,
   ) => Promise<void>;
   workspaceState: ServerWorkspaceState;
 };
@@ -924,6 +930,44 @@ export function ServerWorkspaceProvider({
     [applyWorkspace, authState],
   );
 
+  const updateNurseIssueStatus = useCallback(
+    async (requestId: string, nextStatus: NurseIssueReviewStatus) => {
+      if (
+        authState.status !== "signed_in" ||
+        authState.profile.role !== "charge_nurse"
+      ) {
+        throw new Error("Sign in as charge to update issue requests.");
+      }
+
+      const supabase = getSupabaseClient();
+
+      if (!supabase) {
+        throw new Error("Supabase is not configured yet.");
+      }
+
+      setSaveErrorMessage("");
+      setSaveStatus("saving");
+
+      try {
+        await updateShiftNurseIssueStatusOnServer(supabase, {
+          nextStatus,
+          requestId,
+        });
+        const workspace = await loadServerWorkspace(supabase, authState.profile);
+
+        applyWorkspace(workspace);
+        setSaveStatus("saved");
+      } catch (error) {
+        setSaveErrorMessage(
+          getErrorMessage(error, "Issue status could not be updated."),
+        );
+        setSaveStatus("error");
+        throw error;
+      }
+    },
+    [applyWorkspace, authState],
+  );
+
   const submitJoinedNurseIssueRequest = useCallback(
     async (message: string) => {
       if (authState.status !== "signed_in") {
@@ -1029,6 +1073,7 @@ export function ServerWorkspaceProvider({
       startActiveShift,
       submitJoinedNurseIssueRequest,
       submitJoinedNurseSwapRequest,
+      updateNurseIssueStatus,
       workspaceState,
     }),
     [
@@ -1050,6 +1095,7 @@ export function ServerWorkspaceProvider({
       startActiveShift,
       submitJoinedNurseIssueRequest,
       submitJoinedNurseSwapRequest,
+      updateNurseIssueStatus,
       workspaceState,
     ],
   );

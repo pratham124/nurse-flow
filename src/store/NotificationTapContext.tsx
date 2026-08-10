@@ -145,7 +145,11 @@ export function NotificationTapProvider({
       }
 
       try {
-        if (payload.targetRoute === "joinedNurseAssignment") {
+        if (
+          payload.targetRoute === "joinedNurseAssignment" ||
+          (payload.targetRoute === "requestDetail" &&
+            Boolean(payload.recipientAccessId))
+        ) {
           const targetState = await loadJoinedNurseNotificationTargetState(
             supabase,
             profile,
@@ -164,12 +168,29 @@ export function NotificationTapProvider({
             return;
           }
 
+          if (
+            payload.targetRoute === "requestDetail" &&
+            !targetState.assignmentView.requestHistory.some(
+              (request) => request.id === payload.relatedRequestId,
+            )
+          ) {
+            setRecoveryReason("request_missing");
+            return;
+          }
+
           await retryLoadJoinedNurseAccess();
 
           if (shouldFinish) {
             setPendingPayload(undefined);
             setRecoveryReason("idle");
-            router.replace("/regular-nurse-workspace");
+            if (payload.targetRoute === "requestDetail") {
+              router.replace({
+                pathname: "/joined-request-detail",
+                params: { requestId: payload.relatedRequestId! },
+              });
+            } else {
+              router.replace("/regular-nurse-workspace");
+            }
           }
           return;
         }

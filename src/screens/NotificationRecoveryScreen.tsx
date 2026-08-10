@@ -42,7 +42,7 @@ const recoveryCopy: Record<
   },
   request_missing: {
     message:
-      "That request is no longer available in the current shift. Open Flags to review the latest requests.",
+      "That request is no longer available in the current shift. Return to your current workspace to review the latest requests.",
     title: "Request unavailable",
   },
   shift_ended: {

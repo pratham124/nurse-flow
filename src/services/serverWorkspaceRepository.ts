@@ -9,6 +9,7 @@ import type {
   JoinedNurseAssignedBed,
   JoinedNurseAssignmentView,
   ManualAssignmentOverride,
+  NurseIssueReviewStatus,
   OverrideWarningAcknowledgementInput,
   NurseRequestStatus,
   PreviousShiftSnapshot,
@@ -136,6 +137,11 @@ type SubmitJoinedNurseSwapRequestInput = {
 
 type ResolveShiftNurseSwapRequestInput = {
   nextStatus: Extract<NurseRequestStatus, "accepted" | "declined">;
+  requestId: string;
+};
+
+type UpdateShiftNurseIssueStatusInput = {
+  nextStatus: NurseIssueReviewStatus;
   requestId: string;
 };
 
@@ -813,6 +819,20 @@ export async function resolveShiftNurseSwapRequest(
   const { error } = await supabase.rpc("resolve_shift_nurse_swap_request", {
     next_status: request.nextStatus,
     request_id: request.requestId,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+export async function updateShiftNurseIssueStatus(
+  supabase: SupabaseClient,
+  request: UpdateShiftNurseIssueStatusInput,
+) {
+  const { error } = await supabase.rpc("update_shift_nurse_issue_status", {
+    p_next_status: request.nextStatus,
+    p_request_id: request.requestId,
   });
 
   if (error) {

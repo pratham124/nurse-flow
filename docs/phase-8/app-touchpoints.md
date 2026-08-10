@@ -270,7 +270,7 @@ Performance risk:
 
 Task 5.2 must measure a representative large floor and long thread before Task 5.3 changes list structure or adds a list library. The active bed-keyed override projection prevents override history from becoming part of routine render cost.
 
-## Likely Files and Resources Affected Later
+## Files and Resources Used by Phase 8
 
 ### Existing app files
 
@@ -291,13 +291,17 @@ Task 5.2 must measure a representative large floor and long thread before Task 5
 - `src/components/workflow/WorkflowListScreen.tsx`
 - `src/app/charge-request-detail.tsx` and `src/app/joined-request-detail.tsx`
 
-### Likely new focused files
+### Focused Phase 8 files
 
 - `src/utils/effectiveAssignment.ts`
+- `src/utils/nurseRequestLifecycle.ts`
 - A manual-override repository or focused functions in the existing server workspace repository.
 - A request-thread repository and request-scoped subscription helper.
 - A small responsive layout helper or primitive if Task 4.1 justifies it.
 - A Phase 8 Supabase setup note for override history, request messages, authorization, indexes, transactions, and realtime behavior.
+- `docs/phase-8/supabase-request-lifecycle-setup.md` for issue transitions,
+  atomic swap completion, safe request notifications, and nurse-scoped derived
+  completion state.
 
 ### Existing server documentation that later implementation must reconcile
 

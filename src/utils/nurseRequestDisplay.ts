@@ -1,16 +1,31 @@
-import type { NurseRequest, Shift } from "../types/models";
+import type {
+  ActiveAssignmentOverridesByBedId,
+  NurseIssueReviewStatus,
+  NurseRequest,
+  Shift,
+} from "../types/models";
+import {
+  getIssueReviewStatus,
+  getNurseRequestLifecycleLabel,
+  getNurseRequestLifecycleState,
+  type NurseRequestLifecycleState,
+} from "./nurseRequestLifecycle";
 import { getShiftNurseRequests } from "./nurseRequests";
 
 export type NurseRequestDisplay = {
   bedContext: string;
   createdAtText: string;
   id: string;
+  issueReviewStatus?: NurseIssueReviewStatus;
+  lifecycleState: NurseRequestLifecycleState;
   message: string;
   requestStatus: NurseRequest["status"];
   requestType: NurseRequest["type"];
   requesterName: string;
   resolvedAtText?: string;
+  sourceBedId?: string;
   statusLabel: string;
+  swapCompletedAtText?: string;
   typeLabel: string;
 };
 
@@ -18,25 +33,37 @@ export function getRequestTypeLabel(request: NurseRequest) {
   return request.type === "swap" ? "Swap request" : "Issue request";
 }
 
-export function getRequestStatusLabel(request: NurseRequest) {
-  return request.status.charAt(0).toUpperCase() + request.status.slice(1);
+export function getRequestStatusLabel(
+  request: NurseRequest,
+  activeAssignmentOverridesByBedId?: ActiveAssignmentOverridesByBedId,
+) {
+  return getNurseRequestLifecycleLabel(
+    request,
+    activeAssignmentOverridesByBedId,
+  );
 }
 
 export function getNurseRequestDisplays(
   activeShift?: Shift,
+  activeAssignmentOverridesByBedId?: ActiveAssignmentOverridesByBedId,
 ): NurseRequestDisplay[] {
   if (!activeShift) {
     return [];
   }
 
   return getShiftNurseRequests(activeShift).map((request) =>
-    getNurseRequestDisplay(activeShift, request),
+    getNurseRequestDisplay(
+      activeShift,
+      request,
+      activeAssignmentOverridesByBedId,
+    ),
   );
 }
 
 export function getNurseRequestDisplayById(
   activeShift: Shift | undefined,
   requestId: string | undefined,
+  activeAssignmentOverridesByBedId?: ActiveAssignmentOverridesByBedId,
 ) {
   if (!activeShift || !requestId) {
     return undefined;
@@ -46,17 +73,30 @@ export function getNurseRequestDisplayById(
     (shiftRequest) => shiftRequest.id === requestId,
   );
 
-  return request ? getNurseRequestDisplay(activeShift, request) : undefined;
+  return request
+    ? getNurseRequestDisplay(
+        activeShift,
+        request,
+        activeAssignmentOverridesByBedId,
+      )
+    : undefined;
 }
 
 function getNurseRequestDisplay(
   activeShift: Shift,
   request: NurseRequest,
+  activeAssignmentOverridesByBedId?: ActiveAssignmentOverridesByBedId,
 ): NurseRequestDisplay {
   return {
     bedContext: getRequestBedContext(activeShift, request),
     createdAtText: formatRequestTimestamp(request.createdAt),
     id: request.id,
+    issueReviewStatus:
+      request.type === "issue" ? getIssueReviewStatus(request) : undefined,
+    lifecycleState: getNurseRequestLifecycleState(
+      request,
+      activeAssignmentOverridesByBedId,
+    ),
     message: request.message,
     requestStatus: request.status,
     requestType: request.type,
@@ -64,7 +104,14 @@ function getNurseRequestDisplay(
     resolvedAtText: request.resolvedAt
       ? formatRequestTimestamp(request.resolvedAt)
       : undefined,
-    statusLabel: getRequestStatusLabel(request),
+    sourceBedId: request.sourceBedId,
+    statusLabel: getRequestStatusLabel(
+      request,
+      activeAssignmentOverridesByBedId,
+    ),
+    swapCompletedAtText: request.swapCompletedAt
+      ? formatRequestTimestamp(request.swapCompletedAt)
+      : undefined,
     typeLabel: getRequestTypeLabel(request),
   };
 }

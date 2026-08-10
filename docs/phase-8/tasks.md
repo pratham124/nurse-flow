@@ -310,7 +310,10 @@ Manual validation:
 - Back returns to the nurse-scoped assignment.
 - TypeScript and lint pass.
 
-### Task 2.5: Add Issue Reviewed, Resolved, and Reopened States
+### In Progress Task 2.5: Add Issue Reviewed, Resolved, and Reopened States
+
+Status: implementation and local validation complete; hosted Supabase setup,
+two-session manual validation, and understanding checkpoint remain.
 
 Story coverage: US4, US8
 
@@ -329,7 +332,10 @@ Manual validation:
 - Assignment data remains byte-for-byte unchanged by lifecycle actions where practical to verify.
 - TypeScript, targeted tests, and lint pass.
 
-### Task 2.6: Add Accepted-Swap Completion State
+### In Progress Task 2.6: Add Accepted-Swap Completion State
+
+Status: implementation and local validation complete; hosted Supabase setup,
+two-session manual validation, and understanding checkpoint remain.
 
 Story coverage: US5, US8
 
@@ -350,7 +356,10 @@ Manual validation:
 - Reversing the same bed through a later completed request preserves both request histories while only the newest override remains active.
 - TypeScript, targeted tests, and lint pass.
 
-### Task 2.7: Add Safe Request-Activity Notifications
+### In Progress Task 2.7: Add Safe Request-Activity Notifications
+
+Status: implementation and local validation complete; hosted Supabase setup,
+notification delivery validation, and understanding checkpoint remain.
 
 Story coverage: US3, US4, US5, US8
 
