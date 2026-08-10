@@ -2997,3 +2997,44 @@ For each task, add a dated section with:
     interactive targets at 44 points or taller without app-origin errors.
   - [ ] Native accessibility and device-interaction checks passed.
 - Status: verified
+
+### 2026-08-10 - Plan Phase 9 Production Assignment Optimizer
+
+- Task: Create the five requested Phase 9 planning documents without changing
+  app, backend, schema, dependency, configuration, or test code.
+- Problem understanding:
+  - [x] Why the Phase 1 phone generator can strand globally usable capacity.
+  - [x] Why Phase 9 must replace baseline generation without replacing the
+    existing `AssignmentResult` and Phase 8 manual-override boundary.
+  - [x] Why the Python optimizer must run as a separately deployed service
+    instead of being imported into the Expo app.
+- Solution understanding:
+  - [x] `docs/phase-9/` defines user stories, data contracts, mobile behavior,
+    screen states, and small ordered implementation tasks.
+  - [x] Expo calls a separately deployed Python/OR-Tools service; Supabase owns
+    the user-authorized prepare action and service-authorized atomic finalization.
+  - [x] Hard constraints protect max load, red-bed RN eligibility,
+    occupied-bed-only assignment, and coverage eligibility.
+  - [x] Lexicographic priorities minimize unassigned beds before acuity load,
+    patient count, and stable tie-breaks.
+  - [x] Each successful run gets a new server-generated result ID, while stale
+    or failed runs preserve the previous baseline and active manual moves.
+- Broader context:
+  - [x] Existing boards, flags, realtime refresh, notifications, and nurse-
+    scoped reads can consume the optimizer result without parallel models.
+  - [x] AI, EHR/EMR, automated acuity, multi-hospital tools, handoff notes,
+    analytics, solver settings UI, and offline writes remain outside Phase 9.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained through the concrete Expo, Python/OR-Tools, and
+    Supabase prepare/finalize flow.
+  - [x] Human identified that finalization must reject an older revision because
+    someone may have updated an optimizer input during calculation.
+  - [x] Human correctly predicted that a timed-out rerun preserves the existing
+    assignment result and active manual overrides.
+  - [x] Human identified security as a reason to reload Supabase after success;
+    clarified that the reload also confirms the exact committed source of truth.
+  - [x] Human identified `AssignmentResult` as the compatibility contract that
+    existing Phase 1-8 consumers continue to use.
+  - [x] Document-specific question or walkthrough completed.
+- Status: verified
