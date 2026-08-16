@@ -3122,3 +3122,45 @@ For each task, add a dated section with:
   - [ ] Maximum-floor benchmark report attached after solver implementation.
 - Status: in progress - architecture document written; teaching checkpoint and
   the later implementation-dependent benchmark remain pending.
+
+### 2026-08-15 - Confirm Current Phase 9 Assignment Touchpoints
+
+- Task: Complete the code and server-boundary trace for Phase 9 Task 0.4
+  without changing app behavior, database functions, schemas, dependencies,
+  configuration, or tests.
+- Problem understanding:
+  - [x] Why the current first assignment and rerun calculate the result on the
+    phone but do not use the same server write boundary.
+  - [x] Why accepting a complete client `nextShift` is not an acceptable
+    production optimizer trust boundary.
+  - [x] Why a successful rerun must save the new baseline and supersede active
+    overrides atomically.
+- Solution understanding:
+  - [x] How `AssignmentReviewScreen` currently branches from local generation
+    into the broad first-run save or focused rerun RPC.
+  - [x] Where current baseline IDs are created, checked, and stored, and why
+    Phase 9 needs a fresh opaque ID for each successful run.
+  - [x] How `getEffectiveAssignmentResult` overlays active moves without
+    mutating the saved baseline, generated teams, room coverage, or result ID.
+  - [x] Why effective flags are regenerated after workspace load while saved
+    `shift.flags` describes the committed baseline.
+  - [x] How Realtime signals cause charge and joined-nurse refetches without
+    broadcasting assignment or patient data.
+  - [x] Where server-side notification comparison observes committed baseline
+    changes and why failed or stale solves must write nothing.
+- Broader context:
+  - [x] Which current files and server functions Phase 9 changes, and which
+    board, manual-move, joined-nurse, Realtime, and notification contracts it
+    preserves.
+  - [x] Why unrelated generic `saveActiveShift` callers must not be routed
+    through the optimizer.
+  - [x] Why the standalone Phase 8 manual-move notification caveat remains a
+    separate integration/regression concern rather than a hidden Task 0.4
+    behavior change.
+- Verification:
+  - [x] Human restated current understanding before explanation.
+  - [x] Gaps were explained.
+  - [x] Code/document-specific question completed.
+  - [x] First-run, rerun, and baseline/effective manual traces completed.
+  - [x] Document-only diff and touchpoint reference checks passed.
+- Status: verified

@@ -124,7 +124,7 @@ Task artifact:
 
 - `docs/phase-9/python-service-boundary.md`
 
-### Task 0.4: Confirm Current Assignment Touchpoints
+### Done Task 0.4: Confirm Current Assignment Touchpoints
 
 Story coverage: US1, US5-US7
 
@@ -144,6 +144,10 @@ Manual validation:
 - Trace rerun through baseline checking and active override supersession.
 - Explain where the generated baseline ends and Phase 8 effective assignment
   begins.
+
+Task artifact:
+
+- `docs/phase-9/assignment-touchpoints.md`
 
 ## Optimizer Contract and Core
 
