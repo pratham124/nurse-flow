@@ -3044,42 +3044,81 @@ For each task, add a dated section with:
 - Task: Complete the specification and manual review for Phase 9 Task 0.2
   without adding runtime, dependency, schema, configuration, or test code.
 - Problem understanding:
-  - [ ] Why the optimizer needs one frozen definition for participating beds,
+  - [x] Why the optimizer needs one frozen definition for participating beds,
     dynamic team count, coverage, side guidance, ordering, objectives, and
     outcomes before solver implementation.
   - [x] Why minimizing unassigned occupied beds must outrank every workload,
     team-balance, side-guidance, and deterministic preference.
-  - [ ] Why side-based maximums remain soft guidance while each nurse's
+  - [x] Why side-based maximums remain soft guidance while each nurse's
     `maxPatientLoad` is a hard constraint.
 - Solution understanding:
-  - [ ] How exact staged solves fix each proven optimum before starting the
+  - [x] How exact staged solves fix each proven optimum before starting the
     next objective.
   - [x] Why `FEASIBLE` at the deadline is a timeout rather than a committable
     result, while an optimal understaffed result may still contain unassigned
     beds.
-  - [ ] How canonical ordinals, per-bed owner fixing, and per-nurse team fixing
+  - [x] How canonical ordinals, per-bed owner fixing, and per-nurse team fixing
     make equal aggregate solutions deterministic.
-  - [ ] Why room coverage is projected from the room's selected team and why
+  - [x] Why room coverage is projected from the room's selected team and why
     nurse experience has two narrow uses: an otherwise-equal red-bed owner tie
     and equal category distribution across otherwise-equal teams.
   - [x] Why every occupied room selects exactly one generated team, while
     multiple nurses from that same team may split the room's beds.
   - [x] How the dynamic team formula grows beyond two teams while keeping team
     membership counts within one nurse of each other.
-  - [ ] How `optimal`, `infeasible_input`, `timed_out`, and
+  - [x] How `optimal`, `infeasible_input`, `timed_out`, and
     `internal_failure` differ.
 - Broader context:
-  - [ ] Why the existing `AssignmentResult` and manual-override baseline
+  - [x] Why the existing `AssignmentResult` and manual-override baseline
     contracts remain unchanged.
-  - [ ] Why the 400-bed/40-nurse ceiling still requires a production-like
+  - [x] Why the 400-bed/40-nurse ceiling still requires a production-like
     benchmark during Task 0.3.
-  - [ ] Why Task 0.2 adds no Python service, OR-Tools package, endpoint, schema,
+  - [x] Why Task 0.2 adds no Python service, OR-Tools package, endpoint, schema,
     or mobile behavior.
 - Verification:
-  - [ ] Human restated understanding first.
-  - [ ] Gaps were explained.
-  - [ ] Quiz or document walkthrough completed.
-- Status: in progress — correctly explained unassigned-bed priority, the
-  10-nurse team split, strict one-team-per-occupied-room coverage, and why a
-  merely feasible solver result cannot commit; hard max load versus soft side
-  guidance and the remaining sections are still being verified.
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [x] Quiz or document walkthrough completed.
+- Status: verified
+
+### 2026-08-15 - Document the Phase 9 Python Service Boundary
+
+- Task: Complete the architecture and deployment specification for Phase 9
+  Task 0.3 without adding Python, OR-Tools, schema, endpoint, configuration, or
+  mobile runtime code.
+- Problem understanding:
+  - [x] Why Expo cannot import the OR-Tools Python package and why the solver
+    needs its own bounded backend runtime.
+  - [x] Why Cloud Run is the current best-fit managed-container host, what it
+    costs operationally, and when AWS or Azure would be the better choice.
+  - [x] Why a valid Supabase JWT proves identity but the prepare action must
+    separately prove active-shift ownership.
+  - [x] Why the maximum-floor ceiling remains provisional until the implemented
+    solver passes a production-like benchmark.
+- Solution understanding:
+  - [ ] How the single `POST /v1/assignment-runs` route distinguishes an
+    initial run from a rerun using the expected baseline ID.
+  - [ ] How the user bearer token is verified, forwarded only to prepare, and
+    then discarded without being stored or logged.
+  - [ ] Why only the server-secret finalization transaction may save an
+    optimizer result, and why a normal app user cannot invent one.
+  - [ ] Why the service uses one Uvicorn worker, Cloud Run concurrency one, and
+    CP-SAT `num_search_workers = 1`.
+  - [ ] How the 70-second internal deadline, 75-second host timeout, and one
+    shared 50-second solve budget prevent a late partial result from committing.
+  - [ ] How an immutable container revision and traffic rollback restore the
+    previous service without changing an existing assignment baseline.
+- Broader context:
+  - [ ] Why the app receives only the optimizer base URL and remains unaware of
+    Python modules, solver variables, and the finalization credential.
+  - [ ] Why Supabase remains the source of truth and the app reloads it after a
+    successful action instead of trusting the endpoint response as the board.
+  - [ ] Why Task 0.3 freezes the benchmark method but cannot honestly record a
+    passing result before the later solver implementation exists.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained.
+  - [ ] Code/document-specific question completed.
+  - [ ] Maximum-floor benchmark report attached after solver implementation.
+- Status: in progress - architecture document written; teaching checkpoint and
+  the later implementation-dependent benchmark remain pending.

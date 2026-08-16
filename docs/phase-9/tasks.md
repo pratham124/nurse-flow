@@ -47,10 +47,7 @@ Manual validation:
 - Confirm the five requested planning files exist.
 - Confirm no runtime, dependency, configuration, schema, or test code changed.
 
-### Task 0.2: Freeze the Optimizer Rules
-
-Status: specification written and manually reviewed; understanding checkpoint
-pending before this task can be marked done.
+### Done Task 0.2: Freeze the Optimizer Rules
 
 Story coverage: US2-US4
 
@@ -81,7 +78,10 @@ Task artifact:
 
 - `docs/phase-9/optimizer-rules.md`
 
-### Task 0.3: Document the Python Service and Deployment Boundary
+### Done Task 0.3: Document the Python Service and Deployment Boundary
+
+Status: boundary specification written; maximum-floor benchmark execution and
+understanding checkpoint remain pending before this task can be marked done.
 
 Story coverage: US1, US4, US6, US7
 
@@ -119,6 +119,10 @@ Official references to recheck during this task:
   https://developers.google.com/optimization/install
 - Supabase JWT verification:
   https://supabase.com/docs/guides/auth/jwts
+
+Task artifact:
+
+- `docs/phase-9/python-service-boundary.md`
 
 ### Task 0.4: Confirm Current Assignment Touchpoints
 

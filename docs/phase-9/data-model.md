@@ -13,6 +13,10 @@ baseline, and active manual overrides remain a separate bed-keyed projection.
 Phase 9 uses a separate Python assignment-optimizer service with the official
 OR-Tools Python package.
 
+The concrete FastAPI, Cloud Run, authentication, credential, resource,
+deadline, benchmark, deploy, and rollback choices are frozen in
+`docs/phase-9/python-service-boundary.md`.
+
 ```text
 Expo app
   -> authenticated Python optimizer endpoint

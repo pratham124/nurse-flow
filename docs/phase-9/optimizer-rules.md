@@ -287,8 +287,8 @@ runtime configuration, and deadline, the decision content must match:
 - all objective values.
 
 Canonical per-bed and per-nurse stages make equal aggregate optima unique. The
-future service must also use the pinned solver and deterministic runtime
-configuration chosen in Task 0.3.
+service must also use the pinned Python 3.13.14 and OR-Tools 9.15.6755 runtime,
+one CP-SAT search worker, and fixed seed chosen in Task 0.3.
 
 Opaque database identity is intentionally different from decision content.
 Every successful run receives a new assignment result ID and new child IDs,
@@ -312,9 +312,11 @@ participating bed should always be feasible. Consequently, solver-level
 `INFEASIBLE` indicates a model or implementation defect; it is not a normal
 understaffing result.
 
-Task 0.3 will freeze the numeric service and solver deadlines plus deployment
-resource settings. Whatever values it chooses must enforce one total deadline
-across all stages rather than restarting a full allowance at each stage.
+Task 0.3 freezes a 70-second internal request deadline inside a 75-second host
+timeout, with at most 50 seconds shared by normalization, all solve stages, and
+output validation. The allowance is one total budget rather than a fresh 50
+seconds for each stage. See `docs/phase-9/python-service-boundary.md` for the
+full resource and benchmark contract.
 
 ## Hand-Worked Acceptance Scenarios
 
