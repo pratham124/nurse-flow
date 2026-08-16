@@ -60,7 +60,9 @@ Nurse → generated Balanced Team → generated Room Coverage → Beds
 Each room belongs to one doctor side
 Nurses receive room coverage during shift setup from a deterministic local room-assignment step
 A nurse is first placed into a generated balanced team, and teams can cover rooms on one or both doctor sides as needed
-More than one nurse can have generated coverage for the same room when needed
+Each occupied room receives coverage from exactly one generated team
+More than one nurse from that same team can have generated coverage for the room when needed
+When higher assignment priorities tie, generated teams spread RN coverage and experienced, mid, and new-grad nurses as evenly as possible without treating experience as a combined clinical strength score
 Final patient responsibility is assigned at the bed level, not the room level
 Bed eligibility check: bed's room must be in the nurse's generated room coverage
 

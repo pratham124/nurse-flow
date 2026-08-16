@@ -227,7 +227,7 @@ server shift. This model is not stored as a second shift record.
 | Floor order | Stable doctor-side, room, and bed indices. |
 | Nurses | Stable nurse index, ID, license, experience rank, and hard max load. |
 | Occupied beds | Bed ID, room ID, doctor-side ID, stable index, acuity, and integer acuity weight. |
-| Teams | Existing supported team count and stable Team A/Team B identity rules, with the one-nurse edge case. |
+| Teams | Dynamic stable team count from the frozen optimizer rules: one team for one nurse; otherwise `max(2, ceil(nurse count / 4))`, with alphabetical identities and evenly bounded membership sizes. |
 | Side guidance | Admitting side and current admitting/non-admitting load ranges used for compatible preferences and flags, not as a replacement for hard max load. |
 
 Normalization rules:
@@ -251,8 +251,9 @@ Normalization rules:
 - Empty beds have no assignment.
 - A nurse's assigned-bed count never exceeds `maxPatientLoad`.
 - Red beds can be assigned only to RNs.
+- Every occupied room is covered by exactly one generated team.
 - A saved bed assignment implies generated room coverage for the same nurse and
-  room.
+  room, and that nurse belongs to the room's one selected team.
 - Every nurse appears in exactly one generated team.
 - Generated team and room-coverage relationships use only IDs from the current
   shift.
@@ -273,7 +274,9 @@ mathematically proven weights:
    experienced-RN, mid-RN, new-grad-RN order for otherwise equal red-bed choices.
 
 Later objectives may never worsen an earlier optimum. Exact team-balance,
-coverage-breadth, and side-guidance tie-break details must be frozen in the
+including equal distribution of the three experience categories without a
+combined strength score, room-to-team coverage, and side-guidance tie-break
+details must be frozen in the
 Phase 9 optimizer rules task before implementation; they may refine only equal
 solutions and may not outrank the four roadmap priorities.
 

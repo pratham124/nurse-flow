@@ -3038,3 +3038,48 @@ For each task, add a dated section with:
     existing Phase 1-8 consumers continue to use.
   - [x] Document-specific question or walkthrough completed.
 - Status: verified
+
+### 2026-08-15 - Freeze the Phase 9 Optimizer Rules
+
+- Task: Complete the specification and manual review for Phase 9 Task 0.2
+  without adding runtime, dependency, schema, configuration, or test code.
+- Problem understanding:
+  - [ ] Why the optimizer needs one frozen definition for participating beds,
+    dynamic team count, coverage, side guidance, ordering, objectives, and
+    outcomes before solver implementation.
+  - [x] Why minimizing unassigned occupied beds must outrank every workload,
+    team-balance, side-guidance, and deterministic preference.
+  - [ ] Why side-based maximums remain soft guidance while each nurse's
+    `maxPatientLoad` is a hard constraint.
+- Solution understanding:
+  - [ ] How exact staged solves fix each proven optimum before starting the
+    next objective.
+  - [x] Why `FEASIBLE` at the deadline is a timeout rather than a committable
+    result, while an optimal understaffed result may still contain unassigned
+    beds.
+  - [ ] How canonical ordinals, per-bed owner fixing, and per-nurse team fixing
+    make equal aggregate solutions deterministic.
+  - [ ] Why room coverage is projected from the room's selected team and why
+    nurse experience has two narrow uses: an otherwise-equal red-bed owner tie
+    and equal category distribution across otherwise-equal teams.
+  - [x] Why every occupied room selects exactly one generated team, while
+    multiple nurses from that same team may split the room's beds.
+  - [x] How the dynamic team formula grows beyond two teams while keeping team
+    membership counts within one nurse of each other.
+  - [ ] How `optimal`, `infeasible_input`, `timed_out`, and
+    `internal_failure` differ.
+- Broader context:
+  - [ ] Why the existing `AssignmentResult` and manual-override baseline
+    contracts remain unchanged.
+  - [ ] Why the 400-bed/40-nurse ceiling still requires a production-like
+    benchmark during Task 0.3.
+  - [ ] Why Task 0.2 adds no Python service, OR-Tools package, endpoint, schema,
+    or mobile behavior.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Quiz or document walkthrough completed.
+- Status: in progress — correctly explained unassigned-bed priority, the
+  10-nurse team split, strict one-team-per-occupied-room coverage, and why a
+  merely feasible solver result cannot commit; hard max load versus soft side
+  guidance and the remaining sections are still being verified.

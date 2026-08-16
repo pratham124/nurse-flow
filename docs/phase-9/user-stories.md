@@ -90,8 +90,8 @@ constraints NurseFlow already communicates.
   that bed's room.
 - Every nurse belongs to one generated team, using the existing stable team
   labels and output shape.
-- Room coverage may include more than one nurse or team when required by the
-  feasible assignment.
+- Room coverage may include more than one nurse from its selected generated
+  team, but every occupied room is covered by exactly one team.
 - Existing side-based load limits remain soft workload guidance and flagging;
   the nurse's individual max load remains the hard cap.
 - Invalid or missing nurse, room, bed, side, acuity, or relationship IDs block
@@ -122,6 +122,9 @@ balance and stable ordering so the result is understandable and repeatable.
   diagnosis text or infer clinical meaning.
 - Red-bed ties between otherwise equal eligible RNs prefer experienced, then
   mid, then new-grad RNs.
+- When all higher assignment priorities tie, generated teams spread
+  experienced, mid, and new-grad nurses as evenly as possible without using a
+  combined experience-strength score.
 - Stable ordering covers nurse, doctor-side, room, bed, team, and coverage
   tie-breaks so equivalent inputs do not depend on database row order.
 - The same normalized input, optimizer version, and supported runtime produce
@@ -137,6 +140,8 @@ balance and stable ordering so the result is understandable and repeatable.
   result.
 - Create an otherwise equal red-bed choice and confirm experience order breaks
   the tie.
+- Create an otherwise equal team-membership choice and confirm experience
+  categories are spread across teams.
 - Confirm the optimizer never accepts an extra unassigned bed merely to improve
   acuity or patient-count balance.
 

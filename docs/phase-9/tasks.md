@@ -49,6 +49,9 @@ Manual validation:
 
 ### Task 0.2: Freeze the Optimizer Rules
 
+Status: specification written and manually reviewed; understanding checkpoint
+pending before this task can be marked done.
+
 Story coverage: US2-US4
 
 Build:
@@ -60,8 +63,10 @@ Build:
   input orders.
 - Define the exact lexicographic objective stages and prove later stages cannot
   worsen earlier optima.
-- Define experienced, mid, new-grad RN preference only as the red-bed tie-break
-  stated in the roadmap.
+- Define experienced, mid, new-grad RN preference as the red-bed owner tie-break
+  stated in the roadmap, and preserve general experience only as equal category
+  distribution across otherwise-equal team solutions, never as a combined
+  strength score.
 - Define supported maximum floor size and the difference between optimal,
   infeasible-input, timed-out, and internal-failure outcomes.
 
@@ -71,6 +76,10 @@ Manual validation:
   hand.
 - Explain why minimizing unassigned beds outranks every balancing preference.
 - Confirm side-based limits remain guidance/flags while nurse max load is hard.
+
+Task artifact:
+
+- `docs/phase-9/optimizer-rules.md`
 
 ### Task 0.3: Document the Python Service and Deployment Boundary
 
@@ -183,7 +192,8 @@ Story coverage: US2-US4
 Build:
 
 - Model every nurse in one generated team using the frozen team-count rules.
-- Model occupied-room coverage by one or more teams/nurses as required.
+- Model each occupied room with exactly one generated team and one or more
+  eligible nurses from that team as required.
 - Keep team labels and output ordering compatible with existing board readers.
 - Prevent meaningless extra coverage through the frozen structural constraints
   or final tie-break rule.
@@ -193,7 +203,8 @@ Manual validation:
 
 - Every nurse appears in exactly one team.
 - Coverage uses only current room and nurse IDs.
-- A room can receive multiple eligible nurses when needed.
+- A room can receive multiple eligible nurses from its one selected team when
+  needed, but never nurses from multiple teams.
 - Repeated runs produce the same team and coverage decisions.
 
 ### Task 1.4: Add Bed-Assignment Hard Constraints
@@ -227,6 +238,8 @@ Build:
 - Fix prior optima before minimizing the highest patient count.
 - Apply experienced/mid/new-grad RN preference for otherwise equal red-bed
   choices.
+- Spread experienced, mid, and new-grad nurses across otherwise-equal teams
+  without inventing a combined experience-strength score.
 - Apply canonical stable-order tie-breaks across remaining equal solutions.
 - Configure the chosen solver for reproducibility and pin its version.
 
