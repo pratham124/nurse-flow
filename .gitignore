@@ -40,6 +40,11 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# Python optimizer service
+__pycache__/
+*.py[cod]
+.venv/
+
 app-example
 
 # generated native folders

@@ -1,0 +1,498 @@
+{
+  "schemaVersion": 1,
+  "fixtures": [
+    {
+      "id": "empty-census",
+      "title": "Empty census",
+      "purpose": "An active floor with no occupied beds still produces deterministic teams and empty room coverage.",
+      "input": {
+        "admittingDoctorSideId": "side-a",
+        "sideLoadLimits": { "admitting": { "min": 1, "max": 2 }, "nonAdmitting": { "min": 1, "max": 2 } },
+        "doctorSides": ["side-a", "side-b"],
+        "rooms": [
+          { "id": "room-a1", "doctorSideId": "side-a" },
+          { "id": "room-b1", "doctorSideId": "side-b" }
+        ],
+        "occupiedBeds": [],
+        "nurses": [
+          { "id": "nurse-1", "licenseType": "RN", "experienceLevel": "experienced", "maxPatientLoad": 2 }
+        ]
+      },
+      "expected": {
+        "objectives": {
+          "unassignedCount": 0,
+          "maxNurseAcuityLoad": 0,
+          "maxNursePatientCount": 0,
+          "redBedOwnerRankSum": 0,
+          "sideGuidanceTotalExcess": 0,
+          "sideGuidanceNurseCount": 0,
+          "teamWeightedAcuityGap": 0,
+          "teamPatientCountGap": 0,
+          "teamRnCountGap": 0,
+          "teamExperienceDistributionGap": 0,
+          "teamCapacityGap": 0
+        },
+        "decisions": {
+          "teams": { "Team A": ["nurse-1"] },
+          "roomTeams": { "room-a1": null, "room-b1": null },
+          "bedOwners": {}
+        },
+        "allowedEquivalentChoices": []
+      }
+    },
+    {
+      "id": "one-nurse",
+      "title": "One nurse",
+      "purpose": "One nurse forms one team and owns every bed that fits within her hard max load.",
+      "input": {
+        "admittingDoctorSideId": "side-a",
+        "sideLoadLimits": { "admitting": { "min": 1, "max": 2 }, "nonAdmitting": { "min": 1, "max": 2 } },
+        "doctorSides": ["side-a", "side-b"],
+        "rooms": [{ "id": "room-a1", "doctorSideId": "side-a" }],
+        "occupiedBeds": [
+          { "id": "bed-a1", "roomId": "room-a1", "acuity": "yellow" },
+          { "id": "bed-a2", "roomId": "room-a1", "acuity": "green" }
+        ],
+        "nurses": [
+          { "id": "nurse-1", "licenseType": "RN", "experienceLevel": "mid", "maxPatientLoad": 2 }
+        ]
+      },
+      "expected": {
+        "objectives": {
+          "unassignedCount": 0,
+          "maxNurseAcuityLoad": 3,
+          "maxNursePatientCount": 2,
+          "redBedOwnerRankSum": 0,
+          "sideGuidanceTotalExcess": 0,
+          "sideGuidanceNurseCount": 0,
+          "teamWeightedAcuityGap": 0,
+          "teamPatientCountGap": 0,
+          "teamRnCountGap": 0,
+          "teamExperienceDistributionGap": 0,
+          "teamCapacityGap": 0
+        },
+        "decisions": {
+          "teams": { "Team A": ["nurse-1"] },
+          "roomTeams": { "room-a1": "Team A" },
+          "bedOwners": { "bed-a1": "nurse-1", "bed-a2": "nurse-1" }
+        },
+        "allowedEquivalentChoices": []
+      }
+    },
+    {
+      "id": "rn-lpn-mix",
+      "title": "RN and LPN mix",
+      "purpose": "The RN owns the red bed while both nurses receive balanced two-patient loads.",
+      "input": {
+        "admittingDoctorSideId": "side-a",
+        "sideLoadLimits": { "admitting": { "min": 1, "max": 2 }, "nonAdmitting": { "min": 1, "max": 2 } },
+        "doctorSides": ["side-a", "side-b"],
+        "rooms": [
+          { "id": "room-a1", "doctorSideId": "side-a" },
+          { "id": "room-b1", "doctorSideId": "side-b" }
+        ],
+        "occupiedBeds": [
+          { "id": "bed-a1", "roomId": "room-a1", "acuity": "red" },
+          { "id": "bed-a2", "roomId": "room-a1", "acuity": "green" },
+          { "id": "bed-b1", "roomId": "room-b1", "acuity": "yellow" },
+          { "id": "bed-b2", "roomId": "room-b1", "acuity": "green" }
+        ],
+        "nurses": [
+          { "id": "nurse-rn", "licenseType": "RN", "experienceLevel": "experienced", "maxPatientLoad": 2 },
+          { "id": "nurse-lpn", "licenseType": "LPN", "experienceLevel": "mid", "maxPatientLoad": 2 }
+        ]
+      },
+      "expected": {
+        "objectives": {
+          "unassignedCount": 0,
+          "maxNurseAcuityLoad": 4,
+          "maxNursePatientCount": 2,
+          "redBedOwnerRankSum": 0,
+          "sideGuidanceTotalExcess": 0,
+          "sideGuidanceNurseCount": 0,
+          "teamWeightedAcuityGap": 1,
+          "teamPatientCountGap": 0,
+          "teamRnCountGap": 1,
+          "teamExperienceDistributionGap": 2,
+          "teamCapacityGap": 0
+        },
+        "decisions": {
+          "teams": { "Team A": ["nurse-rn"], "Team B": ["nurse-lpn"] },
+          "roomTeams": { "room-a1": "Team A", "room-b1": "Team B" },
+          "bedOwners": {
+            "bed-a1": "nurse-rn",
+            "bed-a2": "nurse-rn",
+            "bed-b1": "nurse-lpn",
+            "bed-b2": "nurse-lpn"
+          }
+        },
+        "allowedEquivalentChoices": []
+      }
+    },
+    {
+      "id": "red-bed-eligibility",
+      "title": "Red-bed eligibility",
+      "purpose": "A canonical-order LPN is skipped because only the RN is eligible for a red bed.",
+      "input": {
+        "admittingDoctorSideId": "side-a",
+        "sideLoadLimits": { "admitting": { "min": 1, "max": 1 }, "nonAdmitting": { "min": 1, "max": 1 } },
+        "doctorSides": ["side-a", "side-b"],
+        "rooms": [{ "id": "room-a1", "doctorSideId": "side-a" }],
+        "occupiedBeds": [{ "id": "bed-red", "roomId": "room-a1", "acuity": "red" }],
+        "nurses": [
+          { "id": "nurse-lpn", "licenseType": "LPN", "experienceLevel": "experienced", "maxPatientLoad": 1 },
+          { "id": "nurse-rn", "licenseType": "RN", "experienceLevel": "mid", "maxPatientLoad": 1 }
+        ]
+      },
+      "expected": {
+        "objectives": {
+          "unassignedCount": 0,
+          "maxNurseAcuityLoad": 3,
+          "maxNursePatientCount": 1,
+          "redBedOwnerRankSum": 1,
+          "sideGuidanceTotalExcess": 0,
+          "sideGuidanceNurseCount": 0,
+          "teamWeightedAcuityGap": 3,
+          "teamPatientCountGap": 1,
+          "teamRnCountGap": 1,
+          "teamExperienceDistributionGap": 2,
+          "teamCapacityGap": 0
+        },
+        "decisions": {
+          "teams": { "Team A": ["nurse-rn"], "Team B": ["nurse-lpn"] },
+          "roomTeams": { "room-a1": "Team A" },
+          "bedOwners": { "bed-red": "nurse-rn" }
+        },
+        "allowedEquivalentChoices": []
+      }
+    },
+    {
+      "id": "exact-capacity",
+      "title": "Exact capacity",
+      "purpose": "Total hard capacity exactly matches census, so all four beds must be assigned.",
+      "input": {
+        "admittingDoctorSideId": "side-a",
+        "sideLoadLimits": { "admitting": { "min": 1, "max": 2 }, "nonAdmitting": { "min": 1, "max": 2 } },
+        "doctorSides": ["side-a", "side-b"],
+        "rooms": [
+          { "id": "room-a1", "doctorSideId": "side-a" },
+          { "id": "room-b1", "doctorSideId": "side-b" }
+        ],
+        "occupiedBeds": [
+          { "id": "bed-a1", "roomId": "room-a1", "acuity": "green" },
+          { "id": "bed-a2", "roomId": "room-a1", "acuity": "green" },
+          { "id": "bed-b1", "roomId": "room-b1", "acuity": "green" },
+          { "id": "bed-b2", "roomId": "room-b1", "acuity": "green" }
+        ],
+        "nurses": [
+          { "id": "nurse-1", "licenseType": "RN", "experienceLevel": "experienced", "maxPatientLoad": 2 },
+          { "id": "nurse-2", "licenseType": "RN", "experienceLevel": "experienced", "maxPatientLoad": 2 }
+        ]
+      },
+      "expected": {
+        "objectives": {
+          "unassignedCount": 0,
+          "maxNurseAcuityLoad": 2,
+          "maxNursePatientCount": 2,
+          "redBedOwnerRankSum": 0,
+          "sideGuidanceTotalExcess": 0,
+          "sideGuidanceNurseCount": 0,
+          "teamWeightedAcuityGap": 0,
+          "teamPatientCountGap": 0,
+          "teamRnCountGap": 0,
+          "teamExperienceDistributionGap": 0,
+          "teamCapacityGap": 0
+        },
+        "decisions": {
+          "teams": { "Team A": ["nurse-1"], "Team B": ["nurse-2"] },
+          "roomTeams": { "room-a1": "Team A", "room-b1": "Team B" },
+          "bedOwners": {
+            "bed-a1": "nurse-1",
+            "bed-a2": "nurse-1",
+            "bed-b1": "nurse-2",
+            "bed-b2": "nurse-2"
+          }
+        },
+        "allowedEquivalentChoices": []
+      }
+    },
+    {
+      "id": "understaffed",
+      "title": "Understaffed floor",
+      "purpose": "The unassigned choice keeps a valid floor solvable without exceeding the nurse's max load.",
+      "input": {
+        "admittingDoctorSideId": "side-a",
+        "sideLoadLimits": { "admitting": { "min": 1, "max": 2 }, "nonAdmitting": { "min": 1, "max": 2 } },
+        "doctorSides": ["side-a", "side-b"],
+        "rooms": [{ "id": "room-a1", "doctorSideId": "side-a" }],
+        "occupiedBeds": [
+          { "id": "bed-1", "roomId": "room-a1", "acuity": "green" },
+          { "id": "bed-2", "roomId": "room-a1", "acuity": "green" },
+          { "id": "bed-3", "roomId": "room-a1", "acuity": "green" }
+        ],
+        "nurses": [
+          { "id": "nurse-1", "licenseType": "RN", "experienceLevel": "experienced", "maxPatientLoad": 2 }
+        ]
+      },
+      "expected": {
+        "objectives": {
+          "unassignedCount": 1,
+          "maxNurseAcuityLoad": 2,
+          "maxNursePatientCount": 2,
+          "redBedOwnerRankSum": 0,
+          "sideGuidanceTotalExcess": 0,
+          "sideGuidanceNurseCount": 0,
+          "teamWeightedAcuityGap": 0,
+          "teamPatientCountGap": 0,
+          "teamRnCountGap": 0,
+          "teamExperienceDistributionGap": 0,
+          "teamCapacityGap": 0
+        },
+        "decisions": {
+          "teams": { "Team A": ["nurse-1"] },
+          "roomTeams": { "room-a1": "Team A" },
+          "bedOwners": { "bed-1": "nurse-1", "bed-2": "nurse-1", "bed-3": null }
+        },
+        "allowedEquivalentChoices": []
+      }
+    },
+    {
+      "id": "split-room",
+      "title": "Split room within one team",
+      "purpose": "Two nurses from the same generated team split one room while the other team remains separate.",
+      "input": {
+        "admittingDoctorSideId": "side-a",
+        "sideLoadLimits": { "admitting": { "min": 1, "max": 2 }, "nonAdmitting": { "min": 1, "max": 2 } },
+        "doctorSides": ["side-a", "side-b"],
+        "rooms": [{ "id": "room-a1", "doctorSideId": "side-a" }],
+        "occupiedBeds": [
+          { "id": "bed-red", "roomId": "room-a1", "acuity": "red" },
+          { "id": "bed-yellow", "roomId": "room-a1", "acuity": "yellow" },
+          { "id": "bed-green", "roomId": "room-a1", "acuity": "green" }
+        ],
+        "nurses": [
+          { "id": "nurse-rn-experienced", "licenseType": "RN", "experienceLevel": "experienced", "maxPatientLoad": 2 },
+          { "id": "nurse-lpn-mid", "licenseType": "LPN", "experienceLevel": "mid", "maxPatientLoad": 2 },
+          { "id": "nurse-rn-new", "licenseType": "RN", "experienceLevel": "new_grad", "maxPatientLoad": 1 }
+        ]
+      },
+      "expected": {
+        "objectives": {
+          "unassignedCount": 0,
+          "maxNurseAcuityLoad": 3,
+          "maxNursePatientCount": 2,
+          "redBedOwnerRankSum": 0,
+          "sideGuidanceTotalExcess": 0,
+          "sideGuidanceNurseCount": 0,
+          "teamWeightedAcuityGap": 6,
+          "teamPatientCountGap": 3,
+          "teamRnCountGap": 0,
+          "teamExperienceDistributionGap": 3,
+          "teamCapacityGap": 3
+        },
+        "decisions": {
+          "teams": {
+            "Team A": ["nurse-rn-experienced", "nurse-lpn-mid"],
+            "Team B": ["nurse-rn-new"]
+          },
+          "roomTeams": { "room-a1": "Team A" },
+          "bedOwners": {
+            "bed-red": "nurse-rn-experienced",
+            "bed-yellow": "nurse-lpn-mid",
+            "bed-green": "nurse-lpn-mid"
+          }
+        },
+        "allowedEquivalentChoices": []
+      }
+    },
+    {
+      "id": "both-doctor-sides",
+      "title": "Both doctor sides",
+      "purpose": "One generated team may cover occupied rooms on both doctor sides.",
+      "input": {
+        "admittingDoctorSideId": "side-a",
+        "sideLoadLimits": { "admitting": { "min": 1, "max": 2 }, "nonAdmitting": { "min": 1, "max": 2 } },
+        "doctorSides": ["side-a", "side-b"],
+        "rooms": [
+          { "id": "room-a1", "doctorSideId": "side-a" },
+          { "id": "room-b1", "doctorSideId": "side-b" }
+        ],
+        "occupiedBeds": [
+          { "id": "bed-a1", "roomId": "room-a1", "acuity": "green" },
+          { "id": "bed-b1", "roomId": "room-b1", "acuity": "green" }
+        ],
+        "nurses": [
+          { "id": "nurse-1", "licenseType": "RN", "experienceLevel": "mid", "maxPatientLoad": 2 }
+        ]
+      },
+      "expected": {
+        "objectives": {
+          "unassignedCount": 0,
+          "maxNurseAcuityLoad": 2,
+          "maxNursePatientCount": 2,
+          "redBedOwnerRankSum": 0,
+          "sideGuidanceTotalExcess": 0,
+          "sideGuidanceNurseCount": 0,
+          "teamWeightedAcuityGap": 0,
+          "teamPatientCountGap": 0,
+          "teamRnCountGap": 0,
+          "teamExperienceDistributionGap": 0,
+          "teamCapacityGap": 0
+        },
+        "decisions": {
+          "teams": { "Team A": ["nurse-1"] },
+          "roomTeams": { "room-a1": "Team A", "room-b1": "Team A" },
+          "bedOwners": { "bed-a1": "nurse-1", "bed-b1": "nurse-1" }
+        },
+        "allowedEquivalentChoices": []
+      }
+    },
+    {
+      "id": "active-side-guidance",
+      "title": "Active-side guidance",
+      "purpose": "Every nurse covering an admitting-side room uses the admitting maximum, even when teammates share its beds.",
+      "input": {
+        "admittingDoctorSideId": "side-a",
+        "sideLoadLimits": { "admitting": { "min": 1, "max": 1 }, "nonAdmitting": { "min": 1, "max": 2 } },
+        "doctorSides": ["side-a", "side-b"],
+        "rooms": [{ "id": "room-a1", "doctorSideId": "side-a" }],
+        "occupiedBeds": [
+          { "id": "bed-1", "roomId": "room-a1", "acuity": "green" },
+          { "id": "bed-2", "roomId": "room-a1", "acuity": "green" },
+          { "id": "bed-3", "roomId": "room-a1", "acuity": "green" }
+        ],
+        "nurses": [
+          { "id": "nurse-1", "licenseType": "RN", "experienceLevel": "experienced", "maxPatientLoad": 2 },
+          { "id": "nurse-2", "licenseType": "RN", "experienceLevel": "experienced", "maxPatientLoad": 2 },
+          { "id": "nurse-3", "licenseType": "RN", "experienceLevel": "experienced", "maxPatientLoad": 2 }
+        ]
+      },
+      "expected": {
+        "objectives": {
+          "unassignedCount": 0,
+          "maxNurseAcuityLoad": 2,
+          "maxNursePatientCount": 2,
+          "redBedOwnerRankSum": 0,
+          "sideGuidanceTotalExcess": 1,
+          "sideGuidanceNurseCount": 1,
+          "teamWeightedAcuityGap": 3,
+          "teamPatientCountGap": 3,
+          "teamRnCountGap": 1,
+          "teamExperienceDistributionGap": 1,
+          "teamCapacityGap": 2
+        },
+        "decisions": {
+          "teams": { "Team A": ["nurse-1", "nurse-2"], "Team B": ["nurse-3"] },
+          "roomTeams": { "room-a1": "Team A" },
+          "bedOwners": { "bed-1": "nurse-1", "bed-2": "nurse-1", "bed-3": "nurse-2" }
+        },
+        "allowedEquivalentChoices": []
+      }
+    },
+    {
+      "id": "stable-ties",
+      "title": "Stable ties",
+      "purpose": "Canonical room, bed-owner, and team-member stages choose one repeatable result from aggregate-equivalent solutions.",
+      "input": {
+        "admittingDoctorSideId": "side-a",
+        "sideLoadLimits": { "admitting": { "min": 1, "max": 1 }, "nonAdmitting": { "min": 1, "max": 1 } },
+        "doctorSides": ["side-a", "side-b"],
+        "rooms": [
+          { "id": "room-1", "doctorSideId": "side-a" },
+          { "id": "room-2", "doctorSideId": "side-a" }
+        ],
+        "occupiedBeds": [
+          { "id": "bed-1", "roomId": "room-1", "acuity": "green" },
+          { "id": "bed-2", "roomId": "room-2", "acuity": "green" }
+        ],
+        "nurses": [
+          { "id": "nurse-1", "licenseType": "RN", "experienceLevel": "experienced", "maxPatientLoad": 1 },
+          { "id": "nurse-2", "licenseType": "RN", "experienceLevel": "experienced", "maxPatientLoad": 1 }
+        ]
+      },
+      "expected": {
+        "objectives": {
+          "unassignedCount": 0,
+          "maxNurseAcuityLoad": 1,
+          "maxNursePatientCount": 1,
+          "redBedOwnerRankSum": 0,
+          "sideGuidanceTotalExcess": 0,
+          "sideGuidanceNurseCount": 0,
+          "teamWeightedAcuityGap": 0,
+          "teamPatientCountGap": 0,
+          "teamRnCountGap": 0,
+          "teamExperienceDistributionGap": 0,
+          "teamCapacityGap": 0
+        },
+        "decisions": {
+          "teams": { "Team A": ["nurse-1"], "Team B": ["nurse-2"] },
+          "roomTeams": { "room-1": "Team A", "room-2": "Team B" },
+          "bedOwners": { "bed-1": "nurse-1", "bed-2": "nurse-2" }
+        },
+        "allowedEquivalentChoices": [
+          {
+            "reason": "Before canonical bed-owner and team-membership fixing, swapping the identical nurses preserves every aggregate objective.",
+            "decisions": {
+              "teams": { "Team A": ["nurse-2"], "Team B": ["nurse-1"] },
+              "roomTeams": { "room-1": "Team A", "room-2": "Team B" },
+              "bedOwners": { "bed-1": "nurse-2", "bed-2": "nurse-1" }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "greedy-room-capacity-failure",
+      "title": "Greedy room-capacity failure",
+      "purpose": "The lower-census room must use the one-capacity team so the four-capacity team remains available for the higher-census room.",
+      "input": {
+        "admittingDoctorSideId": "side-a",
+        "sideLoadLimits": { "admitting": { "min": 1, "max": 2 }, "nonAdmitting": { "min": 1, "max": 2 } },
+        "doctorSides": ["side-a", "side-b"],
+        "rooms": [
+          { "id": "room-low-census", "doctorSideId": "side-a" },
+          { "id": "room-high-census", "doctorSideId": "side-b" }
+        ],
+        "occupiedBeds": [
+          { "id": "bed-low-1", "roomId": "room-low-census", "acuity": "green" },
+          { "id": "bed-high-red", "roomId": "room-high-census", "acuity": "red" },
+          { "id": "bed-high-yellow", "roomId": "room-high-census", "acuity": "yellow" },
+          { "id": "bed-high-green-1", "roomId": "room-high-census", "acuity": "green" },
+          { "id": "bed-high-green-2", "roomId": "room-high-census", "acuity": "green" }
+        ],
+        "nurses": [
+          { "id": "nurse-rn", "licenseType": "RN", "experienceLevel": "experienced", "maxPatientLoad": 2 },
+          { "id": "nurse-lpn-2", "licenseType": "LPN", "experienceLevel": "mid", "maxPatientLoad": 2 },
+          { "id": "nurse-lpn-1", "licenseType": "LPN", "experienceLevel": "new_grad", "maxPatientLoad": 1 }
+        ]
+      },
+      "expected": {
+        "objectives": {
+          "unassignedCount": 0,
+          "maxNurseAcuityLoad": 4,
+          "maxNursePatientCount": 2,
+          "redBedOwnerRankSum": 0,
+          "sideGuidanceTotalExcess": 0,
+          "sideGuidanceNurseCount": 0,
+          "teamWeightedAcuityGap": 6,
+          "teamPatientCountGap": 3,
+          "teamRnCountGap": 1,
+          "teamExperienceDistributionGap": 3,
+          "teamCapacityGap": 3
+        },
+        "decisions": {
+          "teams": { "Team A": ["nurse-lpn-1"], "Team B": ["nurse-rn", "nurse-lpn-2"] },
+          "roomTeams": { "room-low-census": "Team A", "room-high-census": "Team B" },
+          "bedOwners": {
+            "bed-low-1": "nurse-lpn-1",
+            "bed-high-red": "nurse-rn",
+            "bed-high-yellow": "nurse-lpn-2",
+            "bed-high-green-1": "nurse-rn",
+            "bed-high-green-2": "nurse-lpn-2"
+          }
+        },
+        "allowedEquivalentChoices": []
+      }
+    }
+  ]
+}

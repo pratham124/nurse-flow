@@ -3164,3 +3164,232 @@ For each task, add a dated section with:
   - [x] First-run, rerun, and baseline/effective manual traces completed.
   - [x] Document-only diff and touchpoint reference checks passed.
 - Status: verified
+
+### 2026-08-19 - Add Canonical Phase 9 Optimizer Fixtures
+
+- Task: Implement Phase 9 Task 1.1 by defining synthetic canonical optimizer
+  inputs, expected decisions, allowed aggregate-equivalent choices, and every
+  frozen objective value without implementing a solver.
+- Problem understanding:
+  - [x] Why expected outcomes must be frozen before OR-Tools implementation.
+  - [x] Why the fixture catalog uses normalized structured data and excludes
+    patient identity and free-text clinical fields.
+  - [x] Why the greedy-failure fixture needs the one-capacity team on the
+    lower-census room to preserve the four-capacity team for the larger room.
+- Solution understanding:
+  - [x] How `phase9OptimizerFixtures.json` represents canonical input order,
+    teams, room-team choices, bed owners, and objective values.
+  - [x] Why `allowedEquivalentChoices` records aggregate-equivalent decisions
+    but does not replace the final canonical decision.
+  - [x] How `validateDecisions` recomputes max loads, red-owner ranks, side
+    guidance, and team gaps without searching for an optimum.
+  - [x] Why red-bed checks require an RN while understaffing uses a `null`
+    owner instead of exceeding a nurse's hard max load.
+- Broader context:
+  - [x] How Task 1.2 can normalize server shift data into the same ordered input
+    shape and how later solver tasks can use the catalog as regression oracles.
+  - [x] Why this task adds no Python service, OR-Tools dependency, endpoint,
+    schema, mobile behavior, or patient data.
+- Verification:
+  - [x] Human restated understanding first.
+  - [x] Gaps were explained using the greedy-failure capacities and the
+    red-bed assertion in `validateDecisions`.
+  - [x] Human predicted the greedy-failure fixture's unassigned count and
+    explained the team-capacity choice.
+  - [x] Code-specific walkthrough of `validateDecisions` completed; human
+    correctly predicted that an LPN red-bed owner fails the assertion.
+  - [x] Focused fixture checks passed: 14/14.
+  - [x] Full Node test suite passed: 37/37.
+  - [x] Expo lint and TypeScript validation passed.
+- Status: verified
+
+### 2026-08-19 - Add Phase 9 Input Normalization and Validation
+
+- Task: Implement Phase 9 Task 1.2 by converting a server-authoritative shift
+  snapshot into a validated, canonical, immutable solver model and stable
+  fingerprint without adding solver behavior.
+- Problem understanding:
+  - [ ] Why malformed or unrelated shift data must fail before solver creation.
+  - [ ] Why database/query iteration order cannot become an accidental optimizer
+    tie-break.
+  - [ ] Why patient free text and empty beds do not belong in solver input.
+- Solution understanding:
+  - [ ] How `normalize_shift_snapshot` validates IDs, relationships, acuity,
+    max loads, admitting side, side ranges, and supported-size ceilings.
+  - [ ] How captured snapshot ordinals produce canonical side, room, bed, and
+    nurse order while incidental bed-state order is ignored.
+  - [ ] How immutable dataclasses define the temporary normalized model.
+  - [ ] How canonical JSON plus SHA-256 produces the reproducibility and
+    idempotency fingerprint.
+  - [ ] Why patient initials determine occupancy but initials, diagnosis, age,
+    names, and labels are excluded from the returned model and fingerprint.
+- Broader context:
+  - [ ] Why Tasks 1.3-1.6 consume the normalized model instead of raw Shift JSON.
+  - [ ] Why this task adds no OR-Tools model, HTTP endpoint, database write,
+    Expo import, or assignment result.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Human predicted whether a diagnosis-only change affects the fingerprint.
+  - [ ] Code-specific walkthrough of `normalize_shift_snapshot` completed.
+  - [x] Python normalization suite passed: 4 tests, including all 11 fixtures
+    and eight invalid-input branches.
+  - [x] Existing Node suite passed: 37/37.
+  - [x] Expo lint, TypeScript, Python compilation, and diff checks passed.
+  - [x] Local validation used Python 3.14.4; the production-pinned Python
+    3.13.14 runtime gate remains required by the later service/benchmark work.
+- Status: pending
+
+### 2026-08-19 - Add Phase 9 Team and Room-Coverage Model
+
+- Task: Implement Phase 9 Task 1.3 with the pinned OR-Tools team-membership
+  and occupied-room structure, deferring the human checkpoint by request until
+  Tasks 1.2-1.6 are all implemented.
+- Problem understanding:
+  - [ ] Why team membership and room coverage must be explicit solver decisions.
+  - [ ] Why an occupied room cannot mix nurses from different teams.
+- Solution understanding:
+  - [ ] How every nurse is constrained to exactly one evenly sized team.
+  - [ ] How every occupied room selects exactly one generated team.
+  - [ ] Why room coverage is derived from the selected team's full membership
+    instead of separate unconstrained coverage variables.
+  - [ ] Why empty rooms have no solver team variable and project empty coverage.
+- Broader context:
+  - [ ] How Task 1.4 can require each bed owner to belong to the room's team.
+  - [ ] Why Task 1.3 does not yet choose optimal bed owners or workloads.
+- Verification:
+  - [ ] Combined human checkpoint completed after Task 1.6.
+  - [x] All 11 canonical fixture structures are feasible.
+  - [x] Split-room coverage equals the selected team's two-nurse membership.
+  - [x] Empty-room and repeated fixed-projection checks passed.
+- Status: pending - implementation complete; combined checkpoint deferred by
+  user request.
+
+### 2026-08-19 - Add Phase 9 Bed-Assignment Hard Constraints
+
+- Task: Implement Phase 9 Task 1.4 with eligible nurse/unassigned bed choices,
+  max-load, RN-only red-bed, and assignment-implies-coverage constraints,
+  deferring the checkpoint until Task 1.6 by request.
+- Problem understanding:
+  - [ ] Why unavoidable understaffing needs an internal unassigned choice.
+  - [ ] Why red eligibility, hard max load, and room-team membership cannot be
+    repaired only after solving.
+- Solution understanding:
+  - [ ] How every participating bed has exactly one eligible owner or unassigned.
+  - [ ] Why LPN variables are never created for red beds.
+  - [ ] How nurse max load is a hard sum constraint.
+  - [x] How each bed assignment is restricted to its room's selected team.
+- Broader context:
+  - [ ] Why empty beds never create assignment variables.
+  - [ ] How Task 1.5 can optimize only among decisions that already satisfy all
+    safety and capacity rules.
+- Verification:
+  - [ ] Combined human checkpoint completed after Task 1.6.
+  - [x] Human correctly explained that an owner choice is rejected when the
+    nurse does not belong to the team covering the bed's room.
+  - [x] All canonical fixture assignments satisfy the hard constraints.
+  - [x] Forced overload and cross-team ownership are infeasible.
+  - [x] Red-bed LPN and empty-bed variable checks passed.
+- Status: pending - implementation complete; combined checkpoint deferred by
+  user request.
+
+### 2026-08-19 - Add Phase 9 Lexicographic Objectives
+
+- Task: Implement Phase 9 Task 1.5 with exact staged CP-SAT objectives,
+  deterministic tie-breaks, pinned OR-Tools, one worker, a fixed seed, and one
+  shared solve budget; defer the checkpoint until Task 1.6 by request.
+- Problem understanding:
+  - [ ] Why one guessed weighted sum could trade a safety priority for a later
+    preference.
+  - [ ] Why `FEASIBLE` is insufficient for fixing a lexicographic optimum.
+- Solution understanding:
+  - [ ] How every `OPTIMAL` stage value becomes an equality before the next
+    objective is solved.
+  - [ ] How the objective order covers unassigned, nurse load, red-owner rank,
+    side guidance, ordered team gaps, and canonical decisions.
+  - [ ] Why one worker, fixed seed, pinned OR-Tools, and canonical fixing support
+    reproducible decisions.
+- Broader context:
+  - [ ] Why later preferences can never worsen the fixed unassigned count.
+  - [ ] Why runtime upgrades must pass the same deterministic fixture suite.
+- Verification:
+  - [ ] Combined human checkpoint completed after Task 1.6.
+  - [x] Human explained that tie-breakers make equal-quality floor assignments
+    predictable instead of allowing arbitrary choices.
+  - [x] Human explained that each earlier objective is fixed before later
+    objectives are solved, so tie-breakers cannot worsen clinical priorities.
+  - [x] Human explained that a timeout during a tie-breaker returns an error
+    rather than saving a partial assignment.
+  - [x] All 11 fixtures match every expected objective and canonical decision.
+  - [x] Stage-order and repeated-decision checks passed.
+  - [x] Exact OR-Tools 9.15.6755 is installed in the ignored service environment
+    and recorded with exact transitive versions in `requirements.lock`.
+- Status: pending - implementation complete; combined checkpoint deferred by
+  user request.
+
+### 2026-08-19 - Build and Independently Validate Phase 9 Output
+
+- Task: Implement Phase 9 Task 1.6 by projecting canonical solver decisions to
+  the existing assignment and flag shapes and independently rejecting corrupt
+  output; defer the combined checkpoint until all validation finishes.
+- Problem understanding:
+  - [ ] Why a solver candidate must not be trusted solely because CP-SAT returned
+    `OPTIMAL`.
+  - [ ] Why internal unassigned choices cannot become fake saved assignments.
+- Solution understanding:
+  - [ ] How every successful build receives a fresh result ID while child IDs
+    are stable within that result.
+  - [ ] How generated teams, room coverage, and bed assignments preserve the
+    existing mobile `AssignmentResult` keys.
+  - [ ] How existing flag types are rebuilt from the same validated result.
+  - [ ] How independent validation recomputes IDs, relationships, hard rules,
+    decisions, objectives, and flags without reading solver variables.
+- Broader context:
+  - [ ] Why existing board, effective-assignment, flags, and nurse-view readers
+    do not need a second optimizer result model.
+  - [ ] Why finalization must receive only output that passes this boundary.
+- Verification:
+  - [ ] Combined human checkpoint completed after full validation.
+  - [x] All fixtures build the established output shape.
+  - [x] Fresh ID, stable child ID, unassigned flag, shared-budget timeout, and
+    corrupt-output rejection checks passed.
+  - [x] Existing TypeScript floor-board, effective-assignment, nurse-view, and
+    flag lookup helpers consumed real Python-generated output.
+  - [x] Complete Phase 9 core passed: 23/23 Python tests and 2/2 cross-language
+    compatibility tests.
+  - [x] Phase 1-8 regression passed: 37/37 Node tests, TypeScript, and Expo lint.
+  - [x] Python compilation, exact dependency health, ignored-environment, and
+    diff checks passed.
+- Status: pending - implementation complete; combined checkpoint remains.
+
+### 2026-08-20 - Refactor the Phase 9 Python Service for Readability
+
+- Task: Make the complete Phase 9 Python optimizer service easier for a beginner
+  to read without changing normalization, solver, or output behavior.
+- Problem understanding:
+  - [x] Nested comprehensions can hide which solver variables are created and
+    which constraints are added.
+  - [x] A stored OR-Tools `IntVar` is a symbolic decision; its solved 0/1 value
+    is read later through the solver.
+  - [ ] Why expanding every simple expression would add noise rather than clarity.
+- Solution understanding:
+  - [x] Nurse/team choices now use explicit keys, variable names, loops, and
+    intent-focused comments.
+  - [x] Human explained that `add_exactly_one` requires each nurse to belong to
+    one team while the solver chooses which team.
+  - [ ] How the same readable phase structure now applies to normalization,
+    assignment constraints, staged objectives, output building, and validation.
+- Broader context:
+  - [ ] Why readability matters especially at clinical eligibility, hard-capacity,
+    objective-priority, and output-validation boundaries.
+  - [x] The refactor changes presentation and local structure, not the assignment
+    contract or expected decisions.
+- Verification:
+  - [x] Human restated the nurse/team decision flow in her own words.
+  - [x] Gaps around `new_bool_var`, dictionary values, and solved values were
+    explained.
+  - [x] Code-specific walkthrough of `nurse_team` and `add_exactly_one` completed.
+  - [x] All 23 Python tests, 2 cross-language tests, and 37 existing Node tests
+    passed; TypeScript, Expo lint, Python compilation, and dependency checks pass.
+- Status: in progress - nurse/team model verified; broader service walkthrough
+  remains part of the combined Task 1.2-1.6 checkpoint.

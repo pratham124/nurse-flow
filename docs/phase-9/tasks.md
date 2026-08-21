@@ -151,7 +151,7 @@ Task artifact:
 
 ## Optimizer Contract and Core
 
-### Task 1.1: Add Canonical Optimizer Fixtures and Expected Outcomes
+### Done Task 1.1: Add Canonical Optimizer Fixtures and Expected Outcomes
 
 Story coverage: US2-US4, US6
 
@@ -172,7 +172,7 @@ Manual validation:
 - Confirm the greedy-failure fixture has a valid full assignment.
 - Confirm every expected red-bed owner is an RN.
 
-### Task 1.2: Add Server Input Normalization and Validation
+### Done Task 1.2: Add Server Input Normalization and Validation
 
 Story coverage: US1-US4, US6
 
@@ -193,7 +193,7 @@ Manual validation:
 - Invalid relationships fail before solver invocation.
 - Diagnosis changes alone do not change optimizer input or output.
 
-### Task 1.3: Add Team and Room-Coverage Decision Model
+### Done Task 1.3: Add Team and Room-Coverage Decision Model
 
 Story coverage: US2-US4
 
@@ -215,7 +215,7 @@ Manual validation:
   needed, but never nurses from multiple teams.
 - Repeated runs produce the same team and coverage decisions.
 
-### Task 1.4: Add Bed-Assignment Hard Constraints
+### Done Task 1.4: Add Bed-Assignment Hard Constraints
 
 Story coverage: US2, US3
 
@@ -235,7 +235,7 @@ Manual validation:
 - Red beds never go to LPNs.
 - Every emitted bed assignment has matching room coverage.
 
-### Task 1.5: Add Lexicographic Objectives and Deterministic Tie-Breaks
+### Done Task 1.5: Add Lexicographic Objectives and Deterministic Tie-Breaks
 
 Story coverage: US2, US4
 
@@ -259,7 +259,7 @@ Manual validation:
 - A runtime upgrade cannot be accepted until the deterministic fixture suite
   passes.
 
-### Task 1.6: Build and Independently Validate the Assignment Result
+### Done Task 1.6: Build and Independently Validate the Assignment Result
 
 Story coverage: US1-US4, US7
 

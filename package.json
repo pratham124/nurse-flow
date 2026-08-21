@@ -15,6 +15,10 @@
     "test:request-lifecycle": "tsx --test tests/nurseRequestLifecycle.test.mjs tests/notificationTap.test.mjs",
     "test:responsive-layout": "tsx --test tests/responsiveLayout.test.mjs",
     "test:phase8-performance": "tsx --test tests/floorBoardLookup.test.mjs",
+    "test:phase9-fixtures": "tsx --test tests/phase9OptimizerFixtures.test.mjs",
+    "test:phase9-normalization": "python -m unittest discover -s optimizer-service/tests -p \"test_*.py\"",
+    "test:phase9-optimizer": "optimizer-service\\.venv\\Scripts\\python.exe -m unittest discover -s optimizer-service/tests -p \"test_*.py\"",
+    "test:phase9-output-compatibility": "tsx --test tests/phase9OutputCompatibility.integration.mjs",
     "measure:phase8": "tsx scripts/measure-phase8-performance.ts"
   },
   "dependencies": {
