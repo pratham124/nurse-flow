@@ -283,7 +283,12 @@ Manual validation:
 
 ## Server Coordination and Atomic Save
 
-### Task 2.1: Add Optimizer Run Coordination and Idempotency
+Status: Tasks 2.1-2.4 are Done after implementation, local Python and disposable
+PostgreSQL verification, regression testing, and the combined understanding
+checkpoint. Live Supabase connected-session checks remain a separate
+pre-production gate and are not recorded as executed.
+
+### Done Task 2.1: Add Optimizer Run Coordination and Idempotency
 
 Story coverage: US1, US6
 
@@ -304,7 +309,7 @@ Manual validation:
 - An identical retry reuses one run.
 - Mutation-key reuse with different input is rejected.
 
-### Task 2.2: Add the Authenticated Python Optimizer Endpoint
+### Done Task 2.2: Add the Authenticated Python Optimizer Endpoint
 
 Story coverage: US1-US4, US6
 
@@ -328,7 +333,7 @@ Manual validation:
 - Timeout or internal failure returns a safe non-commit outcome.
 - Logs contain IDs and timings but no diagnosis text or full patient payload.
 
-### Task 2.3: Add Atomic Optimizer Finalization
+### Done Task 2.3: Add Atomic Optimizer Finalization
 
 Story coverage: US1, US5, US6
 
@@ -349,7 +354,7 @@ Manual validation:
 - Concurrent input change makes finalization stale with no partial writes.
 - A database error rolls back result, flags, run success, and override changes.
 
-### Task 2.4: Preserve Realtime, Notifications, and Nurse-Scoped Reads
+### Done Task 2.4: Preserve Realtime, Notifications, and Nurse-Scoped Reads
 
 Story coverage: US5, US7
 

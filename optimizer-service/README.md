@@ -1,8 +1,8 @@
 # NurseFlow Optimizer Service
 
 This directory is the separately deployable Python boundary for the Phase 9
-assignment optimizer. It is not imported by Expo and currently has no HTTP
-adapter.
+assignment optimizer. Expo does not import it. The phone calls one authenticated
+action endpoint and then reloads the committed board from Supabase.
 
 Task 1.2 adds only the pre-solve boundary:
 
@@ -46,6 +46,19 @@ Task 1.6 adds the established output boundary:
 - independent ID, relationship, eligibility, capacity, coverage, decision,
   objective-summary, and flag validation before returning output.
 
+Tasks 2.1-2.4 add the safe server workflow:
+
+- `POST /v1/assignment-runs` accepts only the shift ID, mutation ID, revision,
+  and expected baseline ID;
+- the service verifies the Supabase JWT before the authorized prepare RPC can
+  release the current shift snapshot;
+- retries reuse one coordinated run, with a 90-second recovery lease for a
+  request interrupted after preparation;
+- protected finalization rechecks current state and atomically saves the new
+  baseline, flags, run outcome, and rerun override supersession;
+- only a successful `active_shifts` update reaches the existing realtime,
+  notification, and nurse-scoped read paths.
+
 Install the exact service dependencies into an isolated environment:
 
 ```text
@@ -59,6 +72,19 @@ Run the focused tests from the repository root:
 optimizer-service/.venv/Scripts/python -m unittest discover -s optimizer-service/tests -p "test_*.py"
 ```
 
-The production runtime remains pinned to Python 3.13.14 and OR-Tools 9.15.6755
-by `docs/phase-9/python-service-boundary.md`. FastAPI, the container, and
-deployment belong to later tasks.
+For local HTTP development, set the private values documented in
+`docs/phase-9/supabase-optimizer-coordination-setup.md`, then run:
+
+```text
+optimizer-service/.venv/Scripts/python -m uvicorn nurseflow_optimizer.runtime:create_app_from_environment --factory --app-dir optimizer-service --host 127.0.0.1 --port 8080 --workers 1 --no-access-log
+```
+
+Build the portable production image from the repository root with:
+
+```text
+docker build -f optimizer-service/Dockerfile -t nurseflow-optimizer optimizer-service
+```
+
+The production runtime is pinned to Python 3.13.14, OR-Tools 9.15.6755, and the
+exact transitive HTTP/auth packages in `requirements.lock`. Deployment and the
+maximum-floor benchmark remain separate later Phase 9 work.

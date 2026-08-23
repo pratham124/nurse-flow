@@ -79,7 +79,8 @@ For each task, add a dated section with:
   - [ ] The app remains usable when permission is denied, unavailable, or not yet decided.
 - Verification:
   - [ ] Human restated understanding first.
-  - [ ] Gaps were explained.
+  - [x] Gaps around server-authoritative input, abandoned-run recovery, atomic
+    finalization, and success-only downstream signals were explained.
   - [ ] Code-specific question or walkthrough completed.
   - [ ] Quiz or walkthrough completed.
 - Status: pending
@@ -3393,3 +3394,81 @@ For each task, add a dated section with:
     passed; TypeScript, Expo lint, Python compilation, and dependency checks pass.
 - Status: in progress - nurse/team model verified; broader service walkthrough
   remains part of the combined Task 1.2-1.6 checkpoint.
+
+### 2026-08-22 - Complete Phase 9 Server Coordination and Atomic Save
+
+- Task: Implement Phase 9 Tasks 2.1-2.4 as one authenticated, idempotent,
+  atomic optimizer request flow, then complete one combined checkpoint.
+- Problem understanding:
+  - [x] Why a backend run record is needed instead of trusting a client-created
+    assignment or storing a duplicate shift snapshot.
+  - [x] Why an identical retry is checked before current preconditions, while a
+    new mutation must match the current revision and baseline.
+  - [x] Why bearer-token authentication, shift authorization, solver validation,
+    and protected finalization are separate security boundaries.
+- Solution understanding:
+  - [x] How `prepare_optimizer_run` derives the caller's charge profile and
+    coordinates one run before returning the authorized snapshot.
+  - [x] How `active_shifts.updated_at` acts as the server revision precondition;
+    human explained that the board may change between prepare and finalization.
+  - [x] How `run_optimizer_request` branches completed/in-progress retries before
+    normalization, solving, and finalization.
+  - [x] Why an immediate running retry waits, while the same mutation may reclaim
+    a run only after its 90-second recovery lease expires.
+  - [x] Why prepare and finalize lock the run and shift in the same order; human
+    identified prevention of circular transaction waiting.
+  - [x] How `finalize_optimizer_run` saves baseline, flags, run success, and
+    rerun override supersession in one transaction.
+  - [x] Why failed, stale, timed-out, and invalid paths never update
+    `active_shifts`; human identified `active_shifts` as the real assignment
+    change while `optimizer_runs` stores non-commit outcomes.
+- Broader context:
+  - [x] Why the successful `active_shifts` update automatically reuses existing
+    realtime and generic notification behavior.
+  - [x] Why the existing joined-nurse RPC can see the new committed baseline but
+    still returns only that nurse's effective beds; human chose the scoped view
+    instead of the full board and optimizer metadata.
+  - [x] Why `optimizer_runs`, patient details, service credentials, solver
+    internals, and the full board stay outside joined/mobile responses.
+- Verification:
+  - [x] Human restated the verifier, prepare, solver, and finalization flow.
+  - [x] Gaps around server-authoritative input, abandoned-run recovery, atomic
+    finalization, and success-only downstream signals were explained.
+  - [x] Code/document-specific checkpoint completed, including inherited client
+    initialization, prepare/run statuses, revision checks, recovery leases,
+    source-of-truth writes, and lock ordering.
+  - [x] Human identified that the dependency-install layer supplies the pinned
+    Python packages; the Docker cache benefit and Uvicorn factory gap were
+    explained afterward.
+  - [x] Hidden inherited RPC-client setup was replaced with explicit forwarding
+    constructors for the prepare and finalize clients; 48/48 Python tests still
+    pass after the readability-only change.
+  - [x] Human explained that each explicit child constructor forwards its
+    connection settings to `_SupabaseRpcClient` through `super()`.
+  - [x] Human confirmed that a normal publishable-key/user-token request must be
+    denied access to service-only optimizer finalization.
+  - [x] Human distinguished the optional saved `outcome_code` (`None` for a new
+    run) from the endpoint's later numeric HTTP status.
+  - [x] Human distinguished prepare `status` from persisted `runStatus` and
+    predicted `existing` plus `succeeded` for a completed identical retry.
+  - [x] Human explained that phone-supplied state could be stale and correctly
+    predicted saved-result reuse, immediate-running, and stale-precondition
+    retry branches; the tampering risk and 90-second reclaim branch were then
+    clarified.
+  - [x] Human confirmed that an abandoned but still-current run is reclaimed as
+    `prepared` after the 90-second lease.
+  - [x] Python Phase 9 suite passed: 48/48, including HTTP, auth, retry,
+    timeout, no-commit, SQL contract, and real solve-to-finalize tests.
+  - [x] Phase 9 fixture suite passed: 14/14.
+  - [x] Phase 9 output compatibility suite passed: 2/2.
+  - [x] Phase 1-8 Node regression passed: 37/37; TypeScript and Expo lint pass.
+  - [x] Disposable PostgreSQL execution passed for schema/grants, authorization,
+    identical retry, expired-lease recovery, mutation conflict, initial save,
+    rerun supersession, stale no-commit, corrupt-output rejection, and
+    forced-error rollback.
+  - [ ] Live Supabase RLS, Realtime, notification, and connected nurse-scope
+    checks run in a disposable project.
+- Status: verified - implementation, local verification, and the combined human
+  understanding checkpoint are complete. Live Supabase RLS, Realtime,
+  notification, and connected nurse-scope checks remain an explicit
+  pre-production gate rather than a completed verification claim.

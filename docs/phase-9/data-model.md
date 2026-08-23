@@ -297,7 +297,8 @@ duplicating the shift snapshot.
 | Client mutation ID | Idempotency key; unique for the requester and action scope. |
 | Expected shift revision | Revision used to build the normalized input. |
 | Expected baseline result ID | Missing for an initial run; prior baseline for rerun. |
-| Input fingerprint | One-way canonical fingerprint used to reject key reuse with different input; it is not the input payload. |
+| Request fingerprint | One-way fingerprint of the shift/revision/baseline preconditions, available during prepare for mutation-key reuse checks. |
+| Input fingerprint | One-way canonical solver-input fingerprint added after Python normalization; it is not the input payload. |
 | Optimizer version | Exact rules/runtime version used for reproducibility. |
 | Status | `running`, `succeeded`, `failed`, or `stale`. |
 | Result ID | Present only after a successful commit. |
