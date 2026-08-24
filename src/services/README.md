@@ -37,6 +37,13 @@ boundary for listing and appending request messages. The server derives the
 author and request access from the signed-in session; screens never choose an
 author identity or query another nurse's thread directly.
 
+Phase 9 uses `optimizerRepository` as the only mobile boundary for requesting
+an initial assignment or rerun. It sends the authenticated access token plus
+the shift ID, client mutation ID, current server revision, and optional prior
+baseline ID. It never sends a client-generated assignment result. After a
+saved or stale response, `ServerWorkspaceContext` reloads the authoritative
+Supabase workspace before the screen continues.
+
 Do not add offline queues, deep links, drag-and-drop overrides, board sharing,
 tablet layout, AI, or other future task infrastructure here until the matching
 task starts.

@@ -9,6 +9,10 @@ import {
 } from "react";
 
 import {
+  requestAssignmentOptimization as requestAssignmentOptimizationFromService,
+  type AssignmentOptimizerResult,
+} from "../services/optimizerRepository";
+import {
   confirmManualAssignmentOverride as confirmManualAssignmentOverrideOnServer,
   createServerActiveShift,
   deleteServerFloorTemplate,
@@ -94,6 +98,10 @@ type ServerWorkspaceContextValue = {
   joinedNurseRealtimeConnectionState: RealtimeConnectionState;
   previousShiftSnapshots: PreviousShiftSnapshot[];
   realtimeConnectionState: RealtimeConnectionState;
+  runAssignmentOptimizer: (input: {
+    clientMutationId: string;
+    expectedBaselineAssignmentResultId?: string;
+  }) => Promise<AssignmentOptimizerResult>;
   retryLoadJoinedNurseAccess: () => Promise<void>;
   retryLoadWorkspace: () => Promise<void>;
   resolveNurseSwapRequest: (
@@ -768,6 +776,85 @@ export function ServerWorkspaceProvider({
     [applyWorkspace, authState],
   );
 
+  const runAssignmentOptimizer = useCallback(
+    async (input: {
+      clientMutationId: string;
+      expectedBaselineAssignmentResultId?: string;
+    }) => {
+      if (
+        authState.status !== "signed_in" ||
+        authState.profile.role !== "charge_nurse"
+      ) {
+        throw new Error("Sign in as a charge nurse to run assignment.");
+      }
+
+      if (
+        workspaceState.status !== "ready" &&
+        workspaceState.status !== "empty"
+      ) {
+        throw new Error("Load the server workspace before running assignment.");
+      }
+
+      const activeShiftRecord = workspaceState.workspace.activeShift;
+
+      if (!activeShiftRecord) {
+        throw new Error("Start a shift before running assignment.");
+      }
+
+      const supabase = getSupabaseClient();
+
+      if (!supabase) {
+        throw new Error("Supabase is not configured yet.");
+      }
+
+      setSaveErrorMessage("");
+      setSaveStatus("saving");
+
+      try {
+        const result = await requestAssignmentOptimizationFromService(
+          supabase,
+          {
+            clientMutationId: input.clientMutationId,
+            expectedBaselineAssignmentResultId:
+              input.expectedBaselineAssignmentResultId,
+            expectedShiftRevision: activeShiftRecord.updatedAt,
+            shiftId: activeShiftRecord.id,
+          },
+        );
+
+        if (result.status === "saved" || result.status === "stale") {
+          const workspace = await loadServerWorkspace(
+            supabase,
+            authState.profile,
+          );
+
+          if (
+            result.status === "saved" &&
+            workspace.activeShift?.shiftSnapshot.assignmentResult?.id !==
+              result.resultId
+          ) {
+            throw new Error(
+              "Assignment was saved, but the current board could not be refreshed yet. Reload the workspace before continuing.",
+            );
+          }
+
+          applyWorkspace(workspace);
+        }
+
+        setSaveStatus(result.status === "saved" ? "saved" : "idle");
+
+        return result;
+      } catch (error) {
+        setSaveErrorMessage(
+          getErrorMessage(error, "Assignment could not be calculated."),
+        );
+        setSaveStatus("error");
+        throw error;
+      }
+    },
+    [applyWorkspace, authState, workspaceState],
+  );
+
   const rerunActiveShiftAssignment = useCallback(
     async (nextShift: Shift) => {
       if (
@@ -1064,6 +1151,7 @@ export function ServerWorkspaceProvider({
       retryLoadJoinedNurseAccess: loadJoinedNurseAccess,
       retryLoadWorkspace: loadWorkspace,
       rerunActiveShiftAssignment,
+      runAssignmentOptimizer,
       resolveNurseSwapRequest,
       saveActiveShift,
       saveErrorMessage,
@@ -1086,6 +1174,7 @@ export function ServerWorkspaceProvider({
       loadWorkspace,
       realtimeConnectionState,
       rerunActiveShiftAssignment,
+      runAssignmentOptimizer,
       resolveNurseSwapRequest,
       saveActiveShift,
       saveErrorMessage,

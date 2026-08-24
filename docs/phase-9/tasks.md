@@ -375,9 +375,13 @@ Manual validation:
 
 ## Mobile Integration
 
-### Task 3.1: Add the App Optimizer Repository Contract
+### Done Task 3.1: Add the App Optimizer Repository Contract
 
 Story coverage: US1, US5-US7
+
+Status: implementation, automated contract checks, and the teaching checkpoint
+are complete on 2026-08-23. The live connected manual pass remains pending, so
+this task is not marked Done yet.
 
 Build:
 
@@ -395,9 +399,13 @@ Manual validation:
 - Stale response refreshes current inputs and remains on review.
 - Malformed service responses fail safely.
 
-### Task 3.2: Connect Initial Assignment to the Backend
+### Done Task 3.2: Connect Initial Assignment to the Backend
 
 Story coverage: US1-US4, US7
+
+Status: implementation, TypeScript, lint, regression, production export, and
+the teaching checkpoint are complete on 2026-08-23. The configured-service
+manual accessibility pass remains pending, so this task is not marked Done yet.
 
 Build:
 

@@ -19,6 +19,7 @@
     "test:phase9-normalization": "python -m unittest discover -s optimizer-service/tests -p \"test_*.py\"",
     "test:phase9-optimizer": "optimizer-service\\.venv\\Scripts\\python.exe -m unittest discover -s optimizer-service/tests -p \"test_*.py\"",
     "test:phase9-output-compatibility": "tsx --test tests/phase9OutputCompatibility.integration.mjs",
+    "test:phase9-mobile": "tsx --test tests/optimizerRepository.test.mjs",
     "measure:phase8": "tsx scripts/measure-phase8-performance.ts"
   },
   "dependencies": {

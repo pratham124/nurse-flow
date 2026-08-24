@@ -111,6 +111,18 @@ No second realtime channel or nurse result model is added.
 - Joined users have no table grant or RLS policy for `optimizer_runs` and cannot
   receive the full board through that nurse-scoped RPC.
 
+## Public app configuration
+
+The Expo app needs only the optimizer service's public HTTPS base URL:
+
+```text
+EXPO_PUBLIC_OPTIMIZER_SERVICE_URL=https://your-optimizer-service.example
+```
+
+This URL is public app configuration, not a credential. The app obtains the
+current user's short-lived Supabase access token from its existing secure
+session and sends it as a bearer token for each optimizer request.
+
 ## Private service configuration
 
 Set these only in the optimizer service environment or secret manager:

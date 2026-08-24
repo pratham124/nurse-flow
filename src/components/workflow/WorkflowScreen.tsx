@@ -22,6 +22,7 @@ type WorkflowScreenProps = {
   primaryLabel?: string;
   onPrimaryPress?: () => void;
   primaryDisabled?: boolean;
+  primaryBusy?: boolean;
   primaryAppearance?: "prominent" | "compactSecondary";
   actionErrorText?: string;
   managesOwnScrolling?: boolean;
@@ -45,6 +46,7 @@ export function WorkflowScreen({
   primaryLabel,
   onPrimaryPress,
   primaryDisabled = false,
+  primaryBusy = false,
   primaryAppearance = "prominent",
   actionErrorText,
   managesOwnScrolling = false,
@@ -113,7 +115,10 @@ export function WorkflowScreen({
           <View style={styles.actionRow}>
             <Pressable
               accessibilityRole="button"
-              accessibilityState={{ disabled: primaryDisabled }}
+              accessibilityState={{
+                busy: primaryBusy,
+                disabled: primaryDisabled,
+              }}
               disabled={primaryDisabled}
               onPress={onPrimaryPress}
               style={({ pressed }) => [

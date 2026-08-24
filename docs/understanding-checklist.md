@@ -105,8 +105,11 @@ For each task, add a dated section with:
   - [ ] Cached views are readable saved copies, not permission to edit disconnected shift data.
   - [ ] Requiring a connection for writes keeps the MVP simpler and easier to explain.
 - Verification:
-  - [ ] Human restated understanding first.
-  - [ ] Gaps were explained.
+  - [x] Human restated the request fields, duplicate-request guard, phased rerun
+    scope, and failure behavior before the remaining gaps were explained.
+  - [x] Gaps around authoritative server input, revision versus baseline
+    preconditions, ambiguous retry identity, and safe failure behavior were
+    explained.
   - [ ] Documentation-specific question or walkthrough completed.
   - [ ] Quiz or walkthrough completed.
 - Status: pending
@@ -3472,3 +3475,53 @@ For each task, add a dated section with:
   understanding checkpoint are complete. Live Supabase RLS, Realtime,
   notification, and connected nurse-scope checks remain an explicit
   pre-production gate rather than a completed verification claim.
+
+### 2026-08-23 - Connect Initial Mobile Assignment to the Phase 9 Optimizer
+
+- Task: Implement Phase 9 Tasks 3.1 and 3.2 by adding the authenticated mobile
+  optimizer contract and replacing only the first-run local generator path.
+- Problem understanding:
+  - [x] Why the phone must request an assignment instead of sending a
+    client-generated `assignmentResult` for the server to trust.
+  - [x] Why shift revision, optional prior baseline ID, and mutation ID solve
+    different stale/concurrency/retry problems.
+  - [x] Why the existing rerun path remains temporarily unchanged until Task
+    3.3 instead of changing override behavior early.
+- Solution understanding:
+  - [x] How `requestAssignmentOptimization` obtains the current access token
+    and validates the six app-facing outcomes.
+  - [x] What the four mobile action fields identify and how the shift revision
+    differs from the optional prior-baseline precondition.
+  - [x] How `runAssignmentOptimizer` reloads Supabase after `saved` or `stale`
+    and verifies a saved result ID before the screen may navigate.
+  - [x] How `optimizerRequestInFlightRef` blocks rapid duplicate presses while
+    `retryMutationIdRef` preserves one idempotency key after an unavailable or
+    ambiguous response.
+  - [x] Why malformed, invalid, stale, timed-out, unavailable, and failed paths
+    stay on Assignment Review without creating a local baseline.
+- Broader context:
+  - [x] Why existing floor-board, flags, realtime, and joined-nurse readers need
+    no second assignment model after the backend commit is refreshed.
+  - [x] How Task 3.3 can reuse the same repository action with the current
+    baseline ID, while Task 3.4 later removes the final rerun generator call.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [x] Code-specific quiz and walkthrough completed for `primaryBusy`, the two
+    request refs, refresh/result-ID matching, request preconditions, protected
+    finalization, safe failures, and downstream `AssignmentResult` reuse.
+  - [x] Human explained that `primaryBusy` communicates ongoing work while the
+    separate disabled state prevents another press.
+  - [x] Human identified that the refreshed board could be outdated and worked
+    through result-ID mismatch cases, UUID creation, and the difference between
+    optimizer run IDs and committed assignment result IDs.
+  - [x] Optimizer repository contract suite passed: 9/9.
+  - [x] Full Python optimizer suite passed: 48/48.
+  - [x] Existing Node suite passed: 46/46, plus 2/2 cross-language output
+    compatibility checks.
+  - [x] TypeScript, Expo lint, web production export, and diff checks passed.
+  - [ ] Live authenticated initial assignment and screen-reader/dynamic-type
+    checks run against a configured optimizer service.
+- Status: verified - automated implementation checks and the human
+  understanding checkpoint pass. The configured-service manual pass remains an
+  explicit pre-production gate.
