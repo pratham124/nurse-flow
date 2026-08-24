@@ -145,6 +145,8 @@ export function AssignmentMoveDialog({
     new Set(),
   );
   const [feedback, setFeedback] = useState("");
+  const [openedBaselineAssignmentResultId, setOpenedBaselineAssignmentResultId] =
+    useState<string>();
   const [resultState, setResultState] = useState<"editing" | "saved" | "stale" | "error">(
     "editing",
   );
@@ -173,17 +175,38 @@ export function AssignmentMoveDialog({
     Boolean(preview) &&
     preview?.blockingReasons.length === 0 &&
     allWarningsAcknowledged &&
+    openedBaselineAssignmentResultId === effectiveAssignmentResult.id &&
     realtimeConnectionState === "live" &&
     saveStatus !== "saving";
 
   useEffect(() => {
     if (!visible) {
+      setOpenedBaselineAssignmentResultId(undefined);
       setSelectedNurseId(undefined);
       setAcknowledgedWarningIds(new Set());
       setFeedback("");
       setResultState("editing");
+      return;
     }
-  }, [visible]);
+
+    if (!openedBaselineAssignmentResultId) {
+      setOpenedBaselineAssignmentResultId(effectiveAssignmentResult.id);
+      return;
+    }
+
+    if (openedBaselineAssignmentResultId !== effectiveAssignmentResult.id) {
+      setSelectedNurseId(undefined);
+      setAcknowledgedWarningIds(new Set());
+      setFeedback(
+        "The assignment was rerun while this move was open. Close this dialog and review the new board before starting another move.",
+      );
+      setResultState("stale");
+    }
+  }, [
+    effectiveAssignmentResult.id,
+    openedBaselineAssignmentResultId,
+    visible,
+  ]);
 
   function handleSelectNurse(nurseId: string) {
     setSelectedNurseId(nurseId);
@@ -207,14 +230,19 @@ export function AssignmentMoveDialog({
   }
 
   async function handleConfirm() {
-    if (!bedId || !preview?.fromNurseId || !canConfirm) {
+    if (
+      !bedId ||
+      !preview?.fromNurseId ||
+      !openedBaselineAssignmentResultId ||
+      !canConfirm
+    ) {
       return;
     }
 
     try {
       setFeedback("");
       const result = await confirmManualAssignmentOverride({
-        baselineAssignmentResultId: effectiveAssignmentResult.id,
+        baselineAssignmentResultId: openedBaselineAssignmentResultId,
         bedId,
         clientMutationId: createLocalId("assignment-move"),
         fromNurseId: preview.fromNurseId,

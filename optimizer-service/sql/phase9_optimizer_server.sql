@@ -1,8 +1,21 @@
--- NurseFlow Phase 9 Tasks 2.1-2.4
+-- NurseFlow Phase 9 Tasks 2.1-2.4 and 3.4
 -- Run in Supabase after the Phase 5 active-shift tables and Phase 8 manual
 -- assignment override setup exist.
 
 create extension if not exists pgcrypto with schema extensions;
+
+-- Task 3.4: the Phase 8 rerun RPC accepted a complete assignment snapshot
+-- authored by the phone. Keep the historical function available for rollback,
+-- but remove every mobile-role grant now that reruns use the optimizer service.
+do $$
+begin
+  if to_regprocedure(
+    'public.rerun_active_shift_assignment(uuid,text,jsonb)'
+  ) is not null then
+    execute 'revoke all on function public.rerun_active_shift_assignment(uuid, text, jsonb) from public, anon, authenticated';
+  end if;
+end;
+$$;
 
 create table if not exists public.optimizer_runs (
   id uuid primary key default gen_random_uuid(),

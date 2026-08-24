@@ -44,6 +44,12 @@ baseline ID. It never sends a client-generated assignment result. After a
 saved or stale response, `ServerWorkspaceContext` reloads the authoritative
 Supabase workspace before the screen continues.
 
+The former `serverWorkspaceRepository.rerunActiveShiftAssignment` boundary is
+retired. Mobile code must not call `rerun_active_shift_assignment` or send a
+complete next-shift snapshot for assignment generation. The Phase 9 SQL also
+revokes that legacy RPC from mobile roles so the Python optimizer remains the
+only assignment-generation write path.
+
 Do not add offline queues, deep links, drag-and-drop overrides, board sharing,
 tablet layout, AI, or other future task infrastructure here until the matching
 task starts.

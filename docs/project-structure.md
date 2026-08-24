@@ -86,10 +86,25 @@ Use this map when deciding where new code belongs:
 
 - Floor templates, rooms, beds, and doctor sides belong in `floor-templates`.
 - Starting a shift, admitting side, load limits, nurses, patients, and acuity belong in `shift-setup`, `patients-acuity`, or nearby feature folders.
-- Balanced teams, room coverage, bed assignments, deterministic tie-breakers, and assignment flags belong in `assignment`.
+- Production team, room-coverage, and bed-assignment generation belongs in the
+  separately deployable `optimizer-service/`. Mobile `src/utils/` keeps only
+  assignment display, validation, effective-override projection, flag preview,
+  and other client-owned behavior; it must not generate a baseline.
 - Charge nurse board, board filters, inline flags, and workload summaries belong in `floor-board`.
 - Regular nurse assignment, issue flags, and swap requests belong in `nurse-view` when that phase starts.
 - Login, signup, sessions, real roles, backend persistence, realtime updates, invite links, push notifications, offline queues, sharing, and tablet layout are future-phase areas. Add their folders only when those phases begin.
+
+## Phase 9 Assignment Boundary
+
+- `optimizer-service/` owns normalization, OR-Tools solving, output validation,
+  and protected atomic finalization.
+- `src/services/optimizerRepository.ts` is the only mobile request boundary for
+  both initial assignment and reruns.
+- `src/store/ServerWorkspaceContext.tsx` refreshes the authoritative Supabase
+  workspace after saved or stale optimizer outcomes.
+- Mobile screens never calculate or submit a complete assignment result.
+- Manual move previews continue to use the committed baseline plus active
+  overrides and do not regenerate the baseline.
 
 ## Rule Of Thumb
 

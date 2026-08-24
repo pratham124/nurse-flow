@@ -52,6 +52,15 @@ class SqlContractTests(unittest.TestCase):
             re.compile(r"grant execute on function public\.finalize_optimizer_run\([\s\S]*?to authenticated;"),
         )
 
+    def test_legacy_client_authored_rerun_is_revoked(self) -> None:
+        self.assertRegex(
+            self.sql,
+            re.compile(
+                r"revoke all on function public\.rerun_active_shift_assignment"
+                r"\(uuid, text, jsonb\) from public, anon, authenticated"
+            ),
+        )
+
     def test_only_success_path_updates_active_shift(self) -> None:
         finalize_sql = self.sql.split("create or replace function public.finalize_optimizer_run", 1)[1]
         self.assertEqual(finalize_sql.count("update public.active_shifts"), 1)

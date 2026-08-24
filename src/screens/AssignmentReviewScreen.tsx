@@ -33,8 +33,6 @@ import {
   type AssignmentNeedSideSummary,
   type AssignmentNeedRoomSummary,
 } from "../utils/assignmentNeedSummary";
-import { generateAssignmentFlags } from "../utils/assignmentFlags";
-import { generateLocalAssignmentResult } from "../utils/assignmentTeams";
 
 type AssignmentReviewListHeaderProps = {
   activeOverrideCount: number;
@@ -188,7 +186,6 @@ export default function AssignmentReviewScreen() {
     activeAssignmentOverridesByBedId,
     activeShift,
     realtimeConnectionState,
-    rerunActiveShiftAssignment,
     runAssignmentOptimizer,
     saveStatus,
   } = useServerWorkspace();
@@ -222,7 +219,7 @@ export default function AssignmentReviewScreen() {
     }
   }, [activeShift]);
 
-  async function runInitialAssignment() {
+  async function runBackendAssignment() {
     if (
       !activeShift ||
       !validation.canRunAssignment ||
@@ -244,7 +241,11 @@ export default function AssignmentReviewScreen() {
     setServerSaveError("");
 
     try {
-      const result = await runAssignmentOptimizer({ clientMutationId });
+      const result = await runAssignmentOptimizer({
+        clientMutationId,
+        expectedBaselineAssignmentResultId:
+          activeShift.assignmentResult?.id,
+      });
 
       if (result.status === "saved") {
         retryMutationIdRef.current = undefined;
@@ -269,53 +270,6 @@ export default function AssignmentReviewScreen() {
     }
   }
 
-  async function runAndSaveAssignment() {
-    if (!activeShift) {
-      router.replace("/");
-      return;
-    }
-
-    if (!validation.canRunAssignment) {
-      return;
-    }
-
-    if (!activeShift.assignmentResult) {
-      await runInitialAssignment();
-      return;
-    }
-
-    const assignmentResult = generateLocalAssignmentResult(activeShift);
-    const nextShift = {
-      ...activeShift,
-      assignmentResult,
-      flags: generateAssignmentFlags(activeShift, assignmentResult),
-      status: "assigned" as const,
-    };
-
-    try {
-      setServerSaveError("");
-      const result = await rerunActiveShiftAssignment(nextShift);
-
-      if (result.status === "stale") {
-        setServerSaveError(
-          result.message ??
-            "The assignment changed. Review the refreshed shift and try again.",
-        );
-        return;
-      }
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Assignment could not be saved. Try again.";
-
-      setServerSaveError(message);
-      return;
-    }
-
-    router.push("/floor-board");
-  }
-
   function handlePrimaryPress() {
     if (
       !activeShift ||
@@ -331,12 +285,12 @@ export default function AssignmentReviewScreen() {
       return;
     }
 
-    void runAndSaveAssignment();
+    void runBackendAssignment();
   }
 
   function handleConfirmRerun() {
     setShowRerunConfirmation(false);
-    void runAndSaveAssignment();
+    void runBackendAssignment();
   }
 
   return (
@@ -373,9 +327,7 @@ export default function AssignmentReviewScreen() {
             : saveStatus === "saving"
               ? "Saving..."
               : serverSaveError
-                ? activeShift?.assignmentResult
-                  ? "Retry save"
-                  : "Retry assignment"
+                ? "Retry assignment"
                 : activeShift?.assignmentResult
                   ? "Rerun assignment"
                   : "Run assignment"
@@ -398,7 +350,7 @@ export default function AssignmentReviewScreen() {
       <ConfirmationDialog
         confirmLabel="Rerun and clear moves"
         confirmTone="danger"
-        message={`This will create a new generated assignment and clear ${activeOverrideCount} active manual ${activeOverrideCount === 1 ? "move" : "moves"}. The assignment algorithm itself will not change.`}
+        message={`A successful rerun will create a new generated assignment and clear ${activeOverrideCount} active manual ${activeOverrideCount === 1 ? "move" : "moves"}. The current assignment and moves stay unchanged if the rerun does not succeed.`}
         onCancel={() => setShowRerunConfirmation(false)}
         onConfirm={handleConfirmRerun}
         title="Rerun assignment?"

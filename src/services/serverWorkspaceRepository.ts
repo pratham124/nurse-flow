@@ -67,13 +67,6 @@ type ManualAssignmentOverrideRpcResult = {
   status?: string;
 };
 
-type RerunAssignmentRpcResult = {
-  activeAssignmentOverridesByBedId?: unknown;
-  message?: string;
-  shiftSnapshot?: unknown;
-  status?: string;
-};
-
 type PreviousShiftSnapshotRow = {
   charge_profile_id: string;
   completed_at: string;
@@ -162,18 +155,6 @@ export type ConfirmManualAssignmentOverrideResult = {
   currentEffectiveNurseId?: string;
   message?: string;
   override?: ManualAssignmentOverride;
-  status: "saved" | "stale";
-};
-
-export type RerunActiveShiftAssignmentInput = {
-  expectedBaselineAssignmentResultId: string;
-  nextShift: Shift;
-};
-
-export type RerunActiveShiftAssignmentResult = {
-  activeAssignmentOverridesByBedId: ActiveAssignmentOverridesByBedId;
-  message?: string;
-  shift?: Shift;
   status: "saved" | "stale";
 };
 
@@ -617,40 +598,6 @@ export async function confirmManualAssignmentOverride(
     message: result.message,
     override: result.override
       ? requireManualAssignmentOverride(result.override)
-      : undefined,
-    status: result.status,
-  };
-}
-
-export async function rerunActiveShiftAssignment(
-  supabase: SupabaseClient,
-  input: RerunActiveShiftAssignmentInput,
-): Promise<RerunActiveShiftAssignmentResult> {
-  const { data, error } = await supabase.rpc("rerun_active_shift_assignment", {
-    p_expected_baseline_assignment_result_id:
-      input.expectedBaselineAssignmentResultId,
-    p_next_shift_snapshot: input.nextShift,
-    p_shift_id: input.nextShift.id,
-  });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  const result = data as RerunAssignmentRpcResult | null;
-
-  if (result?.status !== "saved" && result?.status !== "stale") {
-    throw new Error("The assignment rerun returned an invalid result.");
-  }
-
-  return {
-    activeAssignmentOverridesByBedId:
-      requireActiveAssignmentOverrideProjection(
-        result.activeAssignmentOverridesByBedId,
-      ),
-    message: result.message,
-    shift: result.shiftSnapshot
-      ? requireShiftSnapshot(result.shiftSnapshot)
       : undefined,
     status: result.status,
   };

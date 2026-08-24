@@ -1,6 +1,7 @@
 # Phase 9 Optimizer Server Setup
 
-This setup implements the Supabase side of Phase 9 Tasks 2.1-2.4. The executable
+This setup implements the Supabase side of Phase 9 Tasks 2.1-2.4 and the legacy
+rerun-boundary retirement in Task 3.4. The executable
 SQL is in
 `optimizer-service/sql/phase9_optimizer_server.sql`.
 
@@ -23,6 +24,12 @@ Expo bearer token and four action fields
 The phone never sends a trusted assignment result. The full shift snapshot is
 returned only by the authorized prepare action and is not copied into the
 `optimizer_runs` table.
+
+The migration also revokes the Phase 8
+`rerun_active_shift_assignment(uuid, text, jsonb)` function from `public`,
+`anon`, and `authenticated`. Keeping the function definition temporarily makes
+rollback inspectable, but a mobile credential can no longer use it to save a
+self-authored baseline.
 
 ## Task 2.1: coordination and idempotency
 

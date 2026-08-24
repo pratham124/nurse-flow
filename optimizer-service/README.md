@@ -59,6 +59,16 @@ Tasks 2.1-2.4 add the safe server workflow:
 - only a successful `active_shifts` update reaches the existing realtime,
   notification, and nurse-scoped read paths.
 
+Tasks 3.3-3.4 complete the mobile cutover:
+
+- initial runs and reruns call the same endpoint, with reruns supplying the
+  current committed baseline ID;
+- the phone keeps the prior board and active overrides until finalization
+  succeeds;
+- the client-authored Phase 8 rerun RPC is revoked from mobile roles;
+- the retired TypeScript assignment generator is no longer part of the mobile
+  runtime.
+
 Install the exact service dependencies into an isolated environment:
 
 ```text

@@ -3525,3 +3525,68 @@ For each task, add a dated section with:
 - Status: verified - automated implementation checks and the human
   understanding checkpoint pass. The configured-service manual pass remains an
   explicit pre-production gate.
+
+### 2026-08-24 - Connect Optimizer Reruns and Retire Mobile Generation
+
+- Task: Implement Phase 9 Tasks 3.3 and 3.4 by routing reruns through the
+  authenticated optimizer, preserving moves until successful finalization, and
+  removing the client-generated assignment runtime path.
+- Problem understanding:
+  - [x] Why the old rerun path was unsafe even though its Supabase RPC checked
+    the prior baseline ID.
+  - [x] Why reruns need both the current shift revision and expected prior
+    assignment-result ID.
+  - [x] Why failure, stale, timeout, and unavailable outcomes must preserve the
+    committed baseline and active manual moves.
+- Solution understanding:
+  - [x] How `runBackendAssignment` uses the same optimizer action for initial
+    runs and reruns, adding the current result ID only for a rerun.
+  - [x] Why active overrides are cleared only inside successful protected
+    finalization instead of when the confirmation button is pressed.
+  - [x] How `AssignmentMoveDialog` keeps the baseline ID from when it opened so
+    a dialog made stale by a rerun cannot silently save against the new result.
+  - [x] Why the mobile generator, legacy context action, repository RPC, and
+    authenticated database grant were all retired together.
+- Broader context:
+  - [x] Why effective-assignment, flag preview, board display, and nurse-scoped
+    readers remain mobile consumers of the committed result rather than
+    assignment generators.
+  - [x] Why removing the old path makes the Python optimizer the single trusted
+    assignment-generation boundary without changing the `AssignmentResult`
+    shape.
+- Verification:
+  - [x] Human restated the key ideas incrementally through the checkpoint.
+  - [x] Gaps were explained.
+  - [x] Code-specific quiz and walkthrough completed.
+  - [x] Human identified that removing the screen call alone is insufficient
+    because a modified client could still call the legacy RPC directly with an
+    authenticated token; `REVOKE` leaves the function present but blocks those
+    mobile roles.
+  - [x] Human identified successful finalization as the only point where active
+    moves may be cleared; every non-success outcome keeps the prior effective
+    board intact.
+  - [x] Human recognized an outdated expected baseline ID as evidence that
+    another rerun already replaced the assignment; the stale request must make
+    no additional baseline or override changes.
+  - [x] Human distinguished the shift revision, which detects newer nurses,
+    patients, acuity, or other shift inputs, from the baseline ID, which detects
+    assignment replacement.
+  - [x] Human recognized that the move dialog starts from the baseline present
+    when it opens; preserving that ID lets a later rerun make the dialog stale
+    instead of silently rebasing its old choice onto the new assignment.
+  - [x] Human identified effective-assignment and flag-preview helpers as
+    consumers of the committed baseline plus manual moves, not generators of a
+    new baseline.
+  - [x] Phase 9 mobile contract and runtime checks passed: 12/12.
+  - [x] Effective-assignment and move-preview checks passed: 8/8.
+  - [x] Full Python optimizer and SQL contract suite passed: 49/49.
+  - [x] Phase 9 fixtures passed: 14/14; output compatibility passed: 2/2.
+  - [x] Existing local ID, realtime, request lifecycle, responsive-layout, and
+    Phase 8 performance regressions passed: 15/15.
+  - [x] TypeScript, Expo lint, web production export, source search, and diff
+    checks passed.
+  - [ ] Configured-service rerun success/stale/failure, move-clearing, stale
+    dialog, screen-reader, and dynamic-type checks run manually.
+- Status: verified - implementation, automated verification, and the human
+  understanding checkpoint are complete. The configured-service rerun and
+  accessibility passes remain an explicit pre-production gate.

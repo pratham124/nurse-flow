@@ -422,9 +422,13 @@ Manual validation:
 - Failure stays on review and creates no local-only assignment.
 - Accessibility and dynamic-type checks pass for busy and error states.
 
-### Task 3.3: Connect Rerun and Override Clearing to the Backend
+### Done Task 3.3: Connect Rerun and Override Clearing to the Backend
 
 Story coverage: US5-US7
+
+Status: Done on 2026-08-24 after implementation, automated checks, production
+export, and the teaching checkpoint. The configured-service manual rerun pass
+remains an explicit pre-production gate.
 
 Build:
 
@@ -440,9 +444,15 @@ Manual validation:
 - Failure and stale outcomes preserve the prior effective board.
 - An old manual-move dialog cannot save against the new baseline.
 
-### Task 3.4: Retire the Frontend Generator from the Runtime Path
+### Done Task 3.4: Retire the Frontend Generator from the Runtime Path
 
 Story coverage: US1, US6, US7
+
+Status: Done on 2026-08-24. The mobile generator, trusted-snapshot rerun client,
+and mobile grant to the legacy rerun RPC are retired. Automated source-contract
+checks, regressions, TypeScript, lint, production export, and the teaching
+checkpoint pass. The final connected manual pass remains an explicit
+pre-production gate.
 
 Build:
 
