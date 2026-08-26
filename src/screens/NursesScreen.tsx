@@ -16,6 +16,7 @@ import {
   WorkflowSection,
 } from "../components/workflow";
 import { createLocalId } from "../helpers/localId";
+import { AssignedShiftEditGuard } from "../components/assignment/AssignedShiftEditGuard";
 import { useActiveShiftDraft } from "../hooks/useActiveShiftDraft";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { shiftSetupFlow } from "../utils/workflowFlows";
@@ -467,41 +468,48 @@ export default function NursesScreen() {
   }
 
   return (
-    <WorkflowListScreen
-      activeStep="Nurses"
-      actionErrorText={
-        activeShift
-          ? serverSaveError || nurseListError
-          : "Start a shift before adding nurses."
-      }
-      data={nurses}
-      flow={shiftSetupFlow}
-      headerActionLabel="Floors"
-      keyExtractor={getNurseKey}
-      listHeader={
-        <NursesListHeader
-          experienceLevel={experienceLevel}
-          licenseType={licenseType}
-          name={nurseName}
-          nameError={nurseNameError}
-          nurseCount={nurses.length}
-          onAddNurse={handleAddNurse}
-          onExperienceLevelChange={setExperienceLevel}
-          onLicenseTypeChange={setLicenseType}
-          onNameChange={handleNurseNameChange}
-          totalCapacity={totalCapacity}
-        />
-      }
-      onHeaderActionPress={() => router.push("/")}
-      onPrimaryPress={handleContinue}
-      primaryDisabled={isSavingShift}
-      primaryLabel={
-        isSavingShift ? "Saving..." : serverSaveError ? "Retry save" : "Continue"
-      }
-      renderItem={renderNurseItem}
-      subtitle="Step 2 of 3"
-      title={activeShift?.floorName ?? "Nurses"}
-    />
+    <>
+      <WorkflowListScreen
+        activeStep="Nurses"
+        actionErrorText={
+          activeShift
+            ? serverSaveError || nurseListError
+            : "Start a shift before adding nurses."
+        }
+        data={nurses}
+        flow={shiftSetupFlow}
+        headerActionLabel="Floors"
+        keyExtractor={getNurseKey}
+        listHeader={
+          <NursesListHeader
+            experienceLevel={experienceLevel}
+            licenseType={licenseType}
+            name={nurseName}
+            nameError={nurseNameError}
+            nurseCount={nurses.length}
+            onAddNurse={handleAddNurse}
+            onExperienceLevelChange={setExperienceLevel}
+            onLicenseTypeChange={setLicenseType}
+            onNameChange={handleNurseNameChange}
+            totalCapacity={totalCapacity}
+          />
+        }
+        onHeaderActionPress={() => router.push("/")}
+        onPrimaryPress={handleContinue}
+        primaryDisabled={isSavingShift}
+        primaryLabel={
+          isSavingShift
+            ? "Saving..."
+            : serverSaveError
+              ? "Retry save"
+              : "Continue"
+        }
+        renderItem={renderNurseItem}
+        subtitle="Step 2 of 3"
+        title={activeShift?.floorName ?? "Nurses"}
+      />
+      <AssignedShiftEditGuard activeShift={serverActiveShift} />
+    </>
   );
 }
 

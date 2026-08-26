@@ -14,6 +14,7 @@ import {
   WorkflowListScreen,
   WorkflowSection,
 } from "../components/workflow";
+import { AssignedShiftEditGuard } from "../components/assignment/AssignedShiftEditGuard";
 import { useActiveShiftDraft } from "../hooks/useActiveShiftDraft";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
@@ -698,47 +699,50 @@ export default function PatientsAndAcuityScreen() {
   }
 
   return (
-    <WorkflowListScreen
-      activeStep="Patients"
-      actionErrorText={
-        activeShift
-          ? serverSaveError ||
-            (hasInvalidAge
-            ? wholeNumberAgeMessage
-            : hasMissingAcuity
-              ? acuityRequiredMessage
-              : "")
-          : "Start a shift before adding patients."
-      }
-      data={filteredRoomGroups}
-      flow={shiftSetupFlow}
-      headerActionLabel="Floors"
-      keyExtractor={getRoomKey}
-      listHeader={
-        <PatientsListHeader
-          onSelectFilter={setSelectedFilter}
-          occupiedBedCount={occupiedBedCount}
-          selectedFilter={selectedFilter}
-          totalBedCount={totalBedCount}
-        />
-      }
-      ListEmptyComponent={
-        <EmptyCensusMessage selectedFilter={selectedFilter} />
-      }
-      onHeaderActionPress={() => router.push("/")}
-      onPrimaryPress={handleContinue}
-      primaryDisabled={saveStatus === "saving"}
-      primaryLabel={
-        saveStatus === "saving"
-          ? "Saving..."
-          : serverSaveError
-            ? "Retry save"
-            : "Review assignment"
-      }
-      renderItem={renderRoomItem}
-      subtitle="Step 3 of 3"
-      title={activeShift?.floorName ?? "Patients and acuity"}
-    />
+    <>
+      <WorkflowListScreen
+        activeStep="Patients"
+        actionErrorText={
+          activeShift
+            ? serverSaveError ||
+              (hasInvalidAge
+              ? wholeNumberAgeMessage
+              : hasMissingAcuity
+                ? acuityRequiredMessage
+                : "")
+            : "Start a shift before adding patients."
+        }
+        data={filteredRoomGroups}
+        flow={shiftSetupFlow}
+        headerActionLabel="Floors"
+        keyExtractor={getRoomKey}
+        listHeader={
+          <PatientsListHeader
+            onSelectFilter={setSelectedFilter}
+            occupiedBedCount={occupiedBedCount}
+            selectedFilter={selectedFilter}
+            totalBedCount={totalBedCount}
+          />
+        }
+        ListEmptyComponent={
+          <EmptyCensusMessage selectedFilter={selectedFilter} />
+        }
+        onHeaderActionPress={() => router.push("/")}
+        onPrimaryPress={handleContinue}
+        primaryDisabled={saveStatus === "saving"}
+        primaryLabel={
+          saveStatus === "saving"
+            ? "Saving..."
+            : serverSaveError
+              ? "Retry save"
+              : "Review assignment"
+        }
+        renderItem={renderRoomItem}
+        subtitle="Step 3 of 3"
+        title={activeShift?.floorName ?? "Patients and acuity"}
+      />
+      <AssignedShiftEditGuard activeShift={serverActiveShift} />
+    </>
   );
 }
 

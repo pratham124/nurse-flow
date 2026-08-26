@@ -33,6 +33,10 @@ import type {
   ShiftNurseInviteRecord,
   UserProfile,
 } from "../types/models";
+import {
+  getNurseAssignedPatientCount,
+  nurseHasAssignedPatients,
+} from "../utils/nurseInviteEligibility";
 import { assignmentFlow } from "../utils/workflowFlows";
 
 type InviteScreenWorkspace = {
@@ -50,6 +54,7 @@ type GeneratedInviteCodeState = {
 type NurseInviteRowProps = {
   access?: ShiftNurseAccess;
   actionMessage?: string;
+  assignedPatientCount: number;
   busy: boolean;
   generatedCode?: GeneratedInviteCodeState;
   invite?: ShiftNurseInviteRecord;
@@ -219,6 +224,7 @@ function NurseInvitesHeader({
 function NurseInviteRow({
   access,
   actionMessage,
+  assignedPatientCount,
   busy,
   generatedCode,
   invite,
@@ -229,6 +235,7 @@ function NurseInviteRow({
   onShare,
 }: NurseInviteRowProps) {
   const canCopyOrShare = Boolean(generatedCode?.code);
+  const canGenerateCode = assignedPatientCount > 0;
   const hasActiveInvite = invite?.status === "active";
   const shouldShowStoredCodeNotice = hasActiveInvite && !generatedCode;
 
@@ -242,6 +249,11 @@ function NurseInviteRow({
           </Text>
         </View>
         <View style={styles.statusStack}>
+          <SummaryChip
+            label={`${assignedPatientCount} ${
+              assignedPatientCount === 1 ? "patient" : "patients"
+            }`}
+          />
           <SummaryChip label={getJoinedStatusLabel(access)} />
           <SummaryChip label={getInviteStatusLabel(invite)} />
         </View>
@@ -255,7 +267,9 @@ function NurseInviteRow({
         <HiddenCodeNotice />
       ) : (
         <Text style={styles.helperText}>
-          Generate a code when this nurse is ready to join the active shift.
+          {canGenerateCode
+            ? "Generate a code when this nurse is ready to join the active shift."
+            : "Assign at least one patient before generating a join code."}
         </Text>
       )}
 
@@ -279,20 +293,50 @@ function NurseInviteRow({
               onPress={() => onShare(nurse.id)}
             />
             <PlaceholderButton
-              label={busy ? "Regenerating" : "Regenerate"}
-              onPress={busy ? undefined : () => onRegenerate(nurse.id)}
+              label={
+                canGenerateCode
+                  ? busy
+                    ? "Regenerating"
+                    : "Regenerate"
+                  : "No patients assigned"
+              }
+              onPress={
+                busy || !canGenerateCode
+                  ? undefined
+                  : () => onRegenerate(nurse.id)
+              }
             />
           </>
         ) : hasActiveInvite ? (
           <PlaceholderButton
-            label={busy ? "Regenerating" : "Regenerate code"}
-            onPress={busy ? undefined : () => onRegenerate(nurse.id)}
+            label={
+              canGenerateCode
+                ? busy
+                  ? "Regenerating"
+                  : "Regenerate code"
+                : "No patients assigned"
+            }
+            onPress={
+              busy || !canGenerateCode
+                ? undefined
+                : () => onRegenerate(nurse.id)
+            }
             variant="primary"
           />
         ) : (
           <PlaceholderButton
-            label={busy ? "Generating" : "Generate code"}
-            onPress={busy ? undefined : () => onGenerate(nurse.id)}
+            label={
+              canGenerateCode
+                ? busy
+                  ? "Generating"
+                  : "Generate code"
+                : "No patients assigned"
+            }
+            onPress={
+              busy || !canGenerateCode
+                ? undefined
+                : () => onGenerate(nurse.id)
+            }
             variant="primary"
           />
         )}
@@ -383,7 +427,11 @@ function EmptyNurseList() {
 }
 
 export default function NurseInvitesScreen() {
-  const { retryLoadWorkspace, workspaceState } = useServerWorkspace();
+  const {
+    effectiveAssignmentResult,
+    retryLoadWorkspace,
+    workspaceState,
+  } = useServerWorkspace();
   const { activeShift, profile } = getInviteWorkspace(workspaceState);
   const [inviteRecords, setInviteRecords] = useState<ShiftNurseInviteRecord[]>(
     [],
@@ -410,10 +458,21 @@ export default function NurseInvitesScreen() {
     () =>
       nurses.map((nurse) => ({
         access: getAccessForNurse(accessRecords, nurse.id),
+        assignedPatientCount: getNurseAssignedPatientCount(
+          activeShift?.shiftSnapshot,
+          effectiveAssignmentResult,
+          nurse.id,
+        ),
         invite: getActiveInviteForNurse(inviteRecords, nurse.id),
         nurse,
       })),
-    [accessRecords, inviteRecords, nurses],
+    [
+      accessRecords,
+      activeShift?.shiftSnapshot,
+      effectiveAssignmentResult,
+      inviteRecords,
+      nurses,
+    ],
   );
 
   const refreshInviteData = useCallback(async () => {
@@ -501,6 +560,19 @@ export default function NurseInvitesScreen() {
       return;
     }
 
+    if (
+      !nurseHasAssignedPatients(
+        activeShift.shiftSnapshot,
+        effectiveAssignmentResult,
+        nurseId,
+      )
+    ) {
+      setActionErrorMessage(
+        "Assign at least one patient to this nurse before generating a code.",
+      );
+      return;
+    }
+
     const supabase = getSupabaseClient();
 
     if (!supabase) {
@@ -518,6 +590,20 @@ export default function NurseInvitesScreen() {
   }
 
   function handleRegenerate(nurseId: string) {
+    if (
+      !activeShift ||
+      !nurseHasAssignedPatients(
+        activeShift.shiftSnapshot,
+        effectiveAssignmentResult,
+        nurseId,
+      )
+    ) {
+      setActionErrorMessage(
+        "Assign at least one patient to this nurse before generating a code.",
+      );
+      return;
+    }
+
     setConfirmRegenerateNurseId(nurseId);
   }
 
@@ -673,6 +759,7 @@ export default function NurseInvitesScreen() {
           <NurseInviteRow
             access={item.access}
             actionMessage={actionMessageByNurseId[item.nurse.id]}
+            assignedPatientCount={item.assignedPatientCount}
             busy={busyNurseId === item.nurse.id}
             generatedCode={generatedCodes[item.nurse.id]}
             invite={item.invite}

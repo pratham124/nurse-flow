@@ -10,6 +10,7 @@ import {
   WorkflowSection,
   WorkflowScreen,
 } from "../components/workflow";
+import { AssignedShiftEditGuard } from "../components/assignment/AssignedShiftEditGuard";
 import { useActiveShiftDraft } from "../hooks/useActiveShiftDraft";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { shiftSetupFlow } from "../utils/workflowFlows";
@@ -193,88 +194,109 @@ export default function StartShiftScreen() {
   }
 
   return (
-    <WorkflowScreen
-      activeStep="Shift"
-      actionErrorText={
-        serverSaveError ||
-        admittingSideError ||
-        loadLimitError ||
-        (canContinue ? "" : "Create a floor template before starting a shift.")
-      }
-      headerActionLabel="Floors"
-      onHeaderActionPress={() => router.push("/")}
-      onPrimaryPress={handleContinue}
-      primaryDisabled={isSavingShift}
-      primaryLabel={
-        isSavingShift
-          ? "Saving..."
-          : serverSaveError
-            ? "Retry save"
-            : canContinue
-              ? "Continue"
-              : "Back to floors"
-      }
-      flow={shiftSetupFlow}
-      subtitle="Step 1 of 3"
-      title={activeShift?.floorName ?? "Start shift"}
-    >
-      <WorkflowSection title="Template summary">
-        <SummaryTileGrid>
-          <SummaryTile
-            value={(activeShift?.doctorSides.length ?? 0).toString()}
-            label={getCountLabel(
-              activeShift?.doctorSides.length ?? 0,
-              "Doctor side",
-              "Doctor sides",
-            )}
-          />
-          <SummaryTile
-            value={(activeShift?.rooms.length ?? 0).toString()}
-            label={getCountLabel(activeShift?.rooms.length ?? 0, "Room", "Rooms")}
-          />
-          <SummaryTile
-            value={(activeShift?.bedStates.length ?? 0).toString()}
-            label={getCountLabel(activeShift?.bedStates.length ?? 0, "Bed", "Beds")}
-          />
-        </SummaryTileGrid>
-      </WorkflowSection>
+    <>
+      <WorkflowScreen
+        activeStep="Shift"
+        actionErrorText={
+          serverSaveError ||
+          admittingSideError ||
+          loadLimitError ||
+          (canContinue
+            ? ""
+            : "Create a floor template before starting a shift.")
+        }
+        flow={shiftSetupFlow}
+        headerActionLabel="Floors"
+        onHeaderActionPress={() => router.push("/")}
+        onPrimaryPress={handleContinue}
+        primaryDisabled={isSavingShift}
+        primaryLabel={
+          isSavingShift
+            ? "Saving..."
+            : serverSaveError
+              ? "Retry save"
+              : canContinue
+                ? "Continue"
+                : "Back to floors"
+        }
+        subtitle="Step 1 of 3"
+        title={activeShift?.floorName ?? "Start shift"}
+      >
+        <WorkflowSection title="Template summary">
+          <SummaryTileGrid>
+            <SummaryTile
+              value={(activeShift?.doctorSides.length ?? 0).toString()}
+              label={getCountLabel(
+                activeShift?.doctorSides.length ?? 0,
+                "Doctor side",
+                "Doctor sides",
+              )}
+            />
+            <SummaryTile
+              value={(activeShift?.rooms.length ?? 0).toString()}
+              label={getCountLabel(
+                activeShift?.rooms.length ?? 0,
+                "Room",
+                "Rooms",
+              )}
+            />
+            <SummaryTile
+              value={(activeShift?.bedStates.length ?? 0).toString()}
+              label={getCountLabel(
+                activeShift?.bedStates.length ?? 0,
+                "Bed",
+                "Beds",
+              )}
+            />
+          </SummaryTileGrid>
+        </WorkflowSection>
 
-      <WorkflowSection title="Admitting side">
-        <SegmentedPlaceholder
-          options={doctorSideOptions.length ? doctorSideOptions : ["Side 1", "Side 2"]}
-          selectedIndex={hasAdmittingSide ? selectedAdmittingSideIndex : null}
-          onSelect={activeShift ? handleSelectAdmittingSide : undefined}
-        />
-      </WorkflowSection>
-
-      <WorkflowSection title="Side-based load limits">
-        <View style={styles.limitRow}>
-          <View style={styles.limitText}>
-            <Text style={styles.limitTitle}>Admitting-side coverage</Text>
-            <Text style={styles.limitMeta}>Default target around 4-5 patients</Text>
-          </View>
-          <LoadLimitRangeControl
-            loadLimitRange={activeShift?.sideLoadLimits.admitting}
-            onChange={(field, value) =>
-              handleLoadLimitChange("admitting", field, value)
+        <WorkflowSection title="Admitting side">
+          <SegmentedPlaceholder
+            onSelect={activeShift ? handleSelectAdmittingSide : undefined}
+            options={
+              doctorSideOptions.length
+                ? doctorSideOptions
+                : ["Side 1", "Side 2"]
             }
+            selectedIndex={hasAdmittingSide ? selectedAdmittingSideIndex : null}
           />
-        </View>
+        </WorkflowSection>
 
-        <View style={styles.limitRow}>
-          <View style={styles.limitText}>
-            <Text style={styles.limitTitle}>Non-admitting only</Text>
-            <Text style={styles.limitMeta}>Default target around 6-7 patients</Text>
+        <WorkflowSection title="Side-based load limits">
+          <View style={styles.limitRow}>
+            <View style={styles.limitText}>
+              <Text style={styles.limitTitle}>Admitting-side coverage</Text>
+              <Text style={styles.limitMeta}>
+                Default target around 4-5 patients
+              </Text>
+            </View>
+            <LoadLimitRangeControl
+              loadLimitRange={activeShift?.sideLoadLimits.admitting}
+              onChange={(field, value) =>
+                handleLoadLimitChange("admitting", field, value)
+              }
+            />
           </View>
-          <LoadLimitRangeControl
-            loadLimitRange={activeShift?.sideLoadLimits.nonAdmitting}
-            onChange={(field, value) =>
-              handleLoadLimitChange("nonAdmitting", field, value)
-            }
-          />
-        </View>
-      </WorkflowSection>
-    </WorkflowScreen>
+
+          <View style={styles.limitRow}>
+            <View style={styles.limitText}>
+              <Text style={styles.limitTitle}>Non-admitting only</Text>
+              <Text style={styles.limitMeta}>
+                Default target around 6-7 patients
+              </Text>
+            </View>
+            <LoadLimitRangeControl
+              loadLimitRange={activeShift?.sideLoadLimits.nonAdmitting}
+              onChange={(field, value) =>
+                handleLoadLimitChange("nonAdmitting", field, value)
+              }
+            />
+          </View>
+        </WorkflowSection>
+      </WorkflowScreen>
+      <AssignedShiftEditGuard activeShift={serverActiveShift} />
+    </>
   );
 }
 

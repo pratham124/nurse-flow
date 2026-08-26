@@ -67,6 +67,15 @@ type ManualAssignmentOverrideRpcResult = {
   status?: string;
 };
 
+type ResetActiveShiftForEditingRpcResult = {
+  activeAssignmentOverridesByBedId?: unknown;
+  active_assignment_overrides_by_bed_id?: unknown;
+  message?: string;
+  shiftSnapshot?: unknown;
+  shift_snapshot?: unknown;
+  status?: string;
+};
+
 type PreviousShiftSnapshotRow = {
   charge_profile_id: string;
   completed_at: string;
@@ -157,6 +166,17 @@ export type ConfirmManualAssignmentOverrideResult = {
   override?: ManualAssignmentOverride;
   status: "saved" | "stale";
 };
+
+export type ResetActiveShiftForEditingResult =
+  | {
+      activeAssignmentOverridesByBedId: ActiveAssignmentOverridesByBedId;
+      shiftSnapshot: Shift;
+      status: "saved";
+    }
+  | {
+      message: string;
+      status: "stale";
+    };
 
 type ChargeProfileIdentifier = Pick<UserProfile, "id" | "role">;
 
@@ -943,6 +963,59 @@ export async function saveServerActiveShift(
   }
 
   return mapActiveShiftRow(data);
+}
+
+export async function resetServerActiveShiftForEditing(
+  supabase: SupabaseClient,
+  profile: UserProfile,
+  shiftId: string,
+  expectedBaselineAssignmentResultId: string,
+): Promise<ResetActiveShiftForEditingResult> {
+  assertChargeNurse(profile);
+
+  if (!uuidPattern.test(shiftId)) {
+    throw new Error("Only a server-backed active shift can be edited.");
+  }
+
+  const { data, error } = await supabase.rpc(
+    "reset_active_shift_for_editing",
+    {
+      p_expected_baseline_assignment_result_id:
+        expectedBaselineAssignmentResultId,
+      p_shift_id: shiftId,
+    },
+  );
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const result = data as ResetActiveShiftForEditingRpcResult | undefined;
+
+  if (result?.status === "stale") {
+    return {
+      message:
+        result.message ??
+        "The assignment changed. Review the current board before editing.",
+      status: "stale",
+    };
+  }
+
+  if (result?.status !== "saved") {
+    throw new Error("The server returned an invalid shift-edit reset result.");
+  }
+
+  return {
+    activeAssignmentOverridesByBedId:
+      requireActiveAssignmentOverrideProjection(
+        result.activeAssignmentOverridesByBedId ??
+          result.active_assignment_overrides_by_bed_id,
+      ),
+    shiftSnapshot: requireShiftSnapshot(
+      result.shiftSnapshot ?? result.shift_snapshot,
+    ),
+    status: "saved",
+  };
 }
 
 export async function endServerActiveShift(

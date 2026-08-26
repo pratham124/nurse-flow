@@ -21,6 +21,7 @@ import {
   loadServerActiveShift,
   loadServerWorkspace,
   resolveShiftNurseSwapRequest as resolveShiftNurseSwapRequestOnServer,
+  resetServerActiveShiftForEditing,
   saveServerActiveShift,
   saveServerFloorTemplate,
   saveServerPreviousShiftSnapshot,
@@ -106,6 +107,9 @@ type ServerWorkspaceContextValue = {
     requestId: string,
     nextStatus: Extract<NurseRequestStatus, "accepted" | "declined">,
   ) => Promise<void>;
+  resetActiveShiftForEditing: (
+    expectedBaselineAssignmentResultId: string,
+  ) => Promise<Shift>;
   saveActiveShift: (activeShift: Shift) => Promise<Shift>;
   saveErrorMessage: string;
   saveFloorTemplate: (
@@ -731,6 +735,69 @@ export function ServerWorkspaceProvider({
     [applyWorkspace, authState],
   );
 
+  const resetActiveShiftForEditing = useCallback(
+    async (expectedBaselineAssignmentResultId: string) => {
+      if (
+        authState.status !== "signed_in" ||
+        authState.profile.role !== "charge_nurse"
+      ) {
+        throw new Error("Sign in as a charge nurse to edit this shift.");
+      }
+
+      if (
+        workspaceState.status !== "ready" &&
+        workspaceState.status !== "empty"
+      ) {
+        throw new Error("The active shift is still loading. Try again.");
+      }
+
+      const activeShiftRecord = workspaceState.workspace.activeShift;
+
+      if (!activeShiftRecord) {
+        throw new Error("This active shift is no longer available.");
+      }
+
+      const supabase = getSupabaseClient();
+
+      if (!supabase) {
+        throw new Error("Supabase is not configured yet.");
+      }
+
+      setSaveErrorMessage("");
+      setSaveStatus("saving");
+
+      try {
+        const result = await resetServerActiveShiftForEditing(
+          supabase,
+          authState.profile,
+          activeShiftRecord.id,
+          expectedBaselineAssignmentResultId,
+        );
+        const workspace = await loadServerWorkspace(supabase, authState.profile);
+
+        applyWorkspace(workspace);
+
+        if (result.status === "stale") {
+          setSaveStatus("error");
+          throw new Error(result.message);
+        }
+
+        setSaveStatus("saved");
+        return result.shiftSnapshot;
+      } catch (error) {
+        setSaveErrorMessage(
+          getErrorMessage(
+            error,
+            "The active shift could not be opened for editing.",
+          ),
+        );
+        setSaveStatus("error");
+        throw error;
+      }
+    },
+    [applyWorkspace, authState, workspaceState],
+  );
+
   const confirmManualAssignmentOverride = useCallback(
     async (input: ConfirmManualAssignmentOverrideInput) => {
       if (
@@ -1100,6 +1167,7 @@ export function ServerWorkspaceProvider({
       retryLoadWorkspace: loadWorkspace,
       runAssignmentOptimizer,
       resolveNurseSwapRequest,
+      resetActiveShiftForEditing,
       saveActiveShift,
       saveErrorMessage,
       saveFloorTemplate,
@@ -1122,6 +1190,7 @@ export function ServerWorkspaceProvider({
       realtimeConnectionState,
       runAssignmentOptimizer,
       resolveNurseSwapRequest,
+      resetActiveShiftForEditing,
       saveActiveShift,
       saveErrorMessage,
       saveFloorTemplate,

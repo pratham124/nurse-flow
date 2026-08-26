@@ -18,6 +18,8 @@ type ConfirmationDialogProps = {
   title: string;
   visible: boolean;
   cancelLabel?: string;
+  cancelDisabled?: boolean;
+  confirmDisabled?: boolean;
   confirmTone?: "default" | "danger";
   onCancel: () => void;
   onConfirm: () => void;
@@ -29,6 +31,8 @@ export function ConfirmationDialog({
   title,
   visible,
   cancelLabel = "Cancel",
+  cancelDisabled = false,
+  confirmDisabled = false,
   confirmTone = "default",
   onCancel,
   onConfirm,
@@ -69,21 +73,29 @@ export function ConfirmationDialog({
           <View style={styles.actions}>
             <Pressable
               accessibilityRole="button"
+              accessibilityState={{ disabled: cancelDisabled }}
+              disabled={cancelDisabled}
               onPress={onCancel}
               style={({ pressed }) => [
                 styles.cancelButton,
-                pressed ? styles.cancelButtonPressed : null,
+                cancelDisabled ? styles.disabledButton : null,
+                pressed && !cancelDisabled ? styles.cancelButtonPressed : null,
               ]}
             >
               <Text style={styles.cancelButtonText}>{cancelLabel}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
+              accessibilityState={{ disabled: confirmDisabled }}
+              disabled={confirmDisabled}
               onPress={onConfirm}
               style={({ pressed }) => [
                 styles.confirmButton,
                 isDanger ? styles.dangerButton : null,
-                pressed ? styles.confirmButtonPressed : null,
+                confirmDisabled ? styles.disabledButton : null,
+                pressed && !confirmDisabled
+                  ? styles.confirmButtonPressed
+                  : null,
               ]}
             >
               <Text style={styles.confirmButtonText}>{confirmLabel}</Text>
@@ -162,6 +174,9 @@ const styles = StyleSheet.create({
   },
   confirmButtonPressed: {
     opacity: 0.85,
+  },
+  disabledButton: {
+    opacity: 0.48,
   },
   dangerButton: {
     backgroundColor: colors.status.red700,

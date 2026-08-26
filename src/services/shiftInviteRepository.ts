@@ -8,6 +8,8 @@ import type {
   ShiftNurseInviteStatus,
   UserProfile,
 } from "../types/models";
+import { getEffectiveAssignmentResult } from "../utils/effectiveAssignment";
+import { nurseHasAssignedPatients } from "../utils/nurseInviteEligibility";
 
 type ShiftNurseInviteRow = {
   created_at: string;
@@ -158,6 +160,31 @@ function assertNurseBelongsToShift(
   if (!nurseExists) {
     throw new Error(
       "Choose a nurse from the active shift before creating an invite.",
+    );
+  }
+}
+
+function assertNurseHasAssignedPatients(
+  activeShift: ActiveShiftRecord,
+  nurseId: string,
+) {
+  const baselineAssignmentResult = activeShift.shiftSnapshot.assignmentResult;
+  const effectiveAssignmentResult = baselineAssignmentResult
+    ? getEffectiveAssignmentResult(
+        baselineAssignmentResult,
+        activeShift.activeAssignmentOverridesByBedId ?? {},
+      )
+    : undefined;
+
+  if (
+    !nurseHasAssignedPatients(
+      activeShift.shiftSnapshot,
+      effectiveAssignmentResult,
+      nurseId,
+    )
+  ) {
+    throw new Error(
+      "Assign at least one patient to this nurse before generating a code.",
     );
   }
 }
@@ -580,6 +607,7 @@ export async function createShiftNurseInviteRecord(
   assertChargeNurse(profile);
   assertOwnedActiveShift(activeShift, profile);
   assertNurseBelongsToShift(activeShift, nurseId);
+  assertNurseHasAssignedPatients(activeShift, nurseId);
   assertTokenHash(tokenHash);
   assertFutureExpiration(expiresAt);
 
@@ -671,6 +699,8 @@ export async function regenerateShiftNurseInviteCode(
   profile: UserProfile,
   input: GenerateShiftNurseInviteCodeInput,
 ): Promise<GeneratedShiftNurseInviteCode> {
+  assertNurseHasAssignedPatients(input.activeShift, input.nurseId);
+
   await revokeActiveShiftNurseInviteRecord(
     supabase,
     profile,
