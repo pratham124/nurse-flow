@@ -1,7 +1,7 @@
 # Active Shift Edit Reset
 
-Status: implementation complete; Supabase installation, two-session manual
-validation, and the understanding checkpoint remain.
+Status: implementation and understanding checkpoint complete; Supabase
+installation and two-session manual validation remain.
 
 ## Completed Implementation
 
