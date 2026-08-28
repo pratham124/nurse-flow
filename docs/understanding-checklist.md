@@ -4040,31 +4040,36 @@ For each task, add a dated section with:
   boundary, disconnect joined nurses, and restrict join codes to nurses with
   assigned patients.
 - Problem understanding:
-  - [ ] Why editing patient, nurse, or load data makes the existing assignment
+  - [x] Why editing patient, nurse, or load data makes the existing assignment
     and joined-nurse view stale.
-  - [ ] Why assignment reset, invite expiration, access removal, and override
+  - [x] Why assignment reset, invite expiration, access removal, and override
     supersession must succeed together.
-  - [ ] Why invite eligibility must use occupied beds from the effective
+  - [x] Why invite eligibility must use occupied beds from the effective
     assignment rather than the generated baseline alone.
 - Solution understanding:
-  - [ ] How `AssignedShiftEditGuard` blocks editing until the user confirms.
-  - [ ] How `reset_active_shift_for_editing` locks and checks the current
+  - [x] How `AssignedShiftEditGuard` blocks editing until the user confirms.
+  - [x] How `reset_active_shift_for_editing` locks and checks the current
     baseline before applying all reset changes in one transaction.
-  - [ ] How `getNurseAssignedPatientCount` drives both the invite UI and the
+  - [x] How `getNurseAssignedPatientCount` drives both the invite UI and the
     repository guard.
 - Broader context:
-  - [ ] Why disconnected nurses must join again only after a new assignment is
+  - [x] Why disconnected nurses must join again only after a new assignment is
     ready.
-  - [ ] Why keeping no-patient nurses visible with a disabled action is clearer
+  - [x] Why keeping no-patient nurses visible with a disabled action is clearer
     than silently removing them from the invite list.
 - Verification:
-  - [ ] Human restated understanding first.
-  - [ ] Gaps were explained.
-  - [ ] Code-specific quiz or walkthrough completed.
+  - [x] Human restated understanding first: explained that one failed reset
+    operation rolls back the other reset changes.
+  - [x] Routing gap explained and corrected: a successful reset reveals the
+    requested setup screen instead of navigating directly to assignment review.
+  - [x] Code-specific quiz completed: correctly used the effective assignment
+    to enable a nurse whose patient arrived through a manual override.
   - [x] TypeScript, lint, nine focused regressions, and Expo web export passed.
   - [ ] Supabase function installed and two-session manual validation passed.
-- Status: pending - implementation and local validation pass; server install,
-  live two-session validation, and the human understanding checkpoint remain.
+- Status: verified - the human explained transaction rollback and effective
+  assignment eligibility, then correctly identified Patients and acuity as the
+  post-reset screen. Server install and live two-session validation remain as
+  operational checks.
 
 ### 2026-08-26 - Evaluate Exact Bed-Owner Blocks
 
