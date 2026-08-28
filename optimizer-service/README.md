@@ -52,7 +52,7 @@ Tasks 2.1-2.4 add the safe server workflow:
   and expected baseline ID;
 - the service verifies the Supabase JWT before the authorized prepare RPC can
   release the current shift snapshot;
-- retries reuse one coordinated run, with a 90-second recovery lease for a
+- retries reuse one coordinated run, with a 150-second recovery lease for a
   request interrupted after preparation;
 - protected finalization rechecks current state and atomically saves the new
   baseline, flags, run outcome, and rerun override supersession;
@@ -68,6 +68,68 @@ Tasks 3.3-3.4 complete the mobile cutover:
 - the client-authored Phase 8 rerun RPC is revoked from mobile roles;
 - the retired TypeScript assignment generator is no longer part of the mobile
   runtime.
+
+Task 4.1 freezes two measured service envelopes with at most 12 nurses: up to
+25 rooms with at most 50 occupied beds, or up to 20 rooms with at most 80
+occupied beds. Total physical beds may not exceed 80. Other larger shapes are
+rejected during normalization. The earlier provisional 200-room, 400-bed,
+40-nurse shape could not prove every exact objective and is not a supported
+production claim.
+
+Exact-stage timeouts retain private diagnostics for capacity work: completed
+stage values and timings, time remaining when the failed stage began, failed
+stage duration, branch/conflict counts, objective/bound evidence, and solver
+wall time. Benchmark JSON keeps the exact synthetic stage names. Service logs
+keep only stage categories and the opaque run ID, while the HTTP response stays
+the coarse patient-free `timed_out` outcome.
+
+The exact model includes redundant aggregate acuity conservation and capacity
+constraints. They preserve the feasible set and objective order while helping
+CP-SAT propagate tight maximum-acuity candidates across nurse, team, assigned,
+and unassigned expressions.
+
+Parallel patient-count conservation and capacity constraints connect occupied,
+assigned, unassigned, nurse, and team census directly to the maximum patient
+count variable. They preserve the same exact decisions while reducing indirect
+bed-owner search for tight census values.
+
+Occupied rooms also use room-first value precedence for generated team labels.
+The rule removes equivalent A/B/C label permutations while preserving the
+existing room-first canonical output and allowing non-contiguous room coverage.
+
+After each exact objective is proven, the solver replaces its original
+construction hint with the complete proven solution. This rolling hint gives
+the next stage a valid incumbent that already satisfies every frozen earlier
+objective. It changes search guidance only; all stages still require `OPTIMAL`.
+
+On a fully assignable floor above 50 occupied beds, the red-owner objective uses
+a smaller structural count model first. That model keeps room teams, nurse
+teams, per-nurse patient/acuity caps, and green/yellow/red counts, so it proves a
+safe lower bound without choosing 80 individual bed owners. The full model then
+checks that bound with the real bed variables before freezing it. This bridge
+preserves the exact objective while avoiding the original red-rank proof that
+exhausted 120 seconds on the 20-room/80-bed case.
+
+After the clinical and balance objectives are proved and frozen, the production
+solver chooses exact canonical tie-break strategies from occupied-bed count. At
+50 or fewer occupied beds it uses one fixed room-rank pass. Above 50 it proves
+five-room mixed-radix chunks with presolve, then fixes every decoded room rank.
+For a fully assigned large floor it also proves bed owners in exact six-bed
+mixed-radix chunks; capacity-pressure cases with unassigned beds keep the faster
+fixed owner pass. Every path finishes with exact nurse-team membership. These
+adaptive choices preserve the same lexicographic decisions while avoiding the
+large-floor room and owner searches that exhausted 120 seconds in testing.
+
+The benchmark also accepts an optional legacy fixed bed-owner block size.
+Ten- and twenty-five-bed fixed-search blocks preserved exact decisions but
+regressed latency. They are distinct from the retained mixed-radix owner chunks,
+which keep presolve enabled and encode six ordered owner ranks into one exact
+objective.
+
+Direct team feasibility cuts also connect assigned census to configured nurse
+capacity and assigned red beds to configured RN capacity. The existing
+ownership constraints already imply both limits, so the cuts preserve valid
+assignments while letting room proofs reject impossible team choices sooner.
 
 Install the exact service dependencies into an isolated environment:
 

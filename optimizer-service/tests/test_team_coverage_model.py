@@ -11,6 +11,7 @@ sys.path.insert(0, str(SERVICE_ROOT))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from fixture_helpers import build_shift_snapshot, load_fixture_catalog  # noqa: E402
+from scenario_helpers import build_synthetic_shift_snapshot  # noqa: E402
 from nurseflow_optimizer import normalize_shift_snapshot  # noqa: E402
 from nurseflow_optimizer.team_coverage_model import (  # noqa: E402
     build_team_coverage_model,
@@ -82,6 +83,42 @@ class TeamCoverageModelTests(unittest.TestCase):
         )
         self.assertEqual(covered_room.nurse_ids, selected_team.nurse_ids)
         self.assertEqual(len(covered_room.nurse_ids), 2)
+
+    def test_generated_team_labels_follow_first_room_appearance_order(self) -> None:
+        fixture = next(
+            item for item in self.fixtures if item["id"] == "active-side-guidance"
+        )
+        normalized = normalize_shift_snapshot(build_shift_snapshot(fixture)).model
+        structure = build_team_coverage_model(normalized)
+        first_room = normalized.rooms[0]
+        structure.model.add(
+            structure.room_team[(first_room.ordinal, 1)] == 1
+        )
+
+        solver = cp_model.CpSolver()
+        self.assertEqual(solver.solve(structure.model), cp_model.INFEASIBLE)
+
+    def test_value_precedence_does_not_require_contiguous_room_coverage(self) -> None:
+        snapshot = build_synthetic_shift_snapshot(
+            scenario_id="non-contiguous-room-teams",
+            room_bed_counts=[1, 1, 1],
+            nurse_count=3,
+            max_patient_load=2,
+        )
+        normalized = normalize_shift_snapshot(snapshot).model
+        structure = build_team_coverage_model(normalized)
+        expected_team_indexes = (0, 1, 0)
+        for room, team_index in zip(
+            normalized.rooms,
+            expected_team_indexes,
+            strict=True,
+        ):
+            structure.model.add(
+                structure.room_team[(room.ordinal, team_index)] == 1
+            )
+
+        solver = cp_model.CpSolver()
+        self.assertEqual(solver.solve(structure.model), cp_model.OPTIMAL)
 
     def test_empty_rooms_have_no_solver_team_variable_or_coverage(self) -> None:
         fixture = next(item for item in self.fixtures if item["id"] == "empty-census")

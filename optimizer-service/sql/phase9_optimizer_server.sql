@@ -204,10 +204,10 @@ begin
     end if;
 
     -- A process or network failure can leave a run marked `running`. Immediate
-    -- retries must not duplicate its solve, but after the 90-second lease (past
-    -- the 75-second host cutoff) the same mutation may safely reclaim it.
+    -- retries must not duplicate its solve, but after the 150-second lease (past
+    -- the 140-second host cutoff) the same mutation may safely reclaim it.
     if existing_run.status = 'running'
-      and existing_run.started_at <= now() - interval '90 seconds' then
+      and existing_run.started_at <= now() - interval '150 seconds' then
       if not current_preconditions_match then
         update public.optimizer_runs
         set

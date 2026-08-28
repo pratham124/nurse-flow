@@ -473,9 +473,23 @@ Manual validation:
 
 ## Validation and Completion
 
-### Task 4.1: Run the Complex Optimizer Scenario Suite
+### In Progress Task 4.1: Run the Complex Optimizer Scenario Suite
 
 Story coverage: US2-US4, US6
+
+Status: In progress on 2026-08-28. Complex/property coverage and the earlier
+25-room/50-bed pinned warm benchmark pass. The new required 20-room/80-bed,
+12-nurse envelope now includes a fully assignable 80/80 case with nurse maximum
+seven. After one-at-a-time A/B testing, production retains a structural exact
+red-rank proof and six-bed mixed-radix owner chunks for this large full case.
+Five production-default repetitions were exact and deterministic at
+18.402/20.658 seconds median/p95 with all 80 beds assigned; the earlier
+capacity-60 and capacity-48 pressure cases remain covered separately. Production
+uses a 120-second shared solver budget with coordinated 135/140/150-second
+service, host, and retry limits. A refreshed pinned-container repeat and five
+Cloud Run cold starts with production-like Supabase latency remain before this
+task can be marked done. Timeout diagnostics and the public failure contract
+remain unchanged. See `task-4-validation-pass.md`.
 
 Build:
 
@@ -494,9 +508,15 @@ Manual validation:
 - Repeated runs are identical.
 - The maximum supported scenario stays inside the documented resource budget.
 
-### Task 4.2: Run Authorization, Idempotency, and Concurrency Checks
+### In Progress Task 4.2: Run Authorization, Idempotency, and Concurrency Checks
 
 Story coverage: US1, US5-US7
+
+Status: In progress on 2026-08-24. Repeatable authentication, idempotency,
+mutation-conflict, stale-precondition, lock-order, atomic-write-order, rollback,
+grant, and privacy checks pass. Live disposable Supabase RLS identities,
+simultaneous requests, Realtime, notification-after-commit, and joined-nurse
+scope remain. See `task-4-validation-pass.md`.
 
 Build:
 
@@ -513,9 +533,14 @@ Manual validation:
 - A stale result never overwrites newer input or active moves.
 - Joined nurses cannot read optimizer records.
 
-### Task 4.3: Run the Mobile Manual Pass
+### In Progress Task 4.3: Run the Mobile Manual Pass
 
 Story coverage: US1-US7
+
+Status: In progress on 2026-08-24. The 12 automated mobile contract/runtime
+checks pass. No device is connected and no optimizer URL or disposable auth
+sessions are configured, so the authenticated native, responsive, dynamic-type,
+and screen-reader matrix remains. See `task-4-validation-pass.md`.
 
 Build:
 
@@ -532,9 +557,14 @@ Manual validation:
 - Previous data remains visible after rerun failure.
 - Busy, error, retry, and confirmation controls are accessible.
 
-### Task 4.4: Run the Phase 1-8 Regression Pass
+### In Progress Task 4.4: Run the Phase 1-8 Regression Pass
 
 Story coverage: US5, US7
+
+Status: In progress on 2026-08-28. All 51 Node regressions, 86 Python checks,
+TypeScript, lint, and production export pass. Credential-, device-, push-, and
+multi-session-dependent Phase 1-8 manual workflows remain. See
+`task-4-validation-pass.md`.
 
 Build:
 
@@ -553,9 +583,14 @@ Manual validation:
 - Request history survives rerun.
 - Phone and tablet boards render the backend result correctly.
 
-### Task 4.5: Complete Scope, Readability, and Understanding Checkpoint
+### In Progress Task 4.5: Complete Scope, Readability, and Understanding Checkpoint
 
 Story coverage: US1-US7
+
+Status: In progress on 2026-08-24. Runtime and documentation boundaries agree,
+the measured ceiling and remaining gates are explicit, and no future feature
+was added. The required learner restatement and code-specific teaching
+checkpoint remain before this task can be marked done.
 
 Build:
 

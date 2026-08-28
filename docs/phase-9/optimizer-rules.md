@@ -31,19 +31,20 @@ One optimizer run supports:
 | Input | Supported value |
 | --- | --- |
 | Doctor sides | Exactly 2 |
-| Rooms | 1 to 200 |
-| Total beds | 1 to 400 |
-| Participating occupied beds | 0 to 400 |
-| Nurses | 1 to 40 |
+| Rooms | 1 to 25 |
+| Total beds | 1 to 80 |
+| Participating occupied beds | 0 to 80 |
+| Large-floor shape | More than 50 participating beds supports at most 20 rooms |
+| Nurses | 1 to 12 |
 | Nurse max patient load | Whole number from 1 to 12, and no higher than the existing validated side-based maximum |
 | Acuity | `green`, `yellow`, or `red` |
-| Generated teams | 1 to 10, derived from nurse count |
+| Generated teams | 1 to 3, derived from nurse count |
 
 These are service contract ceilings, not suggested hospital floor sizes. Task
-0.3 must benchmark the representative maximum input in the production-like
-Python runtime before dependencies or deployment settings are accepted. A
-request above a ceiling is `infeasible_input`; the service must not start a
-larger best-effort solve or silently truncate data.
+4.1 measured the representative maximum input in the pinned production-like
+Python runtime; the remaining deployed cold-start gate is recorded in
+`task-4-validation-pass.md`. A request above a ceiling is `invalid_input`; the
+service must not start a larger best-effort solve or silently truncate data.
 
 ## Participating Beds
 
@@ -137,7 +138,7 @@ else:
   team_count = max(2, ceil(nurse_count / 4))
 ```
 
-Under the supported 40-nurse ceiling this produces at most 10 teams. Team
+Under the supported 12-nurse ceiling this produces at most 3 teams. Team
 labels use spreadsheet-style alphabetical order beginning with `Team A`; the
 current ceiling therefore uses `Team A` through at most `Team J`. Output uses
 the existing `GeneratedTeam[]` shape, so no new result model or team-count field
@@ -146,6 +147,14 @@ is required.
 Every team must receive either the lower or upper even-share nurse count. For
 example, 10 nurses produce 3 teams with sizes 3, 3, and 4 in some order. The
 later team objectives decide membership, but they cannot produce a 1/1/8 split.
+
+Generated team labels are clinically interchangeable, so occupied rooms use
+value precedence in canonical room order. A room may introduce `Team B` only
+after an earlier occupied room introduced `Team A`; the same rule applies to
+later labels. This removes renamed copies of the same team arrangement without
+requiring contiguous coverage or choosing nurse membership. Room order matches
+the established canonical decision order; nurse-first precedence is not used
+because it changes valid frozen RN/LPN outputs.
 
 Team membership may balance RN count, total configured capacity, assigned
 patient count, assigned acuity, and the distribution of experienced, mid, and
@@ -160,6 +169,27 @@ Experience has exactly two uses:
 The optimizer does not combine license, experience, and capacity into an
 invented nurse or team "strength score." Team experience balance counts all
 current nurses in their existing category, regardless of RN or LPN license.
+
+The model also states three implied acuity relationships directly: assigned
+nurse acuity plus unassigned-bed acuity equals total floor acuity, all team
+acuity equals all assigned nurse acuity, and nurse/team acuity cannot exceed
+the corresponding count multiplied by the maximum nurse acuity variable. These
+constraints do not change the feasible assignments. They expose aggregate
+consequences to CP-SAT without requiring it to reconstruct them through every
+bed-owner and room-team variable.
+
+The same propagation pattern applies to patient census: assigned nurse count
+plus unassigned count equals occupied-bed count, all team patient counts equal
+the assigned nurse count, and nurse/team patient totals cannot exceed the
+corresponding count multiplied by `maximum_nurse_patient_count`. These are also
+implied by the ownership model and do not change valid assignments.
+
+Two direct team feasibility limits expose more consequences of the same hard
+ownership rules. Each team's assigned patient count cannot exceed the combined
+configured max-load capacity of its nurses. Each team's assigned red-bed count
+cannot exceed the combined configured max-load capacity of its RNs. Nurse hard
+capacity, nurse/team room agreement, and RN-only red ownership already imply
+both inequalities; stating them at team level only strengthens propagation.
 
 ## Room and Team Coverage
 
@@ -219,7 +249,12 @@ For each stage, the solver must:
 2. require the `OPTIMAL` status;
 3. record the proven objective value;
 4. add an equality fixing that value;
-5. replace the objective with the next stage.
+5. replace the original construction hint with the complete proven solution;
+6. replace the objective with the next stage.
+
+The refreshed hint is guidance only. It gives the next solve an incumbent that
+already satisfies every frozen earlier optimum, but it does not add a decision
+constraint or allow any status below `OPTIMAL` to advance the sequence.
 
 The stages are:
 
@@ -233,6 +268,14 @@ The stages are:
    ranks `experienced RN = 0`, `mid RN = 1`, `new-grad RN = 2`, and
    `unassigned = 3`. Because stages 1 through 3 are already fixed, this changes
    only otherwise-equal red-bed choices.
+
+   On a fully assignable floor above 50 occupied beds, first prove a lower bound
+   in a structural companion model. It retains room and nurse teams plus each
+   nurse's green/yellow/red counts and fixed patient/acuity maxima, but omits
+   individual bed identities. The full assignment model must then satisfy that
+   bound with its real bed-owner variables before the value is frozen. If the
+   bound is not feasible in the full model, the solver falls back to the normal
+   exact objective proof. A bound alone is never accepted as the result.
 5. **Side guidance:** minimize total guidance excess, then the number of nurses
    above their applicable side maximum.
 6. **Team balance:** across all generated teams, in order, minimize the
@@ -245,17 +288,34 @@ The stages are:
    lowest team count. The experience-distribution gap is the sum of the
    experienced, mid, and new-grad gaps. This treats the three categories
    equally instead of inventing conversions between them.
-7. **Canonical room teams:** for each occupied room in canonical room order,
-   minimize its selected team rank and fix the result before the next room,
-   while retaining every earlier optimum.
-8. **Canonical bed owners:** for each participating bed in canonical bed order,
-   minimize its owner rank and fix the result before the next bed. Canonical
-   nurse ranks come first and the internal unassigned rank comes last. Earlier
-   stages already fix the count and aggregate safety/balance results.
-9. **Canonical team membership:** for each nurse in canonical nurse order,
-   minimize the team rank and fix it before the next nurse, while retaining all
-   team-balance optima. Team A ranks before Team B, continuing alphabetically
+7. **Canonical room teams:** after all clinical and balance optima are fixed,
+   choose the exact room proof by occupied-bed count. At 50 or fewer beds, run
+   one fixed search over every occupied room's team rank in canonical room
+   order and freeze the complete tuple. Above 50 beds, prove five-room
+   mixed-radix chunks in canonical order and freeze each decoded room rank.
+8. **Canonical bed owners:** use participating beds in canonical bed order,
+   with canonical nurse ranks first and the internal unassigned rank last. A
+   fully assigned floor above 50 occupied beds uses exact six-bed mixed-radix
+   chunks with presolve and freezes each decoded rank. Other shapes run one
+   fixed search and freeze the complete owner tuple. Earlier stages already fix
+   the count and aggregate safety/balance results.
+9. **Canonical team membership:** run a final fixed search over nurses in
+   canonical nurse order. Team A ranks before Team B, continuing alphabetically
    through the final generated team.
+
+Each fixed tie-break group runs as a complete `FIXED_SEARCH` satisfaction pass.
+The model clears earlier hints, disables presolve only for these passes so the
+rank variables cannot be substituted out of order, and adds a second fixed
+strategy containing every remaining model variable. Depth-first lowest-value
+search must eliminate every lower group prefix before reaching its first
+feasible leaf, so that leaf is the group's exact lexicographic minimum.
+
+The large-floor room and owner paths instead minimize one bounded mixed-radix
+number per five-item chunk. An earlier rank contributes more than every possible
+combination of later ranks in that chunk, so its `OPTIMAL` value is the same
+lexicographic prefix. Each decoded rank is then fixed before the next chunk.
+The service pins OR-Tools 9.15.6755, requires `OPTIMAL` on every path, and
+verifies the decisions independently.
 
 Coverage nurse IDs are then projected from each room's selected team, and
 output arrays are ordered canonically without another objective.
@@ -270,6 +330,12 @@ equality-fixing step is repeated after every stage and substage.
 This is stronger and easier to review than one weighted sum. A later stage is
 mathematically unable to trade one earlier objective point for any amount of a
 later preference.
+
+The canonical fixed searches are not guessed weighted clinical objectives. They
+order bounded decision ranks directly after every clinical and team-balance
+value has become a hard equality, and each completed rank group is frozen. They
+cannot exchange any earlier objective point or canonical prefix for a later
+preference.
 
 The official CP-SAT status contract distinguishes `OPTIMAL` from `FEASIBLE`:
 `FEASIBLE` means a solution exists but optimality is not proven. Therefore a
@@ -312,11 +378,13 @@ participating bed should always be feasible. Consequently, solver-level
 `INFEASIBLE` indicates a model or implementation defect; it is not a normal
 understaffing result.
 
-Task 0.3 freezes a 70-second internal request deadline inside a 75-second host
-timeout, with at most 50 seconds shared by normalization, all solve stages, and
-output validation. The allowance is one total budget rather than a fresh 50
-seconds for each stage. See `docs/phase-9/python-service-boundary.md` for the
-full resource and benchmark contract.
+Task 0.3 now freezes a 135-second internal request deadline inside a 140-second
+host timeout, with at most 120 seconds shared by every exact solve stage. The
+allowance is one total solver budget rather than a fresh 120 seconds for each
+stage; the remaining request time is reserved for preparation, normalization,
+validation, finalization, and a typed response. See
+`docs/phase-9/python-service-boundary.md` for the full resource and benchmark
+contract.
 
 ## Hand-Worked Acceptance Scenarios
 

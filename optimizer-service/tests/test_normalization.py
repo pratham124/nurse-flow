@@ -15,6 +15,11 @@ from nurseflow_optimizer import (  # noqa: E402
     normalize_shift_snapshot,
 )
 from fixture_helpers import build_shift_snapshot, load_fixture_catalog  # noqa: E402
+from scenario_helpers import (  # noqa: E402
+    build_maximum_shift_snapshot,
+    build_required_large_shift_snapshot,
+    build_synthetic_shift_snapshot,
+)
 
 
 def fixture_contract(normalized: dict) -> dict:
@@ -121,6 +126,75 @@ class NormalizationTests(unittest.TestCase):
                 with self.assertRaises(OptimizerInputValidationError) as raised:
                     normalize_shift_snapshot(snapshot)
                 self.assertGreater(len(raised.exception.issues), 0)
+
+    def test_inputs_above_the_measured_ceiling_are_rejected_early(self) -> None:
+        maximum_25_room_snapshot = build_maximum_shift_snapshot(understaffed=False)
+        maximum_20_room_snapshot = build_required_large_shift_snapshot(
+            understaffed=False
+        )
+
+        too_many_rooms = copy.deepcopy(maximum_25_room_snapshot)
+        too_many_rooms["rooms"].append(
+            {
+                "id": "room-over-limit",
+                "doctorSideId": "side-a",
+                "label": "Over limit",
+                "bedCount": 0,
+            }
+        )
+
+        too_many_beds = copy.deepcopy(maximum_20_room_snapshot)
+        too_many_beds["beds"].append(
+            {
+                "id": "bed-over-limit",
+                "roomId": "room-001",
+                "label": "Over limit",
+                "bedNumber": 99,
+            }
+        )
+
+        too_many_nurses = copy.deepcopy(maximum_25_room_snapshot)
+        extra_nurse = copy.deepcopy(too_many_nurses["nurses"][0])
+        extra_nurse["id"] = "nurse-over-limit"
+        too_many_nurses["nurses"].append(extra_nurse)
+
+        for label, snapshot, expected_code in (
+            ("rooms", too_many_rooms, "unsupported_room_count"),
+            ("beds", too_many_beds, "unsupported_bed_count"),
+            ("nurses", too_many_nurses, "unsupported_nurse_count"),
+        ):
+            with self.subTest(limit=label):
+                with self.assertRaises(OptimizerInputValidationError) as raised:
+                    normalize_shift_snapshot(snapshot)
+                self.assertIn(
+                    expected_code,
+                    {issue.code for issue in raised.exception.issues},
+                )
+
+    def test_required_20_room_80_bed_shape_normalizes(self) -> None:
+        result = normalize_shift_snapshot(
+            build_required_large_shift_snapshot(understaffed=False)
+        )
+
+        self.assertEqual(len(result.model.rooms), 20)
+        self.assertEqual(len(result.model.occupied_beds), 80)
+        self.assertEqual(len(result.model.nurses), 12)
+
+    def test_large_occupied_floor_rejects_more_than_20_rooms(self) -> None:
+        snapshot = build_synthetic_shift_snapshot(
+            scenario_id="unsupported-large-shape",
+            room_bed_counts=[4] * 19 + [2, 2],
+            nurse_count=12,
+            max_patient_load=5,
+        )
+
+        with self.assertRaises(OptimizerInputValidationError) as raised:
+            normalize_shift_snapshot(snapshot)
+
+        self.assertIn(
+            "unsupported_large_floor_shape",
+            {issue.code for issue in raised.exception.issues},
+        )
 
 
 if __name__ == "__main__":

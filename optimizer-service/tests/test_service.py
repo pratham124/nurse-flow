@@ -2,9 +2,20 @@ from __future__ import annotations
 
 import unittest
 from dataclasses import dataclass, field
+from unittest.mock import patch
+
+from ortools.sat.python import cp_model
 
 from fixture_helpers import build_shift_snapshot, load_fixture_catalog
+from nurseflow_optimizer.optimizer import (
+    DEFAULT_SOLVE_BUDGET_SECONDS,
+    ObjectiveStage,
+    OptimizerTimedOutError,
+    SolveFailureDiagnostics,
+)
 from nurseflow_optimizer.service import (
+    FINALIZATION_RESERVE_SECONDS,
+    REQUEST_DEADLINE_SECONDS,
     FinalizedOptimizerRun,
     OptimizerAuthenticationError,
     OptimizerAuthorizationError,
@@ -93,6 +104,14 @@ class OptimizerServiceTests(unittest.TestCase):
             solve_budget_seconds=solve_budget_seconds,
         )
         return dependencies, prepare_client, finalize_client
+
+    def test_default_time_budgets_leave_finalization_headroom(self) -> None:
+        self.assertEqual(DEFAULT_SOLVE_BUDGET_SECONDS, 120.0)
+        self.assertEqual(REQUEST_DEADLINE_SECONDS, 135.0)
+        self.assertGreaterEqual(
+            REQUEST_DEADLINE_SECONDS - FINALIZATION_RESERVE_SECONDS,
+            DEFAULT_SOLVE_BUDGET_SECONDS,
+        )
 
     @staticmethod
     def request_body() -> dict[str, object]:
@@ -199,6 +218,21 @@ class OptimizerServiceTests(unittest.TestCase):
         self.assertEqual(outcome.body["status"], "running")
         self.assertEqual(finalize_client.finalize_calls, 0)
 
+    def test_mutation_key_conflict_does_not_solve_or_finalize(self) -> None:
+        prepared = PreparedOptimizerRun(
+            "conflict",
+            run_id="run-original-mutation",
+        )
+        dependencies, _, finalize_client = self.dependencies(prepared)
+
+        outcome = run_optimizer_request(
+            "Bearer valid-token", self.request_body(), dependencies
+        )
+
+        self.assertEqual(outcome.http_status, 409)
+        self.assertEqual(outcome.body["status"], "conflict")
+        self.assertEqual(finalize_client.finalize_calls, 0)
+
     def test_stale_precondition_does_not_finalize(self) -> None:
         dependencies, _, finalize_client = self.dependencies(
             PreparedOptimizerRun("stale")
@@ -230,6 +264,75 @@ class OptimizerServiceTests(unittest.TestCase):
         self.assertEqual(outcome.body["status"], "timed_out")
         self.assertEqual(finalize_client.finalize_calls, 0)
         self.assertEqual(finalize_client.failed_codes, ["timed_out"])
+
+    def test_solver_timeout_logs_private_diagnostics_without_entity_ids(self) -> None:
+        prepared = PreparedOptimizerRun(
+            "prepared",
+            run_id="run-1",
+            shift_snapshot=self.snapshot,
+        )
+        dependencies, _, finalize_client = self.dependencies(prepared)
+        diagnostics = SolveFailureDiagnostics(
+            solve_budget_ms=50_000,
+            elapsed_before_failed_stage_ms=10_000,
+            remaining_budget_at_failed_stage_ms=40_000,
+            failed_stage_duration_ms=40_000,
+            total_elapsed_ms=50_000,
+            completed_stages=(
+                ObjectiveStage("canonical_room_team:private-room-id", 0, 12.5),
+            ),
+            solver_wall_time_ms=40_000,
+            num_branches=42,
+            num_conflicts=7,
+            objective_value=4,
+            best_objective_bound=3,
+        )
+        timeout = OptimizerTimedOutError(
+            "canonical_bed_owner:private-bed-id",
+            cp_model.FEASIBLE,
+            diagnostics,
+        )
+
+        with patch(
+            "nurseflow_optimizer.service.solve_optimizer",
+            side_effect=timeout,
+        ):
+            with self.assertLogs(
+                "nurseflow_optimizer.service",
+                level="WARNING",
+            ) as captured:
+                outcome = run_optimizer_request(
+                    "Bearer valid-token",
+                    self.request_body(),
+                    dependencies,
+                )
+
+        log_text = "\n".join(captured.output)
+        self.assertEqual(outcome.http_status, 504)
+        self.assertEqual(outcome.body, {"status": "timed_out", "runId": "run-1"})
+        self.assertEqual(finalize_client.failed_codes, ["timed_out"])
+        self.assertIn("canonical_bed_owner", log_text)
+        self.assertIn("canonical_room_team", log_text)
+        self.assertNotIn("private-bed-id", log_text)
+        self.assertNotIn("private-room-id", log_text)
+
+    def test_invalid_server_snapshot_records_no_patient_details(self) -> None:
+        prepared = PreparedOptimizerRun(
+            "prepared",
+            run_id="run-invalid",
+            shift_snapshot={"patient": {"diagnosis": "must stay private"}},
+        )
+        dependencies, _, finalize_client = self.dependencies(prepared)
+
+        outcome = run_optimizer_request(
+            "Bearer valid-token", self.request_body(), dependencies
+        )
+
+        self.assertEqual(outcome.http_status, 422)
+        self.assertEqual(outcome.body, {"status": "invalid_input", "runId": "run-invalid"})
+        self.assertEqual(finalize_client.failed_codes, ["invalid_input"])
+        self.assertNotIn("patient", str(outcome.body).lower())
+        self.assertNotIn("diagnosis", str(outcome.body).lower())
 
     def test_stale_finalization_does_not_report_saved(self) -> None:
         prepared = PreparedOptimizerRun(

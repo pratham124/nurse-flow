@@ -98,6 +98,12 @@ Use this map when deciding where new code belongs:
 
 - `optimizer-service/` owns normalization, OR-Tools solving, output validation,
   and protected atomic finalization.
+- `optimizer-service/nurseflow_optimizer/search_hint.py` supplies deterministic
+  feasible-start guidance only; exact constraints, objective order, and
+  independent output validation still decide whether a result may be saved.
+- `optimizer-service/scripts/benchmark_maximum_floor.py` owns synthetic ceiling
+  measurement. The supported optimizer ceiling is 25 rooms, 50 beds, and 12
+  nurses; larger server snapshots fail normalization before model construction.
 - `src/services/optimizerRepository.ts` is the only mobile request boundary for
   both initial assignment and reruns.
 - `src/store/ServerWorkspaceContext.tsx` refreshes the authoritative Supabase

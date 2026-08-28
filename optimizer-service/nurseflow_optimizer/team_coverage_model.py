@@ -44,6 +44,33 @@ def _spreadsheet_label(index: int) -> str:
     return f"Team {chr(ord('A') + index)}"
 
 
+def _add_room_team_value_precedence(
+    input_model: NormalizedOptimizerInput,
+    model: cp_model.CpModel,
+    room_team: dict[tuple[int, int], cp_model.IntVar],
+) -> None:
+    """Remove equivalent team-label permutations in canonical room order."""
+
+    if input_model.team_count == 1:
+        return
+
+    occupied_room_ids = {bed.room_id for bed in input_model.occupied_beds}
+    occupied_rooms = [
+        room for room in input_model.rooms if room.id in occupied_room_ids
+    ]
+    for room_position, room in enumerate(occupied_rooms):
+        earlier_rooms = occupied_rooms[:room_position]
+        for team_index in range(1, input_model.team_count):
+            previous_team_already_appeared = sum(
+                room_team[(earlier_room.ordinal, team_index - 1)]
+                for earlier_room in earlier_rooms
+            )
+            model.add(
+                room_team[(room.ordinal, team_index)]
+                <= previous_team_already_appeared
+            )
+
+
 def build_team_coverage_model(input_model: NormalizedOptimizerInput) -> TeamCoverageModel:
     """Build the team-membership and occupied-room coverage constraints."""
 
@@ -111,6 +138,8 @@ def build_team_coverage_model(input_model: NormalizedOptimizerInput) -> TeamCove
             room_team_choices.append(room_team[room_team_key])
 
         model.add_exactly_one(room_team_choices)
+
+    _add_room_team_value_precedence(input_model, model, room_team)
 
     return TeamCoverageModel(
         input=input_model,

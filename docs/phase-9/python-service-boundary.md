@@ -33,14 +33,14 @@ is kept as a standard OCI/Docker-compatible container so the host can be
 changed without rewriting the optimizer.
 
 The shortlist was evaluated against the needs that matter here: run the
-official native OR-Tools wheel, permit a 75-second HTTPS request, isolate one
+official native OR-Tools wheel, permit a 140-second HTTPS request, isolate one
 CPU-heavy request per instance, set exact CPU/memory limits, reduce cold-start
 risk, deploy immutable revisions, and roll back without operating a cluster.
 
 | Option | Strengths for NurseFlow | Costs or drawbacks | Decision |
 | --- | --- | --- | --- |
 | Google Cloud Run | Runs the exact container; configurable concurrency, CPU, memory, min/max instances, and request timeout; immutable revisions support traffic splitting and rollback; no cluster to manage. | Adds a GCP account, Artifact Registry, IAM, billing, and monitoring to the Expo/Supabase stack. Scaling to zero reduces idle cost but adds cold-start latency. | Chosen for the initial benchmark and deployment. |
-| AWS App Runner | Also accepts a container image, provides managed HTTPS/autoscaling, and its 120-second HTTP limit fits the planned request. | Adds AWS/ECR/IAM operations, and this project has no existing AWS footprint that would offset that setup. Its deployment controls must be re-evaluated if weighted rollout is required. | Viable runner-up when an organization already standardizes on AWS. |
+| AWS App Runner | Also accepts a container image and provides managed HTTPS/autoscaling. | Its documented 120-second HTTP limit does not fit the current 140-second host contract; it also adds AWS/ECR/IAM operations to a project with no AWS footprint. | Rejected for the current synchronous budget; reconsider only with a shorter measured solve or an asynchronous design. |
 | Azure Container Apps | Accepts containers and supports min/max replicas, scale-to-zero, immutable revisions, and traffic splitting. | Adds an Azure Container Apps environment and KEDA/revision concepts that NurseFlow does not otherwise need. There is no existing Azure footprint in this project. | Viable runner-up when Azure is already the required platform. |
 | Supabase Edge Function | Already beside NurseFlow's database and authentication, with fewer vendors. | Its JavaScript/TypeScript edge runtime is not the normal CPython environment required by the official OR-Tools Python wheel, and it does not provide the chosen solver container boundary. | Rejected for solver execution; Supabase still owns prepare and finalization. |
 | Self-managed VM, ECS, or Kubernetes | Maximum control over runtime, networking, and long-running work. | Requires substantially more patching, scaling, health, rollout, and recovery operations than one stateless optimizer endpoint justifies. | Rejected at this phase as unnecessary operational scope. |
@@ -49,7 +49,7 @@ Why Cloud Run currently wins:
 
 1. Its configurable concurrency of one directly matches a solve that consumes
    most of one instance's CPU and memory.
-2. Its request timeout is configurable beyond NurseFlow's 75-second host
+2. Its request timeout is configurable beyond NurseFlow's 140-second host
    limit, while the service retains its own earlier deadline.
 3. Scaling to zero supports a cost-first initial deployment, and the benchmark
    makes its cold-start cost visible before clinical use.
@@ -64,7 +64,7 @@ Known Cloud Run tradeoffs remain explicit:
 - scaling to zero instead would make the first request slower;
 - a public mobile-facing endpoint needs JWT validation, authorization, request
   size limits, maximum-instance cost protection, and later abuse monitoring;
-- a 70-second synchronous request can be interrupted, so idempotency and
+- a 135-second synchronous request can be interrupted, so idempotency and
   source-of-truth reloads are mandatory;
 - choosing a region far from Supabase would add prepare/finalize latency and
   network cost;
@@ -298,19 +298,20 @@ The first production-like benchmark uses this frozen envelope:
 | Billing | Request-based |
 | Minimum instances | 0 for the initial cost-first deployment |
 | Maximum instances | 2 initially, with a billing budget and alert |
-| Cloud Run request timeout | 75 seconds |
-| NurseFlow internal request deadline | 70 seconds from receipt |
-| Normalize plus all CP-SAT stages plus output validation | At most 50 seconds of the shared deadline |
-| Auth/prepare/finalize/response reserve | At least 20 seconds total |
+| Cloud Run request timeout | 140 seconds |
+| NurseFlow internal request deadline | 135 seconds from receipt |
+| All exact CP-SAT stages | At most 120 seconds from one shared solver budget |
+| Auth/prepare/normalize/output/finalize/response headroom | 15 seconds inside the service deadline, including a 10-second finalization reserve |
 | CP-SAT search workers | 1 |
 
 The internal deadline is earlier than the host timeout because Cloud Run can
 close the connection while container code keeps running. NurseFlow must stop
 starting later solve stages when the shared deadline cannot safely finish,
-mark the run `timed_out`, and return before the host's 75-second cutoff.
+mark the run `timed_out`, and return before the host's 140-second cutoff.
 
-All lexicographic and canonical stages share one deadline; each stage does not
-receive a fresh 50 seconds. A `FEASIBLE` stage at the deadline is not saved.
+All lexicographic and canonical stages share one solver budget; each stage does
+not receive a fresh 120 seconds. A `FEASIBLE` stage at the deadline is not
+saved.
 
 One request per instance prevents two CPU-heavy solves from competing for the
 same CPU or memory. One CP-SAT worker supports repeatability. With minimum
@@ -327,15 +328,30 @@ reviewed before raising it.
 
 ## Maximum-Floor Benchmark Gate
 
-Task 0.2 supports at most 200 rooms, 400 total and participating occupied beds,
-40 nurses, and 10 generated teams. That limit is provisional until the real
-solver passes this gate in the production container.
+Task 0.2 originally proposed 200 rooms, 400 total and participating occupied
+beds, 40 nurses, and 10 generated teams. Task 4.1 proved that shape could not
+finish the exact objective sequence, even after a deterministic feasible-start
+hint advanced it past the first objective. The service now supports two
+measured envelopes with 12 nurses and 3 generated teams: 25 rooms with at most
+50 participating beds, or 20 rooms with at most 80 participating beds. Total
+physical beds may not exceed 80. Normalization rejects a shape with more than
+50 participating beds and more than 20 rooms instead of claiming an unmeasured
+25-room/80-bed cross-product.
 
-The checked-in synthetic maximum fixture must include:
+The fully assignable 20/80 fixture uses nurse maximum seven so all 80 beds can
+actually receive owners. Its exact path proves the red-owner preference with a
+structural lower-bound model plus a full-model feasibility witness, then proves
+canonical owners in six-bed mixed-radix chunks. Five local production-default
+runs completed with 80 assigned, zero unassigned, an 18.402-second median, a
+20.658-second p95, and one deterministic decision fingerprint. Pinned-container
+and deployed cold-start evidence are still required by the release gate below.
 
-- exactly two doctor sides and 200 rooms;
-- 400 occupied beds with stable IDs and a mixture of one- and multi-bed rooms;
-- 40 nurses producing 10 teams;
+The checked-in synthetic maximum fixtures must include:
+
+- exactly two doctor sides;
+- the established 25-room/50-occupied-bed shape;
+- the required 20-room/80-occupied-bed shape;
+- 12 nurses producing 3 teams;
 - RN and LPN eligibility pressure;
 - experienced, mid, and new-grad RNs;
 - green, yellow, and red acuity across both sides;
@@ -361,8 +377,8 @@ Release gate:
 - every attempt reaches `OPTIMAL` at every objective/canonical stage;
 - every output passes independent validation;
 - every repetition has the same decision fingerprint;
-- every request finishes before the 70-second internal deadline;
-- warm p95 end-to-end time is at most 60 seconds;
+- every exact solve finishes inside the shared 120-second solver budget;
+- every request finishes before the 135-second internal deadline;
 - peak resident memory is at most 1.5 GiB, leaving host headroom;
 - no request reaches the Cloud Run cutoff, crashes, or is killed for memory.
 

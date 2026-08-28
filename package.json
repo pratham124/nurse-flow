@@ -20,6 +20,7 @@
     "test:phase9-optimizer": "optimizer-service\\.venv\\Scripts\\python.exe -m unittest discover -s optimizer-service/tests -p \"test_*.py\"",
     "test:phase9-output-compatibility": "tsx --test tests/phase9OutputCompatibility.integration.mjs",
     "test:phase9-mobile": "tsx --test tests/optimizerRepository.test.mjs tests/phase9MobileRuntime.test.mjs",
+    "benchmark:phase9": "optimizer-service\\.venv\\Scripts\\python.exe optimizer-service\\scripts\\benchmark_maximum_floor.py",
     "measure:phase8": "tsx scripts/measure-phase8-performance.ts"
   },
   "dependencies": {

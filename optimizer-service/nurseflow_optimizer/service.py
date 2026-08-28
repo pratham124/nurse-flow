@@ -7,6 +7,8 @@ objects, which makes retries and failures testable without a live database.
 
 from __future__ import annotations
 
+import json
+import logging
 import time
 from dataclasses import dataclass
 from typing import Any, Literal, Mapping, Protocol
@@ -21,6 +23,8 @@ from .optimizer import (
 )
 from .output import AssignmentOutput, build_assignment_output
 
+LOGGER = logging.getLogger(__name__)
+
 RunStatus = Literal["running", "succeeded", "failed", "stale"]
 PrepareStatus = Literal[
     "prepared",
@@ -31,9 +35,9 @@ PrepareStatus = Literal[
 ]
 FinalizeStatus = Literal["saved", "stale", "failed"]
 
-# The host allows 75 seconds. NurseFlow stops earlier so it can still return a
+# The host allows 140 seconds. NurseFlow stops earlier so it can still return a
 # typed response instead of letting the host cut off an unknown in-flight run.
-REQUEST_DEADLINE_SECONDS = 70.0
+REQUEST_DEADLINE_SECONDS = 135.0
 FINALIZATION_RESERVE_SECONDS = 10.0
 
 
@@ -241,6 +245,29 @@ def _mark_failed_safely(
         pass
 
 
+def _log_timeout_safely(run_id: str, error: OptimizerTimedOutError) -> None:
+    """Log private solver evidence without entity IDs or snapshot contents."""
+
+    diagnostics = (
+        error.diagnostics.to_dict(include_decision_ids=False)
+        if error.diagnostics is not None
+        else None
+    )
+    LOGGER.warning(
+        "optimizer_timeout %s",
+        json.dumps(
+            {
+                "runId": run_id,
+                "failedStage": error.stage.split(":", 1)[0],
+                "solverStatus": error.status.name,
+                "diagnostics": diagnostics,
+            },
+            separators=(",", ":"),
+            sort_keys=True,
+        ),
+    )
+
+
 def _require_prepared_snapshot(prepared: PreparedOptimizerRun) -> Mapping[str, Any]:
     if not prepared.run_id or not prepared.shift_snapshot:
         raise OptimizerRequestError("Prepare did not return a runnable shift snapshot.")
@@ -317,7 +344,8 @@ def run_optimizer_request(
     except OptimizerInputValidationError:
         _mark_failed_safely(dependencies, prepared.run_id, "invalid_input")
         return _outcome("invalid_input", 422, run_id=prepared.run_id)
-    except OptimizerTimedOutError:
+    except OptimizerTimedOutError as error:
+        _log_timeout_safely(prepared.run_id, error)
         _mark_failed_safely(dependencies, prepared.run_id, "timed_out")
         return _outcome("timed_out", 504, run_id=prepared.run_id)
     except OptimizerSolveError:

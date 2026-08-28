@@ -3108,8 +3108,8 @@ For each task, add a dated section with:
     optimizer result, and why a normal app user cannot invent one.
   - [ ] Why the service uses one Uvicorn worker, Cloud Run concurrency one, and
     CP-SAT `num_search_workers = 1`.
-  - [ ] How the 70-second internal deadline, 75-second host timeout, and one
-    shared 50-second solve budget prevent a late partial result from committing.
+  - [ ] How the 135-second internal deadline, 140-second host timeout, and one
+    shared 120-second solve budget prevent a late partial result from committing.
   - [ ] How an immutable container revision and traffic rollback restore the
     previous service without changing an existing assignment baseline.
 - Broader context:
@@ -3590,3 +3590,568 @@ For each task, add a dated section with:
 - Status: verified - implementation, automated verification, and the human
   understanding checkpoint are complete. The configured-service rerun and
   accessibility passes remain an explicit pre-production gate.
+
+### 2026-08-24 - Validate Phase 9 Task 4.x
+
+- Task: Add and run the feasible Phase 9 Tasks 4.1-4.5 validation work while
+  preserving explicit Cloud Run, live Supabase, native-device, and learner
+  gates that this workspace cannot honestly complete.
+- Problem understanding:
+  - [ ] Why a solver result marked `FEASIBLE` cannot be saved even when it looks
+    clinically usable.
+  - [ ] Why the provisional 200-room, 400-bed, 40-nurse ceiling had to be
+    measured rather than accepted from the planning document.
+  - [ ] Why automated mobile and SQL contract checks cannot replace live RLS,
+    concurrency, notification, Realtime, and accessibility checks.
+- Solution understanding:
+  - [ ] How `add_deterministic_start_hint` gives CP-SAT a valid starting idea
+    without adding a hard constraint or changing the exact objective order.
+  - [ ] Why `normalize_shift_snapshot` supports 25 rooms through 50 occupied
+    beds or 20 rooms through 80 occupied beds, while still rejecting more than
+    80 beds, more than 12 nurses, and unmeasured larger shape combinations.
+  - [ ] How `benchmark_maximum_floor.py` separates decision fingerprints from
+    fresh output IDs and records timing, status, and memory evidence.
+  - [ ] Which output properties, authorization paths, idempotency branches,
+    stale checks, atomic write ordering, and privacy rules the new tests cover.
+- Broader context:
+  - [ ] Why lowering a measured support ceiling is safer than increasing the
+    timeout or committing a merely feasible assignment.
+  - [ ] How the backend optimizer remains the one baseline generator while the
+    existing mobile board, nurse view, flags, and manual-override projection
+    continue consuming the established `AssignmentResult`.
+  - [ ] Which Cloud Run, live Supabase, authenticated native, and prior-phase
+    manual checks remain before Phase 9 Task 4.x can be marked done.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific quiz or walkthrough completed.
+  - [x] Pinned Python 3.13 image completed 20/20 warm full and 20/20 warm
+    understaffed attempts with deterministic fingerprints, zero failures, p95
+    12.865/28.055 seconds, and peak RSS below 131 MB.
+  - [x] Python checks passed: 75/75.
+  - [x] Node Phase 1-9 regressions passed: 51/51.
+  - [x] TypeScript, Expo lint, and web production export passed.
+  - [ ] Five deployed cold starts with production-like Supabase latency passed.
+  - [ ] Live Supabase RLS/concurrency/signals and authenticated native
+    accessibility/manual matrices passed.
+- Status: pending - implementation and feasible automated/container checks pass;
+  human understanding and the external pre-production gates remain.
+
+### 2026-08-25 - Preserve Optimizer Timeout Diagnostics
+
+- Task: Retain the exact solver work completed before a timeout so later
+  performance changes can target the measured bottleneck without exposing
+  snapshot or canonical entity details to the mobile client or service logs.
+- Problem understanding:
+  - [ ] Why the failed stage name alone cannot show how the shared solve budget
+    was divided among earlier stages and the failed stage.
+  - [ ] Why `FEASIBLE` objective and bound evidence is useful for diagnosis but
+    still cannot be committed as NurseFlow's exact result.
+- Solution understanding:
+  - [ ] How `SolveFailureDiagnostics` travels on `OptimizerTimedOutError` and
+    preserves the completed immutable `ObjectiveStage` trace.
+  - [ ] Why benchmark JSON keeps exact synthetic stage names while service logs
+    strip the room, bed, or nurse ID after the stage category.
+  - [ ] Why the public 504 body and stored `timed_out` code remain unchanged.
+- Broader context:
+  - [ ] How elapsed time, remaining budget, failed-stage duration, branches,
+    conflicts, objective value, and best bound guide the next performance work.
+  - [ ] Why diagnostics improve measurement rather than solver speed directly.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific quiz or walkthrough completed.
+  - [x] Focused optimizer and service checks passed: 20/20.
+  - [x] Complete Python optimizer service suite passed: 63/63.
+  - [x] Real 0.01-second and 1-second timeout probes emitted structured failure
+    diagnostics, including five completed stages before the one-second failure.
+  - [x] Doubled concurrency-one diagnostics identified the full-case team
+    patient/acuity gaps and understaffed maximum nurse acuity proof as the
+    immediate large-input bottlenecks.
+- Status: pending - implementation and focused checks pass; human understanding
+  checkpoint remains.
+
+### 2026-08-25 - Evaluate Generated Team-Label Symmetry
+
+- Task: Test whether removing clinically equivalent team-label permutations
+  improves the measured bottlenecks without changing NurseFlow's existing
+  room-first canonical decisions or exact objectives.
+- Problem understanding:
+  - [ ] Why six interchangeable generated labels can represent up to 720
+    renamed copies of the same team partition.
+  - [ ] Why the first nurse-based rule was rejected when frozen fixtures showed
+    that it changed the established room-first canonical output.
+- Solution understanding:
+  - [ ] How the experiment allowed Team B only after an earlier canonical room
+    introduced Team A, continuing for later labels without forcing contiguous
+    coverage or clinical membership.
+  - [ ] Why identical fixture decisions and supported fingerprints are required
+    before treating symmetry breaking as safe.
+- Broader context:
+  - [ ] Why improving doubled full-case team-gap proofs was insufficient when
+    the critical understaffed maximum-acuity proof did not improve.
+  - [ ] Why the same-runtime supported A/B justified reverting the experiment
+    instead of keeping a theoretically attractive constraint.
+  - [ ] Why the ceiling stays 25/50/12 and explicit acuity-proof strengthening
+    is the next candidate.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific quiz or walkthrough completed.
+  - [x] Focused team, assignment, optimizer, and complex checks passed during
+    the experiment: 22/22.
+  - [x] Complete Python optimizer service suite passed during the experiment:
+    65/65.
+  - [x] Supported full and understaffed fingerprints remained unchanged.
+  - [x] Doubled full and understaffed diagnostic probes recorded.
+- Status: pending - the measured experiment was rejected and reverted; human
+  understanding remains.
+
+### 2026-08-25 - Strengthen Aggregate Acuity Propagation
+
+- Task: State already-implied nurse, team, assigned, and unassigned acuity
+  relationships directly so CP-SAT can prove tight maximum-acuity values with
+  less indirect search.
+- Problem understanding:
+  - [ ] Why the doubled understaffed model found candidate 8 and bound 7 but
+    could not prove whether maximum acuity 7 was achievable.
+  - [ ] Why a mathematically redundant constraint can improve propagation
+    without changing which assignments are valid.
+- Solution understanding:
+  - [ ] How assigned nurse acuity plus unassigned acuity equals total floor
+    acuity, and all team acuity equals assigned nurse acuity.
+  - [ ] How global nurse and per-team capacity inequalities connect those totals
+    directly to `maximum_acuity_load`.
+  - [ ] Why the helper is isolated so the benchmark can disable only these
+    constraints for a same-runtime A/B.
+- Broader context:
+  - [ ] Why proving doubled maximum acuity 7 is a material stage improvement but
+    does not make 50 rooms, 100 beds, and 24 nurses supported yet.
+  - [ ] Why supported fingerprints, local timing, full regression, and a future
+    pinned-container repeat are separate parts of the acceptance evidence.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific quiz or walkthrough completed.
+  - [x] Focused optimizer, complex-scenario, and output checks passed: 17/17.
+  - [x] Complete Python optimizer service suite passed: 64/64.
+  - [x] Supported full and understaffed fingerprints remained unchanged.
+  - [x] Supported three-attempt understaffed A/B was deterministic and favored
+    aggregate constraints at median/p95 22.074/22.637 versus 22.790/23.394.
+  - [x] Doubled understaffed A/B advanced from a 48.976-second acuity timeout to
+    a proven acuity optimum of 7 in 15.187 seconds and two later stages.
+  - [ ] Refreshed pinned-container repeat benchmark passed.
+- Status: pending - implementation and local evidence pass; human understanding
+  and the refreshed pinned-container benchmark remain.
+
+### 2026-08-25 - Strengthen Aggregate Patient-Count Propagation
+
+- Task: State already-implied assigned, unassigned, nurse, and team patient
+  totals directly so CP-SAT can prove tight maximum census with less indirect
+  bed-owner search.
+- Problem understanding:
+  - [ ] Why 100 occupied beds with four unassigned and 24 nurses makes maximum
+    patient count 4 a tight equality case: `24 * 4 = 96` assigned patients.
+  - [ ] Why the 17.640-second patient-count proof was the next measurable stage
+    after aggregate acuity moved the bottleneck downstream.
+- Solution understanding:
+  - [ ] How assigned nurse count plus unassigned count equals occupied-bed count,
+    and all team patient counts equal assigned nurse count.
+  - [ ] How global nurse and per-team capacity inequalities connect those totals
+    directly to `maximum_nurse_patient_count`.
+  - [ ] Why the A/B disabled only `_add_aggregate_patient_count_constraints`
+    while keeping aggregate acuity active on both sides.
+- Broader context:
+  - [ ] Why completing four additional doubled objectives is progress without
+    making the doubled input supported.
+  - [ ] Why unchanged fingerprints and favorable supported timing matter before
+    retaining a redundant performance constraint.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific quiz or walkthrough completed.
+  - [x] Focused optimizer, complex-scenario, and output checks passed: 18/18.
+  - [x] Complete Python optimizer service suite passed: 65/65.
+  - [x] Supported full and understaffed fingerprints remained unchanged.
+  - [x] Supported three-attempt understaffed A/B was deterministic and favored
+    patient propagation at median/p95 17.845/21.447 versus 21.579/21.724.
+  - [x] Doubled patient-count proof improved from 17.640 to 5.495 seconds and
+    four additional exact objectives completed before timeout.
+  - [ ] Refreshed pinned-container repeat benchmark passed.
+- Status: pending - implementation and local evidence pass; human understanding
+  and the refreshed pinned-container benchmark remain.
+
+### 2026-08-25 - Retest Team-Label Symmetry After Aggregate Propagation
+
+- Task: Re-evaluate room-first generated-team value precedence after aggregate
+  acuity and patient constraints moved the doubled bottleneck into team gaps.
+- Problem understanding:
+  - [ ] Why an optimization rejected under the old model can become useful after
+    other constraints change the active bottleneck and search behavior.
+  - [ ] Why the A/B had to keep both aggregate helpers active on both sides and
+    vary only `_add_room_team_value_precedence`.
+- Solution understanding:
+  - [ ] How room-first value precedence removes renamed team copies without
+    forcing contiguous coverage, nurse membership, or clinical assignments.
+  - [ ] Why nurse-first precedence remains invalid for the frozen canonical
+    contract even though room-first precedence now passes.
+- Broader context:
+  - [ ] Why reaching the same RN-gap stage 6.038 seconds earlier is meaningful
+    progress but still does not support the doubled ceiling.
+  - [ ] Why the expanded five-attempt supported A/B reversed the earlier reason
+    for rejecting room-first symmetry.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific quiz or walkthrough completed.
+  - [x] Focused team, assignment, optimizer, and complex checks passed: 24/24.
+  - [x] Complete Python optimizer service suite passed: 67/67.
+  - [x] Supported full and understaffed fingerprints remained unchanged.
+  - [x] Five-attempt supported A/B was deterministic with zero timeouts and
+    favored symmetry at median/p95 17.158/17.407 versus 17.513/20.312.
+  - [x] Doubled A/B reached the RN-gap stage 6.038 seconds earlier with symmetry.
+  - [ ] Refreshed pinned-container repeat benchmark passed.
+- Status: pending - implementation and local evidence pass; human understanding
+  and the refreshed pinned-container benchmark remain.
+
+### 2026-08-25 - Reuse Each Proven Stage as the Next Solver Hint
+
+- Task: Replace the initial construction hint after every exact objective with
+  the complete solution that CP-SAT just proved optimal.
+- Problem understanding:
+  - [ ] Why 42.531 seconds "reaching RN-gap" was cumulative rather than the
+    cost of a single RN objective.
+  - [ ] Why the original hint can become less useful after earlier objective
+    values are frozen as equalities.
+- Solution understanding:
+  - [ ] How `_replace_hint_with_solution` clears the old hint and records every
+    variable value from the last `OPTIMAL` solve.
+  - [ ] Why that complete solution satisfies the newly frozen equality and is
+    therefore a valid incumbent for the next stage.
+  - [ ] Why the hint changes search guidance only and cannot weaken constraints,
+    reorder priorities, or make a `FEASIBLE` result acceptable.
+- Broader context:
+  - [ ] Why materially faster supported runs justify retention even though the
+    doubled request still fails the complete exact canonical sequence.
+  - [ ] Why reaching canonical room tie-breaking is stronger progress than
+    merely reaching RN-gap, but is not evidence for raising the ceiling.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific quiz or walkthrough completed.
+  - [x] Focused optimizer, team, assignment, and complex checks passed: 25/25.
+  - [x] Complete Python optimizer service suite passed: 68/68.
+  - [x] Supported full and understaffed fingerprints remained unchanged.
+  - [x] Five-attempt supported A/B was deterministic with zero timeouts and
+    favored rolling hints at median/p95 12.521/17.345 versus 16.998/18.236.
+  - [x] Doubled enabled completed all primary objectives plus nine canonical
+    room decisions; disabled timed out during `team_patient_count_gap`.
+  - [ ] Refreshed pinned-container repeat benchmark passed.
+- Status: pending - implementation and local evidence pass; human understanding
+  and the refreshed pinned-container benchmark remain.
+
+### 2026-08-25 - Chunk Canonical Room Tie-Breakers
+
+- Task: Prove five canonical room ranks per solve with an exact mixed-radix
+  expression instead of starting a separate exact solve for every room.
+- Problem understanding:
+  - [ ] Why rolling hints moved the doubled bottleneck from primary objectives
+    into repeated canonical room solves.
+  - [ ] Why fewer solves may help even when every room choice still has to be
+    proven and frozen.
+  - [ ] Why making a chunk smaller can simplify each proof but add enough
+    repeated-solve overhead to make the whole sequence slower.
+- Solution understanding:
+  - [ ] How `_mixed_radix_expression` makes an earlier room rank outweigh every
+    possible combination of later ranks in the same chunk.
+  - [ ] Why each decoded room rank is fixed individually after the chunk is
+    proven `OPTIMAL`.
+  - [ ] Why this exact bounded encoding differs from guessing weights for
+    clinical objectives.
+- Broader context:
+  - [ ] Why the large supported improvement justifies retention even though
+    doubled stage-entry variance prevented farther overall progress.
+  - [ ] Why canonical bed-owner chunking is a possible later experiment but was
+    not included in this room-only A/B.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific quiz or walkthrough completed.
+  - [x] Focused optimizer, team, assignment, and complex checks passed: 28/28.
+  - [x] Complete Python optimizer service suite passed: 71/71.
+  - [x] Every fixture and both supported benchmark fingerprints remained
+    unchanged.
+  - [x] Five-attempt supported A/B was deterministic with zero timeouts and
+    favored chunk size five at median/p95 7.926/8.791 versus 13.134/16.239.
+  - [x] Doubled first-ten-room proof time improved from 20.377 to 17.002 seconds.
+  - [x] Three-room tuning was rejected: supported median/p95 regressed to
+    10.041/11.951 and the doubled probe proved nine rather than ten room ranks.
+  - [ ] Refreshed pinned-container repeat benchmark passed.
+- Status: pending - implementation and local evidence pass; human understanding
+  and the refreshed pinned-container benchmark remain.
+
+### 2026-08-25 - Add Direct Team Feasibility Cuts
+
+- Task: State team census versus configured nurse capacity and assigned red
+  census versus configured RN capacity directly in the CP-SAT model.
+- Problem understanding:
+  - [ ] Why the existing bed-owner model already implies both team limits but
+    makes CP-SAT rediscover them through many ownership and membership choices.
+  - [ ] Why the room-chunk bottleneck can benefit from rejecting an impossible
+    team choice before individual bed owners are resolved.
+- Solution understanding:
+  - [ ] How `_add_team_feasibility_constraints` compares each team's assigned
+    patient count with the summed max-load capacity of its nurses.
+  - [ ] How the RN/red cut compares assigned red beds with the summed configured
+    capacity of RNs on that team.
+  - [ ] Why these redundant inequalities strengthen propagation without removing
+    any assignment that satisfied the original hard constraints.
+- Broader context:
+  - [ ] Why proving 15 rather than 10 doubled room ranks is material progress but
+    still does not justify raising the supported ceiling.
+  - [ ] Why unchanged fingerprints and favorable supported timing are required
+    before retaining a propagation-only optimization.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific quiz or walkthrough completed.
+  - [x] Focused optimizer, team, assignment, and complex checks passed: 30/30.
+  - [x] Complete Python optimizer service suite passed: 73/73.
+  - [x] Every fixture and both supported benchmark fingerprints remained
+    unchanged.
+  - [x] Five-attempt supported A/B favored the cuts at median/p95 7.823/7.873
+    versus 8.296/8.529, with zero timeouts on both sides.
+  - [x] Doubled cuts enabled proved 15 canonical room ranks versus 10 disabled.
+  - [ ] Refreshed pinned-container repeat benchmark passed.
+- Status: pending - implementation and local evidence pass; human understanding
+  and the refreshed pinned-container benchmark remain.
+
+### 2026-08-25 - Evaluate Two CP-SAT Search Workers
+
+- Task: Screen two internal solver workers as a possible 2-vCPU latency
+  optimization while retaining one request per service instance.
+- Problem understanding:
+  - [ ] Why dependent lexicographic stages cannot run concurrently even though
+    CP-SAT can parallelize the search inside one stage.
+  - [ ] Why two search workers need at least two available CPU cores and must not
+    be confused with allowing two simultaneous HTTP solves on one instance.
+- Solution understanding:
+  - [ ] How `search_worker_count` changes only CP-SAT's internal worker count and
+    keeps the production default at one.
+  - [ ] Why every stage still requiring `OPTIMAL` and explicit canonical fixing
+    preserved supported decision fingerprints during the experiment.
+- Broader context:
+  - [ ] Why faster canonical chunks did not justify two workers when earlier
+    objectives, supported latency, and memory regressed.
+  - [ ] Why a 2-vCPU deployment change is rejected when doubled completed
+    progress does not advance beyond the one-worker model.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific quiz or walkthrough completed.
+  - [x] Focused optimizer, team, assignment, and complex checks passed: 32/32.
+  - [x] Complete Python optimizer service suite passed: 75/75.
+  - [x] Full and understaffed supported fingerprints remained unchanged.
+  - [x] Two-worker supported median/p95 regressed to 11.851/13.133 seconds from
+    7.823/7.873 with one worker, and peak memory increased.
+  - [x] Both doubled variants proved 15 room ranks before the fourth chunk.
+- Status: pending - the two-worker candidate is rejected and production stays
+  at one worker; the human understanding checkpoint remains.
+
+### 2026-08-25 - Replace Canonical Stages with One Exact Fixed Search
+
+- Task: A/B test the highest-upside exact canonical optimization while
+  preserving every clinical objective, canonical decision, and timeout detail.
+- Problem understanding:
+  - [ ] Why the dependent clinical and balance objectives must still be proved
+    and frozen one at a time before canonical tie-breaking begins.
+  - [ ] Why repeated room, bed-owner, and nurse-team optimization solves created
+    substantial setup and presolve overhead at the supported maximum.
+- Solution understanding:
+  - [ ] How `use_fixed_canonical_search` orders room ranks, bed-owner ranks, then
+    nurse-team ranks and tries the lowest value first in one complete search.
+  - [ ] Why the final pass clears hints, covers every model variable, and turns
+    off presolve so CP-SAT cannot bypass or rewrite the declared rank order.
+  - [ ] Why `optimizer.py` still requires `OPTIMAL` and retains the same shared
+    timeout diagnostics instead of returning a partial canonical candidate.
+- Broader context:
+  - [ ] Why exact fixture equality matters more than matching aggregate
+    objective values when board assignments must remain deterministic.
+  - [ ] Why a large supported understaffed gain does not justify doubling the
+    input ceiling when the doubled fixed pass still times out.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific quiz or walkthrough completed.
+  - [x] Initial presolve-enabled candidate was rejected after changing five
+    frozen canonical fixture decisions.
+  - [x] Corrected candidate matched every fixture and four varied synthetic
+    scenarios exactly.
+  - [x] Complete Python optimizer service suite passed: 78/78.
+  - [x] Supported understaffed candidate improved median/p95 from
+    10.140/12.461 seconds to 5.940/6.758 with the same fingerprint.
+  - [x] Supported full candidate improved from 8.009 to 7.538 seconds with the
+    same fingerprint.
+  - [x] Doubled candidate completed all primary objectives but timed out in
+    `canonical_fixed_search`; the 25/50/12 ceiling remains unchanged.
+- Status: pending - the optimization and local A/B pass; refreshed pinned
+  container evidence and the human understanding checkpoint remain.
+
+### 2026-08-25 - Split Exact Canonical Search and Screen a 90-Second Budget
+
+- Task: Reduce the fixed canonical search tree without losing exactness, and
+  test whether a 90-second shared budget makes the doubled shape supportable.
+- Problem understanding:
+  - [ ] Why the single fixed pass forced room search to carry every later
+    bed-owner and nurse-membership rank through the same search tree.
+  - [ ] Why increasing only the solver budget beyond the service and host
+    deadlines would not actually give the solver more usable request time.
+- Solution understanding:
+  - [ ] How `split_fixed_canonical_search` solves and freezes room ranks, then
+    bed-owner ranks, then nurse-team ranks while preserving their exact order.
+  - [ ] Why each pass still clears hints, disables presolve, covers all model
+    variables, and requires `OPTIMAL` before its tuple can be frozen.
+  - [ ] How timeout diagnostics now identify the incomplete canonical pass and
+    retain every previously completed objective or canonical group.
+- Broader context:
+  - [ ] Why the supported performance gain justifies retaining split search but
+    the failed doubled 90-second run does not justify raising the ceiling.
+  - [ ] Why raising the production solver budget requires coordinated changes
+    to the internal request deadline, Cloud Run timeout, and retry lease.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific quiz or walkthrough completed.
+  - [x] Split search matched staged and single fixed decisions on every frozen
+    fixture and four varied synthetic scenarios.
+  - [x] Forced split timeout retained 11 primary stages and named the room pass.
+  - [x] Understaffed split median/p95 improved from 7.320/11.534 seconds to
+    3.352/3.399 with the same fingerprint.
+  - [x] Full split median/p95 improved from 8.081/8.513 seconds to 5.563/6.618
+    with the same fingerprint.
+  - [x] Doubled 90-second run completed rooms but timed out in bed owners.
+  - [x] Complete Python optimizer service suite passed: 79/79.
+- Status: pending - implementation and regression pass; the human understanding
+  checkpoint remains.
+
+### 2026-08-25 - Reset Joined Access Before Editing an Assigned Shift
+
+- Task: Warn before reopening active-shift setup, invalidate the old assignment
+  boundary, disconnect joined nurses, and restrict join codes to nurses with
+  assigned patients.
+- Problem understanding:
+  - [ ] Why editing patient, nurse, or load data makes the existing assignment
+    and joined-nurse view stale.
+  - [ ] Why assignment reset, invite expiration, access removal, and override
+    supersession must succeed together.
+  - [ ] Why invite eligibility must use occupied beds from the effective
+    assignment rather than the generated baseline alone.
+- Solution understanding:
+  - [ ] How `AssignedShiftEditGuard` blocks editing until the user confirms.
+  - [ ] How `reset_active_shift_for_editing` locks and checks the current
+    baseline before applying all reset changes in one transaction.
+  - [ ] How `getNurseAssignedPatientCount` drives both the invite UI and the
+    repository guard.
+- Broader context:
+  - [ ] Why disconnected nurses must join again only after a new assignment is
+    ready.
+  - [ ] Why keeping no-patient nurses visible with a disabled action is clearer
+    than silently removing them from the invite list.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific quiz or walkthrough completed.
+  - [x] TypeScript, lint, nine focused regressions, and Expo web export passed.
+  - [ ] Supabase function installed and two-session manual validation passed.
+- Status: pending - implementation and local validation pass; server install,
+  live two-session validation, and the human understanding checkpoint remain.
+
+### 2026-08-26 - Evaluate Exact Bed-Owner Blocks
+
+- Task: Test whether smaller exact blocks reduce the doubled bed-owner search
+  bottleneck without hurting the supported production shape.
+- Problem understanding:
+  - [ ] Why one 100-owner fixed pass might appear harder than several smaller
+    prefix passes, but each extra pass also repeats solver setup and search.
+  - [ ] Why the then-supported 25/50/12 contract was the production acceptance
+    gate, not progress on an unsupported doubled input alone.
+- Solution understanding:
+  - [ ] How `fixed_bed_owner_block_size` freezes each canonical owner prefix
+    before solving the next block.
+  - [ ] Why frozen blocks preserve exact lexicographic decisions even though
+    timing can be worse.
+- Broader context:
+  - [ ] Why the experiment is rejected when both screened sizes regress
+    supported latency and fail to finish their first doubled owner block.
+  - [ ] Why the benchmark switch may remain for reproducibility while the
+    production default stays unblocked.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific quiz or walkthrough completed.
+  - [x] Blocked search matched every fixture and four varied synthetic cases.
+  - [x] Ten-bed supported median/p95 regressed to 4.888/7.984 seconds.
+  - [x] Twenty-five-bed supported median/p95 regressed to 4.376/4.564 seconds.
+  - [x] Neither doubled 90-second probe completed its first owner block.
+  - [x] Complete Python optimizer service suite passed: 80/80.
+- Status: pending - experiment and regression complete; the candidate is
+  rejected and the human understanding checkpoint remains.
+
+### 2026-08-28 - Support the Required 20-Room/80-Bed Floor Exactly
+
+- Task: Raise the measured optimizer envelope to 20 rooms, 80 occupied beds,
+  and 12 nurses without weakening objectives or canonical accuracy.
+- Problem understanding:
+  - [ ] Why increasing the original split fixed solver to 120 seconds still
+    timed out in `canonical_fixed_room_search` after primary objectives finished.
+  - [ ] Why a 20/80 run with nurse maximum five tests capacity pressure but is
+    not the fully assignable worst case: 12 nurses can own only 60 beds.
+  - [ ] Why raising the maximum to seven moved the bottleneck first to the exact
+    red-owner objective and then, after that was improved, to canonical owners.
+  - [ ] Why the service should not claim the untested cross-product of 25 rooms
+    and 80 occupied beds when only 25/50 and 20/80 were measured.
+- Solution understanding:
+  - [ ] How `_resolve_mixed_radix_room_search` keeps the fixed room pass through
+    50 occupied beds and selects exact five-room mixed-radix chunks above 50.
+  - [ ] Why a mixed-radix chunk preserves room-by-room lexicographic order, and
+    why fixing each decoded rank preserves that prefix for the next chunk.
+  - [ ] How `_build_structural_red_rank_lower_bound_model` proves a safe rank
+    floor from room/nurse teams and per-nurse acuity counts, and why the full
+    model must still produce a concrete feasibility witness at that value.
+  - [ ] Why fully assigned large floors use exact six-bed mixed-radix owner
+    chunks while capacity-pressure floors keep the fixed owner pass.
+  - [ ] Why owner chunk sizes 3, 4, 5, 7, and 8 were rejected after the
+    one-at-a-time timing comparison retained size 6.
+  - [ ] Why every optimization and canonical chunk still requires `OPTIMAL`.
+  - [ ] How 120/135/140/150-second solver, service, host, and retry limits leave
+    ordered headroom instead of allowing an ambiguous host-side cutoff.
+- Broader context:
+  - [ ] Why chunk sizes four and seven, two workers, and fixed-gap bounds were
+    rejected after regressions, while size six was rejected because its full
+    gain came with an understaffed regression.
+  - [ ] Why deterministic fingerprints and output validation protect accuracy
+    while performance candidates are compared.
+  - [ ] Why losing experimental branches were removed after their A/B evidence
+    was recorded, leaving only measured production paths and explicit controls.
+  - [ ] Why a refreshed pinned-container and Cloud Run cold-start benchmark is
+    still required even though all local 20/80 attempts finished far below the
+    120-second solver allowance.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific quiz or walkthrough completed.
+  - [x] Focused normalization, optimizer, service, and SQL checks passed: 56/56.
+  - [x] Five capacity-pressure 20/80 attempts per variant were optimal and
+    deterministic at 22.039/53.586 seconds median/p95 for capacity 60 and
+    10.445/10.770 seconds for capacity 48.
+  - [x] Five fully assignable production-default 20/80 attempts were optimal,
+    assigned all 80 beds, used one fingerprint, and had 18.402/20.658 seconds
+    median/p95 with peak RSS 128,593,920 bytes.
+  - [x] Default-path 25/50 regression retained fixed room search and completed
+    full/understaffed in 4.754/3.964 seconds with matching fingerprints.
+  - [x] Final complete Python optimizer service suite passed: 88/88, including
+    the fully assignable 20/80 regression.
+  - [ ] Refreshed pinned-container and deployed Cloud Run gates passed.
+- Status: pending - implementation, local A/B evidence, and final regression
+  pass; production-like runtime gates and the human understanding checkpoint
+  remain.

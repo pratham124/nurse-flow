@@ -26,10 +26,12 @@ from .models import (
 ACUITY_WEIGHTS: dict[str, int] = {"green": 1, "yellow": 2, "red": 3}
 EXPERIENCE_LEVELS = {"new_grad", "mid", "experienced"}
 LICENSE_TYPES = {"RN", "LPN"}
-MAX_ROOMS = 200
-MAX_BEDS = 400
-MAX_NURSES = 40
+MAX_ROOMS = 25
+MAX_BEDS = 80
+MAX_NURSES = 12
 MAX_PATIENT_LOAD = 12
+LARGE_FLOOR_OCCUPIED_BED_THRESHOLD = 50
+MAX_LARGE_FLOOR_ROOMS = 20
 
 
 def _issue(
@@ -393,6 +395,19 @@ def normalize_shift_snapshot(snapshot: Mapping[str, Any]) -> NormalizationResult
             "unsupported_occupied_bed_count",
             "bedStates",
             f"cannot contain more than {MAX_BEDS} occupied beds",
+        )
+    if (
+        len(occupied_state_by_bed_id) > LARGE_FLOOR_OCCUPIED_BED_THRESHOLD
+        and len(rooms) > MAX_LARGE_FLOOR_ROOMS
+    ):
+        _issue(
+            issues,
+            "unsupported_large_floor_shape",
+            "rooms",
+            (
+                f"more than {LARGE_FLOOR_OCCUPIED_BED_THRESHOLD} occupied beds "
+                f"supports at most {MAX_LARGE_FLOOR_ROOMS} rooms"
+            ),
         )
 
     # Do not construct solver data from partially valid input. All casts below

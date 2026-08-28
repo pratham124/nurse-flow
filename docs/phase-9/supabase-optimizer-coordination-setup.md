@@ -46,9 +46,9 @@ important: a successful run changes the shift revision and baseline, but an
 identical retry must still return the already-saved result.
 
 An existing `running` mutation returns its current state without starting a
-second solve. If a crashed request remains `running` beyond its 90-second lease,
+second solve. If a crashed request remains `running` beyond its 150-second lease,
 the same mutation may reclaim that run and solve the still-current snapshot.
-This lease is later than the 75-second host cutoff, so a healthy original
+This lease is later than the 140-second host cutoff, so a healthy original
 request cannot still be running. A different mutation for the same running
 shift preconditions returns `in_progress`.
 
