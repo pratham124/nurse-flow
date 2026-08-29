@@ -17,12 +17,8 @@ type ProfileRow = {
   updated_at: string;
 };
 
-function isUserRole(role: string): role is UserRole {
-  return role === "charge_nurse";
-}
-
 function mapProfileRow(row: ProfileRow): UserProfile {
-  if (!isUserRole(row.role)) {
+  if (row.role !== "charge_nurse") {
     throw new Error("This account profile has an unsupported role.");
   }
 

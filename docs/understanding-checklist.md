@@ -2735,8 +2735,8 @@ For each task, add a dated section with:
 - Solution understanding:
   - [ ] `createLocalId` now combines the readable prefix with an Expo Crypto
     UUID, so newly created IDs remain unique across reloads.
-  - [ ] `formatLocalId` keeps the small formatting rule independently testable
-    without loading React Native modules in the Node test runner.
+  - [ ] `createLocalId` now owns its small prefix-formatting rule directly,
+    avoiding a second helper whose only purpose was Node test isolation.
   - [ ] An already-persisted duplicate cannot be repaired automatically because
     assignment references cannot reveal which same-ID nurse was intended.
 - Broader context:
@@ -4160,3 +4160,214 @@ For each task, add a dated section with:
 - Status: pending - implementation, local A/B evidence, and final regression
   pass; production-like runtime gates and the human understanding checkpoint
   remain.
+
+### 2026-08-28 - Review Context State Management
+
+- Task: Decide whether NurseFlow has reached the point where a state-management
+  library would be more useful than React Context alone.
+- Problem understanding:
+  - [ ] Why every consumer of `ServerWorkspaceContext` is notified when any part
+    of its combined value changes.
+  - [ ] Why provider size alone is not the deciding factor, but mixed
+    responsibilities and broad subscriptions are meaningful warning signs.
+  - [ ] Why small, infrequently changing auth, notification, and draft contexts
+    do not need to be migrated automatically.
+- Solution understanding:
+  - [ ] Why an incremental selector-based store for the server workspace is the
+    recommended first migration.
+  - [ ] Why screen-local form, filter, and dialog state should remain local.
+  - [ ] Why a state library does not remove the need to keep server repository,
+    realtime, and derived-state responsibilities separated.
+- Broader context:
+  - [ ] How selective subscriptions can reduce unrelated screen rerenders.
+  - [ ] How a narrow migration limits risk around auth, realtime, and server
+    mutations while preserving an understandable architecture.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific quiz or walkthrough completed.
+- Status: pending
+
+### 2026-08-28 - Simplify the Local ID Helper
+
+- Task: Keep client-generated IDs while removing the unnecessary formatting
+  helper, formatting-only test, and package script.
+- Problem understanding:
+  - [ ] Why NurseFlow still needs one shared client-side ID generator for draft
+    records and idempotent server mutations.
+  - [ ] Why splitting a five-line formatting rule into `localIdCore.ts` added
+    more indirection than useful protection.
+  - [ ] Why removing `createLocalId` entirely would duplicate ID logic across
+    its callers.
+- Solution understanding:
+  - [ ] `createLocalId` now trims the prefix, falls back to `local`, and appends
+    `randomUUID()` in one function.
+  - [ ] `localIdCore.ts`, its formatting-only test, and the `test:local-id`
+    package script were removed together.
+  - [ ] Existing callers and generated ID shapes did not change.
+- Broader context:
+  - [ ] The helper remains the single place to change client ID policy later.
+  - [ ] The remaining test suite no longer implies that string formatting alone
+    proves UUID uniqueness.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [x] TypeScript and lint checks passed.
+  - [x] No stale code or package-script references remain.
+- Status: pending
+
+### 2026-08-28 - Inline the Single User-Role Check
+
+- Task: Remove the one-use `isUserRole` type guard while preserving profile-row
+  validation.
+- Problem understanding:
+  - [ ] Why database rows still require runtime role validation even though the
+    app's TypeScript model defines `UserRole`.
+  - [ ] Why a one-line helper used once did not make this single-role rule easier
+    to understand.
+- Solution understanding:
+  - [ ] `mapProfileRow` now checks `row.role !== "charge_nurse"` directly.
+  - [ ] TypeScript narrows `row.role` after the guard, so the returned profile
+    still satisfies `UserProfile` without a type assertion.
+  - [ ] Unsupported server roles still produce the same error.
+- Broader context:
+  - [ ] A reusable role guard may become useful if the account model later gains
+    multiple supported roles or multiple parsing call sites.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [x] TypeScript and lint checks passed.
+  - [x] No `isUserRole` references remain.
+- Status: pending
+
+### 2026-08-28 - Inline One-Use Shift Status Guards
+
+- Task: Remove the one-use shift and nurse-access status type guards while
+  preserving validation in the row mappers that consume those values.
+- Problem understanding:
+  - [ ] Why server-provided status strings still require runtime validation.
+  - [ ] Why the three private guards added indirection when each had only one
+    caller.
+- Solution understanding:
+  - [ ] `mapActiveShiftRow`, `requireShiftNurseAccess`, and `mapAccessRow` now
+    validate their supported status literals directly.
+  - [ ] `requireShiftNurseAccess` returns only linked access and now declares
+    its `ShiftNurseAccess` return type explicitly.
+  - [ ] The separate four-state nurse-invite guard remains unchanged.
+- Broader context:
+  - [ ] A shared type guard becomes worthwhile if the same status validation is
+    needed at multiple parsing boundaries later.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [x] TypeScript and lint checks passed.
+  - [x] No references to the three removed guards remain.
+- Status: pending
+
+### 2026-08-28 - Inline Assignment Flag Lookups
+
+- Task: Remove four small lookup wrapper functions from `assignmentFlags.ts`
+  while preserving efficient local indexes and generated flag behavior.
+- Problem understanding:
+  - [ ] Why a named local map can communicate lookup intent without requiring a
+    separate function that only wraps `new Map(...)`.
+  - [ ] Why repeated team searches inside the occupied-bed loop were better
+    replaced by one `teamByNurseId` map rather than merely inlined.
+- Solution understanding:
+  - [ ] Bed-assignment and room-coverage maps are now created beside their
+    consumers.
+  - [ ] Nurse lookups use the local `activeShift.nurses.find(...)` expression.
+  - [ ] Team membership is indexed once per summary calculation.
+- Broader context:
+  - [ ] Small duplication can be clearer than a one-line abstraction when no
+    validation or domain rule is being centralized.
+  - [ ] Lookup maps still avoid repeated scans where iteration cost matters.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [x] Focused assignment and move-preview tests passed: 8/8.
+  - [x] TypeScript and lint checks passed.
+  - [x] No references to the four removed wrappers remain.
+- Status: pending
+
+### 2026-08-28 - Remove the Assigned-Patients Boolean Wrapper
+
+- Task: Remove `nurseHasAssignedPatients` and use the shared assigned-patient
+  count directly for invite eligibility checks.
+- Problem understanding:
+  - [ ] Why the boolean wrapper added no independent business rule beyond
+    `getNurseAssignedPatientCount(...) > 0`.
+  - [ ] Why the count helper must remain for the invite-row display and occupied
+    assigned-bed calculation.
+- Solution understanding:
+  - [ ] Screen and repository checks now reject a nurse when the assigned count
+    equals zero.
+  - [ ] Focused tests assert the actual counts before and after an effective
+    assignment override.
+  - [ ] The repository assertion remains because it derives effective state and
+    enforces the mutation boundary before generating a code.
+- Broader context:
+  - [ ] One calculation now serves both numeric display and boolean decisions
+    without exposing a second wrapper API.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [x] Focused active-shift eligibility tests passed: 3/3.
+  - [x] TypeScript and lint checks passed.
+  - [x] No `nurseHasAssignedPatients` references remain.
+- Status: pending
+
+### 2026-08-28 - Inline Nurse Request Display Labels
+
+- Task: Remove two one-use exported label wrappers from
+  `nurseRequestDisplay.ts`.
+- Problem understanding:
+  - [ ] Why `getRequestStatusLabel` added no behavior beyond the existing
+    lifecycle-label function.
+  - [ ] Why a one-use request-type ternary did not require an exported helper.
+- Solution understanding:
+  - [ ] The display mapper now calls `getNurseRequestLifecycleLabel` directly.
+  - [ ] The swap/issue type label is created directly in the display object.
+  - [ ] The separate simulated-nurse helpers remain because they produce a
+    different combined status-and-type label.
+- Broader context:
+  - [ ] Lifecycle label policy remains centralized in
+    `nurseRequestLifecycle.ts`; only the redundant forwarding layer was removed.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [x] Focused lifecycle and notification tests passed: 8/8.
+  - [x] TypeScript and lint checks passed.
+- Status: pending
+
+### 2026-08-28 - Consolidate Shift Request Normalization
+
+- Task: Move duplicate request-ID normalization into
+  `getShiftNurseRequests` and remove its one-use private forwarding helper.
+- Problem understanding:
+  - [ ] Why callers benefit from a shift-oriented API instead of extracting and
+    defaulting the request array themselves.
+  - [ ] Why `getRequestsWithUniqueIds` was unnecessary when only the public
+    shift function called it.
+- Solution understanding:
+  - [ ] `getShiftNurseRequests` still handles a missing shift as an empty list.
+  - [ ] It still preserves the first occurrence of an ID and assigns unique IDs
+    to later duplicates.
+  - [ ] Existing callers did not change because the public API stayed stable.
+- Broader context:
+  - [ ] The compatibility rule remains centralized without an extra internal
+    forwarding layer.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [x] Focused request lifecycle and notification tests passed: 8/8.
+  - [x] TypeScript and lint checks passed.
+  - [x] No `getRequestsWithUniqueIds` references remain.
+- Status: pending

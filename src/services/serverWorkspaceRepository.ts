@@ -17,7 +17,7 @@ import type {
   ServerWorkspace,
   Shift,
   ShiftAccessStatus,
-  ShiftStatus,
+  ShiftNurseAccess,
   UserProfile,
 } from "../types/models";
 
@@ -271,16 +271,6 @@ function getActiveShiftPayload(activeShift: Shift) {
   };
 }
 
-function isShiftStatus(status: string): status is ShiftStatus {
-  return status === "setup" || status === "assigned";
-}
-
-function isShiftAccessStatus(status: string): status is ShiftAccessStatus {
-  return (
-    status === "pending_link" || status === "linked" || status === "removed"
-  );
-}
-
 function mapTemplateRow(row: FloorTemplateRow): FloorTemplateRecord {
   return {
     createdAt: row.created_at,
@@ -293,7 +283,7 @@ function mapTemplateRow(row: FloorTemplateRow): FloorTemplateRecord {
 }
 
 function mapActiveShiftRow(row: ActiveShiftRow): ActiveShiftRecord {
-  if (!isShiftStatus(row.status)) {
+  if (row.status !== "setup" && row.status !== "assigned") {
     throw new Error("The active shift has an unsupported status.");
   }
 
@@ -426,7 +416,7 @@ function requireShiftNurseAccess(
   value: unknown,
   profile: UserProfile,
   shiftId: string,
-) {
+): ShiftNurseAccess {
   const access = value as ShiftNurseAccessSnapshot | undefined;
 
   if (!access) {
@@ -437,7 +427,11 @@ function requireShiftNurseAccess(
   const nurseProfileId =
     access.nurseProfileId ?? access.nurse_profile_id ?? undefined;
 
-  if (!isShiftAccessStatus(status)) {
+  if (
+    status !== "pending_link" &&
+    status !== "linked" &&
+    status !== "removed"
+  ) {
     throw new Error("Shift access has an unsupported status.");
   }
 
@@ -457,7 +451,7 @@ function requireShiftNurseAccess(
     nurseName: access.nurseName ?? access.nurse_name ?? "",
     nurseProfileId,
     shiftId: access.shiftId ?? access.shift_id ?? shiftId,
-    status,
+    status: "linked",
     updatedAt: access.updatedAt ?? access.updated_at ?? "",
   };
 }

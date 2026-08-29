@@ -3,10 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { getEffectiveAssignmentResult } from "../src/utils/effectiveAssignment.ts";
-import {
-  getNurseAssignedPatientCount,
-  nurseHasAssignedPatients,
-} from "../src/utils/nurseInviteEligibility.ts";
+import { getNurseAssignedPatientCount } from "../src/utils/nurseInviteEligibility.ts";
 
 const shift = {
   id: "shift-1",
@@ -54,14 +51,6 @@ test("join-code eligibility counts occupied assigned beds only", () => {
     getNurseAssignedPatientCount(shift, assignmentResult, "nurse-b"),
     0,
   );
-  assert.equal(
-    nurseHasAssignedPatients(shift, assignmentResult, "nurse-a"),
-    true,
-  );
-  assert.equal(
-    nurseHasAssignedPatients(shift, assignmentResult, "nurse-b"),
-    false,
-  );
 });
 
 test("join-code eligibility follows the effective assignment after a move", () => {
@@ -85,12 +74,12 @@ test("join-code eligibility follows the effective assignment after a move", () =
   );
 
   assert.equal(
-    nurseHasAssignedPatients(shift, effectiveAssignmentResult, "nurse-a"),
-    false,
+    getNurseAssignedPatientCount(shift, effectiveAssignmentResult, "nurse-a"),
+    0,
   );
   assert.equal(
-    nurseHasAssignedPatients(shift, effectiveAssignmentResult, "nurse-b"),
-    true,
+    getNurseAssignedPatientCount(shift, effectiveAssignmentResult, "nurse-b"),
+    1,
   );
 });
 

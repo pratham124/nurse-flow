@@ -3,7 +3,31 @@ import type { NurseRequest, NurseRequestStatus, Shift } from "../types/models";
 const nurseRequestIdPrefix = "nurse-request";
 
 export function getShiftNurseRequests(activeShift?: Shift): NurseRequest[] {
-  return getRequestsWithUniqueIds(activeShift?.nurseRequests ?? []);
+  const requests = activeShift?.nurseRequests ?? [];
+  const usedIds = new Set<string>();
+  let nextNumber = requests.length + 1;
+
+  return requests.map((request) => {
+    if (!usedIds.has(request.id)) {
+      usedIds.add(request.id);
+      return request;
+    }
+
+    let nextId = `${nurseRequestIdPrefix}-${nextNumber}`;
+
+    while (usedIds.has(nextId)) {
+      nextNumber += 1;
+      nextId = `${nurseRequestIdPrefix}-${nextNumber}`;
+    }
+
+    usedIds.add(nextId);
+    nextNumber += 1;
+
+    return {
+      ...request,
+      id: nextId,
+    };
+  });
 }
 
 export function createNurseRequestId(activeShift?: Shift): string {
@@ -46,33 +70,6 @@ export function resolvePendingSwapRequest(
       };
     }),
   };
-}
-
-function getRequestsWithUniqueIds(requests: NurseRequest[]): NurseRequest[] {
-  const usedIds = new Set<string>();
-  let nextNumber = requests.length + 1;
-
-  return requests.map((request) => {
-    if (!usedIds.has(request.id)) {
-      usedIds.add(request.id);
-      return request;
-    }
-
-    let nextId = `${nurseRequestIdPrefix}-${nextNumber}`;
-
-    while (usedIds.has(nextId)) {
-      nextNumber += 1;
-      nextId = `${nurseRequestIdPrefix}-${nextNumber}`;
-    }
-
-    usedIds.add(nextId);
-    nextNumber += 1;
-
-    return {
-      ...request,
-      id: nextId,
-    };
-  });
 }
 
 export function getNurseRequestsForNurse(

@@ -33,10 +33,7 @@ import type {
   ShiftNurseInviteRecord,
   UserProfile,
 } from "../types/models";
-import {
-  getNurseAssignedPatientCount,
-  nurseHasAssignedPatients,
-} from "../utils/nurseInviteEligibility";
+import { getNurseAssignedPatientCount } from "../utils/nurseInviteEligibility";
 import { assignmentFlow } from "../utils/workflowFlows";
 
 type InviteScreenWorkspace = {
@@ -561,11 +558,11 @@ export default function NurseInvitesScreen() {
     }
 
     if (
-      !nurseHasAssignedPatients(
+      getNurseAssignedPatientCount(
         activeShift.shiftSnapshot,
         effectiveAssignmentResult,
         nurseId,
-      )
+      ) === 0
     ) {
       setActionErrorMessage(
         "Assign at least one patient to this nurse before generating a code.",
@@ -592,11 +589,11 @@ export default function NurseInvitesScreen() {
   function handleRegenerate(nurseId: string) {
     if (
       !activeShift ||
-      !nurseHasAssignedPatients(
+      getNurseAssignedPatientCount(
         activeShift.shiftSnapshot,
         effectiveAssignmentResult,
         nurseId,
-      )
+      ) === 0
     ) {
       setActionErrorMessage(
         "Assign at least one patient to this nurse before generating a code.",

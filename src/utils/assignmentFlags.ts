@@ -4,7 +4,6 @@ import type {
   Bed,
   BedAssignment,
   Flag,
-  GeneratedTeam,
   Room,
   RoomCoverage,
   Shift,
@@ -43,10 +42,6 @@ function getOccupiedBeds(activeShift: Shift): OccupiedBed[] {
   });
 }
 
-function getNurseById(activeShift: Shift, nurseId: string) {
-  return activeShift.nurses.find((nurse) => nurse.id === nurseId);
-}
-
 function getAssignedBedCountsByNurseId(bedAssignments: BedAssignment[]) {
   const assignedBedCountsByNurseId = new Map<string, number>();
 
@@ -60,16 +55,6 @@ function getAssignedBedCountsByNurseId(bedAssignments: BedAssignment[]) {
   return assignedBedCountsByNurseId;
 }
 
-function getRoomCoverageByRoomId(roomCoverage: RoomCoverage[]) {
-  return new Map(roomCoverage.map((coverage) => [coverage.roomId, coverage]));
-}
-
-function getBedAssignmentByBedId(bedAssignments: BedAssignment[]) {
-  return new Map(
-    bedAssignments.map((bedAssignment) => [bedAssignment.bedId, bedAssignment]),
-  );
-}
-
 function getEligibleCoverageNurseIds(
   activeShift: Shift,
   occupiedBed: OccupiedBed,
@@ -78,7 +63,9 @@ function getEligibleCoverageNurseIds(
 ) {
   return (
     coverage?.nurseIds.filter((nurseId) => {
-      const nurse = getNurseById(activeShift, nurseId);
+      const nurse = activeShift.nurses.find(
+        (candidate) => candidate.id === nurseId,
+      );
 
       if (!nurse) {
         return false;
@@ -112,13 +99,6 @@ function getNurseLoadLimit(
     : activeShift.sideLoadLimits.nonAdmitting.max;
 }
 
-function getTeamForNurse(
-  generatedTeams: GeneratedTeam[],
-  nurseId: string,
-): GeneratedTeam | undefined {
-  return generatedTeams.find((team) => team.nurseIds.includes(nurseId));
-}
-
 function getTeamLoadSummaries(
   activeShift: Shift,
   assignmentResult: AssignmentResult,
@@ -130,20 +110,30 @@ function getTeamLoadSummaries(
         patientCount: 0,
         redBedCount: 0,
         rnCount: team.nurseIds.filter(
-          (nurseId) => getNurseById(activeShift, nurseId)?.licenseType === "RN",
+          (nurseId) =>
+            activeShift.nurses.find((nurse) => nurse.id === nurseId)
+              ?.licenseType === "RN",
         ).length,
         weightedAcuityLoad: 0,
       },
     ]),
   );
-  const assignedBedById = getBedAssignmentByBedId(
-    assignmentResult.bedAssignments,
+  const assignedBedById = new Map(
+    assignmentResult.bedAssignments.map((bedAssignment) => [
+      bedAssignment.bedId,
+      bedAssignment,
+    ]),
+  );
+  const teamByNurseId = new Map(
+    assignmentResult.generatedTeams.flatMap((team) =>
+      team.nurseIds.map((nurseId) => [nurseId, team] as const),
+    ),
   );
 
   getOccupiedBeds(activeShift).forEach((occupiedBed) => {
     const assignedNurseId = assignedBedById.get(occupiedBed.bed.id)?.nurseId;
     const team = assignedNurseId
-      ? getTeamForNurse(assignmentResult.generatedTeams, assignedNurseId)
+      ? teamByNurseId.get(assignedNurseId)
       : undefined;
     const teamLoad = team ? teamLoadByTeamId.get(team.id) : undefined;
 
@@ -217,11 +207,17 @@ function addCoverageFlags(
   const assignedBedCountsByNurseId = getAssignedBedCountsByNurseId(
     assignmentResult.bedAssignments,
   );
-  const assignmentByBedId = getBedAssignmentByBedId(
-    assignmentResult.bedAssignments,
+  const assignmentByBedId = new Map(
+    assignmentResult.bedAssignments.map((bedAssignment) => [
+      bedAssignment.bedId,
+      bedAssignment,
+    ]),
   );
-  const coverageByRoomId = getRoomCoverageByRoomId(
-    assignmentResult.roomCoverage,
+  const coverageByRoomId = new Map(
+    assignmentResult.roomCoverage.map((coverage) => [
+      coverage.roomId,
+      coverage,
+    ]),
   );
   const occupiedBeds = getOccupiedBeds(activeShift);
 

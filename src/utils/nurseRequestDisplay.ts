@@ -29,20 +29,6 @@ export type NurseRequestDisplay = {
   typeLabel: string;
 };
 
-export function getRequestTypeLabel(request: NurseRequest) {
-  return request.type === "swap" ? "Swap request" : "Issue request";
-}
-
-export function getRequestStatusLabel(
-  request: NurseRequest,
-  activeAssignmentOverridesByBedId?: ActiveAssignmentOverridesByBedId,
-) {
-  return getNurseRequestLifecycleLabel(
-    request,
-    activeAssignmentOverridesByBedId,
-  );
-}
-
 export function getNurseRequestDisplays(
   activeShift?: Shift,
   activeAssignmentOverridesByBedId?: ActiveAssignmentOverridesByBedId,
@@ -105,14 +91,14 @@ function getNurseRequestDisplay(
       ? formatRequestTimestamp(request.resolvedAt)
       : undefined,
     sourceBedId: request.sourceBedId,
-    statusLabel: getRequestStatusLabel(
+    statusLabel: getNurseRequestLifecycleLabel(
       request,
       activeAssignmentOverridesByBedId,
     ),
     swapCompletedAtText: request.swapCompletedAt
       ? formatRequestTimestamp(request.swapCompletedAt)
       : undefined,
-    typeLabel: getRequestTypeLabel(request),
+    typeLabel: request.type === "swap" ? "Swap request" : "Issue request",
   };
 }
 

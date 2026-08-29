@@ -21,11 +21,3 @@ export function getNurseAssignedPatientCount(
       assignment.nurseId === nurseId && occupiedBedIds.has(assignment.bedId),
   ).length;
 }
-
-export function nurseHasAssignedPatients(
-  shift: Shift | undefined,
-  assignmentResult: AssignmentResult | undefined,
-  nurseId: string,
-) {
-  return getNurseAssignedPatientCount(shift, assignmentResult, nurseId) > 0;
-}

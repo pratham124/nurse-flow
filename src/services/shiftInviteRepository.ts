@@ -9,7 +9,7 @@ import type {
   UserProfile,
 } from "../types/models";
 import { getEffectiveAssignmentResult } from "../utils/effectiveAssignment";
-import { nurseHasAssignedPatients } from "../utils/nurseInviteEligibility";
+import { getNurseAssignedPatientCount } from "../utils/nurseInviteEligibility";
 
 type ShiftNurseInviteRow = {
   created_at: string;
@@ -177,11 +177,11 @@ function assertNurseHasAssignedPatients(
     : undefined;
 
   if (
-    !nurseHasAssignedPatients(
+    getNurseAssignedPatientCount(
       activeShift.shiftSnapshot,
       effectiveAssignmentResult,
       nurseId,
-    )
+    ) === 0
   ) {
     throw new Error(
       "Assign at least one patient to this nurse before generating a code.",
@@ -266,14 +266,6 @@ function isShiftNurseInviteStatus(
   );
 }
 
-function isShiftNurseAccessStatus(
-  status: string,
-): status is ShiftNurseAccess["status"] {
-  return (
-    status === "pending_link" || status === "linked" || status === "removed"
-  );
-}
-
 function mapInviteRow(row: ShiftNurseInviteRow): ShiftNurseInviteRecord {
   if (!isShiftNurseInviteStatus(row.status)) {
     throw new Error("The nurse invite has an unsupported status.");
@@ -295,7 +287,11 @@ function mapInviteRow(row: ShiftNurseInviteRow): ShiftNurseInviteRecord {
 }
 
 function mapAccessRow(row: ShiftNurseAccessRow): ShiftNurseAccess {
-  if (!isShiftNurseAccessStatus(row.status)) {
+  if (
+    row.status !== "pending_link" &&
+    row.status !== "linked" &&
+    row.status !== "removed"
+  ) {
     throw new Error("The nurse access record has an unsupported status.");
   }
 
