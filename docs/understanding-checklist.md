@@ -4166,27 +4166,101 @@ For each task, add a dated section with:
 - Task: Decide whether NurseFlow has reached the point where a state-management
   library would be more useful than React Context alone.
 - Problem understanding:
-  - [ ] Why every consumer of `ServerWorkspaceContext` is notified when any part
+  - [x] Why every consumer of `ServerWorkspaceContext` is notified when any part
     of its combined value changes.
-  - [ ] Why provider size alone is not the deciding factor, but mixed
+  - [x] Why provider size alone is not the deciding factor, but mixed
     responsibilities and broad subscriptions are meaningful warning signs.
-  - [ ] Why small, infrequently changing auth, notification, and draft contexts
+  - [x] Why small, infrequently changing auth, notification, and draft contexts
     do not need to be migrated automatically.
 - Solution understanding:
-  - [ ] Why an incremental selector-based store for the server workspace is the
+  - [x] Why an incremental selector-based store for the server workspace is the
     recommended first migration.
-  - [ ] Why screen-local form, filter, and dialog state should remain local.
-  - [ ] Why a state library does not remove the need to keep server repository,
+  - [x] Why screen-local form, filter, and dialog state should remain local.
+  - [x] Why a state library does not remove the need to keep server repository,
     realtime, and derived-state responsibilities separated.
 - Broader context:
-  - [ ] How selective subscriptions can reduce unrelated screen rerenders.
-  - [ ] How a narrow migration limits risk around auth, realtime, and server
+  - [x] How selective subscriptions can reduce unrelated screen rerenders.
+  - [x] How a narrow migration limits risk around auth, realtime, and server
     mutations while preserving an understandable architecture.
 - Verification:
-  - [ ] Human restated understanding first.
-  - [ ] Gaps were explained.
-  - [ ] Code-specific quiz or walkthrough completed.
-- Status: pending
+  - [x] Human restated understanding first: identified that provider scoping
+    makes the migration easier.
+  - [x] Gaps were explained: the main benefit is per-session lifecycle and test
+    isolation while Context carries only a stable store instance.
+  - [x] Code-specific quiz completed: correctly predicted that changing an
+    unrelated status does not notify an `activeShift` selector subscriber.
+- Status: verified - the human explained selector isolation and correctly
+  identified workspace reset plus realtime cleanup as the provider-owned
+  sign-out responsibilities.
+
+### 2026-08-28 - Migrate the Server Workspace to Zustand
+
+- Task: Preserve the existing server workspace behavior while replacing one
+  broad Context value with a provider-scoped Zustand store and field selectors.
+- Problem understanding:
+  - [x] Why memoizing the old Context value did not prevent consumers from
+    rerendering when an unrelated field in that value changed.
+  - [x] Why the store is created inside `ServerWorkspaceProvider` instead of as
+    a module-level singleton.
+- Solution understanding:
+  - [x] `serverWorkspaceStore.ts` owns state, derived views, and stable actions;
+    `ServerWorkspaceContext.tsx` owns provider and realtime lifecycle.
+  - [x] `useServerWorkspace(selector)` subscribes a component only to its
+    selected result, with `useShallow` used for multi-field selector objects.
+  - [x] The production dependency adapter keeps native repository imports out
+    of the store's Node-test boundary.
+  - [x] The shared `saveStatus` behavior was preserved for Task 1 rather than
+    redesigned during the migration.
+- Broader context:
+  - [x] Sign-out clears charge and joined nurse views, while provider effect
+    cleanup stops Nurse A's realtime subscribers when their identifying inputs
+    disappear or the provider unmounts.
+  - [x] Small auth, notification, and workflow-draft contexts remain unchanged
+    until their own update patterns justify a migration.
+- Verification:
+  - [x] Human restated understanding first: correctly identified that an
+    unrelated save field is not needed by the floor board, and that sign-out
+    must clear nurse information and subscribers.
+  - [x] Gaps were explained: selected values control store notifications, data
+    reset and subscription cleanup are separate responsibilities, and the
+    compatibility helper is test-only.
+  - [x] Code-specific question completed: correctly identified
+    `stopSubscription()` as the realtime effect cleanup operation.
+  - [x] Focused server workspace store tests passed: 7/7.
+  - [x] TypeScript, lint, and diff checks passed.
+  - [x] Existing mobile regression suites and Expo export passed.
+- Status: verified - the human identified selector isolation, personal-data
+  reset, realtime cleanup, and the retained compatibility-test boundary.
+
+### 2026-08-28 - Remove Obsolete Simulated Nurse Screens
+
+- Task: Remove the retired local simulated nurse screens after the real joined
+  nurse assignment and request paths replaced them.
+- Problem understanding:
+  - [x] Why keeping unreachable simulation screens and their session state
+    creates misleading duplicate product paths and maintenance work.
+- Solution understanding:
+  - [x] The four `SimulatedNurse*` screens, screen names, and simulated session
+    model/state were removed together.
+  - [x] The real joined nurse workspace remains the only nurse-facing runtime
+    assignment path.
+  - [x] The old `nurseAssignmentView` helper remains only for explicit output
+    compatibility regression coverage, not as an app route.
+- Broader context:
+  - [x] Historical planning docs remain historical records; current Phase 6
+    and Phase 9 touchpoint docs now describe the live runtime accurately.
+- Verification:
+  - [x] Human restated understanding first: correctly identified that the
+    retained helper still has an active use after the screens were removed.
+  - [x] Gaps were explained: the helper's remaining consumer is a compatibility
+    regression test, not the runtime app.
+  - [x] Code-specific cleanup walkthrough completed alongside the realtime
+    cleanup question.
+  - [x] No simulated screen, route, session-state, or type references remain in
+    `src` or `tests`.
+  - [x] TypeScript and lint checks passed.
+- Status: verified - the human understood why the screens were removed and why
+  the test-only compatibility helper remains.
 
 ### 2026-08-28 - Simplify the Local ID Helper
 

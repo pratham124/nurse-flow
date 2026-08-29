@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { memo, useCallback, useMemo, useState } from "react";
 import { router } from "expo-router";
 import {
@@ -762,7 +763,15 @@ export default function FloorBoardScreen() {
     effectiveAssignmentResult,
     realtimeConnectionState,
     retryLoadWorkspace,
-  } = useServerWorkspace();
+  } = useServerWorkspace(
+    useShallow((state) => ({
+      activeShift: state.activeShift,
+      effectiveAssignmentFlags: state.effectiveAssignmentFlags,
+      effectiveAssignmentResult: state.effectiveAssignmentResult,
+      realtimeConnectionState: state.realtimeConnectionState,
+      retryLoadWorkspace: state.retryLoadWorkspace,
+    })),
+  );
   const [selectedFilter, setSelectedFilter] = useState<BoardFilter>("All");
   const [selectedMoveBedId, setSelectedMoveBedId] = useState<string>();
   const [selectedNurseId, setSelectedNurseId] = useState<string>();

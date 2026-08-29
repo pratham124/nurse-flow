@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import {
   createContext,
   useCallback,
@@ -54,8 +55,15 @@ export function NotificationTapProvider({
   children,
 }: NotificationTapProviderProps) {
   const { authState } = useAuthSession();
-  const { retryLoadJoinedNurseAccess, retryLoadWorkspace } =
-    useServerWorkspace();
+  const {
+    retryLoadJoinedNurseAccess,
+    retryLoadWorkspace,
+  } = useServerWorkspace(
+    useShallow((state) => ({
+      retryLoadJoinedNurseAccess: state.retryLoadJoinedNurseAccess,
+      retryLoadWorkspace: state.retryLoadWorkspace,
+    })),
+  );
   const [pendingPayload, setPendingPayload] =
     useState<NotificationTapPayload>();
   const [retryCount, setRetryCount] = useState(0);

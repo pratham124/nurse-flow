@@ -315,19 +315,19 @@ Build:
 
 - Make the real invite-based joined nurse path the main nurse-facing route.
 - Remove simulated nurse entry points from the normal charge nurse product flow.
-- Delete simulated nurse screens only if the real joined nurse path fully replaces their manual testing value.
-- If any simulation screens remain for development testing, keep them clearly labeled as local simulation and outside the main user flow.
+- Delete simulated nurse screens once the real joined nurse path fully replaces their manual testing value.
 - Do not imply simulated screens provide real multi-device joined nurse access.
 - Removed the normal Floor Board `View as nurse` simulation entry point.
 - Removed the `src/app/simulated-nurse-*` route files so simulated nurse screens are no longer reachable as app routes.
-- Kept the underlying `src/screens/SimulatedNurse*` files temporarily as reference code for the upcoming real joined nurse request tasks.
+- Removed the obsolete `src/screens/SimulatedNurse*` files after the real joined nurse assignment and request flows replaced them.
+- Removed the draft-only simulated nurse session state that was used only by those screens.
 - Left the Home and join-code paths as the main real joined nurse route.
 
 Validation check:
 
 - Invited nurse uses the real joined nurse route.
 - The normal charge nurse product flow no longer points users to simulated nurse screens.
-- Any remaining simulated route is clearly labeled as local development/testing only and does not imply real multi-device access.
+- No simulated nurse route or screen remains in the app surface.
 - Previous request and assignment display behavior still works.
 - TypeScript, lint, and Expo export pass.
 

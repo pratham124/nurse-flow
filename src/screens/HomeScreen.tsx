@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { useState } from "react";
 import { router } from "expo-router";
 import {
@@ -205,7 +206,22 @@ export default function Index() {
     savePreviousShiftSnapshot: saveServerPreviousShiftSnapshot,
     startActiveShift,
     workspaceState,
-  } = useServerWorkspace();
+  } = useServerWorkspace(
+    useShallow((state) => ({
+      activeShift: state.activeShift,
+      activeParticipation: state.activeParticipation,
+      deleteFloorTemplate: state.deleteFloorTemplate,
+      endActiveShift: state.endActiveShift,
+      floorTemplates: state.floorTemplates,
+      joinedNurseAccessState: state.joinedNurseAccessState,
+      previousShiftSnapshots: state.previousShiftSnapshots,
+      realtimeConnectionState: state.realtimeConnectionState,
+      retryLoadWorkspace: state.retryLoadWorkspace,
+      savePreviousShiftSnapshot: state.savePreviousShiftSnapshot,
+      startActiveShift: state.startActiveShift,
+      workspaceState: state.workspaceState,
+    })),
+  );
   const [floorTemplateToDelete, setFloorTemplateToDelete] =
     useState<FloorTemplate>();
   const [endShiftConfirmationVisible, setEndShiftConfirmationVisible] =

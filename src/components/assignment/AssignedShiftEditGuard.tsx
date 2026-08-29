@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { useState } from "react";
 import { router } from "expo-router";
 
@@ -12,7 +13,13 @@ type AssignedShiftEditGuardProps = {
 export function AssignedShiftEditGuard({
   activeShift,
 }: AssignedShiftEditGuardProps) {
-  const { resetActiveShiftForEditing } = useServerWorkspace();
+  const {
+    resetActiveShiftForEditing,
+  } = useServerWorkspace(
+    useShallow((state) => ({
+      resetActiveShiftForEditing: state.resetActiveShiftForEditing,
+    })),
+  );
   const [errorMessage, setErrorMessage] = useState("");
   const [isResetting, setIsResetting] = useState(false);
   const assignmentResultId = activeShift?.assignmentResult?.id;

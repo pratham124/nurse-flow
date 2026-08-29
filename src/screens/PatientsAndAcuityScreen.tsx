@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { useState, useEffect } from "react";
 import { router } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -533,7 +534,13 @@ export default function PatientsAndAcuityScreen() {
     activeShift: serverActiveShift,
     saveActiveShift,
     saveStatus,
-  } = useServerWorkspace();
+  } = useServerWorkspace(
+    useShallow((state) => ({
+      activeShift: state.activeShift,
+      saveActiveShift: state.saveActiveShift,
+      saveStatus: state.saveStatus,
+    })),
+  );
   const { draftShift: activeShift, setDraftShift } =
     useActiveShiftDraft(serverActiveShift);
   const [ageTextByBedId, setAgeTextByBedId] = useState<Record<string, string>>(

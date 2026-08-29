@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { useEffect, useState } from "react";
 import { router } from "expo-router";
 import {
@@ -423,7 +424,15 @@ export default function RegularNurseWorkspaceScreen() {
     retryLoadJoinedNurseAccess,
     submitJoinedNurseIssueRequest,
     submitJoinedNurseSwapRequest,
-  } = useServerWorkspace();
+  } = useServerWorkspace(
+    useShallow((state) => ({
+      joinedNurseAccessState: state.joinedNurseAccessState,
+      joinedNurseRealtimeConnectionState: state.joinedNurseRealtimeConnectionState,
+      retryLoadJoinedNurseAccess: state.retryLoadJoinedNurseAccess,
+      submitJoinedNurseIssueRequest: state.submitJoinedNurseIssueRequest,
+      submitJoinedNurseSwapRequest: state.submitJoinedNurseSwapRequest,
+    })),
+  );
   const [issueMessage, setIssueMessage] = useState("");
   const [swapMessage, setSwapMessage] = useState("");
   const [selectedSwapBedId, setSelectedSwapBedId] = useState<

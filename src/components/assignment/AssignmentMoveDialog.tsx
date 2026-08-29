@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AccessibilityInfo,
@@ -139,7 +140,13 @@ export function AssignmentMoveDialog({
     confirmManualAssignmentOverride,
     realtimeConnectionState,
     saveStatus,
-  } = useServerWorkspace();
+  } = useServerWorkspace(
+    useShallow((state) => ({
+      confirmManualAssignmentOverride: state.confirmManualAssignmentOverride,
+      realtimeConnectionState: state.realtimeConnectionState,
+      saveStatus: state.saveStatus,
+    })),
+  );
   const [selectedNurseId, setSelectedNurseId] = useState<string>();
   const [acknowledgedWarningIds, setAcknowledgedWarningIds] = useState<Set<string>>(
     new Set(),

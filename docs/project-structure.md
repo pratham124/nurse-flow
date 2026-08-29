@@ -30,7 +30,11 @@ NurseFlow starts as a local charge nurse prototype, then grows toward the full p
 
 - `src/store/`
   - Shared app state containers when local screen state is no longer enough.
-  - Phase 1 should use simple React state or a beginner-friendly reducer before adding libraries.
+  - The server workspace uses one provider-scoped Zustand store so screens can
+    subscribe to individual fields while provider unmount still owns session
+    isolation and realtime cleanup.
+  - Small auth, notification-routing, and workflow-draft contexts remain React
+    Context because their update patterns do not currently justify migration.
 
 - `src/hooks/`
   - Reusable custom React hooks.
@@ -106,8 +110,9 @@ Use this map when deciding where new code belongs:
   nurses; larger server snapshots fail normalization before model construction.
 - `src/services/optimizerRepository.ts` is the only mobile request boundary for
   both initial assignment and reruns.
-- `src/store/ServerWorkspaceContext.tsx` refreshes the authoritative Supabase
-  workspace after saved or stale optimizer outcomes.
+- `src/store/serverWorkspaceStore.ts` refreshes the authoritative Supabase
+  workspace after saved or stale optimizer outcomes, while
+  `src/store/ServerWorkspaceContext.tsx` owns provider and realtime lifecycle.
 - Mobile screens never calculate or submit a complete assignment result.
 - Manual move previews continue to use the committed baseline plus active
   overrides and do not regenerate the baseline.

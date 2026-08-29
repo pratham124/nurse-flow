@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { useEffect, useState } from "react";
 import { router } from "expo-router";
 
@@ -27,7 +28,13 @@ function hasSavedFloorTemplateWithName(
 }
 
 export default function FloorDetailsScreen() {
-  const { floorTemplates } = useServerWorkspace();
+  const {
+    floorTemplates,
+  } = useServerWorkspace(
+    useShallow((state) => ({
+      floorTemplates: state.floorTemplates,
+    })),
+  );
   const { draftFloorTemplate, setDraftFloorTemplate } = useWorkflowDraft();
   const [floorName, setFloorName] = useState(
     draftFloorTemplate?.name ?? "",

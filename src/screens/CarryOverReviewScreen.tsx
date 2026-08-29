@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { useState } from "react";
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -208,7 +209,14 @@ export default function CarryOverReviewScreen() {
     previousShiftSnapshots,
     saveActiveShift,
     saveStatus,
-  } = useServerWorkspace();
+  } = useServerWorkspace(
+    useShallow((state) => ({
+      activeShift: state.activeShift,
+      previousShiftSnapshots: state.previousShiftSnapshots,
+      saveActiveShift: state.saveActiveShift,
+      saveStatus: state.saveStatus,
+    })),
+  );
   const [serverSaveError, setServerSaveError] = useState("");
   const previousShiftSnapshot = activeShift
     ? previousShiftSnapshots.find(

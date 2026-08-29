@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import {
@@ -20,6 +21,7 @@ import {
 import { getSupabaseClient } from "../services/supabaseClient";
 import { useAuthSession } from "../store/AuthSessionContext";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
+import type { ActiveParticipation } from "../store/serverWorkspaceStore";
 import {
   colors,
   fontWeight,
@@ -63,7 +65,7 @@ function getSingleParam(value: string | string[] | undefined) {
 }
 
 function getActiveParticipationMessage(
-  activeParticipation: ReturnType<typeof useServerWorkspace>["activeParticipation"],
+  activeParticipation: ActiveParticipation,
   result: Extract<ShiftNurseInviteValidationResult, { status: "valid" }>,
 ) {
   if (activeParticipation.type === "none") {
@@ -166,8 +168,15 @@ export default function JoinActiveSessionScreen() {
   const params = useLocalSearchParams();
   const initialCode = getSingleParam(params.code);
   const { authState } = useAuthSession();
-  const { activeParticipation, retryLoadJoinedNurseAccess } =
-    useServerWorkspace();
+  const {
+    activeParticipation,
+    retryLoadJoinedNurseAccess,
+  } = useServerWorkspace(
+    useShallow((state) => ({
+      activeParticipation: state.activeParticipation,
+      retryLoadJoinedNurseAccess: state.retryLoadJoinedNurseAccess,
+    })),
+  );
   const [nurseCode, setNurseCode] = useState(() => (initialCode ?? "").slice(0, 6));
   const [validationState, setValidationState] = useState<ValidationState>({
     status: "idle",

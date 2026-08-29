@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { useState } from "react";
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
@@ -149,7 +150,13 @@ export default function TemplateReviewScreen() {
     saveErrorMessage: serverSaveErrorMessage,
     saveFloorTemplate,
     saveStatus,
-  } = useServerWorkspace();
+  } = useServerWorkspace(
+    useShallow((state) => ({
+      saveErrorMessage: state.saveErrorMessage,
+      saveFloorTemplate: state.saveFloorTemplate,
+      saveStatus: state.saveStatus,
+    })),
+  );
   const [saveErrorText, setSaveErrorText] = useState("");
   const draftTemplate = draftFloorTemplate;
   const reviewTemplate = draftTemplate;

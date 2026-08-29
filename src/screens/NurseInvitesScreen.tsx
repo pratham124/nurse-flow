@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import * as Clipboard from "expo-clipboard";
 import { router } from "expo-router";
@@ -25,6 +26,7 @@ import {
 } from "../services/shiftInviteRepository";
 import { getSupabaseClient } from "../services/supabaseClient";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
+import type { ServerWorkspaceState } from "../store/serverWorkspaceStore";
 import { colors, fontWeight, radius, shadows, spacing, textSize } from "../theme/tokens";
 import type {
   ActiveShiftRecord,
@@ -85,7 +87,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 function getInviteWorkspace(
-  workspaceState: ReturnType<typeof useServerWorkspace>["workspaceState"],
+  workspaceState: ServerWorkspaceState,
 ): InviteScreenWorkspace {
   if (workspaceState.status !== "ready" && workspaceState.status !== "empty") {
     return {};
@@ -428,7 +430,13 @@ export default function NurseInvitesScreen() {
     effectiveAssignmentResult,
     retryLoadWorkspace,
     workspaceState,
-  } = useServerWorkspace();
+  } = useServerWorkspace(
+    useShallow((state) => ({
+      effectiveAssignmentResult: state.effectiveAssignmentResult,
+      retryLoadWorkspace: state.retryLoadWorkspace,
+      workspaceState: state.workspaceState,
+    })),
+  );
   const { activeShift, profile } = getInviteWorkspace(workspaceState);
   const [inviteRecords, setInviteRecords] = useState<ShiftNurseInviteRecord[]>(
     [],

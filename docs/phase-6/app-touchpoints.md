@@ -41,10 +41,9 @@ Relevant current routes:
 - `src/app/charge-request-detail.tsx` opens one charge request detail.
 - `src/app/join-active-session.tsx` opens the current placeholder join shell.
 - `src/app/regular-nurse-workspace.tsx` opens the joined nurse workspace shell.
-- `src/screens/SimulatedNurse*` screens are legacy local simulation reference code.
-  The `src/app/simulated-nurse-*` route files were removed in Task 4.3 so
-  simulated nurse screens are no longer reachable from the normal app route
-  surface.
+- The legacy `src/app/simulated-nurse-*` routes and
+  `src/screens/SimulatedNurse*` screens have been removed. The real joined
+  nurse workspace is the only nurse-facing assignment path.
 
 Likely Phase 6 route additions later:
 
@@ -65,7 +64,7 @@ Important boundaries:
 
 - `src/store/AuthSessionContext.tsx` owns session checking, signed-in profile state, and sign out.
 - `src/store/ServerWorkspaceContext.tsx` owns server workspace load state, active shift snapshots, save state, joined nurse access load state, and active participation.
-- `src/store/WorkflowDraftContext.tsx` owns unsaved workflow draft state and local nurse simulation state.
+- `src/store/WorkflowDraftContext.tsx` owns unsaved floor-template draft state.
 
 Realtime connection state should likely live in `ServerWorkspaceContext` or a focused provider directly beside it, because it depends on signed-in profile, active shift, joined nurse access, and cleanup on sign out.
 
@@ -112,8 +111,6 @@ Current screens that save active shift changes:
 - `src/screens/NursesScreen.tsx`
 - `src/screens/PatientsAndAcuityScreen.tsx`
 - `src/screens/AssignmentReviewScreen.tsx`
-- `src/screens/SimulatedNurseIssueScreen.tsx`
-- `src/screens/SimulatedNurseSwapScreen.tsx`
 - `src/screens/ChargeNurseRequestDetailScreen.tsx`
 
 Compatibility risk:
@@ -146,8 +143,8 @@ Current request behavior stores nurse requests inside the active shift snapshot:
 
 - `src/utils/nurseRequests.ts` creates, lists, de-duplicates, and resolves request records.
 - `src/utils/nurseRequestDisplay.ts` prepares request display data.
-- `SimulatedNurseIssueScreen` appends issue requests with `saveActiveShift`.
-- `SimulatedNurseSwapScreen` appends swap requests with `saveActiveShift`.
+- Joined nurses submit issue and swap requests through the server-backed
+  joined-nurse request flow.
 - `ChargeNurseRequestDetailScreen` resolves pending swap requests with `saveActiveShift`.
 
 Compatibility risk:

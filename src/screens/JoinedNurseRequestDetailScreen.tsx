@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { router, useLocalSearchParams } from "expo-router";
 import {
   KeyboardAvoidingView,
@@ -111,7 +112,12 @@ export default function JoinedNurseRequestDetailScreen() {
   const {
     joinedNurseAccessState,
     retryLoadJoinedNurseAccess,
-  } = useServerWorkspace();
+  } = useServerWorkspace(
+    useShallow((state) => ({
+      joinedNurseAccessState: state.joinedNurseAccessState,
+      retryLoadJoinedNurseAccess: state.retryLoadJoinedNurseAccess,
+    })),
+  );
   const { requestId } = useLocalSearchParams<{
     requestId?: string | string[];
   }>();

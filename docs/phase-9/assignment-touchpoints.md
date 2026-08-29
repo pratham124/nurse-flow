@@ -58,7 +58,7 @@ contracts.
 | Effective assignment | `src/utils/effectiveAssignment.ts` | Clones the baseline and overlays active `toNurseId` values on matching baseline bed assignments. | Preserve unchanged unless a later task adds validation at its boundary. |
 | Charge consumers | `src/screens/FloorBoardScreen.tsx`, `src/screens/FlagsScreen.tsx`, and `src/utils/floorBoardLookup.ts` | Read the effective result/flags for the board and workloads while retaining baseline team labels and coverage. | Continue consuming the established `AssignmentResult`; do not teach these readers about OR-Tools. |
 | Joined-nurse read | `loadJoinedNurseAssignmentView` in the repository and `get_joined_nurse_assignment_view` in the Phase 8 setup | Returns only the signed-in nurse's beds after overlaying active overrides on baseline bed owners. | Preserve the scoped RPC and do not return optimizer run records, the full result, or override history. |
-| Local simulated nurse read | `src/utils/nurseAssignmentView.ts` and the simulated nurse screens | Derive the older local/development nurse view directly from `Shift.assignmentResult`. | Treat as compatibility consumers during regression testing; the signed-in joined-nurse path remains the scoped RPC. |
+| Legacy assignment-view compatibility helper | `src/utils/nurseAssignmentView.ts` | Derives the retired local nurse view directly from `Shift.assignmentResult` for output compatibility regression coverage. | Keep it outside the runtime app; the signed-in joined-nurse path remains the scoped RPC. |
 | Realtime subscriptions | `src/services/realtimeWorkspaceRepository.ts` | Listens for private identifier-only active-shift/access events. | Preserve the event contracts. A successful finalization must update `active_shifts` so existing subscribers refetch. |
 | Realtime publisher | `broadcast_nurseflow_active_shift_change` in `docs/phase-8/supabase-request-message-setup.md` | Broadcasts an identifier-only signal after any active-shift update to the charge topic and nurse-access topics. | Preserve. The event remains a refetch signal, not the optimizer result. |
 | Notification comparison | `enqueue_active_shift_change_notifications` in `docs/phase-7/supabase-notification-event-setup.md` | After `shift_snapshot` changes, compares baseline bed IDs per linked nurse and saved flags, then enqueues generic events. | Recheck during integration so a committed optimizer baseline uses this safe path exactly once and no uncommitted result creates an event. |
@@ -222,10 +222,9 @@ snapshot are deliberately enumerated:
   only envelope checks.
 
 The generic `saveActiveShift` action also has non-assignment callers in
-`CarryOverReviewScreen`, `NursesScreen`, `PatientsAndAcuityScreen`,
-`StartShiftScreen`, `SimulatedNurseIssueScreen`, and
-`SimulatedNurseSwapScreen`. Later Phase 9 work must not accidentally route all
-of those workflows through OR-Tools. It should replace only the assignment
+`CarryOverReviewScreen`, `NursesScreen`, `PatientsAndAcuityScreen`, and
+`StartShiftScreen`. Later Phase 9 work must not accidentally route all of
+those workflows through OR-Tools. It should replace only the assignment
 producer/write path and use shift revision plus input fingerprint checks to
 detect relevant edits made while a solve is running.
 
@@ -394,4 +393,3 @@ The following existing boundaries should remain compatible:
   scoped SQL projection.
 - Explain why each new successful optimizer run needs a new result ID before a
   later manual move can safely reference its baseline.
-

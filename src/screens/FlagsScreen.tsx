@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { useState } from "react";
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -410,7 +411,13 @@ export default function FlagsScreen() {
     activeAssignmentOverridesByBedId,
     activeShift,
     effectiveAssignmentFlags,
-  } = useServerWorkspace();
+  } = useServerWorkspace(
+    useShallow((state) => ({
+      activeAssignmentOverridesByBedId: state.activeAssignmentOverridesByBedId,
+      activeShift: state.activeShift,
+      effectiveAssignmentFlags: state.effectiveAssignmentFlags,
+    })),
+  );
   const [activeReviewTab, setActiveReviewTab] = useState<"Flags" | "Requests">("Flags");
   const [selectedFilter, setSelectedFilter] = useState<FlagFilter>("All");
   const [selectedRequestFilter, setSelectedRequestFilter] =

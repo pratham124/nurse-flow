@@ -8,8 +8,6 @@ export type Sex = "female" | "male" | "other" | "unknown";
 
 export type ShiftStatus = "setup" | "assigned";
 
-export type SimulatedRole = "charge" | "regular_nurse";
-
 export type AuthStatus =
   | "checking"
   | "signed_out"
@@ -293,11 +291,6 @@ export interface PreviousShiftSnapshot {
   completedAt: string;
   nurseSuggestions: NurseCarryOverSuggestion[];
   patientSuggestions: PatientCarryOverSuggestion[];
-}
-
-export interface SimulatedSessionState {
-  role: SimulatedRole;
-  selectedNurseId?: string;
 }
 
 export interface UserProfile {

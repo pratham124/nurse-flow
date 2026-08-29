@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
@@ -62,7 +63,17 @@ export default function ChargeNurseRequestDetailScreen() {
     resolveNurseSwapRequest,
     saveStatus,
     updateNurseIssueStatus,
-  } = useServerWorkspace();
+  } = useServerWorkspace(
+    useShallow((state) => ({
+      activeAssignmentOverridesByBedId: state.activeAssignmentOverridesByBedId,
+      activeShift: state.activeShift,
+      effectiveAssignmentResult: state.effectiveAssignmentResult,
+      realtimeConnectionState: state.realtimeConnectionState,
+      resolveNurseSwapRequest: state.resolveNurseSwapRequest,
+      saveStatus: state.saveStatus,
+      updateNurseIssueStatus: state.updateNurseIssueStatus,
+    })),
+  );
   const [serverSaveError, setServerSaveError] = useState("");
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const [isResolving, setIsResolving] = useState(false);

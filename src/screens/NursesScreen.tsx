@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { useState } from "react";
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
@@ -289,7 +290,13 @@ export default function NursesScreen() {
     activeShift: serverActiveShift,
     saveActiveShift,
     saveStatus,
-  } = useServerWorkspace();
+  } = useServerWorkspace(
+    useShallow((state) => ({
+      activeShift: state.activeShift,
+      saveActiveShift: state.saveActiveShift,
+      saveStatus: state.saveStatus,
+    })),
+  );
   const { draftShift: activeShift, setDraftShift } =
     useActiveShiftDraft(serverActiveShift);
   const nurses = activeShift?.nurses ?? [];

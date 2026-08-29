@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { useEffect, useRef, useState } from "react";
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
@@ -188,7 +189,15 @@ export default function AssignmentReviewScreen() {
     realtimeConnectionState,
     runAssignmentOptimizer,
     saveStatus,
-  } = useServerWorkspace();
+  } = useServerWorkspace(
+    useShallow((state) => ({
+      activeAssignmentOverridesByBedId: state.activeAssignmentOverridesByBedId,
+      activeShift: state.activeShift,
+      realtimeConnectionState: state.realtimeConnectionState,
+      runAssignmentOptimizer: state.runAssignmentOptimizer,
+      saveStatus: state.saveStatus,
+    })),
+  );
   const [serverSaveError, setServerSaveError] = useState("");
   const [isOptimizerRunning, setIsOptimizerRunning] = useState(false);
   const [showRerunConfirmation, setShowRerunConfirmation] = useState(false);
