@@ -139,12 +139,10 @@ export function AssignmentMoveDialog({
   const {
     confirmManualAssignmentOverride,
     realtimeConnectionState,
-    saveStatus,
   } = useServerWorkspace(
     useShallow((state) => ({
       confirmManualAssignmentOverride: state.confirmManualAssignmentOverride,
       realtimeConnectionState: state.realtimeConnectionState,
-      saveStatus: state.saveStatus,
     })),
   );
   const [selectedNurseId, setSelectedNurseId] = useState<string>();
@@ -154,9 +152,9 @@ export function AssignmentMoveDialog({
   const [feedback, setFeedback] = useState("");
   const [openedBaselineAssignmentResultId, setOpenedBaselineAssignmentResultId] =
     useState<string>();
-  const [resultState, setResultState] = useState<"editing" | "saved" | "stale" | "error">(
-    "editing",
-  );
+  const [resultState, setResultState] = useState<
+    "editing" | "saving" | "saved" | "stale" | "error"
+  >("editing");
   const titleRef = useRef<Text>(null);
 
   const currentAssignment = effectiveAssignmentResult.bedAssignments.find(
@@ -178,13 +176,14 @@ export function AssignmentMoveDialog({
   }, [activeShift, bedId, effectiveAssignmentResult, selectedNurseId]);
   const allWarningsAcknowledged =
     preview?.warnings.every((warning) => acknowledgedWarningIds.has(warning.id)) ?? false;
+  const isSavingMove = resultState === "saving";
   const canConfirm =
     Boolean(preview) &&
     preview?.blockingReasons.length === 0 &&
     allWarningsAcknowledged &&
     openedBaselineAssignmentResultId === effectiveAssignmentResult.id &&
     realtimeConnectionState === "live" &&
-    saveStatus !== "saving";
+    !isSavingMove;
 
   useEffect(() => {
     if (!visible) {
@@ -248,6 +247,7 @@ export function AssignmentMoveDialog({
 
     try {
       setFeedback("");
+      setResultState("saving");
       const result = await confirmManualAssignmentOverride({
         baselineAssignmentResultId: openedBaselineAssignmentResultId,
         bedId,
@@ -291,7 +291,7 @@ export function AssignmentMoveDialog({
     <Modal
       animationType={isReducedMotionEnabled ? "none" : "slide"}
       onShow={focusDialogTitle}
-      onRequestClose={saveStatus === "saving" ? undefined : onClose}
+      onRequestClose={isSavingMove ? undefined : onClose}
       presentationStyle="pageSheet"
       visible={visible}
     >
@@ -305,8 +305,8 @@ export function AssignmentMoveDialog({
           </View>
           <Pressable
             accessibilityRole="button"
-            accessibilityState={{ disabled: saveStatus === "saving" }}
-            disabled={saveStatus === "saving"}
+            accessibilityState={{ disabled: isSavingMove }}
+            disabled={isSavingMove}
             onPress={resultState === "saved" ? onClose : onClose}
             style={styles.closeButton}
           >
@@ -403,7 +403,7 @@ export function AssignmentMoveDialog({
               ]}
             >
               <Text style={styles.confirmButtonText}>
-                {saveStatus === "saving"
+                {isSavingMove
                   ? "Saving move..."
                   : resultState === "error"
                     ? "Retry move"

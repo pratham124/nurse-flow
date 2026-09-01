@@ -21,7 +21,6 @@ import type {
   NurseRequestStatus,
   PreviousShiftSnapshot,
   RealtimeConnectionState,
-  ServerSaveStatus,
   ServerWorkspace,
   Shift,
 } from "../types/models";
@@ -66,8 +65,6 @@ type ServerWorkspaceStoreState = WorkspaceView & {
   joinedNurseAccessState: JoinedNurseAccessState;
   joinedNurseRealtimeConnectionState: RealtimeConnectionState;
   realtimeConnectionState: RealtimeConnectionState;
-  saveErrorMessage: string;
-  saveStatus: ServerSaveStatus;
   workspaceState: ServerWorkspaceState;
 };
 
@@ -415,35 +412,19 @@ export function createServerWorkspaceStore({
             throw new Error("Supabase is not configured yet.");
           }
 
-          set({ saveErrorMessage: "", saveStatus: "saving" });
-
-          try {
-            const result =
-              await dependencies.confirmManualAssignmentOverrideOnServer(
-                supabase,
-                input,
-              );
-            const workspace = await dependencies.loadServerWorkspace(
+          const result =
+            await dependencies.confirmManualAssignmentOverrideOnServer(
               supabase,
-              authState.profile,
+              input,
             );
+          const workspace = await dependencies.loadServerWorkspace(
+            supabase,
+            authState.profile,
+          );
 
-            applyWorkspace(workspace);
-            set({
-              saveStatus: result.status === "saved" ? "saved" : "idle",
-            });
+          applyWorkspace(workspace);
 
-            return result;
-          } catch (error) {
-            set({
-              saveErrorMessage: getErrorMessage(
-                error,
-                "Assignment move could not be saved.",
-              ),
-              saveStatus: "error",
-            });
-            throw error;
-          }
+          return result;
         },
         async deleteFloorTemplate(floorTemplateId) {
           const authState = getAuthState();
@@ -468,31 +449,17 @@ export function createServerWorkspaceStore({
             throw new Error("Supabase is not configured yet.");
           }
 
-          set({ saveErrorMessage: "", saveStatus: "saving" });
+          await dependencies.deleteServerFloorTemplate(
+            supabase,
+            authState.profile,
+            floorTemplateId,
+          );
+          const workspace = await dependencies.loadServerWorkspace(
+            supabase,
+            authState.profile,
+          );
 
-          try {
-            await dependencies.deleteServerFloorTemplate(
-              supabase,
-              authState.profile,
-              floorTemplateId,
-            );
-            const workspace = await dependencies.loadServerWorkspace(
-              supabase,
-              authState.profile,
-            );
-
-            applyWorkspace(workspace);
-            set({ saveStatus: "saved" });
-          } catch (error) {
-            set({
-              saveErrorMessage: getErrorMessage(
-                error,
-                "Template could not be deleted.",
-              ),
-              saveStatus: "error",
-            });
-            throw error;
-          }
+          applyWorkspace(workspace);
         },
         async endActiveShift(activeShift) {
           const authState = getAuthState();
@@ -510,31 +477,17 @@ export function createServerWorkspaceStore({
             throw new Error("Supabase is not configured yet.");
           }
 
-          set({ saveErrorMessage: "", saveStatus: "saving" });
+          await dependencies.endServerActiveShift(
+            supabase,
+            authState.profile,
+            activeShift,
+          );
+          const workspace = await dependencies.loadServerWorkspace(
+            supabase,
+            authState.profile,
+          );
 
-          try {
-            await dependencies.endServerActiveShift(
-              supabase,
-              authState.profile,
-              activeShift,
-            );
-            const workspace = await dependencies.loadServerWorkspace(
-              supabase,
-              authState.profile,
-            );
-
-            applyWorkspace(workspace);
-            set({ saveStatus: "saved" });
-          } catch (error) {
-            set({
-              saveErrorMessage: getErrorMessage(
-                error,
-                "Shift could not be ended on the server.",
-              ),
-              saveStatus: "error",
-            });
-            throw error;
-          }
+          applyWorkspace(workspace);
         },
         joinedNurseAccessState: { status: "idle" },
         joinedNurseRealtimeConnectionState: "disconnected",
@@ -572,30 +525,16 @@ export function createServerWorkspaceStore({
             throw new Error("Supabase is not configured yet.");
           }
 
-          set({ saveErrorMessage: "", saveStatus: "saving" });
+          await dependencies.resolveShiftNurseSwapRequestOnServer(supabase, {
+            nextStatus,
+            requestId,
+          });
+          const workspace = await dependencies.loadServerWorkspace(
+            supabase,
+            authState.profile,
+          );
 
-          try {
-            await dependencies.resolveShiftNurseSwapRequestOnServer(supabase, {
-              nextStatus,
-              requestId,
-            });
-            const workspace = await dependencies.loadServerWorkspace(
-              supabase,
-              authState.profile,
-            );
-
-            applyWorkspace(workspace);
-            set({ saveStatus: "saved" });
-          } catch (error) {
-            set({
-              saveErrorMessage: getErrorMessage(
-                error,
-                "Request could not be resolved.",
-              ),
-              saveStatus: "error",
-            });
-            throw error;
-          }
+          applyWorkspace(workspace);
         },
         async resetActiveShiftForEditing(
           expectedBaselineAssignmentResultId,
@@ -629,39 +568,24 @@ export function createServerWorkspaceStore({
             throw new Error("Supabase is not configured yet.");
           }
 
-          set({ saveErrorMessage: "", saveStatus: "saving" });
+          const result = await dependencies.resetServerActiveShiftForEditing(
+            supabase,
+            authState.profile,
+            activeShiftRecord.id,
+            expectedBaselineAssignmentResultId,
+          );
+          const workspace = await dependencies.loadServerWorkspace(
+            supabase,
+            authState.profile,
+          );
 
-          try {
-            const result = await dependencies.resetServerActiveShiftForEditing(
-              supabase,
-              authState.profile,
-              activeShiftRecord.id,
-              expectedBaselineAssignmentResultId,
-            );
-            const workspace = await dependencies.loadServerWorkspace(
-              supabase,
-              authState.profile,
-            );
+          applyWorkspace(workspace);
 
-            applyWorkspace(workspace);
-
-            if (result.status === "stale") {
-              set({ saveStatus: "error" });
-              throw new Error(result.message);
-            }
-
-            set({ saveStatus: "saved" });
-            return result.shiftSnapshot;
-          } catch (error) {
-            set({
-              saveErrorMessage: getErrorMessage(
-                error,
-                "The active shift could not be opened for editing.",
-              ),
-              saveStatus: "error",
-            });
-            throw error;
+          if (result.status === "stale") {
+            throw new Error(result.message);
           }
+
+          return result.shiftSnapshot;
         },
         async runAssignmentOptimizer(input) {
           const authState = getAuthState();
@@ -695,55 +619,38 @@ export function createServerWorkspaceStore({
             throw new Error("Supabase is not configured yet.");
           }
 
-          set({ saveErrorMessage: "", saveStatus: "saving" });
+          const result =
+            await dependencies.requestAssignmentOptimizationFromService(
+              supabase,
+              {
+                clientMutationId: input.clientMutationId,
+                expectedBaselineAssignmentResultId:
+                  input.expectedBaselineAssignmentResultId,
+                expectedShiftRevision: activeShiftRecord.updatedAt,
+                shiftId: activeShiftRecord.id,
+              },
+            );
 
-          try {
-            const result =
-              await dependencies.requestAssignmentOptimizationFromService(
-                supabase,
-                {
-                  clientMutationId: input.clientMutationId,
-                  expectedBaselineAssignmentResultId:
-                    input.expectedBaselineAssignmentResultId,
-                  expectedShiftRevision: activeShiftRecord.updatedAt,
-                  shiftId: activeShiftRecord.id,
-                },
+          if (result.status === "saved" || result.status === "stale") {
+            const workspace = await dependencies.loadServerWorkspace(
+              supabase,
+              authState.profile,
+            );
+
+            if (
+              result.status === "saved" &&
+              workspace.activeShift?.shiftSnapshot.assignmentResult?.id !==
+                result.resultId
+            ) {
+              throw new Error(
+                "Assignment was saved, but the current board could not be refreshed yet. Reload the workspace before continuing.",
               );
-
-            if (result.status === "saved" || result.status === "stale") {
-              const workspace = await dependencies.loadServerWorkspace(
-                supabase,
-                authState.profile,
-              );
-
-              if (
-                result.status === "saved" &&
-                workspace.activeShift?.shiftSnapshot.assignmentResult?.id !==
-                  result.resultId
-              ) {
-                throw new Error(
-                  "Assignment was saved, but the current board could not be refreshed yet. Reload the workspace before continuing.",
-                );
-              }
-
-              applyWorkspace(workspace);
             }
 
-            set({
-              saveStatus: result.status === "saved" ? "saved" : "idle",
-            });
-
-            return result;
-          } catch (error) {
-            set({
-              saveErrorMessage: getErrorMessage(
-                error,
-                "Assignment could not be calculated.",
-              ),
-              saveStatus: "error",
-            });
-            throw error;
+            applyWorkspace(workspace);
           }
+
+          return result;
         },
         async saveActiveShift(activeShift) {
           const authState = getAuthState();
@@ -761,35 +668,20 @@ export function createServerWorkspaceStore({
             throw new Error("Supabase is not configured yet.");
           }
 
-          set({ saveErrorMessage: "", saveStatus: "saving" });
+          const savedActiveShift = await dependencies.saveServerActiveShift(
+            supabase,
+            authState.profile,
+            activeShift,
+          );
+          const workspace = await dependencies.loadServerWorkspace(
+            supabase,
+            authState.profile,
+          );
 
-          try {
-            const savedActiveShift = await dependencies.saveServerActiveShift(
-              supabase,
-              authState.profile,
-              activeShift,
-            );
-            const workspace = await dependencies.loadServerWorkspace(
-              supabase,
-              authState.profile,
-            );
+          applyWorkspace(workspace);
 
-            applyWorkspace(workspace);
-            set({ saveStatus: "saved" });
-
-            return savedActiveShift.shiftSnapshot;
-          } catch (error) {
-            set({
-              saveErrorMessage: getErrorMessage(
-                error,
-                "Shift changes could not be saved.",
-              ),
-              saveStatus: "error",
-            });
-            throw error;
-          }
+          return savedActiveShift.shiftSnapshot;
         },
-        saveErrorMessage: "",
         async saveFloorTemplate(floorTemplate) {
           const authState = getAuthState();
           const joinedNurseAccessState = get().joinedNurseAccessState;
@@ -821,33 +713,19 @@ export function createServerWorkspaceStore({
             );
           }
 
-          set({ saveErrorMessage: "", saveStatus: "saving" });
+          const savedTemplate = await dependencies.saveServerFloorTemplate(
+            supabase,
+            authState.profile,
+            floorTemplate,
+          );
+          const workspace = await dependencies.loadServerWorkspace(
+            supabase,
+            authState.profile,
+          );
 
-          try {
-            const savedTemplate = await dependencies.saveServerFloorTemplate(
-              supabase,
-              authState.profile,
-              floorTemplate,
-            );
-            const workspace = await dependencies.loadServerWorkspace(
-              supabase,
-              authState.profile,
-            );
+          applyWorkspace(workspace);
 
-            applyWorkspace(workspace);
-            set({ saveStatus: "saved" });
-
-            return savedTemplate;
-          } catch (error) {
-            set({
-              saveErrorMessage: getErrorMessage(
-                error,
-                "Template could not be saved to the server.",
-              ),
-              saveStatus: "error",
-            });
-            throw error;
-          }
+          return savedTemplate;
         },
         async savePreviousShiftSnapshot(snapshot) {
           const authState = getAuthState();
@@ -865,33 +743,18 @@ export function createServerWorkspaceStore({
             throw new Error("Supabase is not configured yet.");
           }
 
-          set({ saveErrorMessage: "", saveStatus: "saving" });
+          await dependencies.saveServerPreviousShiftSnapshot(
+            supabase,
+            authState.profile,
+            snapshot,
+          );
+          const workspace = await dependencies.loadServerWorkspace(
+            supabase,
+            authState.profile,
+          );
 
-          try {
-            await dependencies.saveServerPreviousShiftSnapshot(
-              supabase,
-              authState.profile,
-              snapshot,
-            );
-            const workspace = await dependencies.loadServerWorkspace(
-              supabase,
-              authState.profile,
-            );
-
-            applyWorkspace(workspace);
-            set({ saveStatus: "saved" });
-          } catch (error) {
-            set({
-              saveErrorMessage: getErrorMessage(
-                error,
-                "Carry-over could not be saved to the server.",
-              ),
-              saveStatus: "error",
-            });
-            throw error;
-          }
+          applyWorkspace(workspace);
         },
-        saveStatus: "idle",
         setJoinedNurseAccessState,
         setJoinedNurseRealtimeConnectionState(
           joinedNurseRealtimeConnectionState,
@@ -919,34 +782,20 @@ export function createServerWorkspaceStore({
             throw new Error("Supabase is not configured yet.");
           }
 
-          set({ saveErrorMessage: "", saveStatus: "saving" });
-
-          try {
-            const savedActiveShift =
-              await dependencies.createServerActiveShift(
-                supabase,
-                authState.profile,
-                activeShift,
-              );
-            const workspace = await dependencies.loadServerWorkspace(
+          const savedActiveShift =
+            await dependencies.createServerActiveShift(
               supabase,
               authState.profile,
+              activeShift,
             );
+          const workspace = await dependencies.loadServerWorkspace(
+            supabase,
+            authState.profile,
+          );
 
-            applyWorkspace(workspace);
-            set({ saveStatus: "saved" });
+          applyWorkspace(workspace);
 
-            return savedActiveShift.shiftSnapshot;
-          } catch (error) {
-            set({
-              saveErrorMessage: getErrorMessage(
-                error,
-                "Shift could not be started on the server.",
-              ),
-              saveStatus: "error",
-            });
-            throw error;
-          }
+          return savedActiveShift.shiftSnapshot;
         },
         async submitJoinedNurseIssueRequest(message) {
           const authState = getAuthState();
@@ -966,25 +815,10 @@ export function createServerWorkspaceStore({
             throw new Error("Supabase is not configured yet.");
           }
 
-          set({ saveErrorMessage: "", saveStatus: "saving" });
-
-          try {
-            await dependencies.submitJoinedNurseIssueRequestToServer(
-              supabase,
-              { message },
-            );
-            await get().retryLoadJoinedNurseAccess("manual");
-            set({ saveStatus: "saved" });
-          } catch (error) {
-            set({
-              saveErrorMessage: getErrorMessage(
-                error,
-                "Issue request could not be submitted.",
-              ),
-              saveStatus: "error",
-            });
-            throw error;
-          }
+          await dependencies.submitJoinedNurseIssueRequestToServer(supabase, {
+            message,
+          });
+          await get().retryLoadJoinedNurseAccess("manual");
         },
         async submitJoinedNurseSwapRequest(sourceBedId, message) {
           const authState = getAuthState();
@@ -1013,25 +847,11 @@ export function createServerWorkspaceStore({
             throw new Error("Supabase is not configured yet.");
           }
 
-          set({ saveErrorMessage: "", saveStatus: "saving" });
-
-          try {
-            await dependencies.submitJoinedNurseSwapRequestToServer(supabase, {
-              message,
-              sourceBedId,
-            });
-            await get().retryLoadJoinedNurseAccess("manual");
-            set({ saveStatus: "saved" });
-          } catch (error) {
-            set({
-              saveErrorMessage: getErrorMessage(
-                error,
-                "Swap request could not be submitted.",
-              ),
-              saveStatus: "error",
-            });
-            throw error;
-          }
+          await dependencies.submitJoinedNurseSwapRequestToServer(supabase, {
+            message,
+            sourceBedId,
+          });
+          await get().retryLoadJoinedNurseAccess("manual");
         },
         async updateNurseIssueStatus(requestId, nextStatus) {
           const authState = getAuthState();
@@ -1049,30 +869,16 @@ export function createServerWorkspaceStore({
             throw new Error("Supabase is not configured yet.");
           }
 
-          set({ saveErrorMessage: "", saveStatus: "saving" });
+          await dependencies.updateShiftNurseIssueStatusOnServer(supabase, {
+            nextStatus,
+            requestId,
+          });
+          const workspace = await dependencies.loadServerWorkspace(
+            supabase,
+            authState.profile,
+          );
 
-          try {
-            await dependencies.updateShiftNurseIssueStatusOnServer(supabase, {
-              nextStatus,
-              requestId,
-            });
-            const workspace = await dependencies.loadServerWorkspace(
-              supabase,
-              authState.profile,
-            );
-
-            applyWorkspace(workspace);
-            set({ saveStatus: "saved" });
-          } catch (error) {
-            set({
-              saveErrorMessage: getErrorMessage(
-                error,
-                "Issue status could not be updated.",
-              ),
-              saveStatus: "error",
-            });
-            throw error;
-          }
+          applyWorkspace(workspace);
         },
         workspaceState: { status: "idle" },
       };

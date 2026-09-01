@@ -15,11 +15,12 @@ small state slices they use through `useServerWorkspace(selector)`.
 
 Prefer a direct selector for one field. Use Zustand's `useShallow` when a
 component selects an object containing several fields. Keep screen-local form,
-filter, and dialog state in the screen rather than adding it to this store.
+filter, dialog, and mutation feedback state in the screen rather than adding it
+to this store.
 
-The existing `saveStatus` and `saveErrorMessage` contract is intentionally
-preserved during this first migration step. Redesigning mutation status is a
-separate follow-up task.
+Server actions return promises and throw failures to their caller. The screen
+that starts an operation owns its pending flag and error message, so an
+assignment move cannot disable an unrelated floor-template or shift workflow.
 
 Phase 7 uses `NotificationTapContext` only for temporary notification routing
 and recovery state. Saved shift data continues to live in the server workspace

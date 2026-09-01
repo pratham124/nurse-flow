@@ -33,6 +33,8 @@ NurseFlow starts as a local charge nurse prototype, then grows toward the full p
   - The server workspace uses one provider-scoped Zustand store so screens can
     subscribe to individual fields while provider unmount still owns session
     isolation and realtime cleanup.
+  - Server mutation actions return promises, while the screen or dialog that
+    starts an operation owns its pending and error UI state.
   - Small auth, notification-routing, and workflow-draft contexts remain React
     Context because their update patterns do not currently justify migration.
 

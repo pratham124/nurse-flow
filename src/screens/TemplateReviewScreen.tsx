@@ -1,4 +1,3 @@
-import { useShallow } from "zustand/react/shallow";
 import { useState } from "react";
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
@@ -146,18 +145,11 @@ function isCompletedFloorTemplate(
 
 export default function TemplateReviewScreen() {
   const { draftFloorTemplate, resetWorkflowDraft } = useWorkflowDraft();
-  const {
-    saveErrorMessage: serverSaveErrorMessage,
-    saveFloorTemplate,
-    saveStatus,
-  } = useServerWorkspace(
-    useShallow((state) => ({
-      saveErrorMessage: state.saveErrorMessage,
-      saveFloorTemplate: state.saveFloorTemplate,
-      saveStatus: state.saveStatus,
-    })),
+  const saveFloorTemplate = useServerWorkspace(
+    (state) => state.saveFloorTemplate,
   );
   const [saveErrorText, setSaveErrorText] = useState("");
+  const [isSavingTemplate, setIsSavingTemplate] = useState(false);
   const draftTemplate = draftFloorTemplate;
   const reviewTemplate = draftTemplate;
   const screenTitle = reviewTemplate?.name ?? "Review floor";
@@ -166,21 +158,20 @@ export default function TemplateReviewScreen() {
   const doctorSideCount = reviewTemplate?.doctorSides.length ?? 0;
   const canSaveTemplate = isCompletedFloorTemplate(draftTemplate);
   const actionErrorText =
-    serverSaveErrorMessage ||
     saveErrorText ||
     (draftTemplate
       ? canSaveTemplate
         ? ""
         : invalidTemplateMessage
       : "Create a floor template before saving.");
-  const isSavingTemplate = saveStatus === "saving";
-
   async function handleSaveTemplate() {
     setSaveErrorText("");
 
     if (!isCompletedFloorTemplate(draftTemplate)) {
       return;
     }
+
+    setIsSavingTemplate(true);
 
     try {
       await saveFloorTemplate(draftTemplate);
@@ -192,6 +183,8 @@ export default function TemplateReviewScreen() {
 
       setSaveErrorText(message);
       return;
+    } finally {
+      setIsSavingTemplate(false);
     }
 
     resetWorkflowDraft();

@@ -87,12 +87,10 @@ export default function StartShiftScreen() {
   const {
     activeShift: serverActiveShift,
     saveActiveShift,
-    saveStatus,
   } = useServerWorkspace(
     useShallow((state) => ({
       activeShift: state.activeShift,
       saveActiveShift: state.saveActiveShift,
-      saveStatus: state.saveStatus,
     })),
   );
   const { draftShift: activeShift, setDraftShift } =
@@ -108,8 +106,8 @@ export default function StartShiftScreen() {
   const [admittingSideError, setAdmittingSideError] = useState("");
   const [loadLimitError, setLoadLimitError] = useState("");
   const [serverSaveError, setServerSaveError] = useState("");
+  const [isSavingShift, setIsSavingShift] = useState(false);
   const canContinue = Boolean(activeShift);
-  const isSavingShift = saveStatus === "saving";
 
   function handleSelectAdmittingSide(index: number) {
     const selectedDoctorSide = activeShift?.doctorSides[index];
@@ -184,6 +182,8 @@ export default function StartShiftScreen() {
       return;
     }
 
+    setIsSavingShift(true);
+
     try {
       setServerSaveError("");
       await saveActiveShift(activeShift);
@@ -195,6 +195,8 @@ export default function StartShiftScreen() {
 
       setServerSaveError(message);
       return;
+    } finally {
+      setIsSavingShift(false);
     }
 
     router.push("/nurses");

@@ -208,16 +208,15 @@ export default function CarryOverReviewScreen() {
     activeShift,
     previousShiftSnapshots,
     saveActiveShift,
-    saveStatus,
   } = useServerWorkspace(
     useShallow((state) => ({
       activeShift: state.activeShift,
       previousShiftSnapshots: state.previousShiftSnapshots,
       saveActiveShift: state.saveActiveShift,
-      saveStatus: state.saveStatus,
     })),
   );
   const [serverSaveError, setServerSaveError] = useState("");
+  const [isSavingCarryOver, setIsSavingCarryOver] = useState(false);
   const previousShiftSnapshot = activeShift
     ? previousShiftSnapshots.find(
         (snapshot) => snapshot.floorTemplateId === activeShift.floorTemplateId,
@@ -256,6 +255,8 @@ export default function CarryOverReviewScreen() {
       carryOverReviewedAt: new Date().toISOString(),
     };
 
+    setIsSavingCarryOver(true);
+
     try {
       setServerSaveError("");
       await saveActiveShift(nextShift);
@@ -267,6 +268,8 @@ export default function CarryOverReviewScreen() {
 
       setServerSaveError(message);
       return;
+    } finally {
+      setIsSavingCarryOver(false);
     }
 
     router.push("/start-shift");
@@ -283,9 +286,9 @@ export default function CarryOverReviewScreen() {
       headerActionLabel="Floors"
       onHeaderActionPress={() => router.push("/")}
       onPrimaryPress={handleContinue}
-      primaryDisabled={saveStatus === "saving"}
+      primaryDisabled={isSavingCarryOver}
       primaryLabel={
-        saveStatus === "saving"
+        isSavingCarryOver
           ? "Saving..."
           : serverSaveError
             ? "Retry save"

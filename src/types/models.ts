@@ -17,8 +17,6 @@ export type AuthStatus =
 
 export type UserRole = "charge_nurse";
 
-export type ServerSaveStatus = "idle" | "saving" | "saved" | "error";
-
 export type RealtimeConnectionState =
   | "connecting"
   | "live"

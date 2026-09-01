@@ -61,7 +61,6 @@ export default function ChargeNurseRequestDetailScreen() {
     effectiveAssignmentResult,
     realtimeConnectionState,
     resolveNurseSwapRequest,
-    saveStatus,
     updateNurseIssueStatus,
   } = useServerWorkspace(
     useShallow((state) => ({
@@ -70,7 +69,6 @@ export default function ChargeNurseRequestDetailScreen() {
       effectiveAssignmentResult: state.effectiveAssignmentResult,
       realtimeConnectionState: state.realtimeConnectionState,
       resolveNurseSwapRequest: state.resolveNurseSwapRequest,
-      saveStatus: state.saveStatus,
       updateNurseIssueStatus: state.updateNurseIssueStatus,
     })),
   );
@@ -114,7 +112,6 @@ export default function ChargeNurseRequestDetailScreen() {
   );
   const lifecycleWriteDisabled =
     isResolving ||
-    saveStatus === "saving" ||
     realtimeConnectionState !== "live";
   const swapCompletionDisabled = lifecycleWriteDisabled || !canCompleteSwap;
 

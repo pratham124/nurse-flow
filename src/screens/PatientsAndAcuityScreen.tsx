@@ -533,12 +533,10 @@ export default function PatientsAndAcuityScreen() {
   const {
     activeShift: serverActiveShift,
     saveActiveShift,
-    saveStatus,
   } = useServerWorkspace(
     useShallow((state) => ({
       activeShift: state.activeShift,
       saveActiveShift: state.saveActiveShift,
-      saveStatus: state.saveStatus,
     })),
   );
   const { draftShift: activeShift, setDraftShift } =
@@ -548,6 +546,7 @@ export default function PatientsAndAcuityScreen() {
   );
   const [selectedFilter, setSelectedFilter] = useState<CensusFilter>("all");
   const [serverSaveError, setServerSaveError] = useState("");
+  const [isSavingShift, setIsSavingShift] = useState(false);
   const roomGroups = getRoomGroups(activeShift);
   const filteredRoomGroups = getFilteredRoomGroups(roomGroups, selectedFilter);
   const { occupiedBedCount, totalBedCount } = getShiftCensus(activeShift);
@@ -677,6 +676,8 @@ export default function PatientsAndAcuityScreen() {
       return;
     }
 
+    setIsSavingShift(true);
+
     try {
       setServerSaveError("");
       await saveActiveShift(activeShift);
@@ -688,6 +689,8 @@ export default function PatientsAndAcuityScreen() {
 
       setServerSaveError(message);
       return;
+    } finally {
+      setIsSavingShift(false);
     }
 
     router.push("/assignment-review");
@@ -736,9 +739,9 @@ export default function PatientsAndAcuityScreen() {
         }
         onHeaderActionPress={() => router.push("/")}
         onPrimaryPress={handleContinue}
-        primaryDisabled={saveStatus === "saving"}
+        primaryDisabled={isSavingShift}
         primaryLabel={
-          saveStatus === "saving"
+          isSavingShift
             ? "Saving..."
             : serverSaveError
               ? "Retry save"

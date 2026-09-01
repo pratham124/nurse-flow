@@ -41,7 +41,7 @@ Phase 9 uses `optimizerRepository` as the only mobile boundary for requesting
 an initial assignment or rerun. It sends the authenticated access token plus
 the shift ID, client mutation ID, current server revision, and optional prior
 baseline ID. It never sends a client-generated assignment result. After a
-saved or stale response, `ServerWorkspaceContext` reloads the authoritative
+saved or stale response, the server workspace store reloads the authoritative
 Supabase workspace before the screen continues.
 
 The former `serverWorkspaceRepository.rerunActiveShiftAssignment` boundary is

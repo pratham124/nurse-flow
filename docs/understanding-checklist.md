@@ -4262,6 +4262,42 @@ For each task, add a dated section with:
 - Status: verified - the human understood why the screens were removed and why
   the test-only compatibility helper remains.
 
+### 2026-08-28 - Move Mutation Feedback Out of the Shared Store
+
+- Task: Replace the single cross-workflow `saveStatus` and `saveErrorMessage`
+  with pending and error UI state owned by the screen starting each mutation.
+- Problem understanding:
+  - [x] Why one shared flag was ambiguous across 13 different server mutations.
+  - [x] Why a persisted `saved` or `error` value could describe an operation
+    unrelated to the currently visible screen.
+  - [x] Why a global per-operation registry would add keys and coordination for
+    state that usually exists only while its initiating screen is mounted.
+- Solution understanding:
+  - [x] Store actions now return promises, refresh authoritative data when
+    appropriate, and throw failures without publishing UI feedback state.
+  - [x] Existing `isOptimizerRunning` and `isResolving` flags are reused.
+  - [x] Shift, carry-over, template, and assignment-move interfaces own focused
+    local pending state and disable only their own controls.
+  - [x] Screen-level catch blocks own the matching user-facing error message.
+- Broader context:
+  - [x] The shared store now represents server workspace data and reusable
+    operations rather than transient presentation state.
+  - [x] Independent operations no longer notify or disable unrelated consumers.
+- Verification:
+  - [x] Human restated understanding first: correctly explained that pending
+    state is local because it is needed only by the initiating screen, and that
+    the component chooses the displayed failure message.
+  - [x] Gaps were explained: unrelated operations must remain enabled rather
+    than inheriting another screen's pending state.
+  - [x] Code-specific question completed: correctly predicted that the template
+    save button remains enabled while only `isSavingMove` is true because it
+    reads its own `isSavingTemplate` state.
+  - [x] Focused server workspace tests passed: 9/9.
+  - [x] TypeScript and lint checks passed.
+  - [x] Existing mobile regression suites and Expo export passed.
+- Status: verified - the human explained local mutation ownership, component
+  error handling, and why unrelated pending operations remain independent.
+
 ### 2026-08-28 - Simplify the Local ID Helper
 
 - Task: Keep client-generated IDs while removing the unnecessary formatting

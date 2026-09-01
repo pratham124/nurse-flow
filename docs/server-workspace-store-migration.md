@@ -23,8 +23,16 @@ Status: complete.
 
 ## Task 2 - Revisit Mutation Status
 
-Status: not started.
+Status: complete.
 
-After Task 1 is understood and manually checked, decide whether the single
-shared `saveStatus` should become operation-specific mutation state. Do not mix
-that behavior redesign into the store migration.
+- [x] Inventory all shared `saveStatus` and `saveErrorMessage` consumers.
+- [x] Keep authoritative workspace data and actions in the shared store.
+- [x] Remove the shared save lifecycle and its unused model type.
+- [x] Reuse existing operation-local flags for optimizer and request updates.
+- [x] Add local pending state to shift saves, template saves, carry-over saves,
+  and assignment moves.
+- [x] Keep failure messages local to the screen that started the operation.
+- [x] Verify that an in-flight save does not publish unrelated shared-store
+  state before the authoritative workspace refresh.
+- [x] Complete automated validation.
+- [x] Complete the human understanding checkpoint.

@@ -138,7 +138,6 @@ test("does not notify an active-shift selector for unrelated state changes", () 
     },
   );
 
-  store.setState({ saveStatus: "saving" });
   store.getState().setRealtimeConnectionState("live");
   store.getState().setJoinedNurseAccessState({ status: "empty" });
   unsubscribe();
@@ -146,26 +145,16 @@ test("does not notify an active-shift selector for unrelated state changes", () 
   assert.equal(activeShiftNotificationCount, 0);
 });
 
-test("preserves the save lifecycle and refreshes workspace after success", async () => {
-  const saveStatuses = [];
+test("refreshes workspace after a successful save", async () => {
   const store = createSignedInStore({
     loadServerWorkspace: async () => readyWorkspace,
     saveServerActiveShift: async () => activeShiftRecord,
   });
-  const unsubscribe = store.subscribe(
-    (state) => state.saveStatus,
-    (saveStatus) => {
-      saveStatuses.push(saveStatus);
-    },
-  );
 
   const savedShift = await store.getState().saveActiveShift(shift);
-  unsubscribe();
 
   assert.equal(savedShift, shift);
-  assert.deepEqual(saveStatuses, ["saving", "saved"]);
   assert.equal(store.getState().activeShift, shift);
-  assert.equal(store.getState().saveErrorMessage, "");
 });
 
 test("preserves the previous workspace and rethrows a failed save", async () => {
@@ -182,8 +171,33 @@ test("preserves the previous workspace and rethrows a failed save", async () => 
   );
 
   assert.equal(store.getState().activeShift, shift);
-  assert.equal(store.getState().saveStatus, "error");
-  assert.equal(store.getState().saveErrorMessage, "server rejected save");
+});
+
+test("does not publish screen-level pending state while a save is running", async () => {
+  let finishSave;
+  const saveRequest = new Promise((resolve) => {
+    finishSave = resolve;
+  });
+  const store = createSignedInStore({
+    loadServerWorkspace: async () => readyWorkspace,
+    saveServerActiveShift: async () => saveRequest,
+  });
+  store.getState().applyWorkspace(readyWorkspace);
+
+  let storeNotificationCount = 0;
+  const unsubscribe = store.subscribe(() => {
+    storeNotificationCount += 1;
+  });
+  const pendingSave = store.getState().saveActiveShift(shift);
+
+  await Promise.resolve();
+  assert.equal(storeNotificationCount, 0);
+
+  finishSave(activeShiftRecord);
+  await pendingSave;
+  unsubscribe();
+
+  assert.equal(storeNotificationCount, 1);
 });
 
 test("clears charge and joined workspace views after sign-out", async () => {
@@ -219,4 +233,19 @@ test("requires every server workspace consumer to select state explicitly", asyn
   }
 
   assert.deepEqual(zeroArgumentConsumers, []);
+});
+
+test("keeps screen-level mutation status out of the shared source state", async () => {
+  const sourceFiles = await collectTypeScriptFiles(sourceDirectory);
+  const legacyMutationStateReferences = [];
+
+  for (const sourceFile of sourceFiles) {
+    const source = await readFile(sourceFile, "utf8");
+
+    if (/\b(?:saveStatus|saveErrorMessage|ServerSaveStatus)\b/.test(source)) {
+      legacyMutationStateReferences.push(sourceFile);
+    }
+  }
+
+  assert.deepEqual(legacyMutationStateReferences, []);
 });

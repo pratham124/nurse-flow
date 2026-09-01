@@ -289,12 +289,10 @@ export default function NursesScreen() {
   const {
     activeShift: serverActiveShift,
     saveActiveShift,
-    saveStatus,
   } = useServerWorkspace(
     useShallow((state) => ({
       activeShift: state.activeShift,
       saveActiveShift: state.saveActiveShift,
-      saveStatus: state.saveStatus,
     })),
   );
   const { draftShift: activeShift, setDraftShift } =
@@ -311,7 +309,7 @@ export default function NursesScreen() {
   const [nurseNameError, setNurseNameError] = useState("");
   const [nurseListError, setNurseListError] = useState("");
   const [serverSaveError, setServerSaveError] = useState("");
-  const isSavingShift = saveStatus === "saving";
+  const [isSavingShift, setIsSavingShift] = useState(false);
 
   function handleNurseNameChange(name: string) {
     setNurseName(name);
@@ -447,6 +445,8 @@ export default function NursesScreen() {
       return;
     }
 
+    setIsSavingShift(true);
+
     try {
       setServerSaveError("");
       await saveActiveShift(activeShift);
@@ -458,6 +458,8 @@ export default function NursesScreen() {
 
       setServerSaveError(message);
       return;
+    } finally {
+      setIsSavingShift(false);
     }
 
     router.push("/patients-and-acuity");

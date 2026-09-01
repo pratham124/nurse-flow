@@ -188,14 +188,12 @@ export default function AssignmentReviewScreen() {
     activeShift,
     realtimeConnectionState,
     runAssignmentOptimizer,
-    saveStatus,
   } = useServerWorkspace(
     useShallow((state) => ({
       activeAssignmentOverridesByBedId: state.activeAssignmentOverridesByBedId,
       activeShift: state.activeShift,
       realtimeConnectionState: state.realtimeConnectionState,
       runAssignmentOptimizer: state.runAssignmentOptimizer,
-      saveStatus: state.saveStatus,
     })),
   );
   const [serverSaveError, setServerSaveError] = useState("");
@@ -283,8 +281,7 @@ export default function AssignmentReviewScreen() {
     if (
       !activeShift ||
       !validation.canRunAssignment ||
-      isOptimizerRunning ||
-      saveStatus === "saving"
+      isOptimizerRunning
     ) {
       return;
     }
@@ -327,19 +324,16 @@ export default function AssignmentReviewScreen() {
         primaryDisabled={
           !validation.canRunAssignment ||
           !hasLiveConnection ||
-          isOptimizerRunning ||
-          saveStatus === "saving"
+          isOptimizerRunning
         }
         primaryLabel={
           isOptimizerRunning
             ? "Calculating…"
-            : saveStatus === "saving"
-              ? "Saving..."
-              : serverSaveError
-                ? "Retry assignment"
-                : activeShift?.assignmentResult
-                  ? "Rerun assignment"
-                  : "Run assignment"
+            : serverSaveError
+              ? "Retry assignment"
+              : activeShift?.assignmentResult
+                ? "Rerun assignment"
+                : "Run assignment"
         }
         subtitle=""
         title={activeShift?.floorName ?? "Assignment review"}
