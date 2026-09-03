@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { LoadingState } from "../components/LoadingState";
+import { NurseFlowLogo } from "../components/NurseFlowLogo";
 import { loginWithEmail, signUpWithEmail } from "../services/authRepository";
 import { useAuthSession } from "../store/AuthSessionContext";
 import {
@@ -175,17 +176,15 @@ export default function AuthFormScreen({ mode }: AuthFormScreenProps) {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.keyboardView}
       >
+        <View style={styles.logoHeader}>
+          <NurseFlowLogo accessibilityLabel="Nurse Flow" variant="wordmark" />
+        </View>
         <ScrollView
           contentContainerStyle={styles.contentContainer}
           keyboardShouldPersistTaps="handled"
+          style={styles.formScrollView}
         >
           <View style={styles.header}>
-            <View style={styles.brandRow}>
-              <View style={styles.brandMark}>
-                <Text style={styles.brandMarkText}>NF</Text>
-              </View>
-              <Text style={styles.brand}>NurseFlow</Text>
-            </View>
             <Text style={styles.title}>
               {isSignup ? "Create account" : "Welcome back"}
             </Text>
@@ -288,39 +287,28 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
+  logoHeader: {
+    alignItems: "center",
+    left: 0,
+    paddingTop: spacing.xxl,
+    position: "absolute",
+    right: 0,
+    top: 0,
+    zIndex: 1,
+  },
+  formScrollView: {
+    flex: 1,
+  },
   contentContainer: {
     flexGrow: 1,
-    justifyContent: "flex-start",
+    justifyContent: "center",
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.xxl,
-    paddingTop: spacing.xxl + spacing.xl,
+    paddingTop: spacing.lg,
   },
   header: {
     gap: spacing.md,
     marginBottom: spacing.xl,
-  },
-  brandRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  brandMark: {
-    alignItems: "center",
-    backgroundColor: colors.brand.burgundy,
-    borderRadius: radius.md,
-    height: 36,
-    justifyContent: "center",
-    width: 36,
-  },
-  brandMarkText: {
-    color: colors.neutral.surface,
-    fontSize: textSize.sm,
-    fontWeight: fontWeight.heavy,
-  },
-  brand: {
-    color: colors.neutral.textPrimary,
-    fontSize: textSize.md,
-    fontWeight: fontWeight.semibold,
   },
   title: {
     color: colors.neutral.textPrimary,
@@ -371,6 +359,7 @@ const styles = StyleSheet.create({
     fontSize: textSize.sm,
     fontWeight: fontWeight.medium,
     lineHeight: 18,
+    textAlign: "center",
   },
   primaryButton: {
     alignItems: "center",

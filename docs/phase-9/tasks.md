@@ -12,6 +12,21 @@ Status legend:
 - Done
 - No marker means not done yet.
 
+## Small Visual Maintenance
+
+### In Progress: Apply the Approved NurseFlow Logo
+
+- Add the supplied NurseFlow artwork as local app assets.
+- Replace the temporary `NF` auth mark and the text-only Home brand treatment;
+  keep the full auth wordmark at the top while the remaining form content sits
+  centrally.
+- Keep launcher and splash artwork unchanged until square logo variants are
+  supplied or approved.
+- Center auth validation messages beneath the form so the error aligns with the
+  primary action area.
+- TypeScript, lint, the production web export, and a phone-sized login preview
+  pass. The required understanding checkpoint remains before this item is done.
+
 ## Build Order Summary
 
 1. Freeze the optimizer rules, Python service boundary, and current app/server

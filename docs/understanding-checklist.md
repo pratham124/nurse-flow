@@ -40,6 +40,48 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-09-03 - Apply the Approved NurseFlow Logo
+
+- Task: Use the supplied NurseFlow artwork on the login, signup, and Home
+  headers.
+- Problem understanding:
+  - [ ] The app still used a temporary `NF` mark on auth and a text-only Home
+    brand treatment.
+  - [ ] The supplied wide wordmark is not automatically suitable for square
+    launcher and adaptive-icon slots.
+  - [ ] Compact and full-width placements need different crops of the same
+    artwork to remain legible.
+- Solution understanding:
+  - [ ] `src/components/NurseFlowLogo.tsx` provides one reusable component with
+    `mark` and `wordmark` variants.
+  - [ ] The auth screens keep the full wordmark at the top while centering the
+    remaining form block, and Home uses the compact nurse mark beside the
+    existing readable title.
+  - [ ] Both variants use local PNG assets with transparent outer backgrounds
+    and `expo-image`; the Home mark is decorative because the adjacent title
+    already names the product.
+  - [ ] `errorText` uses `textAlign: "center"` so validation feedback is
+    centered within the auth form width.
+  - [ ] The wordmark style uses `alignSelf: "center"` so the full logo shares
+    the same horizontal alignment.
+  - [ ] The auth `contentContainer` uses `justifyContent: "center"` so the
+    complete form block centers vertically while remaining scrollable.
+  - [ ] The auth logo header is independently positioned with a larger
+    `spacing.xxl` top inset, so it sits above the form without taking space away
+    from the form's vertical centering.
+- Broader context:
+  - [ ] This changes visible in-app branding without changing auth, navigation,
+    assignment behavior, splash screens, or platform launcher icons.
+  - [ ] Square icon variants can be handled as a separate design task.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [x] TypeScript and lint checks passed.
+  - [x] Production web export passed and bundled both logo assets.
+  - [x] Phone-sized login preview showed the full logo without clipping.
+- Status: pending
+
 ### 2026-07-18 - Review Phase 7 Connection and Cache Tasks
 
 - Task: Review Phase 7 Tasks 3.1, 3.2, and 3.3 and avoid adding redundant connection UI or unvalidated offline caching.

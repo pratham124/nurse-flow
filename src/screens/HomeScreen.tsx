@@ -24,6 +24,7 @@ import {
 } from "../components/workflow";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
+import { NurseFlowLogo } from "../components/NurseFlowLogo";
 import { NotificationPermissionDialog } from "../components/NotificationPermissionCard";
 import { useAuthSession } from "../store/AuthSessionContext";
 import { useNotificationPermission } from "../store/NotificationPermissionContext";
@@ -435,6 +436,7 @@ export default function Index() {
     <SafeAreaView style={styles.screen}>
       <View style={styles.header}>
         <View style={styles.brandPanel}>
+          <NurseFlowLogo variant="mark" />
           <Text style={styles.brandTitle}>Nurse Flow</Text>
         </View>
 
@@ -665,12 +667,14 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   brandPanel: {
+    alignItems: "center",
     backgroundColor: colors.brand.burgundy,
     alignSelf: "stretch",
+    flexDirection: "row",
+    gap: spacing.sm,
     justifyContent: "center",
     minWidth: 142,
-    paddingLeft: spacing.xl,
-    paddingRight: spacing.lg,
+    paddingHorizontal: spacing.md,
     width: 156,
   },
   brandTitle: {
