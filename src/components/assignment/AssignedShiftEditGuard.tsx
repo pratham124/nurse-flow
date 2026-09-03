@@ -1,4 +1,5 @@
 import { useShallow } from "zustand/react/shallow";
+import { useIsFocused } from "@react-navigation/native";
 import { useState } from "react";
 import { router } from "expo-router";
 
@@ -23,6 +24,7 @@ export function AssignedShiftEditGuard({
   const [errorMessage, setErrorMessage] = useState("");
   const [isResetting, setIsResetting] = useState(false);
   const assignmentResultId = activeShift?.assignmentResult?.id;
+  const isFocused = useIsFocused();
 
   async function handleConfirm() {
     if (!assignmentResultId || isResetting) {
@@ -53,6 +55,10 @@ export function AssignedShiftEditGuard({
     router.replace("/floor-board");
   }
 
+  if (!isFocused || !assignmentResultId) {
+    return null;
+  }
+
   return (
     <ConfirmationDialog
       cancelDisabled={isResetting}
@@ -65,7 +71,7 @@ export function AssignedShiftEditGuard({
       onCancel={handleCancel}
       onConfirm={() => void handleConfirm()}
       title="Edit active shift?"
-      visible={Boolean(assignmentResultId)}
+      visible
     />
   );
 }

@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from .auth import SupabaseJwtVerifier
 from .http_api import create_app
@@ -62,4 +63,19 @@ def build_dependencies_from_environment() -> OptimizerServiceDependencies:
 def create_app_from_environment() -> FastAPI:
     """Uvicorn factory used by local development and the container command."""
 
-    return create_app(build_dependencies_from_environment())
+    app = create_app(build_dependencies_from_environment())
+    local_web_origin = os.environ.get(
+        "NURSEFLOW_LOCAL_WEB_ORIGIN",
+        "",
+    ).strip()
+
+    if local_web_origin:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=[local_web_origin],
+            allow_credentials=False,
+            allow_methods=["GET", "POST"],
+            allow_headers=["Authorization", "Content-Type"],
+        )
+
+    return app

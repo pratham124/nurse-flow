@@ -1,8 +1,6 @@
 import { useShallow } from "zustand/react/shallow";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  AccessibilityInfo,
-  findNodeHandle,
   Modal,
   Pressable,
   ScrollView,
@@ -25,6 +23,10 @@ import {
   getAssignmentMovePreview,
   type AssignmentMovePreview,
 } from "../../utils/assignmentMovePreview";
+import {
+  accessibilityFocusProps,
+  focusAccessibilityElement,
+} from "../../utils/accessibilityFocus";
 
 export type AssignmentMoveDialogProps = {
   activeShift: Shift;
@@ -280,11 +282,7 @@ export function AssignmentMoveDialog({
   }
 
   function focusDialogTitle() {
-    const titleNode = findNodeHandle(titleRef.current);
-
-    if (titleNode) {
-      AccessibilityInfo.setAccessibilityFocus(titleNode);
-    }
+    focusAccessibilityElement(titleRef.current);
   }
 
   return (
@@ -298,7 +296,12 @@ export function AssignmentMoveDialog({
       <View accessibilityViewIsModal style={styles.screen}>
         <View style={styles.dialogHeader}>
           <View style={styles.headerCopy}>
-            <Text accessibilityRole="header" ref={titleRef} style={styles.title}>
+            <Text
+              {...accessibilityFocusProps}
+              accessibilityRole="header"
+              ref={titleRef}
+              style={styles.title}
+            >
               Move bed {bedLabel}
             </Text>
             <Text style={styles.subtitle}>Currently assigned to {currentNurseName}</Text>

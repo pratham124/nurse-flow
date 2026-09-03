@@ -1,7 +1,5 @@
 import { useRef } from "react";
 import {
-  AccessibilityInfo,
-  findNodeHandle,
   Modal,
   Pressable,
   StyleSheet,
@@ -11,6 +9,10 @@ import {
 
 import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { colors, radius, spacing, textSize, fontWeight, shadows } from "../../theme/tokens";
+import {
+  accessibilityFocusProps,
+  focusAccessibilityElement,
+} from "../../utils/accessibilityFocus";
 
 type ConfirmationDialogProps = {
   confirmLabel: string;
@@ -42,11 +44,7 @@ export function ConfirmationDialog({
   const titleRef = useRef<Text>(null);
 
   function focusDialogTitle() {
-    const titleNode = findNodeHandle(titleRef.current);
-
-    if (titleNode) {
-      AccessibilityInfo.setAccessibilityFocus(titleNode);
-    }
+    focusAccessibilityElement(titleRef.current);
   }
 
   return (
@@ -60,6 +58,7 @@ export function ConfirmationDialog({
       <View accessibilityViewIsModal style={styles.backdrop}>
         <View style={styles.card}>
           <Text
+            {...accessibilityFocusProps}
             accessibilityRole="header"
             ref={titleRef}
             style={styles.title}

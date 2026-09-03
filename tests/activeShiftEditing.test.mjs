@@ -96,3 +96,28 @@ test("the edit reset SQL clears every stale access boundary in one function", ()
   assert.match(resetSql, /status = 'removed'/);
   assert.match(resetSql, /update public\.active_shifts/);
 });
+
+test("assigned-shift edit dialogs mount only on focused editable screens", () => {
+  const guardSource = readFileSync(
+    new URL(
+      "../src/components/assignment/AssignedShiftEditGuard.tsx",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const assignmentReviewSource = readFileSync(
+    new URL("../src/screens/AssignmentReviewScreen.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(guardSource, /const isFocused = useIsFocused\(\);/);
+  assert.match(
+    guardSource,
+    /if \(!isFocused \|\| !assignmentResultId\) \{\s*return null;/,
+  );
+  assert.doesNotMatch(guardSource, /usePathname/);
+  assert.match(
+    assignmentReviewSource,
+    /<AssignedShiftEditGuard activeShift=\{activeShift\} \/>/,
+  );
+});

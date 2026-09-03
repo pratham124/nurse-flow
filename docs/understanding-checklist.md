@@ -4327,6 +4327,31 @@ For each task, add a dated section with:
   - [x] No stale code or package-script references remain.
 - Status: pending
 
+### 2026-09-02 - Diagnose Realtime Missing Partition Error
+
+- Task: Trace the charge active-shift listener's `MissingPartition` channel
+  error and distinguish an app subscription bug from a Supabase project issue.
+- Problem understanding:
+  - [ ] Why a missing daily child partition of `realtime.messages` prevents a
+    private Broadcast channel from completing its authorization check.
+  - [ ] Why this error is different from a bad NurseFlow topic or callback.
+- Solution understanding:
+  - [ ] No app code changed because the listener already refreshes Realtime
+    auth, marks the channel private, and uses the RLS-authorized topic shape.
+  - [ ] A fresh sign-in and Supabase Realtime Inspector join separate stale
+    session failures from a project-level partition failure.
+- Broader context:
+  - [ ] NurseFlow uses database Broadcast as a refetch signal; without a live
+    subscription, server updates can succeed while the screen stays stale.
+  - [ ] Managed `realtime.messages` partitions should not be manually patched
+    from application migrations.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [x] Focused Realtime repository test passed: 1/1.
+- Status: pending
+
 ### 2026-08-28 - Inline the Single User-Role Check
 
 - Task: Remove the one-use `isUserRole` type guard while preserving profile-row
@@ -4480,4 +4505,124 @@ For each task, add a dated section with:
   - [x] Focused request lifecycle and notification tests passed: 8/8.
   - [x] TypeScript and lint checks passed.
   - [x] No `getRequestsWithUniqueIds` references remain.
+- Status: pending
+
+### 2026-09-02 - Enable Local Expo Web Optimizer Testing
+
+- Task: Let Expo Web call the separately running Python optimizer during local
+  development without broadening the production HTTP boundary.
+- Problem understanding:
+  - [ ] Why browser requests across ports require CORS even on one computer.
+  - [ ] Why React Native clients do not enforce the same browser-origin rule.
+  - [ ] Why a wildcard origin was not appropriate for an authenticated action.
+- Solution understanding:
+  - [ ] `create_app_from_environment` adds CORS only when
+    `NURSEFLOW_LOCAL_WEB_ORIGIN` is configured.
+  - [ ] Only the exact configured origin, required methods, and required headers
+    are allowed.
+  - [ ] Expo reads the public local service URL while Supabase secret material
+    remains only in the optimizer process environment.
+- Broader context:
+  - [ ] Local Expo Web can now exercise the real authenticated optimizer path.
+  - [ ] Omitting the local-web variable preserves the existing production
+    behavior.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [x] Focused CORS checks passed: 3/3.
+  - [x] Complete optimizer regression suite passed: 91/91.
+- Status: pending
+
+### 2026-09-02 - Fix Expo Web Import-Meta Startup Crash
+
+- Task: Allow the Expo SDK 55 web bundle to load Zustand middleware instead of
+  remaining on the session-checking screen after a JavaScript syntax error.
+- Problem understanding:
+  - [ ] Why `zustand/middleware` selected an ESM build containing `import.meta`.
+  - [ ] Why Metro's classic browser bundle could not execute that syntax.
+  - [ ] Why the browser-extension `content.js` error was unrelated.
+- Solution understanding:
+  - [ ] `babel.config.js` keeps the standard Expo preset and enables Expo's
+    `unstable_transformImportMeta` option only for web.
+  - [ ] The transform rewrites supported `import.meta` access before the
+    browser executes the bundle.
+  - [ ] Native iOS and Android transforms remain unchanged.
+- Broader context:
+  - [ ] Session initialization and all later screens can execute on Expo Web.
+  - [ ] Expo SDK 56 is expected to enable this transform by default, so the
+    compatibility setting should be reviewed during that upgrade.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [x] Clean Expo web export passed.
+  - [x] Exported web bundle no longer contains Zustand's raw `import.meta.env`.
+  - [x] The local Supabase secret was absent from the exported web bundle.
+  - [x] TypeScript and lint checks passed.
+- Status: pending
+
+### 2026-09-02 - Fix Dialog Accessibility Focus on Web
+
+- Task: Prevent dialog title focus from calling React Native's unsupported
+  numeric-node API in the web browser.
+- Problem understanding:
+  - [ ] Why React Native Web throws when application code calls
+    `findNodeHandle`.
+  - [ ] Why focusing a dialog title still matters for screen-reader context.
+  - [ ] Why removing title focus entirely would weaken accessibility.
+- Solution understanding:
+  - [ ] Native uses `accessibilityFocus.ts` to preserve
+    `AccessibilityInfo.setAccessibilityFocus`.
+  - [ ] Web uses `accessibilityFocus.web.ts` to call `focus()` on the title ref.
+  - [ ] Web titles receive `tabIndex={-1}` so code can focus them without adding
+    them to normal keyboard tab order.
+- Broader context:
+  - [ ] Both reusable confirmation dialogs and assignment-move dialogs now use
+    one platform-aware boundary.
+  - [ ] Other native-only imperative APIs should receive the same platform
+    review before being used by shared components.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [x] TypeScript and lint checks passed.
+  - [x] Clean Expo web export passed.
+  - [x] Clean local web startup reached the login screen without console errors.
+  - [x] The web development bundle uses two direct ref-focus calls and no
+    dialog-title `findNodeHandle` calls.
+- Status: pending
+
+### 2026-09-02 - Scope Assigned-Shift Edit Dialogs to Focused Screens
+
+- Task: Prevent editable screens retained in the navigation stack from showing
+  an assigned-shift edit warning over the floor board, while guarding Assign
+  when the user intentionally opens it.
+- Problem understanding:
+  - [ ] Why a mounted screen is not necessarily the currently visible route.
+  - [ ] Why assignment data alone was insufficient to decide whether the edit
+    dialog should be visible.
+  - [ ] Why clicking the unexpected edit button returned the shift to setup.
+- Solution understanding:
+  - [ ] `AssignedShiftEditGuard` reads its screen's React Navigation focus
+    state.
+  - [ ] The guard renders nothing unless its editable screen is focused and the
+    shift has an assignment result.
+  - [ ] Intentionally opening Assign, Patients, Nurses, or Shift remains
+    protected by the same destructive-action warning.
+- Broader context:
+  - [ ] Assigned shifts still resume on `/floor-board`; setup shifts still
+    resume on `/start-shift`.
+  - [ ] Route-aware overlays prevent inactive stack screens from affecting the
+    screen the user can currently see.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [x] Focused active-shift editing checks passed: 4/4.
+  - [x] Optimizer mobile contract/runtime checks passed: 12/12.
+  - [x] TypeScript and lint checks passed.
+  - [x] Clean Expo web export passed.
+  - [ ] Signed-in browser flow confirmed: run assignment, return home, and
+    resume the assigned shift without an unexpected dialog or setup redirect.
 - Status: pending

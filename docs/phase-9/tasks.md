@@ -538,9 +538,19 @@ Manual validation:
 Story coverage: US1-US7
 
 Status: In progress on 2026-08-24. The 12 automated mobile contract/runtime
-checks pass. No device is connected and no optimizer URL or disposable auth
-sessions are configured, so the authenticated native, responsive, dynamic-type,
-and screen-reader matrix remains. See `task-4-validation-pass.md`.
+checks pass. No device is connected and no disposable auth sessions are
+configured, so the authenticated native, responsive, dynamic-type, and
+screen-reader matrix remains. On 2026-09-02, an opt-in exact-origin CORS setting
+and local Expo Web URL were added so the authenticated assignment flow can also
+be exercised from the development computer. The Expo SDK 55 web build also
+enables its web-only `import.meta` transform so Zustand middleware can load in
+Metro's classic browser bundle. Dialog title focus now uses a direct ref on web
+while retaining native accessibility focus behavior. Assigned-shift edit
+dialogs now render only while their editable screen has navigation focus, so
+screens retained behind the board cannot open a destructive reset prompt after
+assignment. Assign, Patients, Nurses, and Shift all show the explicit edit
+warning when opened from an assigned board. See
+`task-4-validation-pass.md`.
 
 Build:
 

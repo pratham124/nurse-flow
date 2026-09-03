@@ -151,6 +151,30 @@ For local HTTP development, set the private values documented in
 optimizer-service/.venv/Scripts/python -m uvicorn nurseflow_optimizer.runtime:create_app_from_environment --factory --app-dir optimizer-service --host 127.0.0.1 --port 8080 --workers 1 --no-access-log
 ```
 
+To call the local service from Expo Web, opt in to the exact browser origin in
+the optimizer terminal before starting Uvicorn:
+
+```powershell
+$env:NURSEFLOW_LOCAL_WEB_ORIGIN="http://localhost:8081"
+```
+
+Set the app's public service URL in the repository-root `.env`, then restart
+Expo on that same browser port:
+
+```text
+EXPO_PUBLIC_OPTIMIZER_SERVICE_URL=http://127.0.0.1:8080
+```
+
+```powershell
+npm run web -- --port 8081
+```
+
+The origin must match the browser address exactly. For example, an Expo page
+opened at `http://127.0.0.1:8081` requires that value instead. If the local-web
+variable is absent, the service does not add browser CORS access. Keep
+`NURSEFLOW_SUPABASE_SECRET_KEY` only in the optimizer process environment; it
+must never use an `EXPO_PUBLIC_` name.
+
 Build the portable production image from the repository root with:
 
 ```text

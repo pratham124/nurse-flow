@@ -11,6 +11,7 @@ import {
   WorkflowSection,
   WorkflowScreen,
 } from "../components/workflow";
+import { AssignedShiftEditGuard } from "../components/assignment/AssignedShiftEditGuard";
 import { ConfirmationDialog } from "../components/workflow/ConfirmationDialog";
 import { createLocalId } from "../helpers/localId";
 import type { AssignmentOptimizerStatus } from "../services/optimizerRepository";
@@ -350,6 +351,7 @@ export default function AssignmentReviewScreen() {
           totalBedCount={totalBedCount}
         />
       </WorkflowScreen>
+      <AssignedShiftEditGuard activeShift={activeShift} />
       <ConfirmationDialog
         confirmLabel="Rerun and clear moves"
         confirmTone="danger"

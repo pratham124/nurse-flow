@@ -22,8 +22,8 @@ existing active-shift, invite, nurse-access, and manual-override setup.
 
 ## Manual Validation
 
-- [ ] From an assigned Floor Board, open Patients, Nurses, or Shift setup and
-  confirm the warning appears before any field can be edited.
+- [ ] From an assigned Floor Board, open Assign, Patients, Nurses, or Shift
+  setup and confirm the warning appears before continuing.
 - [ ] Cancel and confirm the existing board and joined-nurse access remain.
 - [ ] Confirm the edit; verify assignment and flags are cleared and the shift
   opens in setup state.
