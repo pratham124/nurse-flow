@@ -21,7 +21,7 @@ type SwipeRevealActionProps = {
   actionWidth?: number;
   actionIcon?: ReactNode;
   actionSide?: "left" | "right";
-  actionTone?: "brand" | "danger";
+  actionTone?: "brand" | "danger" | "delete";
   enableAccessibilityReveal?: boolean;
 };
 
@@ -115,8 +115,15 @@ export function SwipeRevealAction({
           style={({ pressed }) => [
             styles.actionButton,
             actionTone === "brand" ? styles.brandActionButton : null,
+            actionTone === "delete" ? styles.deleteActionButton : null,
             { width: actionWidth },
-            pressed ? styles.actionButtonPressed : null,
+            pressed
+              ? actionTone === "brand"
+                ? styles.brandActionButtonPressed
+                : actionTone === "delete"
+                  ? styles.deleteActionButtonPressed
+                : styles.actionButtonPressed
+              : null,
           ]}
         >
           {actionIcon ? (
@@ -190,6 +197,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.status.red800,
   },
   brandActionButton: {
+    backgroundColor: colors.brand.burgundy,
+  },
+  brandActionButtonPressed: {
+    backgroundColor: colors.brand.burgundyLight,
+  },
+  deleteActionButton: {
+    backgroundColor: colors.brand.burgundyLight,
+  },
+  deleteActionButtonPressed: {
     backgroundColor: colors.brand.burgundy,
   },
   actionButtonText: {

@@ -40,6 +40,83 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-09-03 - Simplify Join Active Session Copy
+
+- Task: Make the nurse join screen easier to understand and remove the
+  unnecessary safe-preview explanation.
+- Problem understanding:
+  - [ ] The screen used technical wording such as `validate` and `Code
+    validated`, and the safe-preview panel did not help the join task.
+- Solution understanding:
+  - [ ] The screen now says `Join your shift`, explains that the code comes
+    from the charge nurse, and uses `Check code` for the primary step.
+  - [ ] The `Safe preview` panel is removed while validation, account prompts,
+    errors, and the final join step remain available.
+  - [ ] Code-format and invite-status messages use direct, conversational copy.
+- Broader context:
+  - [ ] This is a copy and information-hierarchy improvement; invite
+    validation and privacy boundaries are unchanged.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [x] TypeScript, lint, and production web export passed.
+- Status: pending
+
+### 2026-09-03 - Make Home Template Deletion Discoverable
+
+- Task: Make saved floor-template deletion on Home use the same discoverable
+  right-swipe interaction as room deletion.
+- Problem understanding:
+  - [ ] Home template rows used the reusable swipe action's default left-swipe
+    direction, which conflicted with the right-swipe cue used elsewhere.
+  - [ ] The hidden delete affordance had no visible cue on the resting card.
+- Solution understanding:
+  - [ ] Home template rows show `Swipe right to delete` when deletion is allowed.
+  - [ ] Home uses the left-side, icon-only burgundy delete action with an
+    accessible reveal action.
+  - [ ] Home template cards no longer render the decorative side bar or trailing
+    chevron; the card itself remains pressable.
+  - [ ] Existing protection remains: templates cannot be deleted while an
+    active charge shift is in progress.
+- Broader context:
+  - [ ] This changes discoverability and consistency without changing the
+    confirmation dialog or server deletion boundary.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [x] TypeScript, lint, and production web export passed.
+- Status: pending
+
+### 2026-09-03 - Guard Template Creation Routes After Reload
+
+- Task: Recover from a direct reload of a later template-creation step when the
+  temporary workflow draft is no longer in memory.
+- Problem understanding:
+  - [ ] `WorkflowDraftContext` keeps the in-progress floor template in React
+    memory, so a browser or app reload clears it.
+  - [ ] `RoomsAndBedsScreen`, `DoctorSidesScreen`, and `TemplateReviewScreen`
+    previously rendered fallback or empty content even though the required
+    floor name and draft structure were gone.
+- Solution understanding:
+  - [ ] The later template screens redirect to `/floor-details` with
+    `router.replace` when `draftFloorTemplate` is missing.
+  - [ ] Each guarded screen returns no orphaned content while that redirect is
+    being processed; the normal local draft flow is unchanged.
+  - [ ] `TemplateReviewScreen` navigates home before clearing the draft after a
+    successful save, so the guard does not mistake a normal completion for a
+    broken reload.
+- Broader context:
+  - [ ] This keeps workflow navigation aligned with the data required by each
+    step without adding persistence or backend behavior early.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Code-specific question or walkthrough completed.
+  - [x] TypeScript, lint, and production web export passed.
+- Status: pending
+
 ### 2026-09-03 - Apply the Approved NurseFlow Logo
 
 - Task: Use the supplied NurseFlow artwork on the login, signup, and Home
@@ -69,6 +146,15 @@ For each task, add a dated section with:
   - [ ] The auth logo header is independently positioned with a larger
     `spacing.xxl` top inset, so it sits above the form without taking space away
     from the form's vertical centering.
+  - [ ] The Home header is a rounded white app bar; its existing notification
+    and sign-out actions remain unchanged.
+  - [ ] `WorkflowSection` keeps a white surface with a light shadow, while its
+    nested inputs retain opaque neutral backgrounds for contrast.
+  - [ ] Room rows show `Swipe right to delete`, so the hidden destructive action
+    is discoverable without changing the existing gesture direction.
+  - [ ] The room delete reveal uses a calmer burgundy icon-only button with a
+    `Delete room ...` accessibility label, and `enableAccessibilityReveal`
+    exposes it to assistive technology.
 - Broader context:
   - [ ] This changes visible in-app branding without changing auth, navigation,
     assignment behavior, splash screens, or platform launcher icons.
@@ -80,6 +166,8 @@ For each task, add a dated section with:
   - [x] TypeScript and lint checks passed.
   - [x] Production web export passed and bundled both logo assets.
   - [x] Phone-sized login preview showed the full logo without clipping.
+  - [x] Final phone-sized preview showed the logo above a vertically centered
+    form block.
 - Status: pending
 
 ### 2026-07-18 - Review Phase 7 Connection and Cache Tasks

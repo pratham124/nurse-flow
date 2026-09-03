@@ -15,7 +15,14 @@ import { AssignedShiftEditGuard } from "../components/assignment/AssignedShiftEd
 import { useActiveShiftDraft } from "../hooks/useActiveShiftDraft";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { shiftSetupFlow } from "../utils/workflowFlows";
-import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
+import {
+  colors,
+  radius,
+  spacing,
+  textSize,
+  fontWeight,
+  shadows,
+} from "../theme/tokens";
 import type { LoadLimitRange } from "../types/models";
 
 type LoadLimitKind = "admitting" | "nonAdmitting";
@@ -28,7 +35,11 @@ const maximumLoadLimitMessage = `Load limit cannot be higher than ${phaseOneMaxL
 const invalidLoadLimitRangeMessage =
   "Minimum load cannot be higher than maximum load.";
 
-function getCountLabel(count: number, singularLabel: string, pluralLabel: string) {
+function getCountLabel(
+  count: number,
+  singularLabel: string,
+  pluralLabel: string,
+) {
   return count === 1 ? singularLabel : pluralLabel;
 }
 
@@ -84,15 +95,13 @@ function LoadLimitRangeControl({
 }
 
 export default function StartShiftScreen() {
-  const {
-    activeShift: serverActiveShift,
-    saveActiveShift,
-  } = useServerWorkspace(
-    useShallow((state) => ({
-      activeShift: state.activeShift,
-      saveActiveShift: state.saveActiveShift,
-    })),
-  );
+  const { activeShift: serverActiveShift, saveActiveShift } =
+    useServerWorkspace(
+      useShallow((state) => ({
+        activeShift: state.activeShift,
+        saveActiveShift: state.saveActiveShift,
+      })),
+    );
   const { draftShift: activeShift, setDraftShift } =
     useActiveShiftDraft(serverActiveShift);
   const doctorSideOptions =
@@ -229,7 +238,7 @@ export default function StartShiftScreen() {
                 : "Back to floors"
         }
         subtitle="Step 1 of 3"
-        title={activeShift?.floorName ?? "Start shift"}
+        title={activeShift?.floorName ?? "Start"}
       >
         <WorkflowSection title="Template summary">
           <SummaryTileGrid>

@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import {
@@ -88,11 +88,13 @@ function RoomRow({
 
   return (
     <SwipeRevealAction
-      accessibilityLabel={`Remove room ${room.label}`}
-      actionLabel="Remove"
-      actionIcon={<TrashIcon color={colors.neutral.surface} size={18} />}
+      accessibilityLabel={`Delete room ${room.label}`}
+      actionLabel="Delete"
+      actionIcon={<TrashIcon color={colors.neutral.surface} size={20} />}
       actionSide="left"
+      actionTone="delete"
       actionWidth={72}
+      enableAccessibilityReveal
       onActionPress={() => onRemoveRoom(room.id)}
     >
       <View style={styles.roomRow}>
@@ -125,6 +127,10 @@ function RoomRow({
               />
             ))}
           </BedChipRow>
+          <View style={styles.swipeHint}>
+            <Text style={styles.swipeHintArrow}>→</Text>
+            <Text style={styles.swipeHintText}>Swipe right to delete</Text>
+          </View>
         </View>
       </View>
     </SwipeRevealAction>
@@ -151,6 +157,16 @@ export default function RoomsAndBedsScreen() {
   const [roomListError, setRoomListError] = useState("");
   const screenTitle = draftFloorTemplate?.name ?? "Rooms and beds";
   const rooms = draftFloorTemplate?.rooms ?? [];
+
+  useEffect(() => {
+    if (!draftFloorTemplate) {
+      router.replace("/floor-details");
+    }
+  }, [draftFloorTemplate]);
+
+  if (!draftFloorTemplate) {
+    return null;
+  }
 
   function handleRoomNameChange(text: string) {
     setRoomName(text);
@@ -357,6 +373,23 @@ const styles = StyleSheet.create({
   },
   roomFooterRow: {
     alignItems: "stretch",
+    gap: spacing.xs,
+  },
+  swipeHint: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.xs,
+    justifyContent: "flex-end",
+  },
+  swipeHintArrow: {
+    color: colors.brand.burgundyLight,
+    fontSize: textSize.md,
+    fontWeight: fontWeight.bold,
+  },
+  swipeHintText: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.xs,
+    fontWeight: fontWeight.semibold,
   },
   roomLabel: {
     color: colors.neutral.textPrimary,

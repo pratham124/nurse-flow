@@ -216,6 +216,12 @@ export default function DoctorSidesScreen() {
   ).length;
 
   useEffect(() => {
+    if (!draftFloorTemplate) {
+      router.replace("/floor-details");
+    }
+  }, [draftFloorTemplate]);
+
+  useEffect(() => {
     if (!draftFloorTemplate || doctorSides.length === 2) {
       return;
     }
@@ -235,6 +241,10 @@ export default function DoctorSidesScreen() {
     draftFloorTemplate,
     setDraftFloorTemplate,
   ]);
+
+  if (!draftFloorTemplate) {
+    return null;
+  }
 
   function handleSideNameChange(sideIndex: number, name: string) {
     const nextSideOneName = sideIndex === 0 ? name : sideOneName;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -164,6 +164,17 @@ export default function TemplateReviewScreen() {
         ? ""
         : invalidTemplateMessage
       : "Create a floor template before saving.");
+
+  useEffect(() => {
+    if (!draftFloorTemplate) {
+      router.replace("/floor-details");
+    }
+  }, [draftFloorTemplate]);
+
+  if (!draftFloorTemplate) {
+    return null;
+  }
+
   async function handleSaveTemplate() {
     setSaveErrorText("");
 
@@ -187,9 +198,8 @@ export default function TemplateReviewScreen() {
       setIsSavingTemplate(false);
     }
 
+    router.replace("/");
     resetWorkflowDraft();
-
-    router.push("/");
   }
 
   return (

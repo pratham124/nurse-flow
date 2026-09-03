@@ -24,8 +24,33 @@ Status legend:
   supplied or approved.
 - Center auth validation messages beneath the form so the error aligns with the
   primary action area.
+- Restyle the Home header as a rounded white app bar while keeping its current
+  notification and sign-out actions.
+- Keep shared workflow cards white with a light shadow so their input controls
+  remain readable.
+- Make room deletion discoverable with a visible right-swipe cue, a labeled
+  burgundy delete action, and an accessible reveal action.
+- Use the same right-swipe delete affordance on Home floor-template cards when
+  no active shift is blocking template deletion.
+- Keep Home floor-template cards visually simple by removing the side accent bar
+  and trailing chevron while preserving the card tap target.
+- Simplify Join Active Session copy for nurses and remove the unnecessary
+  `Safe preview` information panel.
 - TypeScript, lint, the production web export, and a phone-sized login preview
   pass. The required understanding checkpoint remains before this item is done.
+
+### In Progress: Guard Unsaved Workflow Routes After Reload
+
+- Redirect the later template-creation routes (`/rooms-and-beds`,
+  `/doctor-sides`, and `/template-review`) to `/floor-details` when their
+  in-memory draft is missing after a reload, instead of showing an empty
+  orphaned step.
+- Keep the local-first draft model unchanged; the floor name can be entered
+  again from the owning step.
+- After a successful save, leave the review route before clearing the temporary
+  draft so the reload guard does not intercept the normal completion path.
+- TypeScript, lint, and the production web export pass. The required
+  understanding checkpoint remains before this item is done.
 
 ## Build Order Summary
 

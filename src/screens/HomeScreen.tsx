@@ -123,7 +123,7 @@ function FloorTemplateRow({
         pressed && styles.startShiftButtonPressed,
       ]}
     >
-      <Text style={styles.startShiftButtonText}>Start Shift</Text>
+      <Text style={styles.startShiftButtonText}>Start</Text>
     </Pressable>
   );
 
@@ -136,7 +136,6 @@ function FloorTemplateRow({
         pressed && styles.templateRowPressed,
       ]}
     >
-      <View style={styles.templateAccent} />
       <View style={styles.templateMainRow}>
         <View style={styles.templateLeft}>
           <View style={styles.templateBadge}>
@@ -165,11 +164,18 @@ function FloorTemplateRow({
 
         <View style={styles.templateRight}>
           {isCompactLayout ? null : startShiftButton}
-          <ChevronRightIcon color={colors.neutral.textTertiary} size={14} />
         </View>
       </View>
 
       {isCompactLayout ? startShiftButton : null}
+      {canDelete ? (
+        <View style={styles.templateSwipeHint}>
+          <Text style={styles.templateSwipeHintArrow}>→</Text>
+          <Text style={styles.templateSwipeHintText}>
+            Swipe right to delete
+          </Text>
+        </View>
+      ) : null}
     </Pressable>
   );
 
@@ -180,8 +186,12 @@ function FloorTemplateRow({
   return (
     <SwipeRevealAction
       accessibilityLabel={`Delete ${floorTemplate.name}`}
-      actionIcon={<TrashIcon color={colors.neutral.surface} size={18} />}
+      actionIcon={<TrashIcon color={colors.neutral.surface} size={20} />}
       actionLabel="Delete"
+      actionSide="left"
+      actionTone="delete"
+      actionWidth={72}
+      enableAccessibilityReveal
       onActionPress={() => onRequestDelete(floorTemplate)}
     >
       {rowContent}
@@ -603,7 +613,7 @@ export default function Index() {
           <Text style={styles.secondaryActionButtonText}>
             {activeParticipation.type === "joined_nurse"
               ? "View joined shift"
-              : "Join active session"}
+              : "Join shift"}
           </Text>
         </Pressable>
         <Pressable
@@ -658,27 +668,34 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral.backgroundPrimary,
   },
   header: {
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.neutral.borderTertiary,
     alignItems: "center",
     backgroundColor: colors.neutral.surface,
+    borderColor: colors.neutral.borderTertiary,
+    borderRadius: radius.xl,
+    borderWidth: 1,
     flexDirection: "row",
-    minHeight: 82,
-    overflow: "hidden",
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+    minHeight: 68,
+    paddingHorizontal: spacing.md,
+    boxShadow: [
+      {
+        offsetX: 0,
+        offsetY: 2,
+        blurRadius: 6,
+        color: "rgba(33, 26, 29, 0.08)",
+      },
+    ],
   },
   brandPanel: {
     alignItems: "center",
-    backgroundColor: colors.brand.burgundy,
-    alignSelf: "stretch",
     flexDirection: "row",
     gap: spacing.sm,
     justifyContent: "center",
-    minWidth: 142,
-    paddingHorizontal: spacing.md,
-    width: 156,
+    minWidth: 0,
   },
   brandTitle: {
-    color: colors.neutral.surface,
+    color: colors.neutral.textPrimary,
     fontSize: textSize.md,
     fontWeight: fontWeight.heavy,
     lineHeight: 20,
@@ -691,8 +708,6 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     minWidth: 0,
     paddingLeft: spacing.lg,
-    paddingRight: spacing.xl,
-    paddingVertical: spacing.md,
   },
   accountName: {
     color: colors.neutral.textPrimary,
@@ -703,14 +718,14 @@ const styles = StyleSheet.create({
   },
   notificationButton: {
     alignItems: "center",
-    backgroundColor: colors.brand.burgundy10,
+    backgroundColor: "transparent",
     borderRadius: radius.pill,
     height: 38,
     justifyContent: "center",
     width: 38,
   },
   notificationButtonPressed: {
-    backgroundColor: colors.brand.burgundy15,
+    backgroundColor: colors.brand.burgundy10,
   },
   signOutButton: {
     alignItems: "center",
@@ -993,14 +1008,6 @@ const styles = StyleSheet.create({
     opacity: 0.92,
     backgroundColor: colors.neutral.backgroundTertiary,
   },
-  templateAccent: {
-    backgroundColor: colors.brand.burgundy,
-    bottom: 0,
-    left: 0,
-    position: "absolute",
-    top: 0,
-    width: 4,
-  },
   templateMainRow: {
     alignItems: "center",
     flexDirection: "row",
@@ -1020,6 +1027,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.sm,
     flexShrink: 0,
+  },
+  templateSwipeHint: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.xs,
+    justifyContent: "flex-end",
+    marginTop: spacing.xs,
+  },
+  templateSwipeHintArrow: {
+    color: colors.brand.burgundyLight,
+    fontSize: textSize.md,
+    fontWeight: fontWeight.bold,
+  },
+  templateSwipeHintText: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.xs,
+    fontWeight: fontWeight.semibold,
   },
   templateBadge: {
     alignItems: "center",

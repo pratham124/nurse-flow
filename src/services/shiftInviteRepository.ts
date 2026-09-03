@@ -223,18 +223,18 @@ export function getNurseInviteCodeFormatMessage(code: string) {
   const normalizedCode = getNormalizedNurseInviteCode(code);
 
   if (!normalizedCode) {
-    return "Enter the 6-character nurse code from charge.";
+    return "Enter the 6-character code from your charge nurse.";
   }
 
   if (normalizedCode.length < inviteCodeLength) {
-    return "Nurse codes are 6 characters long.";
+    return "That code needs 6 characters.";
   }
 
   if (
     normalizedCode.length > inviteCodeLength ||
     !inviteCodePattern.test(normalizedCode)
   ) {
-    return "Use the 6 letters or numbers shown by charge.";
+    return "Use the 6 letters or numbers shown by your charge nurse.";
   }
 
   return "";
@@ -312,34 +312,34 @@ function getValidationBlockMessage(
   reason: ShiftNurseInviteValidationBlockReason,
 ) {
   if (reason === "invalid_format") {
-    return "Use the 6-character nurse code from charge.";
+    return "Use the 6-character code from your charge nurse.";
   }
 
   if (reason === "expired") {
-    return "That nurse code has expired. Ask charge for a new code.";
+    return "That code has expired. Ask your charge nurse for a new one.";
   }
 
   if (reason === "revoked") {
-    return "That nurse code was replaced. Ask charge for a new code.";
+    return "That code is no longer active. Ask your charge nurse for a new one.";
   }
 
   if (reason === "already_used") {
-    return "That nurse code was already used.";
+    return "That code has already been used. Ask your charge nurse for a new one.";
   }
 
   if (reason === "ended_shift") {
-    return "That shift has ended.";
+    return "This shift has ended. Ask your charge nurse for a current code.";
   }
 
   if (reason === "stale_nurse") {
-    return "That nurse is no longer in this active shift.";
+    return "This nurse is no longer on this shift. Ask your charge nurse for help.";
   }
 
   if (reason === "participation_conflict") {
-    return "This account is already linked to another active shift.";
+    return "You are already connected to another active shift.";
   }
 
-  return "That nurse code is not valid.";
+  return "That code is not valid. Check it and try again.";
 }
 
 function isValidationBlockReason(

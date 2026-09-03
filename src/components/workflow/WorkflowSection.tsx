@@ -16,7 +16,6 @@ export function WorkflowSection({
 }: WorkflowSectionProps) {
   return (
     <View style={styles.section}>
-      <View style={styles.topAccentBar} />
       <View style={styles.sectionHeader}>
         <Text accessibilityRole="header" style={styles.sectionTitle}>
           {title}
@@ -39,14 +38,6 @@ const styles = StyleSheet.create({
     position: "relative",
     overflow: "hidden",
     ...shadows.sm,
-  },
-  topAccentBar: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 3,
-    backgroundColor: colors.brand.burgundy,
   },
   sectionHeader: {
     gap: spacing.xs,

@@ -73,18 +73,18 @@ function getActiveParticipationMessage(
   }
 
   if (activeParticipation.type === "charge_shift") {
-    return "End your active charge shift before joining as a nurse.";
+    return "Finish your current charge shift before joining as a nurse.";
   }
 
   if (activeParticipation.shiftId !== result.shiftId) {
-    return "This account is already linked to another active shift.";
+    return "You are already connected to another active shift.";
   }
 
   if (activeParticipation.nurseId !== result.nurseId) {
-    return "This account is already linked to a different nurse in this shift.";
+    return "You are already connected as another nurse on this shift.";
   }
 
-  return "This account already has nurse access for this shift.";
+  return "You are already connected to this shift.";
 }
 
 function CodeCells({ code, onChangeText }: CodeCellsProps) {
@@ -154,11 +154,11 @@ function MessageBox({ message, title, variant }: MessageBoxProps) {
 function JoinConfirmation({ result }: JoinConfirmationProps) {
   return (
     <View style={styles.confirmationBox}>
-      <Text style={styles.confirmationEyebrow}>Code validated</Text>
+      <Text style={styles.confirmationEyebrow}>Ready to join</Text>
       <Text style={styles.confirmationTitle}>{result.nurseName}</Text>
       <Text style={styles.confirmationText}>{result.floorName}</Text>
       <Text style={styles.helperText}>
-        Joining opens only the invited nurse assignment for this active shift.
+        You will only see the assignment for this shift.
       </Text>
     </View>
   );
@@ -228,7 +228,7 @@ export default function JoinActiveSessionScreen() {
 
     if (authState.status === "checking") {
       setValidationState({
-        message: "Checking your account session. Try again in a moment.",
+        message: "We are still checking your account. Try again in a moment.",
         status: "error",
       });
       return;
@@ -241,7 +241,9 @@ export default function JoinActiveSessionScreen() {
 
     if (authState.status !== "signed_in") {
       setValidationState({
-        message: authState.errorMessage ?? "Finish account setup before joining.",
+        message:
+          authState.errorMessage ??
+          "Please finish setting up your account before joining.",
         status: "error",
       });
       return;
@@ -293,7 +295,10 @@ export default function JoinActiveSessionScreen() {
       });
     } catch (error) {
       setValidationState({
-        message: getErrorMessage(error, "The nurse code could not be checked."),
+        message: getErrorMessage(
+          error,
+          "We could not check that code. Please try again.",
+        ),
         status: "error",
       });
     } finally {
@@ -308,7 +313,7 @@ export default function JoinActiveSessionScreen() {
 
     if (authState.status !== "signed_in") {
       setValidationState({
-        message: "Sign in before joining this shift.",
+        message: "Please sign in before joining this shift.",
         status: "error",
         title: "Join failed",
       });
@@ -343,7 +348,10 @@ export default function JoinActiveSessionScreen() {
       router.replace("/regular-nurse-workspace");
     } catch (error) {
       setValidationState({
-        message: getErrorMessage(error, "This nurse code could not be joined."),
+        message: getErrorMessage(
+          error,
+          "We could not join this shift. Please try again.",
+        ),
         status: "error",
         title: "Join failed",
       });
@@ -368,10 +376,9 @@ export default function JoinActiveSessionScreen() {
           </Pressable>
         </View>
         <View style={styles.titleGroup}>
-          <Text style={styles.title}>Join active session</Text>
+          <Text style={styles.title}>Join your shift</Text>
           <Text style={styles.subtitle}>
-            Enter the nurse code from charge. The app validates the code before
-            showing any shift details.
+            Enter the 6-character code from your charge nurse to get started.
           </Text>
         </View>
       </View>
@@ -400,7 +407,7 @@ export default function JoinActiveSessionScreen() {
           {isValidating || isJoining ? (
             <View style={styles.loadingBox}>
               <LoadingState
-                message={isJoining ? "Joining shift" : "Checking nurse code"}
+                message={isJoining ? "Joining shift" : "Checking code"}
               />
             </View>
           ) : null}
@@ -408,8 +415,8 @@ export default function JoinActiveSessionScreen() {
           {validationState.status === "auth_required" ? (
             <View style={styles.authBox}>
               <MessageBox
-                message="Sign in or create an account, then return here with this code."
-                title="Account needed"
+                message="Sign in or create an account to continue. We will bring your code with you."
+                title="Sign in to continue"
                 variant="info"
               />
               <View style={styles.authActions}>
@@ -434,7 +441,7 @@ export default function JoinActiveSessionScreen() {
           {validationState.status === "blocked" ? (
             <MessageBox
               message={validationState.message}
-              title="Cannot join with this code"
+              title="This code cannot be used"
               variant="error"
             />
           ) : null}
@@ -442,21 +449,13 @@ export default function JoinActiveSessionScreen() {
           {validationState.status === "error" ? (
             <MessageBox
               message={validationState.message}
-              title={validationState.title ?? "Code check failed"}
+              title={validationState.title ?? "Something went wrong"}
               variant="error"
             />
           ) : null}
 
           {validationState.status === "valid" ? (
             <JoinConfirmation result={validationState.result} />
-          ) : null}
-
-          {validationState.status === "idle" && !shouldShowFormatMessage ? (
-            <MessageBox
-              message="Only the nurse name and floor name appear after validation. Patient data waits until the join step."
-              title="Safe preview"
-              variant="info"
-            />
           ) : null}
         </View>
       </ScrollView>
@@ -488,10 +487,10 @@ export default function JoinActiveSessionScreen() {
                 ? "Joining"
                 : "Join shift"
               : isValidating
-                ? "Checking"
+                ? "Checking code"
                 : isSignedOut && isCodeReady
                   ? "Continue"
-                  : "Validate code"}
+                  : "Check code"}
           </Text>
         </Pressable>
       </View>
