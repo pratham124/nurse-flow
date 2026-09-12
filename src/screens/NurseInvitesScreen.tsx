@@ -201,7 +201,11 @@ function NurseInvitesHeader({
               {activeShift.shiftSnapshot.floorName}
             </Text>
           </View>
-          <SummaryChip label={`${activeShift.shiftSnapshot.nurses.length} nurses`} />
+          <SummaryChip
+            label={`${activeShift.shiftSnapshot.nurses.length} ${
+              activeShift.shiftSnapshot.nurses.length === 1 ? "nurse" : "nurses"
+            }`}
+          />
         </View>
         <Text style={styles.summaryText}>{activeInviteExpirationText}</Text>
         {loadStatus === "loading" ? (
@@ -236,38 +240,39 @@ function NurseInviteRow({
   const canCopyOrShare = Boolean(generatedCode?.code);
   const canGenerateCode = assignedPatientCount > 0;
   const hasActiveInvite = invite?.status === "active";
-  const shouldShowStoredCodeNotice = hasActiveInvite && !generatedCode;
 
   return (
     <View style={styles.nurseRow}>
       <View style={styles.nurseTopRow}>
+        <View style={styles.nurseAvatar}>
+          <Text style={styles.nurseAvatarText}>
+            {nurse.name.trim().split(/\s+/).map((part) => part[0]).slice(0, 2).join("").toUpperCase()}
+          </Text>
+        </View>
         <View style={styles.nurseIdentity}>
           <Text style={styles.nurseName}>{nurse.name}</Text>
           <Text style={styles.nurseMeta}>
-            {nurse.licenseType} - {getExperienceLabel(nurse)}
+            {nurse.licenseType} · {getExperienceLabel(nurse)}
+          </Text>
+          <Text style={styles.nurseMeta}>
+            {assignedPatientCount} {assignedPatientCount === 1 ? "patient" : "patients"} assigned
           </Text>
         </View>
         <View style={styles.statusStack}>
-          <SummaryChip
-            label={`${assignedPatientCount} ${
-              assignedPatientCount === 1 ? "patient" : "patients"
-            }`}
-          />
-          <SummaryChip label={getJoinedStatusLabel(access)} />
-          <SummaryChip label={getInviteStatusLabel(invite)} />
+          <SummaryChip label={access ? getJoinedStatusLabel(access) : invite ? getInviteStatusLabel(invite) : "Not invited"} />
         </View>
       </View>
 
-      <Text style={styles.expirationText}>{formatExpiration(invite?.expiresAt)}</Text>
+      {invite?.expiresAt ? (
+        <Text style={styles.expirationText}>{formatExpiration(invite.expiresAt)}</Text>
+      ) : null}
 
       {generatedCode ? (
         <InviteCodeCells code={generatedCode.code} />
-      ) : shouldShowStoredCodeNotice ? (
-        <HiddenCodeNotice />
-      ) : (
+      ) : hasActiveInvite ? null : (
         <Text style={styles.helperText}>
           {canGenerateCode
-            ? "Generate a code when this nurse is ready to join the active shift."
+            ? "Share a code so this nurse can join your shift."
             : "Assign at least one patient before generating a join code."}
         </Text>
       )}
@@ -378,25 +383,6 @@ function InviteActionIconButton({
         <ShareIcon color={iconColor} size={18} />
       )}
     </Pressable>
-  );
-}
-
-function HiddenCodeNotice() {
-  return (
-    <View style={styles.hiddenCodeBox}>
-      <View style={styles.hiddenCodeCells}>
-        {Array.from({ length: 6 }).map((_, index) => (
-          <View key={`hidden-code-${index}`} style={styles.hiddenCodeCell}>
-            <Text style={styles.hiddenCodeCellText}>-</Text>
-          </View>
-        ))}
-      </View>
-      <Text style={styles.hiddenCodeTitle}>Code already generated</Text>
-      <Text style={styles.hiddenCodeText}>
-        Existing codes are not shown again. Regenerate when you need a fresh
-        copyable code.
-      </Text>
-    </View>
   );
 }
 
@@ -823,10 +809,10 @@ const styles = StyleSheet.create({
   nurseRow: {
     backgroundColor: colors.neutral.surface,
     borderColor: colors.neutral.borderTertiary,
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
     borderWidth: 0.5,
     gap: spacing.lg,
-    padding: spacing.lg,
+    padding: spacing.xl,
     ...shadows.sm,
   },
   nurseTopRow: {
@@ -838,6 +824,19 @@ const styles = StyleSheet.create({
   nurseIdentity: {
     flex: 1,
     gap: spacing.xs,
+  },
+  nurseAvatar: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: 44,
+    height: 44,
+    borderRadius: radius.lg,
+    backgroundColor: colors.brand.burgundy10,
+  },
+  nurseAvatarText: {
+    color: colors.brand.burgundy,
+    fontSize: textSize.lg,
+    fontWeight: fontWeight.bold,
   },
   nurseName: {
     color: colors.neutral.textPrimary,
@@ -862,43 +861,6 @@ const styles = StyleSheet.create({
   },
   helperText: {
     color: colors.neutral.textSecondary,
-    fontSize: textSize.sm,
-    lineHeight: 18,
-  },
-  hiddenCodeBox: {
-    backgroundColor: colors.status.blue50,
-    borderColor: colors.neutral.borderTertiary,
-    borderRadius: radius.md,
-    borderWidth: 0.5,
-    gap: spacing.sm,
-    padding: spacing.md,
-  },
-  hiddenCodeCells: {
-    flexDirection: "row",
-    gap: spacing.xs,
-  },
-  hiddenCodeCell: {
-    alignItems: "center",
-    backgroundColor: colors.neutral.surface,
-    borderColor: colors.neutral.borderTertiary,
-    borderRadius: radius.sm,
-    borderWidth: 0.5,
-    height: 34,
-    justifyContent: "center",
-    width: 34,
-  },
-  hiddenCodeCellText: {
-    color: colors.neutral.textTertiary,
-    fontSize: textSize.md,
-    fontWeight: fontWeight.bold,
-  },
-  hiddenCodeTitle: {
-    color: colors.status.blue800,
-    fontSize: textSize.sm,
-    fontWeight: fontWeight.bold,
-  },
-  hiddenCodeText: {
-    color: colors.status.blue800,
     fontSize: textSize.sm,
     lineHeight: 18,
   },
@@ -935,7 +897,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm,
-    justifyContent: "flex-start",
+    justifyContent: "flex-end",
+    borderTopColor: colors.neutral.borderTertiary,
+    borderTopWidth: 0.5,
+    paddingTop: spacing.md,
   },
   iconButton: {
     alignItems: "center",

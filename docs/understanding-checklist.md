@@ -40,6 +40,15 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-09-12 - Simplify Nurse Invite Cards
+
+- [ ] Problem: repeated badges and empty expiration text obscured the primary action.
+- [ ] Solution: nurse identity and patient count are grouped beside an initials avatar;
+  one status badge and a separate action footer establish hierarchy.
+- [ ] Context: code generation, eligibility, copying, sharing, and confirmation handlers are unchanged.
+- Verification: TypeScript passed; visual review and human restatement pending.
+- Status: pending
+
 ### 2026-09-03 - Simplify Join Active Session Copy
 
 - Task: Make the nurse join screen easier to understand and remove the

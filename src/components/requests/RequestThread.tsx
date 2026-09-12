@@ -323,10 +323,13 @@ const styles = StyleSheet.create({
     color: "rgba(255, 255, 255, 0.78)",
   },
   emptyThread: {
-    backgroundColor: colors.neutral.backgroundSecondary,
-    borderRadius: radius.md,
-    gap: spacing.xs,
-    padding: spacing.md,
+    backgroundColor: colors.neutral.backgroundTertiary,
+    borderRadius: radius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 144,
+    gap: spacing.sm,
+    padding: spacing.xl,
   },
   emptyThreadTitle: {
     color: colors.neutral.textPrimary,
@@ -334,6 +337,7 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
   },
   emptyThreadMessage: {
+    textAlign: "center",
     color: colors.neutral.textSecondary,
     fontSize: textSize.sm,
     lineHeight: 18,
@@ -350,9 +354,9 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
   },
   composerInput: {
-    backgroundColor: colors.neutral.surface,
+    backgroundColor: colors.neutral.backgroundTertiary,
     borderColor: colors.neutral.borderSecondary,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     borderWidth: 1,
     color: colors.neutral.textPrimary,
     fontSize: textSize.md,

@@ -14,6 +14,13 @@ Status legend:
 
 ## Small Visual Maintenance
 
+### In Progress: Simplify Nurse Invite Cards
+
+- [x] Add initials avatars, consolidate status badges, simplify invitation copy,
+  and separate the action footer using the existing burgundy theme.
+- [ ] Verify the generated-code and initial states visually on a phone.
+- [ ] Complete the understanding checkpoint.
+
 ### In Progress: Apply the Approved NurseFlow Logo
 
 - Add the supplied NurseFlow artwork as local app assets.

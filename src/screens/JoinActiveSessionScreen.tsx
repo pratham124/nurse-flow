@@ -52,10 +52,6 @@ type MessageBoxProps = {
   variant: "info" | "error" | "success";
 };
 
-type JoinConfirmationProps = {
-  result: Extract<ShiftNurseInviteValidationResult, { status: "valid" }>;
-};
-
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
@@ -146,19 +142,6 @@ function MessageBox({ message, title, variant }: MessageBoxProps) {
         ]}
       >
         {message}
-      </Text>
-    </View>
-  );
-}
-
-function JoinConfirmation({ result }: JoinConfirmationProps) {
-  return (
-    <View style={styles.confirmationBox}>
-      <Text style={styles.confirmationEyebrow}>Ready to join</Text>
-      <Text style={styles.confirmationTitle}>{result.nurseName}</Text>
-      <Text style={styles.confirmationText}>{result.floorName}</Text>
-      <Text style={styles.helperText}>
-        You will only see the assignment for this shift.
       </Text>
     </View>
   );
@@ -289,10 +272,7 @@ export default function JoinActiveSessionScreen() {
         return;
       }
 
-      setValidationState({
-        result,
-        status: "valid",
-      });
+      await handleJoinShift();
     } catch (error) {
       setValidationState({
         message: getErrorMessage(
@@ -307,10 +287,6 @@ export default function JoinActiveSessionScreen() {
   }
 
   async function handleJoinShift() {
-    if (validationState.status !== "valid") {
-      return;
-    }
-
     if (authState.status !== "signed_in") {
       setValidationState({
         message: "Please sign in before joining this shift.",
@@ -454,9 +430,6 @@ export default function JoinActiveSessionScreen() {
             />
           ) : null}
 
-          {validationState.status === "valid" ? (
-            <JoinConfirmation result={validationState.result} />
-          ) : null}
         </View>
       </ScrollView>
 
@@ -467,11 +440,7 @@ export default function JoinActiveSessionScreen() {
             disabled: isValidating || isJoining,
           }}
           disabled={isValidating || isJoining}
-          onPress={
-            validationState.status === "valid"
-              ? handleJoinShift
-              : handleValidateCode
-          }
+          onPress={handleValidateCode}
           style={({ pressed }) => [
             styles.primaryButton,
             (!isCodeReady || isValidating || isJoining) &&
@@ -482,15 +451,13 @@ export default function JoinActiveSessionScreen() {
           ]}
         >
           <Text style={styles.primaryButtonText}>
-            {validationState.status === "valid"
-              ? isJoining
-                ? "Joining"
-                : "Join shift"
+            {isJoining
+              ? "Joining"
               : isValidating
                 ? "Checking code"
                 : isSignedOut && isCodeReady
                   ? "Continue"
-                  : "Check code"}
+                  : "Join shift"}
           </Text>
         </Pressable>
       </View>

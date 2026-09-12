@@ -226,7 +226,7 @@ export default function JoinedNurseRequestDetailScreen() {
               <View style={styles.metadataColumn}>
                 <View style={styles.summaryCard}>
                   <View style={styles.chipRow}>
-                    <SummaryChip label={getRequestTitle(request)} />
+                    <Text style={styles.sectionTitle}>Request details</Text>
                     <SummaryChip
                       label={getNurseRequestLifecycleLabel(request)}
                     />
@@ -236,7 +236,7 @@ export default function JoinedNurseRequestDetailScreen() {
                     value={getCreatedAtLabel(request.createdAt)}
                   />
                   <DetailRow
-                    label="Bed context"
+                    label="Bed"
                     value={getBedContext(assignmentView, request)}
                   />
                   {request.swapCompletedAt ? (
@@ -245,10 +245,6 @@ export default function JoinedNurseRequestDetailScreen() {
                       value={getCreatedAtLabel(request.swapCompletedAt)}
                     />
                   ) : null}
-                  <Text style={styles.readOnlyNote}>
-                    Request status is managed by charge. Messages do not change
-                    assignments or request status.
-                  </Text>
                   {wasSwapAssignmentChangedLater ? (
                     <Text style={styles.lifecycleNote}>
                       The swap was completed, but a later move changed that bed
@@ -258,7 +254,7 @@ export default function JoinedNurseRequestDetailScreen() {
                 </View>
 
                 <View style={styles.originalMessageCard}>
-                  <Text style={styles.sectionTitle}>Original message</Text>
+                  <Text style={styles.sectionTitle}>Your request</Text>
                   <Text style={styles.originalMessage}>{request.message}</Text>
                 </View>
               </View>
@@ -312,7 +308,7 @@ const styles = StyleSheet.create({
   title: {
     color: colors.neutral.textPrimary,
     flex: 1,
-    fontSize: textSize.lg,
+    fontSize: textSize.xl,
     fontWeight: fontWeight.bold,
   },
   backButton: {
@@ -352,25 +348,30 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   threadColumn: {
-    flex: 1.15,
+    flex: 1.6,
     minWidth: 0,
   },
   summaryCard: {
     backgroundColor: colors.neutral.surface,
     borderColor: colors.neutral.borderTertiary,
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
     borderWidth: 0.5,
-    gap: spacing.md,
-    padding: spacing.md,
+    gap: spacing.lg,
+    padding: spacing.xl,
     ...shadows.sm,
   },
   chipRow: {
+    alignItems: "center",
+    justifyContent: "space-between",
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm,
   },
   detailRow: {
     gap: spacing.xs,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.neutral.borderTertiary,
   },
   detailLabel: {
     color: colors.neutral.textSecondary,
@@ -382,11 +383,6 @@ const styles = StyleSheet.create({
     fontSize: textSize.md,
     fontWeight: fontWeight.bold,
   },
-  readOnlyNote: {
-    color: colors.neutral.textSecondary,
-    fontSize: textSize.sm,
-    lineHeight: 18,
-  },
   lifecycleNote: {
     color: colors.status.amber800,
     fontSize: textSize.sm,
@@ -396,10 +392,10 @@ const styles = StyleSheet.create({
   originalMessageCard: {
     backgroundColor: colors.neutral.surface,
     borderColor: colors.neutral.borderTertiary,
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
     borderWidth: 0.5,
     gap: spacing.sm,
-    padding: spacing.md,
+    padding: spacing.xl,
     ...shadows.sm,
   },
   sectionTitle: {
@@ -411,6 +407,9 @@ const styles = StyleSheet.create({
     color: colors.neutral.textPrimary,
     fontSize: textSize.md,
     lineHeight: 20,
+    backgroundColor: colors.brand.burgundy10,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
   },
   safeStateCard: {
     backgroundColor: colors.neutral.surface,
