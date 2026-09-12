@@ -40,6 +40,58 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-09-12 - README Architecture Diagrams
+
+- Task: Add Mermaid diagrams for current Supabase/RPC architecture and planned Go application-data architecture to README.md.
+- Follow-up: user clarified that the README should cover app purpose, setup, and architecture only. Removed migration/process prose, added Cloud Run around the Python optimizer, and included environment setup. Prior layer-responsibility checkpoint remains verified; no new application logic was introduced.
+- Problem understanding:
+  - [x] Distinguish the existing Supabase path from the planned Go path: human correctly explained that writes remain on the current path during the first milestone.
+- Solution understanding:
+  - [x] Trace an ordinary request through net/http, service authorization, GORM, and Postgres: human identified HTTP handling, business logic, and database access; authorization was verified in the earlier checkpoint.
+  - Context retained from the agreed plan: Supabase Auth continues login/refresh, and Python continues optimization. Neither is replaced by this documentation task.
+- Broader context:
+  - [x] Distinguish the eventual Go data path from milestone 1, which migrates only the template read: human correctly identified that writes retain the existing Supabase path.
+- Verification:
+  - [x] Human restated understanding and walked through a diagram path. Clarification: GORM also maps Go models to queries and manages explicit transactions, beyond establishing connectivity.
+  - [x] Predict which README diagram path handles a template write during milestone 1.
+- Status: verified; layer responsibilities and incremental cutover checked. No application behavior changed.
+
+### 2026-09-12 - Live Supabase Schema Inspection for Go Migration
+
+- Task: Read the live dashboard and record the observed schema/policy/function/trigger/index inventory in `docs/go-migration/live-schema-review.md`.
+- Problem understanding:
+  - [x] Explain why historical setup SQL and dashboard table lists alone are insufficient to recreate the database: human identified triggers, indexes, and other database objects as required parts of the baseline.
+- Solution understanding:
+  - [x] Explain the relationship between `profiles.auth_user_id`, `profiles.id`, and `floor_templates.owner_profile_id`: human correctly selected profile P after mapping Auth user A.
+  - [x] Recognize that database behavior includes triggers and indexes, not just tables.
+  - Deferred to implementation: walk through JSONB snapshot mapping and individual trigger behavior when the corresponding Go workflow is built.
+- Broader context:
+  - [x] Distinguish this read-only inventory from the schema-only export and development restore still needed: human explained why copying tables alone is insufficient.
+- Verification:
+  - [x] Read-only inspection documented; no database changes made.
+  - [x] Human restated understanding before a detailed walkthrough; the Auth ID's profile-lookup role was clarified.
+  - [x] Predict the effect of filtering `owner_profile_id` by the token's Auth user ID instead of the resolved profile ID: incorrect filter, normally no templates; human identified P as the correct filter value.
+- Status: verified for the inspection checkpoint. Identity mapping and baseline completeness checked; executable schema export and development restore remain separate unfinished tasks.
+
+### 2026-09-12 - Go Migration Architecture and First Milestone Plan
+
+- Task: Consolidate the agreed Go migration architecture and ordered teaching tasks in `docs/go-migration/plan.md`. Application implementation has not started.
+- Problem understanding:
+  - [x] Human identified long PL/pgSQL functions as the maintenance problem and explicitly chose Go as a learning objective.
+  - [x] Human chose to preserve the current app behavior and database schema, with no parallel feature development.
+- Solution understanding:
+  - [x] Human selected net/http and ORM access, accepted backend authorization, and explicit migrations instead of automatic schema changes.
+  - [x] Human confirmed Expo keeps Supabase sign-in/refresh and Go verifies tokens.
+  - [x] Explain why the template owner filter must use the resolved NurseFlow profile ID rather than directly using the Auth token subject.
+- Broader context:
+  - [x] Human requested a separate branch and development database and agreed to incremental work.
+  - [ ] Explain how the branch/worktree, environment configuration, and development database provide different parts of isolation.
+- Verification:
+  - [x] Architecture choices discussed in question rounds; earlier backend/authorization/concurrency checkpoint verified separately.
+  - [ ] Human reviewed the consolidated plan and restated the first milestone's request flow.
+  - [ ] Code-specific walkthrough of `loadFloorTemplates` and `profiles.auth_user_id` completed.
+- Status: in progress; consolidated plan approved by the user. Identity mapping verified; remaining understanding items are unchecked above.
+
 ### 2026-09-12 - Simplify Nurse Invite Cards
 
 - [ ] Problem: repeated badges and empty expiration text obscured the primary action.
@@ -4769,16 +4821,16 @@ For each task, add a dated section with:
 
 - Task: Compare the current PL/pgSQL RPC approach with a backend and ORM using Supabase Postgres. No migration selected or implemented.
 - Problem understanding:
-  - [ ] Explain why mixing permissions, workflow rules, locking, and JSON assembly makes large RPCs difficult to maintain.
-  - [ ] Compare smaller RPCs, a hybrid backend, and moving application workflows into a backend.
+  - [x] Human identified PL/pgSQL readability and maintenance as the reason to consider a backend.
 - Solution understanding:
-  - [ ] Distinguish backend business logic, ORM database access, and database integrity constraints.
-  - [ ] Explain why moving code must preserve authorization, transactions, concurrency checks, and retry handling.
+  - [x] Human placed the service layer and database access in the backend; ORM responsibilities were clarified.
+  - [x] Human identified authorization as the required check beyond authentication.
+  - [x] Human predicted conflicting concurrent assignment changes; row locking, transactions, and stale-state checks were explained.
 - Broader context:
-  - [ ] Explain how Supabase Postgres and Auth can remain while workflow logic moves.
-  - [ ] Consider the existing Python optimizer service before adding another backend runtime.
+  - [x] Human recognized that Supabase can remain the database and auth provider while service logic moves.
+  - Architecture options discussed: smaller RPCs, a hybrid backend, or a full API boundary. Runtime choice, retry design, and migration details remain future planning decisions.
 - Verification:
-  - [ ] Human restated understanding first.
-  - [ ] Gaps were explained.
-  - [ ] Walk through what could happen if confirm_manual_assignment_override lost its FOR UPDATE protection during migration.
-- Status: pending
+  - [x] Human restated understanding before the detailed request-flow explanation.
+  - [x] Gaps were explained.
+  - [x] Walked through what could happen if confirm_manual_assignment_override lost its FOR UPDATE protection during migration.
+- Status: verified (introductory architecture discussion only; no implementation or migration approval).
