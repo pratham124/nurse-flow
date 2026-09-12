@@ -4765,3 +4765,20 @@ For each task, add a dated section with:
   - [ ] Signed-in browser flow confirmed: run assignment, return home, and
     resume the assigned shift without an unexpected dialog or setup redirect.
 - Status: pending
+### 2026-09-12 - Supabase RPC and Backend Architecture Discussion
+
+- Task: Compare the current PL/pgSQL RPC approach with a backend and ORM using Supabase Postgres. No migration selected or implemented.
+- Problem understanding:
+  - [ ] Explain why mixing permissions, workflow rules, locking, and JSON assembly makes large RPCs difficult to maintain.
+  - [ ] Compare smaller RPCs, a hybrid backend, and moving application workflows into a backend.
+- Solution understanding:
+  - [ ] Distinguish backend business logic, ORM database access, and database integrity constraints.
+  - [ ] Explain why moving code must preserve authorization, transactions, concurrency checks, and retry handling.
+- Broader context:
+  - [ ] Explain how Supabase Postgres and Auth can remain while workflow logic moves.
+  - [ ] Consider the existing Python optimizer service before adding another backend runtime.
+- Verification:
+  - [ ] Human restated understanding first.
+  - [ ] Gaps were explained.
+  - [ ] Walk through what could happen if confirm_manual_assignment_override lost its FOR UPDATE protection during migration.
+- Status: pending
