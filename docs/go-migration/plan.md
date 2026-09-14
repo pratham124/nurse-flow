@@ -72,16 +72,18 @@ As a signed-in charge nurse, I can see my existing floor-template list through t
 
 ## Ordered implementation tasks
 
+Branch/worktree setup (2026-09-12): `codex/go-migration` created at `C:/Users/psito/Projects/Projects/first-app-go-migration` from `d4ac54f` (`go migration planning`). The original checkout remains on `main`. Git verified both worktrees; no `.env` or `node_modules` was copied. Branch creation and its understanding checkpoint are complete. The separate development configuration was completed in ordered task 3.
+
 - [x] README architecture diagrams: current and planned flows documented; human explained layer responsibilities and the first milestone's retained write path.
 - [x] README scope refinement: removed milestone/process details, added the optimizer's Cloud Run hosting boundary, and documented app environment setup. Migration steps remain in this plan.
 - [x] Preliminary read-only dashboard inspection: inventory saved in `live-schema-review.md`. Schema export/restore is not complete; teaching checkpoint is recorded separately.
 
 Every item below is a separate teaching task. Do not implement multiple items in one turn by default. Before code, explain the purpose and design; after code, verify behavior and ask the human to restate their understanding before filling gaps.
 
-- [ ] 0. Review this consolidated plan and complete the architecture understanding checkpoint. Confirm shared understanding before implementation.
-- [ ] 1. Establish isolation: preserve current work, create the migration branch/worktree from the agreed current baseline, and document separate environment targets. Do not copy existing live credentials into the development setup.
-- [ ] 2. Establish the database baseline: inspect existing schema, functions, triggers, grants, and RLS; capture a reproducible starting point and document required Auth/project settings. Review before applying it anywhere.
-- [ ] 3. Prepare the separate development Supabase project: apply the baseline, configure development authentication, create test accounts and synthetic template data, and verify the existing app can use it. Project provisioning/billing or unavailable access requires a concrete user action if needed.
+- [x] 0. Review this consolidated plan and complete the architecture understanding checkpoint. Confirm shared understanding before implementation.
+- [x] 1. Establish isolation: preserve current work, create the migration branch/worktree from the agreed current baseline, and document separate environment targets. Do not copy existing live credentials into the development setup.
+- [x] 2. Establish the database baseline: inspect existing schema, functions, triggers, grants, and RLS; capture a reproducible starting point and document required Auth/project settings. Review before applying it anywhere.
+- [x] 3. Prepare the separate development Supabase project: apply the baseline, configure development authentication, create test accounts and synthetic template data, and verify the existing app can use it. Project provisioning/billing or unavailable access requires a concrete user action if needed.
 - [ ] 4. Set up Go: inspect/install an appropriate supported toolchain as needed, create one backend module, and explain packages, imports, structs, and explicit error handling using only what the next task needs.
 - [ ] 5. Implement a local health endpoint: introduce `net/http`, a handler, server configuration, and a small meaningful handler test. No database dependency in the liveness response.
 - [ ] 6. Connect to development Postgres: configure GORM, explicit existing-table mappings, connection lifecycle/timeouts, and the dedicated database role. Verify its RLS/grant behavior and avoid automatic schema changes.
@@ -124,3 +126,52 @@ An ORM transaction alone does not solve every race. Preserve the current locking
 - [GORM locking](https://gorm.io/docs/advanced_query.html)
 - [Supabase JWTs](https://supabase.com/docs/guides/auth/jwts)
 - [Supabase environment management](https://supabase.com/docs/guides/deployment/managing-environments)
+
+
+### Database baseline capture progress (2026-09-12)
+
+- [x] Read-only capture saved under `supabase/baseline`: 29 function definitions and 269 structural metadata rows, with reproducible catalog queries and file hashes.
+- [x] Capture integrity checked: JSON parsing, object counts, complete function definitions, and targeted credential-pattern scan.
+- [x] Capture understanding checkpoint: human explained why non-table objects preserve functionality and correctly predicted the conditional trigger behavior.
+- [x] Completed Auth/project settings review, restore preparation, and isolated restore validation; ordered task 2 is complete.
+
+
+### Restore preparation progress
+
+- [x] Recorded observed provider, redirect, email, and session settings in `auth-and-restore-preparation.md`; unverified settings are listed explicitly.
+- [x] Prepared `supabase/baseline/export-public-schema.ps1`, using a terminal password prompt and a schema-only public export with grants.
+- [x] User exported `public-schema-20260912-215152.sql` using the terminal password prompt.
+- [x] Reviewed the dump and external dependencies, finished configuration review, and validated the isolated restore.
+
+
+### 2026-09-13 - Dump review
+
+- [x] Static dump review complete; all 29 function bodies match the catalog capture, and table/policy/trigger/index counts agree. See `supabase/baseline/dump-review.md`.
+- [x] Recorded required restore adjustments and prepared read-only destination inspection SQL.
+- [x] Dump-review understanding checkpoint: human correctly chose to omit duplicate schema creation and explained how permissions affect access to functionality.
+- [x] Inspected the development destination, produced and applied its adapted restore, and validated schema, permissions, and synthetic-user behavior.
+
+
+### 2026-09-13 - Development destination inspection
+
+- [x] User created `nurseflow-go-dev` (`nmitctyxtjmlakcsmnuj`) in East US.
+- [x] Read-only inspection verified empty public schema, PostgreSQL 17.6, required managed dependencies, and matching default privileges.
+- [x] Prepared `supabase/baseline/restore-development.draft.sql` with documented schema/managed-role adjustments, exact client ACL reconciliation, and app Realtime additions.
+- [x] Applied the prepared restore to development and compared schema/ACLs with source; see `supabase/baseline/development-verification`.
+- [x] Completed app behavior validation with synthetic accounts.
+- [x] Development isolation/restore preparation checkpoint: human explained .env targeting, unintended grants, and the nonempty-schema stop condition.
+- [x] Restore execution/validation and Auth/app configuration.
+
+
+### 2026-09-13 - Development restore applied
+
+- [x] Applied the prepared baseline to `nmitctyxtjmlakcsmnuj` in one transaction.
+- [x] Verified 29 functions, 11 tables, 27 indexes, seven triggers, 22 policies, exact object ACLs, and app publication membership against source; two equivalent check-expression grouping differences documented.
+- [x] Confirmed all application tables are empty; no production records copied.
+- [x] Restore-result understanding checkpoint: human distinguished restored structure/behavior from application data and explained the rerun preflight outcome.
+- [x] Compared the development Auth settings needed by the current app with production. At the human's request, email confirmation was disabled in development to match current behavior and avoid the built-in provider's email limit during fixture setup.
+- [x] Added a Git-ignored Expo `.env` for the development project only; left the production-connected optimizer URL unset during isolated validation.
+- [x] Created and verified three development Auth/profile fixtures: two charge nurses for authorized/ownership-isolation checks and one regular nurse for forbidden-role checks. Credentials are not committed.
+- [x] Created `Migration Test Floor` as Charge Alpha and verified its two-room/three-bed/two-side snapshot in Postgres.
+- [x] Existing-app behavior checks passed: Alpha sees the template, Beta sees the empty state, and Regular Nurse is rejected from the charge workspace.
+- [x] Completed the development-environment understanding checkpoint; ordered task 3 is complete.

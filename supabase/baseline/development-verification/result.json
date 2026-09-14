@@ -1,0 +1,30 @@
+{
+  "project": "nmitctyxtjmlakcsmnuj",
+  "project_name": "nurseflow-go-dev",
+  "date": "2026-09-13",
+  "applied_file": "restore-development.draft.sql",
+  "applied_sha256": "11516e1805cb2ef0dd8c9bd700aea482380ee673b08ea7582473f46f9061a8bf",
+  "schema_verified": true,
+  "app_behavior_verified": false,
+  "application_tables": 11,
+  "application_row_counts": {
+    "active_shifts": 0,
+    "device_push_tokens": 0,
+    "floor_templates": 0,
+    "manual_assignment_overrides": 0,
+    "notification_events": 0,
+    "nurse_request_messages": 0,
+    "optimizer_runs": 0,
+    "previous_shift_snapshots": 0,
+    "profiles": 0,
+    "shift_nurse_access": 0,
+    "shift_nurse_invites": 0
+  },
+  "function_differences": 0,
+  "constraint_formatting_differences": 2,
+  "file_sha256": {
+    "catalog.json": "7e3b4fac52a16796c64b05762f4f2b989ff2f87dc558b9bbe5a2b3f22167a970",
+    "comparison.json": "69f6a5e6f3aa44472604e3a24e8ee94c72611fc20899bf2c6529c07f41750d62",
+    "functions.json": "86012ebf897f71f1b17e08366fc5ac26a9e644109d3b09092eb90754b34a7c83"
+  }
+}

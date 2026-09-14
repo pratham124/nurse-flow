@@ -1,0 +1,36 @@
+{
+  "source_project": "mkljczezkyqtuplzedpj",
+  "catalog_captured_at_utc": "2026-09-13T04:20:22.242111+00:00",
+  "format": "catalog-review-capture",
+  "restore_verified": false,
+  "counts": {
+    "functions": 29,
+    "catalog_rows": 269,
+    "public_tables": 11,
+    "columns": 108,
+    "constraints": 65,
+    "indexes": 27,
+    "application_triggers": 7,
+    "public_policies": 21,
+    "realtime_policies": 1
+  },
+  "sha256": {
+    "capture-catalog.sql": "370dbade819d2419d41ed59947a1c3e4b62a07442d7b1fba61ba48bb2ebd48ff",
+    "capture-functions.sql": "b70764b96eeee9cb2913b28febe04afc7c683fae6a698917faa76882c4e20414",
+    "catalog.json": "ad5eeada2e0eea6a64597ad4adca5b8174f55a25634d9e949b0aeab32f761f12",
+    "functions.json": "49bf3d2ae139e1c77a7bc3d5e267ad65464af000bbebdffa834a387bd3b298a8",
+    "functions.sql": "8b8d981e51918085407e9700b77e86d67551fa224bc610fb3f2a747857269e59",
+    "README.md": "8cf540fe37058115deb0be6830e803fbe0ae74c1b3a5059516f981a896961141",
+    "public-schema-20260912-215152.sql": "633484105847439713f2c96099cd1f1035d07c13a78ce351e79973088d32457f",
+    "restore-development.draft.sql": "11516e1805cb2ef0dd8c9bd700aea482380ee673b08ea7582473f46f9061a8bf"
+  },
+  "dump_review": {
+    "date": "2026-09-13",
+    "function_bodies_match": 29,
+    "restore_verified": false,
+    "report": "dump-review.md"
+  },
+  "schema_restore_verified": true,
+  "restore_status": "Development schema verified; Auth configuration and app behavior verification pending.",
+  "development_project": "nmitctyxtjmlakcsmnuj"
+}

@@ -1,0 +1,210 @@
+{
+  "project": "nmitctyxtjmlakcsmnuj",
+  "name": "nurseflow-go-dev",
+  "inspection": {
+    "role": "postgres",
+    "schemas": [
+      {
+        "acl": [
+          "supabase_admin=UC/supabase_admin",
+          "postgres=U*/supabase_admin",
+          "anon=U/supabase_admin",
+          "service_role=U/supabase_admin",
+          "supabase_realtime_admin=U*C*/supabase_admin",
+          "authenticated=U/supabase_admin"
+        ],
+        "name": "realtime",
+        "owner": "supabase_admin"
+      },
+      {
+        "acl": [
+          "pg_database_owner=UC/pg_database_owner",
+          "=U/pg_database_owner",
+          "postgres=U/pg_database_owner",
+          "anon=U/pg_database_owner",
+          "authenticated=U/pg_database_owner",
+          "service_role=U/pg_database_owner"
+        ],
+        "name": "public",
+        "owner": "pg_database_owner"
+      },
+      {
+        "acl": [
+          "postgres=UC/postgres",
+          "anon=U/postgres",
+          "authenticated=U/postgres",
+          "service_role=U/postgres",
+          "dashboard_user=UC/postgres"
+        ],
+        "name": "extensions",
+        "owner": "postgres"
+      },
+      {
+        "acl": [
+          "supabase_admin=UC/supabase_admin",
+          "anon=U/supabase_admin",
+          "authenticated=U/supabase_admin",
+          "service_role=U/supabase_admin",
+          "supabase_auth_admin=UC/supabase_admin",
+          "dashboard_user=UC/supabase_admin",
+          "postgres=U/supabase_admin"
+        ],
+        "name": "auth",
+        "owner": "supabase_admin"
+      }
+    ],
+    "version": "17.6",
+    "defaults": [
+      {
+        "acl": [
+          "postgres=arwdDxtm/postgres",
+          "anon=arwdDxtm/postgres",
+          "authenticated=arwdDxtm/postgres",
+          "service_role=arwdDxtm/postgres"
+        ],
+        "type": "r",
+        "owner": "postgres",
+        "schema": "public"
+      },
+      {
+        "acl": [
+          "postgres=X/postgres",
+          "anon=X/postgres",
+          "authenticated=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "type": "f",
+        "owner": "postgres",
+        "schema": "public"
+      },
+      {
+        "acl": [
+          "postgres=rwU/postgres",
+          "anon=rwU/postgres",
+          "authenticated=rwU/postgres",
+          "service_role=rwU/postgres"
+        ],
+        "type": "S",
+        "owner": "postgres",
+        "schema": "public"
+      },
+      {
+        "acl": [
+          "postgres=rwU/supabase_admin",
+          "anon=rwU/supabase_admin",
+          "authenticated=rwU/supabase_admin",
+          "service_role=rwU/supabase_admin"
+        ],
+        "type": "S",
+        "owner": "supabase_admin",
+        "schema": "public"
+      },
+      {
+        "acl": [
+          "postgres=arwdDxtm/supabase_admin",
+          "anon=arwdDxtm/supabase_admin",
+          "authenticated=arwdDxtm/supabase_admin",
+          "service_role=arwdDxtm/supabase_admin"
+        ],
+        "type": "r",
+        "owner": "supabase_admin",
+        "schema": "public"
+      },
+      {
+        "acl": [
+          "postgres=X/supabase_admin",
+          "anon=X/supabase_admin",
+          "authenticated=X/supabase_admin",
+          "service_role=X/supabase_admin"
+        ],
+        "type": "f",
+        "owner": "supabase_admin",
+        "schema": "public"
+      }
+    ],
+    "policies": [],
+    "functions": [
+      {
+        "args": "text, text",
+        "name": "digest",
+        "owner": "postgres",
+        "schema": "extensions"
+      },
+      {
+        "args": "bytea, text",
+        "name": "digest",
+        "owner": "postgres",
+        "schema": "extensions"
+      },
+      {
+        "args": "",
+        "name": "uid",
+        "owner": "supabase_auth_admin",
+        "schema": "auth"
+      },
+      {
+        "args": "",
+        "name": "role",
+        "owner": "supabase_auth_admin",
+        "schema": "auth"
+      },
+      {
+        "args": "payload jsonb, event text, topic text, private boolean",
+        "name": "send",
+        "owner": "supabase_realtime_admin",
+        "schema": "realtime"
+      },
+      {
+        "args": "",
+        "name": "topic",
+        "owner": "supabase_realtime_admin",
+        "schema": "realtime"
+      }
+    ],
+    "relations": [],
+    "auth_users": "auth.users",
+    "extensions": [
+      {
+        "name": "plpgsql",
+        "schema": "pg_catalog",
+        "version": "1.0"
+      },
+      {
+        "name": "pg_stat_statements",
+        "schema": "extensions",
+        "version": "1.11"
+      },
+      {
+        "name": "uuid-ossp",
+        "schema": "extensions",
+        "version": "1.1"
+      },
+      {
+        "name": "pgcrypto",
+        "schema": "extensions",
+        "version": "1.3"
+      },
+      {
+        "name": "supabase_vault",
+        "schema": "vault",
+        "version": "0.3.1"
+      }
+    ],
+    "publications": [
+      {
+        "oid": "16430",
+        "pubname": "supabase_realtime",
+        "pubowner": "16388",
+        "pubdelete": true,
+        "pubinsert": true,
+        "pubupdate": true,
+        "pubviaroot": false,
+        "pubtruncate": true,
+        "puballtables": false
+      }
+    ],
+    "realtime_messages": "realtime.messages",
+    "publication_tables": []
+  },
+  "query": "BEGIN READ ONLY;\nSELECT jsonb_build_object(\n 'role',current_user,'version',current_setting('server_version'),\n 'relations',(SELECT coalesce(jsonb_agg(jsonb_build_object('name',c.relname,'kind',c.relkind,'owner',pg_get_userbyid(c.relowner))),'[]') FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind IN ('r','p','v','m','S','f')),\n 'functions',(SELECT coalesce(jsonb_agg(jsonb_build_object('schema',n.nspname,'name',p.proname,'args',pg_get_function_identity_arguments(p.oid),'owner',pg_get_userbyid(p.proowner))),'[]') FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' OR (n.nspname='auth' AND p.proname IN ('uid','role')) OR (n.nspname='extensions' AND p.proname='digest') OR (n.nspname='realtime' AND p.proname IN ('send','topic'))),\n 'auth_users',to_regclass('auth.users'),'realtime_messages',to_regclass('realtime.messages'),\n 'defaults',(SELECT coalesce(jsonb_agg(jsonb_build_object('owner',pg_get_userbyid(d.defaclrole),'schema',n.nspname,'type',d.defaclobjtype,'acl',d.defaclacl)),'[]') FROM pg_default_acl d LEFT JOIN pg_namespace n ON n.oid=d.defaclnamespace WHERE d.defaclnamespace=0 OR n.nspname='public'),\n 'schemas',(SELECT jsonb_agg(jsonb_build_object('name',nspname,'owner',pg_get_userbyid(nspowner),'acl',nspacl)) FROM pg_namespace WHERE nspname IN ('public','auth','realtime','extensions')),\n 'extensions',(SELECT jsonb_agg(jsonb_build_object('name',extname,'version',extversion,'schema',extnamespace::regnamespace)) FROM pg_extension),\n 'policies',(SELECT coalesce(jsonb_agg(to_jsonb(p)),'[]') FROM pg_policies p WHERE schemaname IN ('public','realtime')),\n 'publications',(SELECT coalesce(jsonb_agg(to_jsonb(p)),'[]') FROM pg_publication p),\n 'publication_tables',(SELECT coalesce(jsonb_agg(to_jsonb(p)),'[]') FROM pg_publication_tables p)\n) AS inspection;\nCOMMIT;"
+}

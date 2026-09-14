@@ -40,6 +40,24 @@ For each task, add a dated section with:
 
 ## Running Items
 
+### 2026-09-12 - Create Go Migration Worktree
+
+- Task: Create codex/go-migration in a sibling worktree from committed baseline d4ac54f.
+- Problem understanding:
+  - [x] Human correctly predicted that editing the migration checkout does not change the original checkout.
+- Solution understanding:
+  - Context explained: worktrees have separate checked-out files and branches but share Git history.
+  - [x] Human answered no: editing README.md in first-app-go-migration does not edit README.md in first-app.
+- Broader context:
+  - Separate database/environment setup remains the next task; branch creation did not create a Supabase project or copy .env.
+- Verification:
+  - [x] git worktree list confirms original main and new codex/go-migration at d4ac54f.
+  - [x] Both checkouts were clean immediately after creation; original checkout remains unchanged.
+  - [x] New checkout has neither .env nor node_modules.
+  - [x] Human completed the file-isolation prediction question.
+- Status: verified for branch/worktree creation. No app code, dependencies, or database configuration changed.
+
+
 ### 2026-09-12 - README Architecture Diagrams
 
 - Task: Add Mermaid diagrams for current Supabase/RPC architecture and planned Go application-data architecture to README.md.
@@ -1529,7 +1547,7 @@ For each task, add a dated section with:
   - [x] Max patient load should NOT carry over because staffing limits change between shifts.
 - Solution understanding:
   - [x] `src/screens/CarryOverReviewScreen.tsx` tracks review decisions in local `useState` as a `Record<suggestionId, NurseReviewEntry>`.
-  - [x] Accept, dismiss, and undo only change local component state — no shift mutation happens until Continue.
+  - [x] Accept, dismiss, and undo only change local component state â€” no shift mutation happens until Continue.
   - [x] `handleContinue` collects all accepted suggestions and adds them to `activeShift.nurses` in one `setLocalState` call, with `maxPatientLoad` defaulting to `sideLoadLimits.admitting.max`.
   - [x] Duplicate prevention checks name + licenseType + experienceLevel before adding.
   - [x] `SuggestionStatusBadge` now takes a `variant` prop for accepted (green), dismissed (gray), and pending (amber) styles.
@@ -2718,7 +2736,7 @@ For each task, add a dated section with:
   - [x] `activeAssignmentOverridesByBedId` exposes only current active overrides to routine app reads.
   - [x] Effective assignment uses a direct bed-key lookup and falls back to the generated assignment when the dictionary has no entry.
   - [x] A later same-bed move atomically supersedes the previous server row and replaces that bed's active dictionary value.
-  - [x] A completed swap whose override is later superseded remains historical and displays `Completed — assignment later changed`.
+  - [x] A completed swap whose override is later superseded remains historical and displays `Completed â€” assignment later changed`.
 - Broader context:
   - [x] The board and realtime payload stay small while authorized request or audit views can still query history.
   - [x] The generated assignment remains the baseline, and Phase 9 can later replace its generator without changing this boundary.
@@ -4834,3 +4852,119 @@ For each task, add a dated section with:
   - [x] Gaps were explained.
   - [x] Walked through what could happen if confirm_manual_assignment_override lost its FOR UPDATE protection during migration.
 - Status: verified (introductory architecture discussion only; no implementation or migration approval).
+
+
+### 2026-09-12 - Supabase schema catalog capture
+
+- Task: Capture existing database definitions in the migration worktree without exporting application records.
+- Problem understanding:
+  - [x] Human explained that functions, triggers, and policies contain functionality needed beyond table structure.
+- Solution understanding:
+  - [x] Human correctly predicted that updating only `active_shifts.updated_at` does not invoke `enqueue_active_shift_change_notifications`.
+  - Explanation supplied: the trigger listens for `shift_snapshot` updates and requires an actual snapshot difference.
+- Broader context:
+  - [x] Human identified functionality as the reason to preserve these objects; clarified business logic, automatic actions, and access controls as the behavior to retain during migration.
+- Verification:
+  - [x] Both exports parse; function/table/index/trigger counts match the inspected source; artifact hashes recorded.
+  - [x] Human supplied her understanding and completed the read/predict question.
+- Status: verified for the capture rationale and trigger behavior. Restore preparation, validation, and their teaching checkpoint remain separate pending work.
+
+
+### 2026-09-13 - Public schema dump review
+
+- Task: Check the exported schema and identify development restore requirements.
+- [x] Static comparison completed; 29 function bodies and object counts match the earlier capture.
+- [x] Human correctly chose to omit duplicate schema creation and explained that differing permissions change access to functionality.
+- [x] Read/predict: clarified that `CREATE SCHEMA "public";` fails if the schema exists; it does not drop it. Human correctly chose to omit that line and retain the destination schema.
+- [x] Human explained the effect of permissions on access. Review explained that ownership, exact grants, and Realtime objects outside public must also be preserved; their implementation remains pending.
+- Status: verified for dump-review rationale, duplicate schema creation, and permission effects. No restore or production changes performed.
+
+
+### 2026-09-13 - Development project and restore draft
+
+- Task: Inspect nurseflow-go-dev and prepare the destination-specific schema restore.
+- [x] Verified project ref, empty public schema, managed dependencies, and default ACLs through read-only metadata.
+- [x] Human correctly explained that the project URL and key in .env determine the app's Supabase destination.
+- [x] Human correctly predicted that the preflight stops the restore when public already contains tables or functions.
+- [x] Human identified the risk of granting authenticated users unintended access. Clarified that table privileges and RLS both apply: optimizer_runs currently has no client policies, so RLS still blocks rows despite an extra table grant.
+- Status: verified for restore preparation: environment targeting, grant rationale (with RLS clarification), and preflight behavior. Restore execution, runtime validation, and app configuration remain pending.
+
+
+### 2026-09-13 - Development schema restore
+
+- Task: Apply and verify the schema in nurseflow-go-dev.
+- [x] Schema, functions, ACLs, policies, triggers, and app publication membership compared with the source; no application rows copied.
+- [x] Human explained that the restore recreated schema and database behavior, but did not copy production data; development accounts, synthetic data, and app configuration are therefore still needed.
+- [x] Read/predict: human previously predicted that the empty-public-schema preflight stops a rerun after it encounters the restored objects.
+- Status: verified for the isolated schema restore and its safety check. Auth/environment setup and end-to-end app behavior are separate pending tasks.
+
+
+### 2026-09-13 - Development Auth settings comparison
+
+- Task: Compare the development project's Auth settings with the production settings needed by the current app.
+- [x] Email/password sign-in, signup, provider, URL, session, token-expiry, and refresh-token settings inspected without changing either project.
+- [x] The development Site URL, redirect allowlist, session controls, access-token expiry, and refresh-token controls match the observed production values.
+- [x] The material observed difference was email confirmation: initially enabled in development and disabled in production.
+- [x] At the human's request, development email confirmation was disabled to match production and avoid the built-in provider's two-emails-per-hour limit during fixture setup.
+- [x] Human explained that disabling confirmation avoids the email limit and gives up proof that a signup controls the supplied email address.
+- Status: verified. No test user has been created.
+
+
+### 2026-09-13 - Development Expo environment target
+
+- Task: Configure the migration worktree to use the development Supabase project without copying production credentials.
+- [x] Added a Git-ignored `.env` containing the development project URL and publishable key.
+- [x] Verified the URL uses project ref `nmitctyxtjmlakcsmnuj` and Git ignores the file.
+- [x] Left `EXPO_PUBLIC_OPTIMIZER_SERVICE_URL` unset so development validation cannot call the existing production-connected optimizer.
+- [x] Human identified the project URL and publishable key as the Supabase selectors and explained that the optimizer is intentionally excluded from this step.
+- Status: verified. No test user or synthetic application record has been created.
+
+
+### 2026-09-13 - Development Auth fixtures
+
+- Task: Create isolated test identities and matching NurseFlow profiles for authorized, cross-user, and forbidden-role scenarios.
+- [x] Installed the locked Expo dependencies and started the existing web app with the development `.env`.
+- [x] Created two `charge_nurse` identities and one `regular_nurse` identity without sending confirmation emails.
+- [x] Each signup reached the home screen, proving the normal flow created both the Auth identity and its profile.
+- [x] A database join verified the three expected email, display-name, and role combinations.
+- [x] Fixture documentation records identities and roles without committing the password.
+- [x] Human explained that Auth establishes identity while the profile stores app-specific data, identified `loadOrCreateUserProfile`, and predicted that only Charge Alpha may list a template owned by Charge Alpha.
+- Status: verified. Synthetic template data remains separate pending work.
+
+
+### 2026-09-13 - Synthetic template and existing-app validation
+
+- Task: Prove the restored development environment supports the current template workflow and enforces identity, role, and ownership boundaries.
+- [x] Charge Alpha created `Migration Test Floor` through the existing app: rooms `101` and `102`, three beds, and East/West doctor sides.
+- [x] Charge Alpha listed the saved template; Charge Beta listed zero templates.
+- [x] Regular Nurse authenticated but the current app rejected its unsupported profile role before entering the charge workspace.
+- [x] A database query verified one Charge-Alpha-owned template with two rooms, three top-level beds, and two doctor sides.
+- [x] Corrected the initial verification assumption: `FloorTemplate.beds` is a top-level array, not an array nested under each room.
+- [x] Human distinguished successful sign-in from the regular-nurse role rejection and explained why comparing two charge nurses isolates template ownership.
+- [x] Code-specific: human recognized that rooms and beds are separate top-level arrays and, after clarification, used `Bed.roomId` to identify the owning room.
+- Status: verified. Technical validation and the understanding checkpoint are complete.
+
+
+### 2026-09-13 - Supabase Agent Skills setup
+
+- Task: Install Supabase's official Agent Skills for the Go migration workspace.
+- [x] Installed the `supabase` skill at `.agents/skills/supabase` for current Supabase product guidance, verification, and security checks.
+- [x] Installed the `supabase-postgres-best-practices` skill at `.agents/skills/supabase-postgres-best-practices` for schema, SQL, migrations, RLS, indexes, locking, and query work.
+- [x] Used project scope so the migration guidance is versioned with this branch and shared by collaborators working in this repository.
+- [x] Verified the installer added `.agents/skills` plus `skills-lock.json`, which records each skill's source and content hash; application code, package files, and environment credentials were unchanged.
+- [x] Human distinguished broad Supabase guidance from database-specific Postgres guidance and explained that project scope fits because this migration uses Supabase.
+- [x] File-specific: human identified `supabase-postgres-best-practices/SKILL.md` as the skill to load before changing an RLS policy because RLS is database access-control logic.
+- Status: verified. Installation, file verification, and understanding checkpoint are complete.
+
+
+### 2026-09-13 - Go backend module setup
+
+- Task: Establish the smallest compilable Go backend module before adding HTTP or database behavior.
+- [x] Confirmed Go 1.27.1 is installed and is a current supported release.
+- [x] Added the `github.com/pratham124/nurse-flow/backend` module under `backend` with no external dependencies.
+- [x] Added the `cmd/api` executable package and an explicit `main` to `run() error` startup-error boundary.
+- [x] Kept HTTP handlers, server configuration, database code, and placeholder structs out of this setup task.
+- [x] `gofmt`, `go test ./...`, `go vet ./...`, and `go run ./cmd/api` passed.
+- [ ] Human explains the module, package, import, and explicit-error-boundary choices.
+- [ ] Code-specific: human predicts what happens when `run()` returns a non-nil error.
+- Status: pending verification and understanding checkpoint.

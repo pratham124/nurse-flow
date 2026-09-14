@@ -1,0 +1,66 @@
+{
+  "structural": [
+    {
+      "section": "columns",
+      "source": 108,
+      "destination": 108,
+      "differences": []
+    },
+    {
+      "section": "constraints",
+      "source": 65,
+      "destination": 65,
+      "differences": [
+        {
+          "name": "nurse_request_messages.nurse_request_messages_body_check",
+          "field": "definition",
+          "source": "CHECK ((((char_length(body) >= 1) AND (char_length(body) <= 1000)) AND (body = btrim(body))))",
+          "destination": "CHECK (((char_length(body) >= 1) AND (char_length(body) <= 1000) AND (body = btrim(body))))"
+        },
+        {
+          "name": "nurse_request_messages.nurse_request_messages_client_mutation_i",
+          "field": "definition",
+          "source": "CHECK (((client_mutation_id IS NULL) OR (((char_length(client_mutation_id) >= 1) AND (char_length(client_mutation_id) <= 120)) AND (client_mutation_id = btrim(client_mutation_id)))))",
+          "destination": "CHECK (((client_mutation_id IS NULL) OR ((char_length(client_mutation_id) >= 1) AND (char_length(client_mutation_id) <= 120) AND (client_mutation_id = btrim(client_mutation_id)))))"
+        }
+      ]
+    },
+    {
+      "section": "indexes",
+      "source": 27,
+      "destination": 27,
+      "differences": []
+    },
+    {
+      "section": "tables",
+      "source": 12,
+      "destination": 12,
+      "differences": []
+    },
+    {
+      "section": "triggers",
+      "source": 7,
+      "destination": 7,
+      "differences": []
+    },
+    {
+      "section": "policies",
+      "source": 22,
+      "destination": 22,
+      "differences": []
+    },
+    {
+      "section": "sequences",
+      "source": 1,
+      "destination": 1,
+      "differences": []
+    },
+    {
+      "section": "default_privileges",
+      "source": 6,
+      "destination": 6,
+      "differences": []
+    }
+  ],
+  "functionDifferences": []
+}

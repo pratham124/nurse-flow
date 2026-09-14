@@ -146,3 +146,12 @@ The Tables page marks `active_shifts` and `nurse_request_messages` Realtime-enab
 - [Publications](https://supabase.com/dashboard/project/mkljczezkyqtuplzedpj/database/publications)
 - [Migrations](https://supabase.com/dashboard/project/mkljczezkyqtuplzedpj/database/migrations)
 - [Roles](https://supabase.com/dashboard/project/mkljczezkyqtuplzedpj/database/roles)
+
+
+## 2026-09-12 catalog capture follow-up
+
+The full public function definitions and structural metadata are now saved in [the baseline capture](../../supabase/baseline/README.md). This supersedes earlier notes that function bodies, exact trigger conditions, and policy expressions were still unavailable. The capture contains 29 functions and 269 structural metadata rows, including 21 public policies and the scoped Realtime receive policy.
+
+Exact trigger definitions confirm conditional snapshot notification triggers and the non-null swap-request condition; all seven triggers are enabled. The Auth foreign key is `profiles.auth_user_id → auth.users.id ON DELETE CASCADE`.
+
+This remains a review reference, not a tested restore. Auth/project settings, full dependency/privilege review, a conventional dump or reviewed reconstruction, and development restore validation remain pending. No production schema or application records were changed.

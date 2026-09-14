@@ -1,0 +1,3833 @@
+[
+  {
+    "section": "columns",
+    "name": "active_shifts.charge_profile_id",
+    "metadata": {
+      "acl": null,
+      "name": "charge_profile_id",
+      "type": "uuid",
+      "table": "active_shifts",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 2,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "active_shifts.created_at",
+    "metadata": {
+      "acl": null,
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "table": "active_shifts",
+      "comment": null,
+      "default": "now()",
+      "identity": "",
+      "not_null": true,
+      "position": 6,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "active_shifts.ended_at",
+    "metadata": {
+      "acl": null,
+      "name": "ended_at",
+      "type": "timestamp with time zone",
+      "table": "active_shifts",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 8,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "active_shifts.floor_template_id",
+    "metadata": {
+      "acl": null,
+      "name": "floor_template_id",
+      "type": "uuid",
+      "table": "active_shifts",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 3,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "active_shifts.id",
+    "metadata": {
+      "acl": null,
+      "name": "id",
+      "type": "uuid",
+      "table": "active_shifts",
+      "comment": null,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "not_null": true,
+      "position": 1,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "active_shifts.shift_snapshot",
+    "metadata": {
+      "acl": null,
+      "name": "shift_snapshot",
+      "type": "jsonb",
+      "table": "active_shifts",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 5,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "active_shifts.status",
+    "metadata": {
+      "acl": null,
+      "name": "status",
+      "type": "text",
+      "table": "active_shifts",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 4,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "active_shifts.updated_at",
+    "metadata": {
+      "acl": null,
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "table": "active_shifts",
+      "comment": null,
+      "default": "now()",
+      "identity": "",
+      "not_null": true,
+      "position": 7,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "device_push_tokens.created_at",
+    "metadata": {
+      "acl": null,
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "table": "device_push_tokens",
+      "comment": null,
+      "default": "now()",
+      "identity": "",
+      "not_null": true,
+      "position": 8,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "device_push_tokens.device_id",
+    "metadata": {
+      "acl": null,
+      "name": "device_id",
+      "type": "uuid",
+      "table": "device_push_tokens",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 3,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "device_push_tokens.id",
+    "metadata": {
+      "acl": null,
+      "name": "id",
+      "type": "uuid",
+      "table": "device_push_tokens",
+      "comment": null,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "not_null": true,
+      "position": 1,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "device_push_tokens.last_seen_at",
+    "metadata": {
+      "acl": null,
+      "name": "last_seen_at",
+      "type": "timestamp with time zone",
+      "table": "device_push_tokens",
+      "comment": null,
+      "default": "now()",
+      "identity": "",
+      "not_null": true,
+      "position": 10,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "device_push_tokens.permission_status",
+    "metadata": {
+      "acl": null,
+      "name": "permission_status",
+      "type": "text",
+      "table": "device_push_tokens",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 7,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "device_push_tokens.platform",
+    "metadata": {
+      "acl": null,
+      "name": "platform",
+      "type": "text",
+      "table": "device_push_tokens",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 4,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "device_push_tokens.profile_id",
+    "metadata": {
+      "acl": null,
+      "name": "profile_id",
+      "type": "uuid",
+      "table": "device_push_tokens",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 2,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "device_push_tokens.push_token",
+    "metadata": {
+      "acl": null,
+      "name": "push_token",
+      "type": "text",
+      "table": "device_push_tokens",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 5,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "device_push_tokens.status",
+    "metadata": {
+      "acl": null,
+      "name": "status",
+      "type": "text",
+      "table": "device_push_tokens",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 6,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "device_push_tokens.updated_at",
+    "metadata": {
+      "acl": null,
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "table": "device_push_tokens",
+      "comment": null,
+      "default": "now()",
+      "identity": "",
+      "not_null": true,
+      "position": 9,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "floor_templates.created_at",
+    "metadata": {
+      "acl": null,
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "table": "floor_templates",
+      "comment": null,
+      "default": "now()",
+      "identity": "",
+      "not_null": true,
+      "position": 5,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "floor_templates.id",
+    "metadata": {
+      "acl": null,
+      "name": "id",
+      "type": "uuid",
+      "table": "floor_templates",
+      "comment": null,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "not_null": true,
+      "position": 1,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "floor_templates.name",
+    "metadata": {
+      "acl": null,
+      "name": "name",
+      "type": "text",
+      "table": "floor_templates",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 3,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "floor_templates.owner_profile_id",
+    "metadata": {
+      "acl": null,
+      "name": "owner_profile_id",
+      "type": "uuid",
+      "table": "floor_templates",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 2,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "floor_templates.template_snapshot",
+    "metadata": {
+      "acl": null,
+      "name": "template_snapshot",
+      "type": "jsonb",
+      "table": "floor_templates",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 4,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "floor_templates.updated_at",
+    "metadata": {
+      "acl": null,
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "table": "floor_templates",
+      "comment": null,
+      "default": "now()",
+      "identity": "",
+      "not_null": true,
+      "position": 6,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "manual_assignment_overrides.baseline_assignment_result_id",
+    "metadata": {
+      "acl": null,
+      "name": "baseline_assignment_result_id",
+      "type": "text",
+      "table": "manual_assignment_overrides",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 3,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "manual_assignment_overrides.bed_id",
+    "metadata": {
+      "acl": null,
+      "name": "bed_id",
+      "type": "text",
+      "table": "manual_assignment_overrides",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 4,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "manual_assignment_overrides.client_mutation_id",
+    "metadata": {
+      "acl": null,
+      "name": "client_mutation_id",
+      "type": "text",
+      "table": "manual_assignment_overrides",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 14,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "manual_assignment_overrides.created_at",
+    "metadata": {
+      "acl": null,
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "table": "manual_assignment_overrides",
+      "comment": null,
+      "default": "now()",
+      "identity": "",
+      "not_null": true,
+      "position": 8,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "manual_assignment_overrides.created_by_profile_id",
+    "metadata": {
+      "acl": null,
+      "name": "created_by_profile_id",
+      "type": "uuid",
+      "table": "manual_assignment_overrides",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 7,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "manual_assignment_overrides.from_nurse_id",
+    "metadata": {
+      "acl": null,
+      "name": "from_nurse_id",
+      "type": "text",
+      "table": "manual_assignment_overrides",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 5,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "manual_assignment_overrides.id",
+    "metadata": {
+      "acl": null,
+      "name": "id",
+      "type": "uuid",
+      "table": "manual_assignment_overrides",
+      "comment": null,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "not_null": true,
+      "position": 1,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "manual_assignment_overrides.related_swap_request_id",
+    "metadata": {
+      "acl": null,
+      "name": "related_swap_request_id",
+      "type": "text",
+      "table": "manual_assignment_overrides",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 12,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "manual_assignment_overrides.server_sequence",
+    "metadata": {
+      "acl": null,
+      "name": "server_sequence",
+      "type": "bigint",
+      "table": "manual_assignment_overrides",
+      "comment": null,
+      "default": null,
+      "identity": "a",
+      "not_null": true,
+      "position": 11,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "manual_assignment_overrides.shift_id",
+    "metadata": {
+      "acl": null,
+      "name": "shift_id",
+      "type": "uuid",
+      "table": "manual_assignment_overrides",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 2,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "manual_assignment_overrides.status",
+    "metadata": {
+      "acl": null,
+      "name": "status",
+      "type": "text",
+      "table": "manual_assignment_overrides",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 9,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "manual_assignment_overrides.superseded_at",
+    "metadata": {
+      "acl": null,
+      "name": "superseded_at",
+      "type": "timestamp with time zone",
+      "table": "manual_assignment_overrides",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 10,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "manual_assignment_overrides.to_nurse_id",
+    "metadata": {
+      "acl": null,
+      "name": "to_nurse_id",
+      "type": "text",
+      "table": "manual_assignment_overrides",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 6,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "manual_assignment_overrides.warning_acknowledgements",
+    "metadata": {
+      "acl": null,
+      "name": "warning_acknowledgements",
+      "type": "jsonb",
+      "table": "manual_assignment_overrides",
+      "comment": null,
+      "default": "'[]'::jsonb",
+      "identity": "",
+      "not_null": true,
+      "position": 13,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "notification_events.body",
+    "metadata": {
+      "acl": null,
+      "name": "body",
+      "type": "text",
+      "table": "notification_events",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 10,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "notification_events.created_at",
+    "metadata": {
+      "acl": null,
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "table": "notification_events",
+      "comment": null,
+      "default": "now()",
+      "identity": "",
+      "not_null": true,
+      "position": 12,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "notification_events.event_type",
+    "metadata": {
+      "acl": null,
+      "name": "event_type",
+      "type": "text",
+      "table": "notification_events",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 5,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "notification_events.failure_reason",
+    "metadata": {
+      "acl": null,
+      "name": "failure_reason",
+      "type": "text",
+      "table": "notification_events",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 14,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "notification_events.id",
+    "metadata": {
+      "acl": null,
+      "name": "id",
+      "type": "uuid",
+      "table": "notification_events",
+      "comment": null,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "not_null": true,
+      "position": 1,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "notification_events.recipient_access_id",
+    "metadata": {
+      "acl": null,
+      "name": "recipient_access_id",
+      "type": "uuid",
+      "table": "notification_events",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 4,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "notification_events.recipient_profile_id",
+    "metadata": {
+      "acl": null,
+      "name": "recipient_profile_id",
+      "type": "uuid",
+      "table": "notification_events",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 3,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "notification_events.related_bed_id",
+    "metadata": {
+      "acl": null,
+      "name": "related_bed_id",
+      "type": "text",
+      "table": "notification_events",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 8,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "notification_events.related_request_id",
+    "metadata": {
+      "acl": null,
+      "name": "related_request_id",
+      "type": "text",
+      "table": "notification_events",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 7,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "notification_events.sent_at",
+    "metadata": {
+      "acl": null,
+      "name": "sent_at",
+      "type": "timestamp with time zone",
+      "table": "notification_events",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 13,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "notification_events.shift_id",
+    "metadata": {
+      "acl": null,
+      "name": "shift_id",
+      "type": "uuid",
+      "table": "notification_events",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 2,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "notification_events.status",
+    "metadata": {
+      "acl": null,
+      "name": "status",
+      "type": "text",
+      "table": "notification_events",
+      "comment": null,
+      "default": "'pending'::text",
+      "identity": "",
+      "not_null": true,
+      "position": 11,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "notification_events.target_route",
+    "metadata": {
+      "acl": null,
+      "name": "target_route",
+      "type": "text",
+      "table": "notification_events",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 6,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "notification_events.title",
+    "metadata": {
+      "acl": null,
+      "name": "title",
+      "type": "text",
+      "table": "notification_events",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 9,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "nurse_request_messages.author_profile_id",
+    "metadata": {
+      "acl": null,
+      "name": "author_profile_id",
+      "type": "uuid",
+      "table": "nurse_request_messages",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 4,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "nurse_request_messages.body",
+    "metadata": {
+      "acl": null,
+      "name": "body",
+      "type": "text",
+      "table": "nurse_request_messages",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 5,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "nurse_request_messages.client_mutation_id",
+    "metadata": {
+      "acl": null,
+      "name": "client_mutation_id",
+      "type": "text",
+      "table": "nurse_request_messages",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 7,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "nurse_request_messages.created_at",
+    "metadata": {
+      "acl": null,
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "table": "nurse_request_messages",
+      "comment": null,
+      "default": "now()",
+      "identity": "",
+      "not_null": true,
+      "position": 6,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "nurse_request_messages.id",
+    "metadata": {
+      "acl": null,
+      "name": "id",
+      "type": "uuid",
+      "table": "nurse_request_messages",
+      "comment": null,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "not_null": true,
+      "position": 1,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "nurse_request_messages.request_id",
+    "metadata": {
+      "acl": null,
+      "name": "request_id",
+      "type": "text",
+      "table": "nurse_request_messages",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 3,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "nurse_request_messages.shift_id",
+    "metadata": {
+      "acl": null,
+      "name": "shift_id",
+      "type": "uuid",
+      "table": "nurse_request_messages",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 2,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "optimizer_runs.client_mutation_id",
+    "metadata": {
+      "acl": null,
+      "name": "client_mutation_id",
+      "type": "text",
+      "table": "optimizer_runs",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 4,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "optimizer_runs.completed_at",
+    "metadata": {
+      "acl": null,
+      "name": "completed_at",
+      "type": "timestamp with time zone",
+      "table": "optimizer_runs",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 14,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "optimizer_runs.created_at",
+    "metadata": {
+      "acl": null,
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "table": "optimizer_runs",
+      "comment": null,
+      "default": "now()",
+      "identity": "",
+      "not_null": true,
+      "position": 16,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "optimizer_runs.duration_ms",
+    "metadata": {
+      "acl": null,
+      "name": "duration_ms",
+      "type": "integer",
+      "table": "optimizer_runs",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 15,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "optimizer_runs.expected_baseline_assignment_result_id",
+    "metadata": {
+      "acl": null,
+      "name": "expected_baseline_assignment_result_id",
+      "type": "text",
+      "table": "optimizer_runs",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 6,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "optimizer_runs.expected_shift_revision",
+    "metadata": {
+      "acl": null,
+      "name": "expected_shift_revision",
+      "type": "timestamp with time zone",
+      "table": "optimizer_runs",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 5,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "optimizer_runs.id",
+    "metadata": {
+      "acl": null,
+      "name": "id",
+      "type": "uuid",
+      "table": "optimizer_runs",
+      "comment": null,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "not_null": true,
+      "position": 1,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "optimizer_runs.input_fingerprint",
+    "metadata": {
+      "acl": null,
+      "name": "input_fingerprint",
+      "type": "text",
+      "table": "optimizer_runs",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 8,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "optimizer_runs.optimizer_version",
+    "metadata": {
+      "acl": null,
+      "name": "optimizer_version",
+      "type": "text",
+      "table": "optimizer_runs",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 9,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "optimizer_runs.outcome_summary",
+    "metadata": {
+      "acl": null,
+      "name": "outcome_summary",
+      "type": "jsonb",
+      "table": "optimizer_runs",
+      "comment": null,
+      "default": "'{}'::jsonb",
+      "identity": "",
+      "not_null": true,
+      "position": 12,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "optimizer_runs.request_fingerprint",
+    "metadata": {
+      "acl": null,
+      "name": "request_fingerprint",
+      "type": "text",
+      "table": "optimizer_runs",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 7,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "optimizer_runs.requested_by_profile_id",
+    "metadata": {
+      "acl": null,
+      "name": "requested_by_profile_id",
+      "type": "uuid",
+      "table": "optimizer_runs",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 3,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "optimizer_runs.result_id",
+    "metadata": {
+      "acl": null,
+      "name": "result_id",
+      "type": "text",
+      "table": "optimizer_runs",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 11,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "optimizer_runs.shift_id",
+    "metadata": {
+      "acl": null,
+      "name": "shift_id",
+      "type": "uuid",
+      "table": "optimizer_runs",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 2,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "optimizer_runs.started_at",
+    "metadata": {
+      "acl": null,
+      "name": "started_at",
+      "type": "timestamp with time zone",
+      "table": "optimizer_runs",
+      "comment": null,
+      "default": "now()",
+      "identity": "",
+      "not_null": true,
+      "position": 13,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "optimizer_runs.status",
+    "metadata": {
+      "acl": null,
+      "name": "status",
+      "type": "text",
+      "table": "optimizer_runs",
+      "comment": null,
+      "default": "'running'::text",
+      "identity": "",
+      "not_null": true,
+      "position": 10,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "previous_shift_snapshots.charge_profile_id",
+    "metadata": {
+      "acl": null,
+      "name": "charge_profile_id",
+      "type": "uuid",
+      "table": "previous_shift_snapshots",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 2,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "previous_shift_snapshots.completed_at",
+    "metadata": {
+      "acl": null,
+      "name": "completed_at",
+      "type": "timestamp with time zone",
+      "table": "previous_shift_snapshots",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 4,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "previous_shift_snapshots.floor_template_id",
+    "metadata": {
+      "acl": null,
+      "name": "floor_template_id",
+      "type": "uuid",
+      "table": "previous_shift_snapshots",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 3,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "previous_shift_snapshots.id",
+    "metadata": {
+      "acl": null,
+      "name": "id",
+      "type": "uuid",
+      "table": "previous_shift_snapshots",
+      "comment": null,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "not_null": true,
+      "position": 1,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "previous_shift_snapshots.nurse_suggestions",
+    "metadata": {
+      "acl": null,
+      "name": "nurse_suggestions",
+      "type": "jsonb",
+      "table": "previous_shift_snapshots",
+      "comment": null,
+      "default": "'[]'::jsonb",
+      "identity": "",
+      "not_null": true,
+      "position": 5,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "previous_shift_snapshots.patient_suggestions",
+    "metadata": {
+      "acl": null,
+      "name": "patient_suggestions",
+      "type": "jsonb",
+      "table": "previous_shift_snapshots",
+      "comment": null,
+      "default": "'[]'::jsonb",
+      "identity": "",
+      "not_null": true,
+      "position": 6,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "profiles.auth_user_id",
+    "metadata": {
+      "acl": null,
+      "name": "auth_user_id",
+      "type": "uuid",
+      "table": "profiles",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 2,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "profiles.created_at",
+    "metadata": {
+      "acl": null,
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "table": "profiles",
+      "comment": null,
+      "default": "now()",
+      "identity": "",
+      "not_null": true,
+      "position": 5,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "profiles.display_name",
+    "metadata": {
+      "acl": null,
+      "name": "display_name",
+      "type": "text",
+      "table": "profiles",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 3,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "profiles.id",
+    "metadata": {
+      "acl": null,
+      "name": "id",
+      "type": "uuid",
+      "table": "profiles",
+      "comment": null,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "not_null": true,
+      "position": 1,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "profiles.role",
+    "metadata": {
+      "acl": null,
+      "name": "role",
+      "type": "text",
+      "table": "profiles",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 4,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "profiles.updated_at",
+    "metadata": {
+      "acl": null,
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "table": "profiles",
+      "comment": null,
+      "default": "now()",
+      "identity": "",
+      "not_null": true,
+      "position": 6,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "shift_nurse_access.created_at",
+    "metadata": {
+      "acl": null,
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "table": "shift_nurse_access",
+      "comment": null,
+      "default": "now()",
+      "identity": "",
+      "not_null": true,
+      "position": 8,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "shift_nurse_access.id",
+    "metadata": {
+      "acl": null,
+      "name": "id",
+      "type": "uuid",
+      "table": "shift_nurse_access",
+      "comment": null,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "not_null": true,
+      "position": 1,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "shift_nurse_access.nurse_email",
+    "metadata": {
+      "acl": null,
+      "name": "nurse_email",
+      "type": "text",
+      "table": "shift_nurse_access",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 6,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "shift_nurse_access.nurse_id",
+    "metadata": {
+      "acl": null,
+      "name": "nurse_id",
+      "type": "text",
+      "table": "shift_nurse_access",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 3,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "shift_nurse_access.nurse_name",
+    "metadata": {
+      "acl": null,
+      "name": "nurse_name",
+      "type": "text",
+      "table": "shift_nurse_access",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 4,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "shift_nurse_access.nurse_profile_id",
+    "metadata": {
+      "acl": null,
+      "name": "nurse_profile_id",
+      "type": "uuid",
+      "table": "shift_nurse_access",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 5,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "shift_nurse_access.shift_id",
+    "metadata": {
+      "acl": null,
+      "name": "shift_id",
+      "type": "uuid",
+      "table": "shift_nurse_access",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 2,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "shift_nurse_access.status",
+    "metadata": {
+      "acl": null,
+      "name": "status",
+      "type": "text",
+      "table": "shift_nurse_access",
+      "comment": null,
+      "default": "'pending_link'::text",
+      "identity": "",
+      "not_null": true,
+      "position": 7,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "shift_nurse_access.updated_at",
+    "metadata": {
+      "acl": null,
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "table": "shift_nurse_access",
+      "comment": null,
+      "default": "now()",
+      "identity": "",
+      "not_null": true,
+      "position": 9,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "shift_nurse_invites.created_at",
+    "metadata": {
+      "acl": null,
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "table": "shift_nurse_invites",
+      "comment": null,
+      "default": "now()",
+      "identity": "",
+      "not_null": true,
+      "position": 7,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "shift_nurse_invites.created_by_profile_id",
+    "metadata": {
+      "acl": null,
+      "name": "created_by_profile_id",
+      "type": "uuid",
+      "table": "shift_nurse_invites",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 4,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "shift_nurse_invites.expires_at",
+    "metadata": {
+      "acl": null,
+      "name": "expires_at",
+      "type": "timestamp with time zone",
+      "table": "shift_nurse_invites",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 8,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "shift_nurse_invites.id",
+    "metadata": {
+      "acl": null,
+      "name": "id",
+      "type": "uuid",
+      "table": "shift_nurse_invites",
+      "comment": null,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "not_null": true,
+      "position": 1,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "shift_nurse_invites.nurse_id",
+    "metadata": {
+      "acl": null,
+      "name": "nurse_id",
+      "type": "text",
+      "table": "shift_nurse_invites",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 3,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "shift_nurse_invites.revoked_at",
+    "metadata": {
+      "acl": null,
+      "name": "revoked_at",
+      "type": "timestamp with time zone",
+      "table": "shift_nurse_invites",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 11,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "shift_nurse_invites.shift_id",
+    "metadata": {
+      "acl": null,
+      "name": "shift_id",
+      "type": "uuid",
+      "table": "shift_nurse_invites",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 2,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "shift_nurse_invites.status",
+    "metadata": {
+      "acl": null,
+      "name": "status",
+      "type": "text",
+      "table": "shift_nurse_invites",
+      "comment": null,
+      "default": "'active'::text",
+      "identity": "",
+      "not_null": true,
+      "position": 6,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "shift_nurse_invites.token_hash",
+    "metadata": {
+      "acl": null,
+      "name": "token_hash",
+      "type": "text",
+      "table": "shift_nurse_invites",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 5,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "shift_nurse_invites.updated_at",
+    "metadata": {
+      "acl": null,
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "table": "shift_nurse_invites",
+      "comment": null,
+      "default": "now()",
+      "identity": "",
+      "not_null": true,
+      "position": 12,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "shift_nurse_invites.used_at",
+    "metadata": {
+      "acl": null,
+      "name": "used_at",
+      "type": "timestamp with time zone",
+      "table": "shift_nurse_invites",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 9,
+      "generated": ""
+    }
+  },
+  {
+    "section": "columns",
+    "name": "shift_nurse_invites.used_by_profile_id",
+    "metadata": {
+      "acl": null,
+      "name": "used_by_profile_id",
+      "type": "uuid",
+      "table": "shift_nurse_invites",
+      "comment": null,
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 10,
+      "generated": ""
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "active_shifts.active_shifts_charge_profile_id_fkey",
+    "metadata": {
+      "name": "active_shifts_charge_profile_id_fkey",
+      "type": "f",
+      "table": "active_shifts",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (charge_profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "active_shifts.active_shifts_floor_template_id_fkey",
+    "metadata": {
+      "name": "active_shifts_floor_template_id_fkey",
+      "type": "f",
+      "table": "active_shifts",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (floor_template_id) REFERENCES floor_templates(id) ON DELETE SET NULL",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "active_shifts.active_shifts_pkey",
+    "metadata": {
+      "name": "active_shifts_pkey",
+      "type": "p",
+      "table": "active_shifts",
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (id)",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "active_shifts.active_shifts_status_check",
+    "metadata": {
+      "name": "active_shifts_status_check",
+      "type": "c",
+      "table": "active_shifts",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK ((status = ANY (ARRAY['setup'::text, 'assigned'::text])))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "device_push_tokens.device_push_tokens_permission_status_check",
+    "metadata": {
+      "name": "device_push_tokens_permission_status_check",
+      "type": "c",
+      "table": "device_push_tokens",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK ((permission_status = ANY (ARRAY['unknown'::text, 'granted'::text, 'denied'::text, 'provisional'::text, 'unavailable'::text])))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "device_push_tokens.device_push_tokens_pkey",
+    "metadata": {
+      "name": "device_push_tokens_pkey",
+      "type": "p",
+      "table": "device_push_tokens",
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (id)",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "device_push_tokens.device_push_tokens_platform_check",
+    "metadata": {
+      "name": "device_push_tokens_platform_check",
+      "type": "c",
+      "table": "device_push_tokens",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK ((platform = ANY (ARRAY['ios'::text, 'android'::text])))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "device_push_tokens.device_push_tokens_profile_id_device_id_key",
+    "metadata": {
+      "name": "device_push_tokens_profile_id_device_id_key",
+      "type": "u",
+      "table": "device_push_tokens",
+      "validated": true,
+      "deferrable": false,
+      "definition": "UNIQUE (profile_id, device_id)",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "device_push_tokens.device_push_tokens_profile_id_fkey",
+    "metadata": {
+      "name": "device_push_tokens_profile_id_fkey",
+      "type": "f",
+      "table": "device_push_tokens",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "device_push_tokens.device_push_tokens_status_check",
+    "metadata": {
+      "name": "device_push_tokens_status_check",
+      "type": "c",
+      "table": "device_push_tokens",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK ((status = ANY (ARRAY['active'::text, 'disabled'::text, 'expired'::text, 'revoked'::text])))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "floor_templates.floor_templates_owner_profile_id_fkey",
+    "metadata": {
+      "name": "floor_templates_owner_profile_id_fkey",
+      "type": "f",
+      "table": "floor_templates",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (owner_profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "floor_templates.floor_templates_pkey",
+    "metadata": {
+      "name": "floor_templates_pkey",
+      "type": "p",
+      "table": "floor_templates",
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (id)",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "manual_assignment_overrides.manual_assignment_overrides_check",
+    "metadata": {
+      "name": "manual_assignment_overrides_check",
+      "type": "c",
+      "table": "manual_assignment_overrides",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK ((from_nurse_id <> to_nurse_id))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "manual_assignment_overrides.manual_assignment_overrides_check1",
+    "metadata": {
+      "name": "manual_assignment_overrides_check1",
+      "type": "c",
+      "table": "manual_assignment_overrides",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK ((((status = 'active'::text) AND (superseded_at IS NULL)) OR ((status = 'superseded'::text) AND (superseded_at IS NOT NULL))))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "manual_assignment_overrides.manual_assignment_overrides_created",
+    "metadata": {
+      "name": "manual_assignment_overrides_created_by_profile_id_fkey",
+      "type": "f",
+      "table": "manual_assignment_overrides",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (created_by_profile_id) REFERENCES profiles(id) ON DELETE RESTRICT",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "manual_assignment_overrides.manual_assignment_overrides_pkey",
+    "metadata": {
+      "name": "manual_assignment_overrides_pkey",
+      "type": "p",
+      "table": "manual_assignment_overrides",
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (id)",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "manual_assignment_overrides.manual_assignment_overrides_shift_i",
+    "metadata": {
+      "name": "manual_assignment_overrides_shift_id_fkey",
+      "type": "f",
+      "table": "manual_assignment_overrides",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (shift_id) REFERENCES active_shifts(id) ON DELETE CASCADE",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "manual_assignment_overrides.manual_assignment_overrides_status_",
+    "metadata": {
+      "name": "manual_assignment_overrides_status_check",
+      "type": "c",
+      "table": "manual_assignment_overrides",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK ((status = ANY (ARRAY['active'::text, 'superseded'::text])))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "manual_assignment_overrides.manual_assignment_overrides_warning",
+    "metadata": {
+      "name": "manual_assignment_overrides_warning_acknowledgements_check",
+      "type": "c",
+      "table": "manual_assignment_overrides",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK ((jsonb_typeof(warning_acknowledgements) = 'array'::text))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "notification_events.notification_events_body_check",
+    "metadata": {
+      "name": "notification_events_body_check",
+      "type": "c",
+      "table": "notification_events",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK (((char_length(TRIM(BOTH FROM body)) >= 1) AND (char_length(TRIM(BOTH FROM body)) <= 180)))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "notification_events.notification_events_check",
+    "metadata": {
+      "name": "notification_events_check",
+      "type": "c",
+      "table": "notification_events",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK (((sent_at IS NULL) OR (status = 'sent'::text)))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "notification_events.notification_events_event_type_check",
+    "metadata": {
+      "name": "notification_events_event_type_check",
+      "type": "c",
+      "table": "notification_events",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK ((event_type = ANY (ARRAY['issue_submitted'::text, 'swap_requested'::text, 'request_message_added'::text, 'request_status_changed'::text, 'assignment_updated'::text, 'admission_added'::text, 'patient_discharged'::text, 'imbalance_detected'::text, 'bed_unassigned'::text])))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "notification_events.notification_events_pkey",
+    "metadata": {
+      "name": "notification_events_pkey",
+      "type": "p",
+      "table": "notification_events",
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (id)",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "notification_events.notification_events_recipient_access_id_fke",
+    "metadata": {
+      "name": "notification_events_recipient_access_id_fkey",
+      "type": "f",
+      "table": "notification_events",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (recipient_access_id) REFERENCES shift_nurse_access(id) ON DELETE SET NULL",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "notification_events.notification_events_recipient_profile_id_fk",
+    "metadata": {
+      "name": "notification_events_recipient_profile_id_fkey",
+      "type": "f",
+      "table": "notification_events",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (recipient_profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "notification_events.notification_events_shift_id_fkey",
+    "metadata": {
+      "name": "notification_events_shift_id_fkey",
+      "type": "f",
+      "table": "notification_events",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (shift_id) REFERENCES active_shifts(id) ON DELETE CASCADE",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "notification_events.notification_events_status_check",
+    "metadata": {
+      "name": "notification_events_status_check",
+      "type": "c",
+      "table": "notification_events",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK ((status = ANY (ARRAY['pending'::text, 'sent'::text, 'failed'::text, 'skipped'::text, 'cancelled'::text])))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "notification_events.notification_events_supported_event_type_ch",
+    "metadata": {
+      "name": "notification_events_supported_event_type_check",
+      "type": "c",
+      "table": "notification_events",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK ((event_type = ANY (ARRAY['issue_submitted'::text, 'swap_requested'::text, 'assignment_updated'::text, 'admission_added'::text, 'patient_discharged'::text, 'imbalance_detected'::text, 'bed_unassigned'::text])))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "notification_events.notification_events_target_route_check",
+    "metadata": {
+      "name": "notification_events_target_route_check",
+      "type": "c",
+      "table": "notification_events",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK ((target_route = ANY (ARRAY['request_detail'::text, 'requests_list'::text, 'joined_nurse_assignment'::text, 'floor_board'::text, 'flags'::text])))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "notification_events.notification_events_title_check",
+    "metadata": {
+      "name": "notification_events_title_check",
+      "type": "c",
+      "table": "notification_events",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK (((char_length(TRIM(BOTH FROM title)) >= 1) AND (char_length(TRIM(BOTH FROM title)) <= 80)))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "nurse_request_messages.nurse_request_messages_author_profile_id",
+    "metadata": {
+      "name": "nurse_request_messages_author_profile_id_fkey",
+      "type": "f",
+      "table": "nurse_request_messages",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (author_profile_id) REFERENCES profiles(id) ON DELETE RESTRICT",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "nurse_request_messages.nurse_request_messages_body_check",
+    "metadata": {
+      "name": "nurse_request_messages_body_check",
+      "type": "c",
+      "table": "nurse_request_messages",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK (((char_length(body) >= 1) AND (char_length(body) <= 1000) AND (body = btrim(body))))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "nurse_request_messages.nurse_request_messages_client_mutation_i",
+    "metadata": {
+      "name": "nurse_request_messages_client_mutation_id_check",
+      "type": "c",
+      "table": "nurse_request_messages",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK (((client_mutation_id IS NULL) OR ((char_length(client_mutation_id) >= 1) AND (char_length(client_mutation_id) <= 120) AND (client_mutation_id = btrim(client_mutation_id)))))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "nurse_request_messages.nurse_request_messages_pkey",
+    "metadata": {
+      "name": "nurse_request_messages_pkey",
+      "type": "p",
+      "table": "nurse_request_messages",
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (id)",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "nurse_request_messages.nurse_request_messages_shift_id_fkey",
+    "metadata": {
+      "name": "nurse_request_messages_shift_id_fkey",
+      "type": "f",
+      "table": "nurse_request_messages",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (shift_id) REFERENCES active_shifts(id) ON DELETE CASCADE",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "optimizer_runs.optimizer_runs_check",
+    "metadata": {
+      "name": "optimizer_runs_check",
+      "type": "c",
+      "table": "optimizer_runs",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK ((((status = 'succeeded'::text) AND (result_id IS NOT NULL)) OR ((status <> 'succeeded'::text) AND (result_id IS NULL))))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "optimizer_runs.optimizer_runs_check1",
+    "metadata": {
+      "name": "optimizer_runs_check1",
+      "type": "c",
+      "table": "optimizer_runs",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK ((((status = 'running'::text) AND (completed_at IS NULL)) OR ((status <> 'running'::text) AND (completed_at IS NOT NULL))))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "optimizer_runs.optimizer_runs_client_mutation_id_check",
+    "metadata": {
+      "name": "optimizer_runs_client_mutation_id_check",
+      "type": "c",
+      "table": "optimizer_runs",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK ((btrim(client_mutation_id) <> ''::text))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "optimizer_runs.optimizer_runs_duration_ms_check",
+    "metadata": {
+      "name": "optimizer_runs_duration_ms_check",
+      "type": "c",
+      "table": "optimizer_runs",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK (((duration_ms IS NULL) OR (duration_ms >= 0)))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "optimizer_runs.optimizer_runs_input_fingerprint_check",
+    "metadata": {
+      "name": "optimizer_runs_input_fingerprint_check",
+      "type": "c",
+      "table": "optimizer_runs",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK (((input_fingerprint IS NULL) OR (btrim(input_fingerprint) <> ''::text)))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "optimizer_runs.optimizer_runs_optimizer_version_check",
+    "metadata": {
+      "name": "optimizer_runs_optimizer_version_check",
+      "type": "c",
+      "table": "optimizer_runs",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK (((optimizer_version IS NULL) OR (btrim(optimizer_version) <> ''::text)))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "optimizer_runs.optimizer_runs_outcome_summary_check",
+    "metadata": {
+      "name": "optimizer_runs_outcome_summary_check",
+      "type": "c",
+      "table": "optimizer_runs",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK ((jsonb_typeof(outcome_summary) = 'object'::text))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "optimizer_runs.optimizer_runs_pkey",
+    "metadata": {
+      "name": "optimizer_runs_pkey",
+      "type": "p",
+      "table": "optimizer_runs",
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (id)",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "optimizer_runs.optimizer_runs_request_fingerprint_check",
+    "metadata": {
+      "name": "optimizer_runs_request_fingerprint_check",
+      "type": "c",
+      "table": "optimizer_runs",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK ((btrim(request_fingerprint) <> ''::text))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "optimizer_runs.optimizer_runs_requested_by_profile_id_fkey",
+    "metadata": {
+      "name": "optimizer_runs_requested_by_profile_id_fkey",
+      "type": "f",
+      "table": "optimizer_runs",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (requested_by_profile_id) REFERENCES profiles(id) ON DELETE RESTRICT",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "optimizer_runs.optimizer_runs_shift_id_fkey",
+    "metadata": {
+      "name": "optimizer_runs_shift_id_fkey",
+      "type": "f",
+      "table": "optimizer_runs",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (shift_id) REFERENCES active_shifts(id) ON DELETE CASCADE",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "optimizer_runs.optimizer_runs_status_check",
+    "metadata": {
+      "name": "optimizer_runs_status_check",
+      "type": "c",
+      "table": "optimizer_runs",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK ((status = ANY (ARRAY['running'::text, 'succeeded'::text, 'failed'::text, 'stale'::text])))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "previous_shift_snapshots.previous_shift_snapshots_charge_profil",
+    "metadata": {
+      "name": "previous_shift_snapshots_charge_profile_id_fkey",
+      "type": "f",
+      "table": "previous_shift_snapshots",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (charge_profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "previous_shift_snapshots.previous_shift_snapshots_floor_templat",
+    "metadata": {
+      "name": "previous_shift_snapshots_floor_template_id_fkey",
+      "type": "f",
+      "table": "previous_shift_snapshots",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (floor_template_id) REFERENCES floor_templates(id) ON DELETE CASCADE",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "previous_shift_snapshots.previous_shift_snapshots_pkey",
+    "metadata": {
+      "name": "previous_shift_snapshots_pkey",
+      "type": "p",
+      "table": "previous_shift_snapshots",
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (id)",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "profiles.profiles_auth_user_id_fkey",
+    "metadata": {
+      "name": "profiles_auth_user_id_fkey",
+      "type": "f",
+      "table": "profiles",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (auth_user_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "profiles.profiles_auth_user_id_key",
+    "metadata": {
+      "name": "profiles_auth_user_id_key",
+      "type": "u",
+      "table": "profiles",
+      "validated": true,
+      "deferrable": false,
+      "definition": "UNIQUE (auth_user_id)",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "profiles.profiles_pkey",
+    "metadata": {
+      "name": "profiles_pkey",
+      "type": "p",
+      "table": "profiles",
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (id)",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "profiles.profiles_role_check",
+    "metadata": {
+      "name": "profiles_role_check",
+      "type": "c",
+      "table": "profiles",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK ((role = ANY (ARRAY['charge_nurse'::text, 'regular_nurse'::text])))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "shift_nurse_access.shift_nurse_access_nurse_profile_id_fkey",
+    "metadata": {
+      "name": "shift_nurse_access_nurse_profile_id_fkey",
+      "type": "f",
+      "table": "shift_nurse_access",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (nurse_profile_id) REFERENCES profiles(id) ON DELETE SET NULL",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "shift_nurse_access.shift_nurse_access_pkey",
+    "metadata": {
+      "name": "shift_nurse_access_pkey",
+      "type": "p",
+      "table": "shift_nurse_access",
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (id)",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "shift_nurse_access.shift_nurse_access_shift_id_fkey",
+    "metadata": {
+      "name": "shift_nurse_access_shift_id_fkey",
+      "type": "f",
+      "table": "shift_nurse_access",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (shift_id) REFERENCES active_shifts(id) ON DELETE CASCADE",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "shift_nurse_access.shift_nurse_access_status_check",
+    "metadata": {
+      "name": "shift_nurse_access_status_check",
+      "type": "c",
+      "table": "shift_nurse_access",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK ((status = ANY (ARRAY['pending_link'::text, 'linked'::text, 'removed'::text])))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "shift_nurse_invites.shift_nurse_invites_check",
+    "metadata": {
+      "name": "shift_nurse_invites_check",
+      "type": "c",
+      "table": "shift_nurse_invites",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK ((expires_at > created_at))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "shift_nurse_invites.shift_nurse_invites_created_by_profile_id_f",
+    "metadata": {
+      "name": "shift_nurse_invites_created_by_profile_id_fkey",
+      "type": "f",
+      "table": "shift_nurse_invites",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (created_by_profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "shift_nurse_invites.shift_nurse_invites_pkey",
+    "metadata": {
+      "name": "shift_nurse_invites_pkey",
+      "type": "p",
+      "table": "shift_nurse_invites",
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (id)",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "shift_nurse_invites.shift_nurse_invites_shift_id_fkey",
+    "metadata": {
+      "name": "shift_nurse_invites_shift_id_fkey",
+      "type": "f",
+      "table": "shift_nurse_invites",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (shift_id) REFERENCES active_shifts(id) ON DELETE CASCADE",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "shift_nurse_invites.shift_nurse_invites_status_check",
+    "metadata": {
+      "name": "shift_nurse_invites_status_check",
+      "type": "c",
+      "table": "shift_nurse_invites",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK ((status = ANY (ARRAY['active'::text, 'used'::text, 'revoked'::text, 'expired'::text])))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "shift_nurse_invites.shift_nurse_invites_token_hash_check",
+    "metadata": {
+      "name": "shift_nurse_invites_token_hash_check",
+      "type": "c",
+      "table": "shift_nurse_invites",
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK ((char_length(token_hash) >= 32))",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "constraints",
+    "name": "shift_nurse_invites.shift_nurse_invites_used_by_profile_id_fkey",
+    "metadata": {
+      "name": "shift_nurse_invites_used_by_profile_id_fkey",
+      "type": "f",
+      "table": "shift_nurse_invites",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (used_by_profile_id) REFERENCES profiles(id) ON DELETE SET NULL",
+      "initially_deferred": false
+    }
+  },
+  {
+    "section": "database",
+    "name": "postgres",
+    "metadata": {
+      "captured_at": "2026-09-13T23:07:29.909812+00:00",
+      "server_version": "17.6"
+    }
+  },
+  {
+    "section": "default_privileges",
+    "name": "postgres.public.S",
+    "metadata": {
+      "acl": [
+        "postgres=rwU/postgres",
+        "anon=rwU/postgres",
+        "authenticated=rwU/postgres",
+        "service_role=rwU/postgres"
+      ],
+      "role": "postgres",
+      "schema": "public",
+      "object_type": "S"
+    }
+  },
+  {
+    "section": "default_privileges",
+    "name": "postgres.public.f",
+    "metadata": {
+      "acl": [
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "role": "postgres",
+      "schema": "public",
+      "object_type": "f"
+    }
+  },
+  {
+    "section": "default_privileges",
+    "name": "postgres.public.r",
+    "metadata": {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "role": "postgres",
+      "schema": "public",
+      "object_type": "r"
+    }
+  },
+  {
+    "section": "default_privileges",
+    "name": "supabase_admin.public.S",
+    "metadata": {
+      "acl": [
+        "postgres=rwU/supabase_admin",
+        "anon=rwU/supabase_admin",
+        "authenticated=rwU/supabase_admin",
+        "service_role=rwU/supabase_admin"
+      ],
+      "role": "supabase_admin",
+      "schema": "public",
+      "object_type": "S"
+    }
+  },
+  {
+    "section": "default_privileges",
+    "name": "supabase_admin.public.f",
+    "metadata": {
+      "acl": [
+        "postgres=X/supabase_admin",
+        "anon=X/supabase_admin",
+        "authenticated=X/supabase_admin",
+        "service_role=X/supabase_admin"
+      ],
+      "role": "supabase_admin",
+      "schema": "public",
+      "object_type": "f"
+    }
+  },
+  {
+    "section": "default_privileges",
+    "name": "supabase_admin.public.r",
+    "metadata": {
+      "acl": [
+        "postgres=arwdDxtm/supabase_admin",
+        "anon=arwdDxtm/supabase_admin",
+        "authenticated=arwdDxtm/supabase_admin",
+        "service_role=arwdDxtm/supabase_admin"
+      ],
+      "role": "supabase_admin",
+      "schema": "public",
+      "object_type": "r"
+    }
+  },
+  {
+    "section": "extensions",
+    "name": "pg_stat_statements",
+    "metadata": {
+      "name": "pg_stat_statements",
+      "schema": "extensions",
+      "version": "1.11",
+      "relocatable": true
+    }
+  },
+  {
+    "section": "extensions",
+    "name": "pgcrypto",
+    "metadata": {
+      "name": "pgcrypto",
+      "schema": "extensions",
+      "version": "1.3",
+      "relocatable": true
+    }
+  },
+  {
+    "section": "extensions",
+    "name": "plpgsql",
+    "metadata": {
+      "name": "plpgsql",
+      "schema": "pg_catalog",
+      "version": "1.0",
+      "relocatable": false
+    }
+  },
+  {
+    "section": "extensions",
+    "name": "supabase_vault",
+    "metadata": {
+      "name": "supabase_vault",
+      "schema": "vault",
+      "version": "0.3.1",
+      "relocatable": false
+    }
+  },
+  {
+    "section": "extensions",
+    "name": "uuid-ossp",
+    "metadata": {
+      "name": "uuid-ossp",
+      "schema": "extensions",
+      "version": "1.1",
+      "relocatable": true
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "active_shifts_pkey",
+    "metadata": {
+      "indexdef": "CREATE UNIQUE INDEX active_shifts_pkey ON public.active_shifts USING btree (id)",
+      "indexname": "active_shifts_pkey",
+      "tablename": "active_shifts",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "device_push_tokens_pkey",
+    "metadata": {
+      "indexdef": "CREATE UNIQUE INDEX device_push_tokens_pkey ON public.device_push_tokens USING btree (id)",
+      "indexname": "device_push_tokens_pkey",
+      "tablename": "device_push_tokens",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "device_push_tokens_profile_id_device_id_key",
+    "metadata": {
+      "indexdef": "CREATE UNIQUE INDEX device_push_tokens_profile_id_device_id_key ON public.device_push_tokens USING btree (profile_id, device_id)",
+      "indexname": "device_push_tokens_profile_id_device_id_key",
+      "tablename": "device_push_tokens",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "floor_templates_pkey",
+    "metadata": {
+      "indexdef": "CREATE UNIQUE INDEX floor_templates_pkey ON public.floor_templates USING btree (id)",
+      "indexname": "floor_templates_pkey",
+      "tablename": "floor_templates",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "manual_assignment_overrides_bed_history",
+    "metadata": {
+      "indexdef": "CREATE INDEX manual_assignment_overrides_bed_history ON public.manual_assignment_overrides USING btree (shift_id, bed_id, server_sequence)",
+      "indexname": "manual_assignment_overrides_bed_history",
+      "tablename": "manual_assignment_overrides",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "manual_assignment_overrides_idempotency",
+    "metadata": {
+      "indexdef": "CREATE UNIQUE INDEX manual_assignment_overrides_idempotency ON public.manual_assignment_overrides USING btree (shift_id, created_by_profile_id, client_mutation_id)",
+      "indexname": "manual_assignment_overrides_idempotency",
+      "tablename": "manual_assignment_overrides",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "manual_assignment_overrides_one_active_bed",
+    "metadata": {
+      "indexdef": "CREATE UNIQUE INDEX manual_assignment_overrides_one_active_bed ON public.manual_assignment_overrides USING btree (shift_id, bed_id) WHERE (status = 'active'::text)",
+      "indexname": "manual_assignment_overrides_one_active_bed",
+      "tablename": "manual_assignment_overrides",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "manual_assignment_overrides_pkey",
+    "metadata": {
+      "indexdef": "CREATE UNIQUE INDEX manual_assignment_overrides_pkey ON public.manual_assignment_overrides USING btree (id)",
+      "indexname": "manual_assignment_overrides_pkey",
+      "tablename": "manual_assignment_overrides",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "manual_assignment_overrides_related_swap",
+    "metadata": {
+      "indexdef": "CREATE INDEX manual_assignment_overrides_related_swap ON public.manual_assignment_overrides USING btree (related_swap_request_id) WHERE (related_swap_request_id IS NOT NULL)",
+      "indexname": "manual_assignment_overrides_related_swap",
+      "tablename": "manual_assignment_overrides",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "notification_events_pending_delivery",
+    "metadata": {
+      "indexdef": "CREATE INDEX notification_events_pending_delivery ON public.notification_events USING btree (created_at) WHERE (status = 'pending'::text)",
+      "indexname": "notification_events_pending_delivery",
+      "tablename": "notification_events",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "notification_events_pkey",
+    "metadata": {
+      "indexdef": "CREATE UNIQUE INDEX notification_events_pkey ON public.notification_events USING btree (id)",
+      "indexname": "notification_events_pkey",
+      "tablename": "notification_events",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "notification_events_recipient_history",
+    "metadata": {
+      "indexdef": "CREATE INDEX notification_events_recipient_history ON public.notification_events USING btree (recipient_profile_id, created_at DESC)",
+      "indexname": "notification_events_recipient_history",
+      "tablename": "notification_events",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "nurse_request_messages_author_mutation_idx",
+    "metadata": {
+      "indexdef": "CREATE UNIQUE INDEX nurse_request_messages_author_mutation_idx ON public.nurse_request_messages USING btree (shift_id, author_profile_id, client_mutation_id) WHERE (client_mutation_id IS NOT NULL)",
+      "indexname": "nurse_request_messages_author_mutation_idx",
+      "tablename": "nurse_request_messages",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "nurse_request_messages_pkey",
+    "metadata": {
+      "indexdef": "CREATE UNIQUE INDEX nurse_request_messages_pkey ON public.nurse_request_messages USING btree (id)",
+      "indexname": "nurse_request_messages_pkey",
+      "tablename": "nurse_request_messages",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "nurse_request_messages_thread_order_idx",
+    "metadata": {
+      "indexdef": "CREATE INDEX nurse_request_messages_thread_order_idx ON public.nurse_request_messages USING btree (shift_id, request_id, created_at, id)",
+      "indexname": "nurse_request_messages_thread_order_idx",
+      "tablename": "nurse_request_messages",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "optimizer_runs_idempotency",
+    "metadata": {
+      "indexdef": "CREATE UNIQUE INDEX optimizer_runs_idempotency ON public.optimizer_runs USING btree (shift_id, requested_by_profile_id, client_mutation_id)",
+      "indexname": "optimizer_runs_idempotency",
+      "tablename": "optimizer_runs",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "optimizer_runs_one_running_initial",
+    "metadata": {
+      "indexdef": "CREATE UNIQUE INDEX optimizer_runs_one_running_initial ON public.optimizer_runs USING btree (shift_id, expected_shift_revision) WHERE ((status = 'running'::text) AND (expected_baseline_assignment_result_id IS NULL))",
+      "indexname": "optimizer_runs_one_running_initial",
+      "tablename": "optimizer_runs",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "optimizer_runs_one_running_rerun",
+    "metadata": {
+      "indexdef": "CREATE UNIQUE INDEX optimizer_runs_one_running_rerun ON public.optimizer_runs USING btree (shift_id, expected_shift_revision, expected_baseline_assignment_result_id) WHERE ((status = 'running'::text) AND (expected_baseline_assignment_result_id IS NOT NULL))",
+      "indexname": "optimizer_runs_one_running_rerun",
+      "tablename": "optimizer_runs",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "optimizer_runs_pkey",
+    "metadata": {
+      "indexdef": "CREATE UNIQUE INDEX optimizer_runs_pkey ON public.optimizer_runs USING btree (id)",
+      "indexname": "optimizer_runs_pkey",
+      "tablename": "optimizer_runs",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "optimizer_runs_shift_history",
+    "metadata": {
+      "indexdef": "CREATE INDEX optimizer_runs_shift_history ON public.optimizer_runs USING btree (shift_id, created_at DESC)",
+      "indexname": "optimizer_runs_shift_history",
+      "tablename": "optimizer_runs",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "optimizer_runs_status_started",
+    "metadata": {
+      "indexdef": "CREATE INDEX optimizer_runs_status_started ON public.optimizer_runs USING btree (status, started_at DESC)",
+      "indexname": "optimizer_runs_status_started",
+      "tablename": "optimizer_runs",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "previous_shift_snapshots_pkey",
+    "metadata": {
+      "indexdef": "CREATE UNIQUE INDEX previous_shift_snapshots_pkey ON public.previous_shift_snapshots USING btree (id)",
+      "indexname": "previous_shift_snapshots_pkey",
+      "tablename": "previous_shift_snapshots",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "profiles_auth_user_id_key",
+    "metadata": {
+      "indexdef": "CREATE UNIQUE INDEX profiles_auth_user_id_key ON public.profiles USING btree (auth_user_id)",
+      "indexname": "profiles_auth_user_id_key",
+      "tablename": "profiles",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "profiles_pkey",
+    "metadata": {
+      "indexdef": "CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id)",
+      "indexname": "profiles_pkey",
+      "tablename": "profiles",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "shift_nurse_access_pkey",
+    "metadata": {
+      "indexdef": "CREATE UNIQUE INDEX shift_nurse_access_pkey ON public.shift_nurse_access USING btree (id)",
+      "indexname": "shift_nurse_access_pkey",
+      "tablename": "shift_nurse_access",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "shift_nurse_invites_one_active_per_nurse",
+    "metadata": {
+      "indexdef": "CREATE UNIQUE INDEX shift_nurse_invites_one_active_per_nurse ON public.shift_nurse_invites USING btree (shift_id, nurse_id) WHERE (status = 'active'::text)",
+      "indexname": "shift_nurse_invites_one_active_per_nurse",
+      "tablename": "shift_nurse_invites",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "indexes",
+    "name": "shift_nurse_invites_pkey",
+    "metadata": {
+      "indexdef": "CREATE UNIQUE INDEX shift_nurse_invites_pkey ON public.shift_nurse_invites USING btree (id)",
+      "indexname": "shift_nurse_invites_pkey",
+      "tablename": "shift_nurse_invites",
+      "schemaname": "public",
+      "tablespace": null
+    }
+  },
+  {
+    "section": "policies",
+    "name": "public.active_shifts.Charge nurses can create their own active ",
+    "metadata": {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "active_shifts",
+      "permissive": "PERMISSIVE",
+      "policyname": "Charge nurses can create their own active shifts",
+      "schemaname": "public",
+      "with_check": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = active_shifts.charge_profile_id) AND (profiles.auth_user_id = auth.uid()) AND (profiles.role = 'charge_nurse'::text))))"
+    }
+  },
+  {
+    "section": "policies",
+    "name": "public.active_shifts.Charge nurses can read their own active sh",
+    "metadata": {
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = active_shifts.charge_profile_id) AND (profiles.auth_user_id = auth.uid()) AND (profiles.role = 'charge_nurse'::text))))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "active_shifts",
+      "permissive": "PERMISSIVE",
+      "policyname": "Charge nurses can read their own active shifts",
+      "schemaname": "public",
+      "with_check": null
+    }
+  },
+  {
+    "section": "policies",
+    "name": "public.active_shifts.Charge nurses can update their own active ",
+    "metadata": {
+      "cmd": "UPDATE",
+      "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = active_shifts.charge_profile_id) AND (profiles.auth_user_id = auth.uid()) AND (profiles.role = 'charge_nurse'::text))))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "active_shifts",
+      "permissive": "PERMISSIVE",
+      "policyname": "Charge nurses can update their own active shifts",
+      "schemaname": "public",
+      "with_check": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = active_shifts.charge_profile_id) AND (profiles.auth_user_id = auth.uid()) AND (profiles.role = 'charge_nurse'::text))))"
+    }
+  },
+  {
+    "section": "policies",
+    "name": "public.floor_templates.Charge nurses can create their own templ",
+    "metadata": {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "floor_templates",
+      "permissive": "PERMISSIVE",
+      "policyname": "Charge nurses can create their own templates",
+      "schemaname": "public",
+      "with_check": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = floor_templates.owner_profile_id) AND (profiles.auth_user_id = auth.uid()) AND (profiles.role = 'charge_nurse'::text))))"
+    }
+  },
+  {
+    "section": "policies",
+    "name": "public.floor_templates.Charge nurses can delete their own templ",
+    "metadata": {
+      "cmd": "DELETE",
+      "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = floor_templates.owner_profile_id) AND (profiles.auth_user_id = auth.uid()) AND (profiles.role = 'charge_nurse'::text))))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "floor_templates",
+      "permissive": "PERMISSIVE",
+      "policyname": "Charge nurses can delete their own templates",
+      "schemaname": "public",
+      "with_check": null
+    }
+  },
+  {
+    "section": "policies",
+    "name": "public.floor_templates.Charge nurses can read their own templat",
+    "metadata": {
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = floor_templates.owner_profile_id) AND (profiles.auth_user_id = auth.uid()) AND (profiles.role = 'charge_nurse'::text))))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "floor_templates",
+      "permissive": "PERMISSIVE",
+      "policyname": "Charge nurses can read their own templates",
+      "schemaname": "public",
+      "with_check": null
+    }
+  },
+  {
+    "section": "policies",
+    "name": "public.floor_templates.Charge nurses can update their own templ",
+    "metadata": {
+      "cmd": "UPDATE",
+      "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = floor_templates.owner_profile_id) AND (profiles.auth_user_id = auth.uid()) AND (profiles.role = 'charge_nurse'::text))))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "floor_templates",
+      "permissive": "PERMISSIVE",
+      "policyname": "Charge nurses can update their own templates",
+      "schemaname": "public",
+      "with_check": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = floor_templates.owner_profile_id) AND (profiles.auth_user_id = auth.uid()) AND (profiles.role = 'charge_nurse'::text))))"
+    }
+  },
+  {
+    "section": "policies",
+    "name": "public.manual_assignment_overrides.Charge nurses can read overr",
+    "metadata": {
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM (active_shifts\n     JOIN profiles ON ((profiles.id = active_shifts.charge_profile_id)))\n  WHERE ((active_shifts.id = manual_assignment_overrides.shift_id) AND (profiles.auth_user_id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'charge_nurse'::text))))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "manual_assignment_overrides",
+      "permissive": "PERMISSIVE",
+      "policyname": "Charge nurses can read override history for their shifts",
+      "schemaname": "public",
+      "with_check": null
+    }
+  },
+  {
+    "section": "policies",
+    "name": "public.nurse_request_messages.Thread participants can read requ",
+    "metadata": {
+      "cmd": "SELECT",
+      "qual": "(get_nurse_request_thread_actor(shift_id, request_id) IS NOT NULL)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "nurse_request_messages",
+      "permissive": "PERMISSIVE",
+      "policyname": "Thread participants can read request messages",
+      "schemaname": "public",
+      "with_check": null
+    }
+  },
+  {
+    "section": "policies",
+    "name": "public.previous_shift_snapshots.Charge nurses can create their ",
+    "metadata": {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "previous_shift_snapshots",
+      "permissive": "PERMISSIVE",
+      "policyname": "Charge nurses can create their own previous snapshots",
+      "schemaname": "public",
+      "with_check": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = previous_shift_snapshots.charge_profile_id) AND (profiles.auth_user_id = auth.uid()) AND (profiles.role = 'charge_nurse'::text))))"
+    }
+  },
+  {
+    "section": "policies",
+    "name": "public.previous_shift_snapshots.Charge nurses can delete their ",
+    "metadata": {
+      "cmd": "DELETE",
+      "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = previous_shift_snapshots.charge_profile_id) AND (profiles.auth_user_id = auth.uid()) AND (profiles.role = 'charge_nurse'::text))))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "previous_shift_snapshots",
+      "permissive": "PERMISSIVE",
+      "policyname": "Charge nurses can delete their own previous snapshots",
+      "schemaname": "public",
+      "with_check": null
+    }
+  },
+  {
+    "section": "policies",
+    "name": "public.previous_shift_snapshots.Charge nurses can read their ow",
+    "metadata": {
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = previous_shift_snapshots.charge_profile_id) AND (profiles.auth_user_id = auth.uid()) AND (profiles.role = 'charge_nurse'::text))))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "previous_shift_snapshots",
+      "permissive": "PERMISSIVE",
+      "policyname": "Charge nurses can read their own previous snapshots",
+      "schemaname": "public",
+      "with_check": null
+    }
+  },
+  {
+    "section": "policies",
+    "name": "public.profiles.Profiles can be created by their owner",
+    "metadata": {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "profiles",
+      "permissive": "PERMISSIVE",
+      "policyname": "Profiles can be created by their owner",
+      "schemaname": "public",
+      "with_check": "(auth.uid() = auth_user_id)"
+    }
+  },
+  {
+    "section": "policies",
+    "name": "public.profiles.Profiles can be read by their owner",
+    "metadata": {
+      "cmd": "SELECT",
+      "qual": "(auth.uid() = auth_user_id)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "profiles",
+      "permissive": "PERMISSIVE",
+      "policyname": "Profiles can be read by their owner",
+      "schemaname": "public",
+      "with_check": null
+    }
+  },
+  {
+    "section": "policies",
+    "name": "public.profiles.Profiles can be updated by their owner",
+    "metadata": {
+      "cmd": "UPDATE",
+      "qual": "(auth.uid() = auth_user_id)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "profiles",
+      "permissive": "PERMISSIVE",
+      "policyname": "Profiles can be updated by their owner",
+      "schemaname": "public",
+      "with_check": "(auth.uid() = auth_user_id)"
+    }
+  },
+  {
+    "section": "policies",
+    "name": "public.shift_nurse_access.Charge nurses can manage access for t",
+    "metadata": {
+      "cmd": "ALL",
+      "qual": "(EXISTS ( SELECT 1\n   FROM (active_shifts\n     JOIN profiles ON ((profiles.id = active_shifts.charge_profile_id)))\n  WHERE ((active_shifts.id = shift_nurse_access.shift_id) AND (profiles.auth_user_id = auth.uid()) AND (profiles.role = 'charge_nurse'::text))))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "shift_nurse_access",
+      "permissive": "PERMISSIVE",
+      "policyname": "Charge nurses can manage access for their own shifts",
+      "schemaname": "public",
+      "with_check": "(EXISTS ( SELECT 1\n   FROM (active_shifts\n     JOIN profiles ON ((profiles.id = active_shifts.charge_profile_id)))\n  WHERE ((active_shifts.id = shift_nurse_access.shift_id) AND (profiles.auth_user_id = auth.uid()) AND (profiles.role = 'charge_nurse'::text))))"
+    }
+  },
+  {
+    "section": "policies",
+    "name": "public.shift_nurse_access.Joined users can read their own acces",
+    "metadata": {
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = shift_nurse_access.nurse_profile_id) AND (profiles.auth_user_id = auth.uid()) AND (profiles.role = 'charge_nurse'::text))))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "shift_nurse_access",
+      "permissive": "PERMISSIVE",
+      "policyname": "Joined users can read their own access row",
+      "schemaname": "public",
+      "with_check": null
+    }
+  },
+  {
+    "section": "policies",
+    "name": "public.shift_nurse_invites.Charge nurses can create invites for",
+    "metadata": {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "shift_nurse_invites",
+      "permissive": "PERMISSIVE",
+      "policyname": "Charge nurses can create invites for their own active shifts",
+      "schemaname": "public",
+      "with_check": "(EXISTS ( SELECT 1\n   FROM (active_shifts\n     JOIN profiles ON ((profiles.id = active_shifts.charge_profile_id)))\n  WHERE ((active_shifts.id = shift_nurse_invites.shift_id) AND (active_shifts.ended_at IS NULL) AND (profiles.id = shift_nurse_invites.created_by_profile_id) AND (profiles.auth_user_id = auth.uid()) AND (profiles.role = 'charge_nurse'::text) AND (EXISTS ( SELECT 1\n           FROM jsonb_array_elements(COALESCE((active_shifts.shift_snapshot -> 'nurses'::text), '[]'::jsonb)) nurse(value)\n          WHERE ((nurse.value ->> 'id'::text) = shift_nurse_invites.nurse_id))))))"
+    }
+  },
+  {
+    "section": "policies",
+    "name": "public.shift_nurse_invites.Charge nurses can delete invites for",
+    "metadata": {
+      "cmd": "DELETE",
+      "qual": "(EXISTS ( SELECT 1\n   FROM (active_shifts\n     JOIN profiles ON ((profiles.id = active_shifts.charge_profile_id)))\n  WHERE ((active_shifts.id = shift_nurse_invites.shift_id) AND (profiles.auth_user_id = auth.uid()) AND (profiles.role = 'charge_nurse'::text))))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "shift_nurse_invites",
+      "permissive": "PERMISSIVE",
+      "policyname": "Charge nurses can delete invites for their own shifts",
+      "schemaname": "public",
+      "with_check": null
+    }
+  },
+  {
+    "section": "policies",
+    "name": "public.shift_nurse_invites.Charge nurses can read invites for t",
+    "metadata": {
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM (active_shifts\n     JOIN profiles ON ((profiles.id = active_shifts.charge_profile_id)))\n  WHERE ((active_shifts.id = shift_nurse_invites.shift_id) AND (profiles.auth_user_id = auth.uid()) AND (profiles.role = 'charge_nurse'::text))))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "shift_nurse_invites",
+      "permissive": "PERMISSIVE",
+      "policyname": "Charge nurses can read invites for their own shifts",
+      "schemaname": "public",
+      "with_check": null
+    }
+  },
+  {
+    "section": "policies",
+    "name": "public.shift_nurse_invites.Charge nurses can update invites for",
+    "metadata": {
+      "cmd": "UPDATE",
+      "qual": "(EXISTS ( SELECT 1\n   FROM (active_shifts\n     JOIN profiles ON ((profiles.id = active_shifts.charge_profile_id)))\n  WHERE ((active_shifts.id = shift_nurse_invites.shift_id) AND (profiles.auth_user_id = auth.uid()) AND (profiles.role = 'charge_nurse'::text))))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "shift_nurse_invites",
+      "permissive": "PERMISSIVE",
+      "policyname": "Charge nurses can update invites for their own shifts",
+      "schemaname": "public",
+      "with_check": "(EXISTS ( SELECT 1\n   FROM (active_shifts\n     JOIN profiles ON ((profiles.id = active_shifts.charge_profile_id)))\n  WHERE ((active_shifts.id = shift_nurse_invites.shift_id) AND (profiles.auth_user_id = auth.uid()) AND (profiles.role = 'charge_nurse'::text))))"
+    }
+  },
+  {
+    "section": "policies",
+    "name": "realtime.messages.NurseFlow users can receive scoped broadcasts",
+    "metadata": {
+      "cmd": "SELECT",
+      "qual": "((extension = 'broadcast'::text) AND can_receive_nurseflow_broadcast(( SELECT realtime.topic() AS topic)))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "messages",
+      "permissive": "PERMISSIVE",
+      "policyname": "NurseFlow users can receive scoped broadcasts",
+      "schemaname": "realtime",
+      "with_check": null
+    }
+  },
+  {
+    "section": "publication_tables",
+    "name": "supabase_realtime.public.active_shifts",
+    "metadata": {
+      "pubname": "supabase_realtime",
+      "attnames": [
+        "id",
+        "charge_profile_id",
+        "floor_template_id",
+        "status",
+        "shift_snapshot",
+        "created_at",
+        "updated_at",
+        "ended_at"
+      ],
+      "rowfilter": null,
+      "tablename": "active_shifts",
+      "schemaname": "public"
+    }
+  },
+  {
+    "section": "publication_tables",
+    "name": "supabase_realtime.public.nurse_request_messages",
+    "metadata": {
+      "pubname": "supabase_realtime",
+      "attnames": [
+        "id",
+        "shift_id",
+        "request_id",
+        "author_profile_id",
+        "body",
+        "created_at",
+        "client_mutation_id"
+      ],
+      "rowfilter": null,
+      "tablename": "nurse_request_messages",
+      "schemaname": "public"
+    }
+  },
+  {
+    "section": "publications",
+    "name": "supabase_realtime",
+    "metadata": {
+      "name": "supabase_realtime",
+      "owner": "postgres",
+      "delete": true,
+      "insert": true,
+      "update": true,
+      "truncate": true,
+      "all_tables": false,
+      "via_partition_root": false
+    }
+  },
+  {
+    "section": "schemas",
+    "name": "auth",
+    "metadata": {
+      "acl": [
+        "supabase_admin=UC/supabase_admin",
+        "anon=U/supabase_admin",
+        "authenticated=U/supabase_admin",
+        "service_role=U/supabase_admin",
+        "supabase_auth_admin=UC/supabase_admin",
+        "dashboard_user=UC/supabase_admin",
+        "postgres=U/supabase_admin"
+      ],
+      "name": "auth",
+      "owner": "supabase_admin"
+    }
+  },
+  {
+    "section": "schemas",
+    "name": "extensions",
+    "metadata": {
+      "acl": [
+        "postgres=UC/postgres",
+        "anon=U/postgres",
+        "authenticated=U/postgres",
+        "service_role=U/postgres",
+        "dashboard_user=UC/postgres"
+      ],
+      "name": "extensions",
+      "owner": "postgres"
+    }
+  },
+  {
+    "section": "schemas",
+    "name": "public",
+    "metadata": {
+      "acl": [
+        "pg_database_owner=UC/pg_database_owner",
+        "=U/pg_database_owner",
+        "postgres=U/pg_database_owner",
+        "anon=U/pg_database_owner",
+        "authenticated=U/pg_database_owner",
+        "service_role=U/pg_database_owner"
+      ],
+      "name": "public",
+      "owner": "pg_database_owner"
+    }
+  },
+  {
+    "section": "schemas",
+    "name": "realtime",
+    "metadata": {
+      "acl": [
+        "supabase_admin=UC/supabase_admin",
+        "postgres=U*/supabase_admin",
+        "anon=U/supabase_admin",
+        "service_role=U/supabase_admin",
+        "supabase_realtime_admin=U*C*/supabase_admin",
+        "authenticated=U/supabase_admin"
+      ],
+      "name": "realtime",
+      "owner": "supabase_admin"
+    }
+  },
+  {
+    "section": "schemas",
+    "name": "storage",
+    "metadata": {
+      "acl": [
+        "supabase_admin=UC/supabase_admin",
+        "postgres=U*/supabase_admin",
+        "anon=U/supabase_admin",
+        "authenticated=U/supabase_admin",
+        "service_role=U/supabase_admin",
+        "supabase_storage_admin=U*C*/supabase_admin",
+        "dashboard_user=UC/supabase_admin"
+      ],
+      "name": "storage",
+      "owner": "supabase_admin"
+    }
+  },
+  {
+    "section": "sequences",
+    "name": "manual_assignment_overrides_server_sequence_seq",
+    "metadata": {
+      "cycle": false,
+      "data_type": "bigint",
+      "max_value": 9223372036854776000,
+      "min_value": 1,
+      "cache_size": 1,
+      "schemaname": "public",
+      "start_value": 1,
+      "increment_by": 1,
+      "sequencename": "manual_assignment_overrides_server_sequence_seq",
+      "sequenceowner": "postgres"
+    }
+  },
+  {
+    "section": "tables",
+    "name": "active_shifts",
+    "metadata": {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "owner": "postgres",
+      "schema": "public",
+      "comment": null,
+      "options": null,
+      "force_rls": false,
+      "replica_identity": "d"
+    }
+  },
+  {
+    "section": "tables",
+    "name": "device_push_tokens",
+    "metadata": {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "owner": "postgres",
+      "schema": "public",
+      "comment": null,
+      "options": null,
+      "force_rls": false,
+      "replica_identity": "d"
+    }
+  },
+  {
+    "section": "tables",
+    "name": "floor_templates",
+    "metadata": {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "owner": "postgres",
+      "schema": "public",
+      "comment": null,
+      "options": null,
+      "force_rls": false,
+      "replica_identity": "d"
+    }
+  },
+  {
+    "section": "tables",
+    "name": "manual_assignment_overrides",
+    "metadata": {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres",
+        "authenticated=r/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "owner": "postgres",
+      "schema": "public",
+      "comment": null,
+      "options": null,
+      "force_rls": false,
+      "replica_identity": "d"
+    }
+  },
+  {
+    "section": "tables",
+    "name": "manual_assignment_overrides_server_sequence_seq",
+    "metadata": {
+      "acl": [
+        "postgres=rwU/postgres",
+        "anon=rwU/postgres",
+        "authenticated=rwU/postgres",
+        "service_role=rwU/postgres"
+      ],
+      "rls": false,
+      "kind": "S",
+      "owner": "postgres",
+      "schema": "public",
+      "comment": null,
+      "options": null,
+      "force_rls": false,
+      "replica_identity": "n"
+    }
+  },
+  {
+    "section": "tables",
+    "name": "notification_events",
+    "metadata": {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "owner": "postgres",
+      "schema": "public",
+      "comment": null,
+      "options": null,
+      "force_rls": false,
+      "replica_identity": "d"
+    }
+  },
+  {
+    "section": "tables",
+    "name": "nurse_request_messages",
+    "metadata": {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres",
+        "authenticated=r/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "owner": "postgres",
+      "schema": "public",
+      "comment": null,
+      "options": null,
+      "force_rls": false,
+      "replica_identity": "d"
+    }
+  },
+  {
+    "section": "tables",
+    "name": "optimizer_runs",
+    "metadata": {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "owner": "postgres",
+      "schema": "public",
+      "comment": null,
+      "options": null,
+      "force_rls": false,
+      "replica_identity": "d"
+    }
+  },
+  {
+    "section": "tables",
+    "name": "previous_shift_snapshots",
+    "metadata": {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "owner": "postgres",
+      "schema": "public",
+      "comment": null,
+      "options": null,
+      "force_rls": false,
+      "replica_identity": "d"
+    }
+  },
+  {
+    "section": "tables",
+    "name": "profiles",
+    "metadata": {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "owner": "postgres",
+      "schema": "public",
+      "comment": null,
+      "options": null,
+      "force_rls": false,
+      "replica_identity": "d"
+    }
+  },
+  {
+    "section": "tables",
+    "name": "shift_nurse_access",
+    "metadata": {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "owner": "postgres",
+      "schema": "public",
+      "comment": null,
+      "options": null,
+      "force_rls": false,
+      "replica_identity": "d"
+    }
+  },
+  {
+    "section": "tables",
+    "name": "shift_nurse_invites",
+    "metadata": {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "owner": "postgres",
+      "schema": "public",
+      "comment": null,
+      "options": null,
+      "force_rls": false,
+      "replica_identity": "d"
+    }
+  },
+  {
+    "section": "triggers",
+    "name": "public.active_shifts.broadcast_nurseflow_active_shift_change",
+    "metadata": {
+      "name": "broadcast_nurseflow_active_shift_change",
+      "table": "active_shifts",
+      "schema": "public",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER broadcast_nurseflow_active_shift_change AFTER UPDATE ON public.active_shifts FOR EACH ROW EXECUTE FUNCTION broadcast_nurseflow_active_shift_change()"
+    }
+  },
+  {
+    "section": "triggers",
+    "name": "public.active_shifts.enqueue_active_shift_change_notifications",
+    "metadata": {
+      "name": "enqueue_active_shift_change_notifications",
+      "table": "active_shifts",
+      "schema": "public",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER enqueue_active_shift_change_notifications AFTER UPDATE OF shift_snapshot ON public.active_shifts FOR EACH ROW WHEN ((old.shift_snapshot IS DISTINCT FROM new.shift_snapshot)) EXECUTE FUNCTION enqueue_active_shift_change_notifications()"
+    }
+  },
+  {
+    "section": "triggers",
+    "name": "public.active_shifts.enqueue_request_lifecycle_notifications",
+    "metadata": {
+      "name": "enqueue_request_lifecycle_notifications",
+      "table": "active_shifts",
+      "schema": "public",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER enqueue_request_lifecycle_notifications AFTER UPDATE OF shift_snapshot ON public.active_shifts FOR EACH ROW WHEN ((old.shift_snapshot IS DISTINCT FROM new.shift_snapshot)) EXECUTE FUNCTION enqueue_request_lifecycle_notifications()"
+    }
+  },
+  {
+    "section": "triggers",
+    "name": "public.manual_assignment_overrides.complete_swap_request_from_o",
+    "metadata": {
+      "name": "complete_swap_request_from_override",
+      "table": "manual_assignment_overrides",
+      "schema": "public",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER complete_swap_request_from_override AFTER INSERT ON public.manual_assignment_overrides FOR EACH ROW WHEN ((new.related_swap_request_id IS NOT NULL)) EXECUTE FUNCTION complete_swap_request_from_override()"
+    }
+  },
+  {
+    "section": "triggers",
+    "name": "public.nurse_request_messages.broadcast_nurseflow_request_messa",
+    "metadata": {
+      "name": "broadcast_nurseflow_request_message",
+      "table": "nurse_request_messages",
+      "schema": "public",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER broadcast_nurseflow_request_message AFTER INSERT ON public.nurse_request_messages FOR EACH ROW EXECUTE FUNCTION broadcast_nurseflow_request_message()"
+    }
+  },
+  {
+    "section": "triggers",
+    "name": "public.nurse_request_messages.enqueue_nurse_request_message_not",
+    "metadata": {
+      "name": "enqueue_nurse_request_message_notification",
+      "table": "nurse_request_messages",
+      "schema": "public",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER enqueue_nurse_request_message_notification AFTER INSERT ON public.nurse_request_messages FOR EACH ROW EXECUTE FUNCTION enqueue_nurse_request_message_notification()"
+    }
+  },
+  {
+    "section": "triggers",
+    "name": "public.shift_nurse_access.broadcast_nurseflow_access_change",
+    "metadata": {
+      "name": "broadcast_nurseflow_access_change",
+      "table": "shift_nurse_access",
+      "schema": "public",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER broadcast_nurseflow_access_change AFTER UPDATE ON public.shift_nurse_access FOR EACH ROW EXECUTE FUNCTION broadcast_nurseflow_access_change()"
+    }
+  }
+]
