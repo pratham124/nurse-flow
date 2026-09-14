@@ -4968,3 +4968,13 @@ For each task, add a dated section with:
 - [ ] Human explains the module, package, import, and explicit-error-boundary choices.
 - [ ] Code-specific: human predicts what happens when `run()` returns a non-nil error.
 - Status: pending verification and understanding checkpoint.
+
+
+### 2026-09-13 - Go migration session handoff shortcut
+
+- Task: Let a new Codex session safely resume the migration from a short prompt.
+- [x] Added an active Go migration handoff rule to `AGENTS.md`.
+- [x] The rule directs new sessions to the plan, understanding checklist, repository state, and first incomplete task.
+- [x] The rule makes the migration plan authoritative over the older Phase 1 scope for explicit Go migration work.
+- [ ] Human identifies the short continuation phrase and the worktree that must be opened.
+- Status: pending understanding checkpoint.

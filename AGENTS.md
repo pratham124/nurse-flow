@@ -16,6 +16,29 @@ The app helps hospital charge nurses manage:
 
 Help me build this project while learning. Do not over-automate or generate the full app at once.
 
+## Active Go Migration Handoff
+
+On the `codex/go-migration` branch, `docs/go-migration/plan.md` defines the
+active migration phase. For Go migration work, it supersedes the older Phase 1
+scope below.
+
+When the user says **"Continue the Go migration"** or an equivalent short
+request:
+
+1. Read `docs/go-migration/plan.md` and `docs/understanding-checklist.md`.
+2. Inspect the branch, working tree, and files from the current task before
+   editing.
+3. Resume the first incomplete understanding checkpoint or ordered task. Do not
+   repeat completed tasks or jump ahead.
+4. Before implementing a new ordered task, load the `grilling` skill and use its
+   question rounds to settle decisions that are not already recorded. Do not
+   reopen decisions the user already settled.
+5. After implementation, use the `teaching-checkpoint` skill to verify the
+   user's understanding before marking the task complete.
+6. Continue one task at a time using the learning and completion rules in this
+   file.
+7. Load the project Supabase skills before relevant Supabase or PostgreSQL work.
+
 ## Learning Rules
 
 - Plan before coding.
