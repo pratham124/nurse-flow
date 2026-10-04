@@ -1,5 +1,7 @@
 # Understanding Checklist
 
+> Historical record: mandatory understanding checkpoints were removed at the user's request on 2026-10-04. Pending learning items below do not block task completion. Use docs/go-migration/plan.md for active migration progress.
+
 Use this file as the running teaching checklist after each completed task. Keep entries short, concrete, and tied to the actual work completed.
 
 ## How To Use This Checklist
@@ -4967,7 +4969,7 @@ For each task, add a dated section with:
 - [x] `gofmt`, `go test ./...`, `go vet ./...`, and `go run ./cmd/api` passed.
 - [ ] Human explains the module, package, import, and explicit-error-boundary choices.
 - [ ] Code-specific: human predicts what happens when `run()` returns a non-nil error.
-- Status: pending verification and understanding checkpoint.
+- Status: implementation and verification complete; mandatory understanding checkpoint removed at the user's request on 2026-10-04.
 
 
 ### 2026-09-13 - Go migration session handoff shortcut
@@ -4976,5 +4978,6 @@ For each task, add a dated section with:
 - [x] Added an active Go migration handoff rule to `AGENTS.md`.
 - [x] The rule directs new sessions to the plan, understanding checklist, repository state, and first incomplete task.
 - [x] The rule makes the migration plan authoritative over the older Phase 1 scope for explicit Go migration work.
+- [x] Updated the pre-task workflow to use `grill-with-docs` for both decision questioning and warranted persistent architecture/domain documentation; `teaching-checkpoint` remains the post-task workflow.
 - [ ] Human identifies the short continuation phrase and the worktree that must be opened.
-- Status: pending understanding checkpoint.
+- Status: documentation complete; mandatory understanding checkpoint removed at the user's request on 2026-10-04.

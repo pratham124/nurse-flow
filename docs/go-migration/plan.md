@@ -1,6 +1,6 @@
 # Go Backend Migration Plan
 
-Status: consolidated plan approved by the user on 2026-09-12. Read-only live schema inspection recorded in `live-schema-review.md`; no application migration has been implemented. Understanding checkpoints remain required for each implementation task.
+Status: consolidated plan approved by the user on 2026-09-12. Read-only live schema inspection recorded in `live-schema-review.md`; no application migration has been implemented. Mandatory understanding checkpoints were removed at the user's request on 2026-10-04; tasks complete after implementation and relevant verification.
 
 ## Purpose and scope
 
@@ -26,7 +26,7 @@ The user has confirmed that no additional product features are planned during th
 | Optimizer | Retain the separate Python optimizer; integration is outside milestone 1. |
 | Errors | Consistent API error codes/messages and HTTP statuses, preserving existing user-facing behavior. |
 | Isolation | Separate migration branch, worktree, and development Supabase project with test accounts/data. |
-| Learning | Assistant writes small increments; human explains why, what, how, decisions, and edge cases after each task. |
+| Learning | Assistant writes small increments and explains purpose, implementation, decisions, and verification. No mandatory quizzes or understanding checkpoints. |
 | First milestone | Expo reads the signed-in charge nurse's floor templates through a local Go API. Deployment follows later. |
 
 ## Request flow
@@ -68,7 +68,6 @@ As a signed-in charge nurse, I can see my existing floor-template list through t
 - The app's other workflows remain on their existing paths during this milestone.
 - Web and physical-device API reachability are documented as applicable; a phone's localhost is not the development computer.
 - Relevant automated checks and a manual Expo walkthrough pass.
-- The user completes each understanding checkpoint before its task is marked done.
 
 ## Ordered implementation tasks
 
@@ -78,20 +77,20 @@ Branch/worktree setup (2026-09-12): `codex/go-migration` created at `C:/Users/ps
 - [x] README scope refinement: removed milestone/process details, added the optimizer's Cloud Run hosting boundary, and documented app environment setup. Migration steps remain in this plan.
 - [x] Preliminary read-only dashboard inspection: inventory saved in `live-schema-review.md`. Schema export/restore is not complete; teaching checkpoint is recorded separately.
 
-Every item below is a separate teaching task. Do not implement multiple items in one turn by default. Before code, explain the purpose and design; after code, verify behavior and ask the human to restate their understanding before filling gaps.
+Every item below is a separate implementation task. Do not implement multiple items in one turn by default. Before code, explain the purpose and design; after code, verify behavior and explain the result. Use `grill-with-docs` to settle unresolved design decisions, without requiring post-task understanding quizzes.
 
-- [x] 0. Review this consolidated plan and complete the architecture understanding checkpoint. Confirm shared understanding before implementation.
+- [x] 0. Review and agree this consolidated architecture plan before implementation.
 - [x] 1. Establish isolation: preserve current work, create the migration branch/worktree from the agreed current baseline, and document separate environment targets. Do not copy existing live credentials into the development setup.
 - [x] 2. Establish the database baseline: inspect existing schema, functions, triggers, grants, and RLS; capture a reproducible starting point and document required Auth/project settings. Review before applying it anywhere.
 - [x] 3. Prepare the separate development Supabase project: apply the baseline, configure development authentication, create test accounts and synthetic template data, and verify the existing app can use it. Project provisioning/billing or unavailable access requires a concrete user action if needed.
-- [ ] 4. Set up Go: inspect/install an appropriate supported toolchain as needed, create one backend module, and explain packages, imports, structs, and explicit error handling using only what the next task needs.
+- [x] 4. Set up Go: inspect/install an appropriate supported toolchain as needed, create one backend module, and explain packages, imports, structs, and explicit error handling using only what the next task needs.
 - [ ] 5. Implement a local health endpoint: introduce `net/http`, a handler, server configuration, and a small meaningful handler test. No database dependency in the liveness response.
 - [ ] 6. Connect to development Postgres: configure GORM, explicit existing-table mappings, connection lifecycle/timeouts, and the dedicated database role. Verify its RLS/grant behavior and avoid automatic schema changes.
 - [ ] 7. Add API authentication and error handling: preserve Expo login/refresh; verify tokens using a maintained library and the actual project's signing configuration. Validate signature, issuer, audience as appropriate, and expiry. Never treat decoding alone as verification.
 - [ ] 8. Add profile resolution and authorization: derive the application profile from verified identity and enforce the charge-nurse role. Test forbidden-role and missing-profile behavior.
 - [ ] 9. Implement the template-list endpoint: agree the route/response contract, preserve current owner filtering, ordering, JSON snapshot mapping, and empty-state semantics. Check two-user isolation against development Postgres.
 - [ ] 10. Integrate the Expo read: introduce a separate public Go API base URL, replace only the template-list data path, send the current access token, preserve application models, and handle errors without silent fallback that hides integration failures.
-- [ ] 11. Complete the milestone walkthrough: test the signed-in list, empty list, expired/invalid token, forbidden role, cross-user isolation, and unavailable API/database. Run relevant Go and changed-app checks, refactor only demonstrated issues, and finish the understanding checkpoint.
+- [ ] 11. Complete the milestone walkthrough: test the signed-in list, empty list, expired/invalid token, forbidden role, cross-user isolation, and unavailable API/database. Run relevant Go and changed-app checks, refactor only demonstrated issues, and document the results.
 
 Toolchain versions, token-verification library, exact grants, endpoint schema, environment commands, and test fixtures are task-level details to inspect and explain before their corresponding implementation. They are not permission to introduce new product scope.
 
@@ -102,9 +101,9 @@ For each task:
 1. Explain the problem, intended change, and meaningful alternatives before implementation.
 2. Implement only that task in readable increments.
 3. Run checks appropriate to the change and provide a manual verification path.
-4. Ask the human to restate why the change was needed, what changed, how it works, and why the approach was selected.
-5. Ask a code-specific read/predict question and cover relevant edge cases and effects on later work.
-6. Fill gaps at the requested explanation level. Mark the task and its entry in `docs/understanding-checklist.md` complete only after demonstrated understanding.
+4. Explain what changed, key decisions, relevant edge cases, and effects on later work.
+5. Answer questions at the requested explanation level without requiring a quiz or restatement.
+6. Mark the ordered task complete when its implementation and relevant checks pass. The historical understanding checklist is not a completion gate.
 
 ## Later migration milestones: outline only
 
@@ -175,3 +174,9 @@ An ORM transaction alone does not solve every race. Preserve the current locking
 - [x] Created `Migration Test Floor` as Charge Alpha and verified its two-room/three-bed/two-side snapshot in Postgres.
 - [x] Existing-app behavior checks passed: Alpha sees the template, Beta sees the empty state, and Regular Nurse is rejected from the charge workspace.
 - [x] Completed the development-environment understanding checkpoint; ordered task 3 is complete.
+
+### 2026-10-04 - Go setup complete and learning workflow updated
+
+- [x] Backend module and executable scaffold are implemented; formatting, compilation, static checks, and the success path passed during task 4.
+- [x] Removed the mandatory understanding checkpoint at the user's request. Ordered task 4 is complete; task 5 (local health endpoint) is next.
+- [x] Updated AGENTS.md and this plan to retain explanations, incremental implementation, grill-with-docs design discussions, and relevant verification.

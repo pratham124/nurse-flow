@@ -25,19 +25,22 @@ scope below.
 When the user says **"Continue the Go migration"** or an equivalent short
 request:
 
-1. Read `docs/go-migration/plan.md` and `docs/understanding-checklist.md`.
+1. Read `docs/go-migration/plan.md` for the current task and progress.
 2. Inspect the branch, working tree, and files from the current task before
    editing.
-3. Resume the first incomplete understanding checkpoint or ordered task. Do not
-   repeat completed tasks or jump ahead.
-4. Before implementing a new ordered task, load the `grilling` skill and use its
-   question rounds to settle decisions that are not already recorded. Do not
-   reopen decisions the user already settled.
-5. After implementation, use the `teaching-checkpoint` skill to verify the
-   user's understanding before marking the task complete.
+3. Resume the first incomplete ordered task. Do not repeat completed tasks or
+   jump ahead.
+4. Before implementing a new ordered task, load the `grill-with-docs` skill. Use
+   its `grilling` and `domain-modeling` workflow to settle decisions that are not
+   already recorded and persist warranted terminology or architecture decisions.
+   Do not reopen decisions the user already settled or create documentation for
+   trivial choices.
+5. After implementation, explain the change and verification results. Do not
+   require quizzes, understanding checkpoints, or updates to the historical
+   understanding checklist as a condition of completion.
 6. Continue one task at a time using the learning and completion rules in this
    file.
-7. Load the project Supabase skills before relevant Supabase or PostgreSQL work.
+7. Load the locally installed Supabase skills before relevant Supabase or PostgreSQL work.
 
 ## Learning Rules
 
@@ -76,25 +79,6 @@ Use this order:
 8. Implementation
 9. Manual testing
 10. Refactor
-11. Understanding checkpoint
-
-## Understanding Checkpoint
-
-After finishing each task, add a short teaching checkpoint before considering the work done. Use `$teaching-checkpoint` when that skill is available.
-
-Use `docs/understanding-checklist.md` as the running checklist of what the human should understand. Keep it incremental and tied to the task just completed.
-
-For each completed task, verify understanding in three layers:
-
-- Problem: what problem existed, why it existed, and what branches or alternatives were considered.
-- Solution: what changed, why that solution was chosen, key design decisions, and important edge cases.
-- Broader context: why the change matters, what it affects now, and what future work it may influence.
-
-Before explaining everything, ask the human to restate her current understanding first. Then fill in gaps, answer questions, and adjust the explanation level when requested, such as ELI5, ELI14, or intern-level.
-
-Use short open-ended or multiple-choice questions to check understanding. Include at least one code-specific question that references the changed file, function, state field, or helper, and asks the human to read or predict code behavior. If an `AskUserQuestion` tool is available, use it for quizzes and do not reveal the answer until after the human responds. If that tool is unavailable, ask concise questions directly in chat.
-
-The session should not end until the human has demonstrated understanding of the checklist items for the completed task.
 
 ## Scope Control
 
@@ -188,6 +172,4 @@ A task is done only when:
 - Relevant acceptance criteria are met.
 - Code changes are explained clearly.
 - The implementation stays within the current phase.
-- I can explain the changed code myself.
 - The relevant task tracking document is updated with a done marker for the completed task.
-- The understanding checkpoint is completed and `docs/understanding-checklist.md` is updated.
