@@ -84,7 +84,7 @@ Every item below is a separate implementation task. Do not implement multiple it
 - [x] 2. Establish the database baseline: inspect existing schema, functions, triggers, grants, and RLS; capture a reproducible starting point and document required Auth/project settings. Review before applying it anywhere.
 - [x] 3. Prepare the separate development Supabase project: apply the baseline, configure development authentication, create test accounts and synthetic template data, and verify the existing app can use it. Project provisioning/billing or unavailable access requires a concrete user action if needed.
 - [x] 4. Set up Go: inspect/install an appropriate supported toolchain as needed, create one backend module, and explain packages, imports, structs, and explicit error handling using only what the next task needs.
-- [ ] 5. Implement a local health endpoint: introduce `net/http`, a handler, server configuration, and a small meaningful handler test. No database dependency in the liveness response.
+- [x] 5. Implement a local health endpoint: introduce `net/http`, a handler, server configuration, and a small meaningful handler test. No database dependency in the liveness response.
 - [ ] 6. Connect to development Postgres: configure GORM, explicit existing-table mappings, connection lifecycle/timeouts, and the dedicated database role. Verify its RLS/grant behavior and avoid automatic schema changes.
 - [ ] 7. Add API authentication and error handling: preserve Expo login/refresh; verify tokens using a maintained library and the actual project's signing configuration. Validate signature, issuer, audience as appropriate, and expiry. Never treat decoding alone as verification.
 - [ ] 8. Add profile resolution and authorization: derive the application profile from verified identity and enforce the charge-nurse role. Test forbidden-role and missing-profile behavior.
@@ -180,3 +180,11 @@ An ORM transaction alone does not solve every race. Preserve the current locking
 - [x] Backend module and executable scaffold are implemented; formatting, compilation, static checks, and the success path passed during task 4.
 - [x] Removed the mandatory understanding checkpoint at the user's request. Ordered task 4 is complete; task 5 (local health endpoint) is next.
 - [x] Updated AGENTS.md and this plan to retain explanations, incremental implementation, grill-with-docs design discussions, and relevant verification.
+
+### 2026-10-04 - Local health endpoint complete
+
+- [x] Added a standard-library HTTP server with `GET /health`, returning HTTP 200 and `{"status":"ok"}` without database or Auth dependencies.
+- [x] Default binding is `127.0.0.1:8080`; `NURSEFLOW_HTTP_ADDR` overrides it. Explicit request/header/write/idle timeouts are configured.
+- [x] Handler tests verify successful JSON status/content, unsupported methods, and unknown routes. `go test ./...` and `go vet ./...` passed.
+- [x] Real HTTP walkthrough returned the expected response; a second server on the occupied port returned a clear startup error and a nonzero exit. The walkthrough server was stopped afterward.
+- [x] Added backend run/configuration instructions and beginner-oriented code explanations. Ordered task 5 and local ticket 01 are complete; ordered task 6 (development Postgres connection) is next.
