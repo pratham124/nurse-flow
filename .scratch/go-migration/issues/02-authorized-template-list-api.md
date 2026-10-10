@@ -8,7 +8,7 @@
 
 - [x] Go connects to development Postgres through GORM with explicit existing-table mappings, connection lifecycle management, and timeouts; no automatic schema migration runs.
 - [x] A dedicated database role has reviewed permissions and verified RLS behavior. Existing client RLS protection is preserved, and database credentials remain server-side.
-- [ ] Token verification uses a maintained library and the development project's inspected signing configuration; it validates signature, issuer, audience as appropriate, and expiry. Decoding alone never authorizes a request.
+- [x] Token verification uses a maintained library and the development project's inspected signing configuration; it validates signature, issuer, audience as appropriate, and expiry. Decoding alone never authorizes a request.
 - [ ] The application profile is resolved from the verified Auth subject, and only the charge-nurse role is authorized. Missing-profile and forbidden-role behavior is tested.
 - [ ] The agreed template-list route and response preserve owner-profile filtering, descending update-time ordering without a new tie-break rule, and existing snapshot mapping semantics, including row ID/name and validation of doctor-side, room, and bed arrays.
 - [ ] An owner with no templates receives a successful empty collection.
@@ -19,6 +19,10 @@
 - [ ] Ordered tasks 6, 7, 8, and 9 are marked complete individually after their own implementation and relevant checks pass.
 
 ## Implementation guidance
+
+### Task 7 complete — 2026-10-10
+
+The user selected ES256-only verification after the active development key was inspected. JWT v5.3.1 verification, library-managed public-key discovery/cache through `jwkset` v0.11.3, bearer middleware, context identity, controlled JSON errors, and the `/auth/check` diagnostic are implemented. Go tests/vet/race checks, live public discovery, and HTTP health/missing/invalid-token requests passed. A real Charge Alpha Supabase token returned 200 with the matching Auth user ID; an altered signature returned 401. Tasks 8–9 have not started; this combined ticket remains in progress.
 
 ### Task 6 progress — 2026-10-07
 

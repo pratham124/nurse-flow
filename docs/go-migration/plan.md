@@ -86,7 +86,7 @@ Every item below is a separate implementation task. Do not implement multiple it
 - [x] 4. Set up Go: inspect/install an appropriate supported toolchain as needed, create one backend module, and explain packages, imports, structs, and explicit error handling using only what the next task needs.
 - [x] 5. Implement a local health endpoint: introduce `net/http`, a handler, server configuration, and a small meaningful handler test. No database dependency in the liveness response.
 - [x] 6. Connect to development Postgres: configure GORM, explicit existing-table mappings, connection lifecycle/timeouts, and the dedicated database role. Verify its RLS/grant behavior and avoid automatic schema changes.
-- [ ] 7. Add API authentication and error handling: preserve Expo login/refresh; verify tokens using a maintained library and the actual project's signing configuration. Validate signature, issuer, audience as appropriate, and expiry. Never treat decoding alone as verification.
+- [x] 7. Add API authentication and error handling: preserve Expo login/refresh; verify tokens using a maintained library and the actual project's signing configuration. Validate signature, issuer, audience as appropriate, and expiry. Never treat decoding alone as verification.
 - [ ] 8. Add profile resolution and authorization: derive the application profile from verified identity and enforce the charge-nurse role. Test forbidden-role and missing-profile behavior.
 - [ ] 9. Implement the template-list endpoint: agree the route/response contract, preserve current owner filtering, ordering, JSON snapshot mapping, and empty-state semantics. Check two-user isolation against development Postgres.
 - [ ] 10. Integrate the Expo read: introduce a separate public Go API base URL, replace only the template-list data path, send the current access token, preserve application models, and handle errors without silent fallback that hides integration failures.
@@ -95,6 +95,8 @@ Every item below is a separate implementation task. Do not implement multiple it
 Toolchain versions, token-verification library, exact grants, endpoint schema, environment commands, and test fixtures are task-level details to inspect and explain before their corresponding implementation. They are not permission to introduce new product scope.
 
 ## Learning and completion protocol
+
+Task 7 signing-configuration inspection, the agreed ES256-only design, implementation, and verification are recorded in `api-authentication.md`. The current development key is ES256; Go intentionally rejects legacy HS256. Task 7 is complete; profile/charge-nurse authorization is task 8.
 
 For each task:
 
@@ -203,3 +205,13 @@ An ORM transaction alone does not solve every race. Preserve the current locking
 - [x] Verified the installed role, exact ownership policy predicates, RLS flags, and grants using the read-only `verify-database-role.sql` query.
 - [x] Recorded version `20261008060018` as applied using CLI migration repair with the explicit development project reference. The final migration list reports the same version locally and remotely; no role/policy SQL was rerun.
 - [x] Explained task 6 implementation incrementally with the user. The Go field remains `Profile.ID`; the proposed rename was cancelled before edits. Task 7 has not started.
+
+### 2026-10-10 - API authentication complete
+
+- [x] Inspected the current ECC P-256 signing key and matching public ES256 discovery key. The user chose ES256-only verification; no keys/secrets or Expo auth settings were changed.
+- [x] Added pinned JWT v5.3.1 verification for signature, issuer, authenticated audience, required expiry, UUID subject, and authenticated database-role claim. Added cached public-key discovery, bounded retrieval, and rejection of unsupported algorithms.
+- [x] Added reusable bearer middleware, request-context identity, JSON error helpers, and a protected `/auth/check` diagnostic. `/health` remains public and database-independent. Profile resolution and charge-nurse authorization are not implemented yet.
+- [x] Go tests, static checks, race-detector checks, live public-key retrieval, and running-server health/missing/invalid-token requests passed. Synthetic signatures exercised authenticated success. The user-run real Supabase sign-in check also passed on 2026-10-10: Charge Alpha's token returned 200 with its matching Auth UUID; an altered signature returned 401.
+- [x] Documented the implementation files, Go concepts, errors, cache/revocation limits, and manual verification in `api-authentication.md`. Ordered task 7 is complete; task 8 is next.
+- [x] Task 7 readability follow-up: replaced application-owned JWK coordinate decoding and curve-point validation with pinned `go-jose` v4.1.5. Retained the bounded HTTP fetch, cache, ES256/P-256 selection, and token-claim rules. Added malformed-point, key-metadata, duplicate-ID, and mixed-algorithm coverage; Go tests, vet, race checks, and live development-key retrieval passed.
+- [x] Task 7 cache follow-up: moved discovery, decoding, synchronized caching, rate-limited unknown-key refresh, and periodic refresh to `jwkset` v0.11.3; removed the intermediate `go-jose` dependency. Retained our key-selection and HTTP bounds, clear cached keys after refresh failure, and cancel background work with the server context. Documented the change from request-triggered expiry to background refresh. Rotation/revocation, outages/recovery, unknown-key throttling, cancellation, redirect rejection, and live discovery checks passed.

@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/pratham124/nurse-flow/backend/internal/auth"
+	"github.com/pratham124/nurse-flow/backend/internal/httpresponse"
 )
 
 func main() {
@@ -16,6 +20,12 @@ func main() {
 }
 
 func run() error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	verifier, err := auth.NewDevelopment(ctx)
+	if err != nil {
+		return fmt.Errorf("configure authentication: %w", err)
+	}
 	address := os.Getenv("NURSEFLOW_HTTP_ADDR")
 	if address == "" {
 		address = "127.0.0.1:8080"
@@ -23,7 +33,7 @@ func run() error {
 
 	server := &http.Server{
 		Addr:              address,
-		Handler:           newHandler(),
+		Handler:           newHandler(verifier),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      10 * time.Second,
@@ -37,10 +47,23 @@ func run() error {
 	return nil
 }
 
-func newHandler() http.Handler {
+func newHandler(verifier *auth.Verifier) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", healthHandler)
+	mux.Handle("GET /auth/check", verifier.RequireIdentity(http.HandlerFunc(authCheckHandler)))
 	return mux
+}
+
+// This diagnostic route proves authentication only; profile authorization is task 8.
+func authCheckHandler(w http.ResponseWriter, r *http.Request) {
+	identity, ok := auth.IdentityFromContext(r.Context())
+	if !ok {
+		httpresponse.WriteError(w, http.StatusInternalServerError, "internal_error", "The request could not be completed.")
+		return
+	}
+	httpresponse.WriteJSON(w, http.StatusOK, struct {
+		AuthUserID string `json:"auth_user_id"`
+	}{AuthUserID: identity.AuthUserID})
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {

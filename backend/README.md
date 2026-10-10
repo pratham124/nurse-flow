@@ -38,7 +38,7 @@ The server allows five seconds to read request headers, ten seconds to read a re
 - `healthHandler` receives a response writer and a pointer to the incoming request. It sets the response header before writing JSON. Writing without an explicit status sends HTTP 200.
 - `:=` declares a variable and infers its type. `&http.Server{...}` creates a server struct and gives us a pointer to it. `if err := ...; err != nil` checks an operation's returned error explicitly. `%w` wraps an error with context while preserving the underlying error.
 
-All code currently uses the Go standard library. The handlers and server remain in one executable package for this small first increment.
+The server uses the Go standard library for HTTP. Authentication middleware and token verification live in `internal/auth`; the shared JSON response helpers live in `internal/httpresponse`. Database queries use GORM.
 
 ## Checks
 
@@ -56,3 +56,11 @@ References: [Go HTTP server and routing documentation](https://pkg.go.dev/net/ht
 ## Development database
 
 The database package and `go run ./cmd/dbcheck` are implemented separately from the health server. See [development database setup and verification](../docs/go-migration/database-connection.md) for the role migration, private environment variables, Go concepts, and completed local/live checks.
+
+## Authentication
+
+`GET /auth/check` requires a current development Supabase access token in the `Authorization: Bearer <token>` header and returns its verified Auth user ID. It verifies ES256 signatures using public discovery keys, expected issuer/audience, and expiry. It checks identity only; a regular nurse can authenticate too. Profile/charge-nurse authorization is the next ordered task.
+
+Missing or invalid tokens return controlled JSON 401 errors. Required-key retrieval failures return JSON 503 errors. No database credentials, signing secrets, or API keys are needed to run the API for this task. The public `/health` endpoint does not depend on authentication availability. See [authentication design, errors, tests, and private manual requests](../docs/go-migration/api-authentication.md).
+
+Public-key discovery, caching, and background refresh use `jwkset`. Startup attempts discovery for up to five seconds and can start even if retrieval fails. The server supplies a cancellation context to stop background refresh when `run` exits.
