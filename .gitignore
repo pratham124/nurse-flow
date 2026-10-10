@@ -52,3 +52,6 @@ app-example
 /android
 
 test.py
+
+# Supabase CLI local cache
+supabase/.temp/

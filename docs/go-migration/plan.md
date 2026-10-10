@@ -85,7 +85,7 @@ Every item below is a separate implementation task. Do not implement multiple it
 - [x] 3. Prepare the separate development Supabase project: apply the baseline, configure development authentication, create test accounts and synthetic template data, and verify the existing app can use it. Project provisioning/billing or unavailable access requires a concrete user action if needed.
 - [x] 4. Set up Go: inspect/install an appropriate supported toolchain as needed, create one backend module, and explain packages, imports, structs, and explicit error handling using only what the next task needs.
 - [x] 5. Implement a local health endpoint: introduce `net/http`, a handler, server configuration, and a small meaningful handler test. No database dependency in the liveness response.
-- [ ] 6. Connect to development Postgres: configure GORM, explicit existing-table mappings, connection lifecycle/timeouts, and the dedicated database role. Verify its RLS/grant behavior and avoid automatic schema changes.
+- [x] 6. Connect to development Postgres: configure GORM, explicit existing-table mappings, connection lifecycle/timeouts, and the dedicated database role. Verify its RLS/grant behavior and avoid automatic schema changes.
 - [ ] 7. Add API authentication and error handling: preserve Expo login/refresh; verify tokens using a maintained library and the actual project's signing configuration. Validate signature, issuer, audience as appropriate, and expiry. Never treat decoding alone as verification.
 - [ ] 8. Add profile resolution and authorization: derive the application profile from verified identity and enforce the charge-nurse role. Test forbidden-role and missing-profile behavior.
 - [ ] 9. Implement the template-list endpoint: agree the route/response contract, preserve current owner filtering, ordering, JSON snapshot mapping, and empty-state semantics. Check two-user isolation against development Postgres.
@@ -188,3 +188,18 @@ An ORM transaction alone does not solve every race. Preserve the current locking
 - [x] Handler tests verify successful JSON status/content, unsupported methods, and unknown routes. `go test ./...` and `go vet ./...` passed.
 - [x] Real HTTP walkthrough returned the expected response; a second server on the occupied port returned a clear startup error and a nonzero exit. The walkthrough server was stopped afterward.
 - [x] Added backend run/configuration instructions and beginner-oriented code explanations. Ordered task 5 and local ticket 01 are complete; ordered task 6 (development Postgres connection) is next.
+
+### 2026-10-07 - Database connection preparation
+
+- [x] Agreed to preserve database ownership checks for Go reads alongside server authorization, using a limited database role and transaction-local verified identity; recorded the decision in ADR 0001.
+- [x] Prepared pinned GORM/Postgres dependencies, existing profile/template mappings, a bounded connection pool, private development-only configuration, transaction-local identity, and a separate connection-check command. No automatic schema changes or HTTP data endpoint were added.
+- [x] Read-only development preflight confirmed table RLS and fixture identities. Five PUBLIC-executable workflow functions also have explicit grants to the existing client roles; the proposed migration removes the blanket grants while preserving those named grants.
+- [x] Local Postgres migration/ownership/permission checks and Go tests/static checks passed; local test servers were stopped. Details and configuration instructions are in `database-connection.md`.
+- [x] Applied the reviewed role/policy migration to development on 2026-10-08. Catalog checks confirmed the limited grants and preserved existing client function access. Login remains disabled; SQL-editor role impersonation was denied.
+- [x] User privately provisioned the Go role password and enabled login. User-run `dbcheck` connected as `nurseflow_go`, and the live `TestDatabaseOwnershipIntegration` parent test and all four user subtests passed. The downloaded Supabase root certificate resolved the Windows psql system-certificate issue. Ordered task 6 is complete; task 7 (API authentication and error handling) is next. Tasks 7–9 have not started.
+
+### 2026-10-10 - Development migration history reconciled
+
+- [x] Verified the installed role, exact ownership policy predicates, RLS flags, and grants using the read-only `verify-database-role.sql` query.
+- [x] Recorded version `20261008060018` as applied using CLI migration repair with the explicit development project reference. The final migration list reports the same version locally and remotely; no role/policy SQL was rerun.
+- [x] Explained task 6 implementation incrementally with the user. The Go field remains `Profile.ID`; the proposed rename was cancelled before edits. Task 7 has not started.

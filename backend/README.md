@@ -52,3 +52,7 @@ go vet ./...
 The handler tests use `httptest` to simulate requests and record responses. They check the successful status, JSON content type/body, unsupported method, and unknown route.
 
 References: [Go HTTP server and routing documentation](https://pkg.go.dev/net/http), [Go HTTP testing documentation](https://pkg.go.dev/net/http/httptest).
+
+## Development database
+
+The database package and `go run ./cmd/dbcheck` are implemented separately from the health server. See [development database setup and verification](../docs/go-migration/database-connection.md) for the role migration, private environment variables, Go concepts, and completed local/live checks.
