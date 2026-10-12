@@ -55,3 +55,6 @@ test.py
 
 # Supabase CLI local cache
 supabase/.temp/
+
+# Local scratch files and temporary verification artifacts
+/.scratch/

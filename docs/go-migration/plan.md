@@ -87,7 +87,7 @@ Every item below is a separate implementation task. Do not implement multiple it
 - [x] 5. Implement a local health endpoint: introduce `net/http`, a handler, server configuration, and a small meaningful handler test. No database dependency in the liveness response.
 - [x] 6. Connect to development Postgres: configure GORM, explicit existing-table mappings, connection lifecycle/timeouts, and the dedicated database role. Verify its RLS/grant behavior and avoid automatic schema changes.
 - [x] 7. Add API authentication and error handling: preserve Expo login/refresh; verify tokens using a maintained library and the actual project's signing configuration. Validate signature, issuer, audience as appropriate, and expiry. Never treat decoding alone as verification.
-- [ ] 8. Add profile resolution and authorization: derive the application profile from verified identity and enforce the charge-nurse role. Test forbidden-role and missing-profile behavior.
+- [x] 8. Add profile resolution and authorization: derive the application profile from verified identity and enforce the charge-nurse role. Test forbidden-role and missing-profile behavior.
 - [ ] 9. Implement the template-list endpoint: agree the route/response contract, preserve current owner filtering, ordering, JSON snapshot mapping, and empty-state semantics. Check two-user isolation against development Postgres.
 - [ ] 10. Integrate the Expo read: introduce a separate public Go API base URL, replace only the template-list data path, send the current access token, preserve application models, and handle errors without silent fallback that hides integration failures.
 - [ ] 11. Complete the milestone walkthrough: test the signed-in list, empty list, expired/invalid token, forbidden role, cross-user isolation, and unavailable API/database. Run relevant Go and changed-app checks, refactor only demonstrated issues, and document the results.
@@ -96,7 +96,7 @@ Toolchain versions, token-verification library, exact grants, endpoint schema, e
 
 ## Learning and completion protocol
 
-Task 7 signing-configuration inspection, the agreed ES256-only design, implementation, and verification are recorded in `api-authentication.md`. The current development key is ES256; Go intentionally rejects legacy HS256. Task 7 is complete; profile/charge-nurse authorization is task 8.
+Task 7 signing-configuration inspection, the agreed ES256-only design, implementation, and verification are recorded in `api-authentication.md`. The current development key is ES256; Go intentionally rejects legacy HS256. Task 8 profile/charge-nurse authorization is also complete and recorded in `profile-authorization.md`; the template-list endpoint is task 9.
 
 For each task:
 
@@ -215,3 +215,12 @@ An ORM transaction alone does not solve every race. Preserve the current locking
 - [x] Documented the implementation files, Go concepts, errors, cache/revocation limits, and manual verification in `api-authentication.md`. Ordered task 7 is complete; task 8 is next.
 - [x] Task 7 readability follow-up: replaced application-owned JWK coordinate decoding and curve-point validation with pinned `go-jose` v4.1.5. Retained the bounded HTTP fetch, cache, ES256/P-256 selection, and token-claim rules. Added malformed-point, key-metadata, duplicate-ID, and mixed-algorithm coverage; Go tests, vet, race checks, and live development-key retrieval passed.
 - [x] Task 7 cache follow-up: moved discovery, decoding, synchronized caching, rate-limited unknown-key refresh, and periodic refresh to `jwkset` v0.11.3; removed the intermediate `go-jose` dependency. Retained our key-selection and HTTP bounds, clear cached keys after refresh failure, and cancel background work with the server context. Documented the change from request-triggered expiry to background refresh. Rotation/revocation, outages/recovery, unknown-key throttling, cancellation, redirect rejection, and live discovery checks passed.
+
+### 2026-10-11 - Profile authorization complete
+
+- [x] User selected distinct 403 `profile_missing` and `forbidden` errors, 503 `database_unavailable` for lookup failures, and a separate `/auth/charge-check` diagnostic; `/auth/check` remains authentication-only.
+- [x] Added an explicit profile lookup using the verified Auth subject, existing read-only identity transaction, and unchanged RLS policies. Missing rows are distinguished from database failures; no profile is created by a read.
+- [x] Added reusable charge-nurse middleware and authorized profile context. The nurse role is read from Postgres for each request; client identity inputs and the JWT's authenticated database-role claim cannot establish authorization.
+- [x] API startup now owns the development database pool and requires Task 6's private settings. Health and authentication-only handlers still make no database queries. No schema, dependencies, Expo behavior, or template endpoint changed.
+- [x] Go tests, vet, race checks, router/middleware checks, and actual profile resolution against isolated UTF-8 PostgreSQL passed, including both charge nurses, regular/unknown users, controlled errors, current-role lookup, and identity cleanup. Local test servers were stopped afterward. Live development requests are documented but not claimed as run without private credentials.
+- [x] Implementation, Go concepts, manual requests, and verification are recorded in `profile-authorization.md`. Ordered task 8 is complete; task 9 is next.

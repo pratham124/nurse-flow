@@ -9,7 +9,7 @@
 - [x] Go connects to development Postgres through GORM with explicit existing-table mappings, connection lifecycle management, and timeouts; no automatic schema migration runs.
 - [x] A dedicated database role has reviewed permissions and verified RLS behavior. Existing client RLS protection is preserved, and database credentials remain server-side.
 - [x] Token verification uses a maintained library and the development project's inspected signing configuration; it validates signature, issuer, audience as appropriate, and expiry. Decoding alone never authorizes a request.
-- [ ] The application profile is resolved from the verified Auth subject, and only the charge-nurse role is authorized. Missing-profile and forbidden-role behavior is tested.
+- [x] The application profile is resolved from the verified Auth subject, and only the charge-nurse role is authorized. Missing-profile and forbidden-role behavior is tested.
 - [ ] The agreed template-list route and response preserve owner-profile filtering, descending update-time ordering without a new tie-break rule, and existing snapshot mapping semantics, including row ID/name and validation of doctor-side, room, and bed arrays.
 - [ ] An owner with no templates receives a successful empty collection.
 - [ ] Two charge-nurse fixtures cannot read each other's templates against development Postgres; a client-supplied identity cannot override verified ownership.
@@ -19,6 +19,10 @@
 - [ ] Ordered tasks 6, 7, 8, and 9 are marked complete individually after their own implementation and relevant checks pass.
 
 ## Implementation guidance
+
+### Task 8 complete — 2026-10-11
+
+Added the identity-scoped GORM profile lookup, charge-nurse authorization middleware, profile context, and `/auth/charge-check` diagnostic. The user chose distinct missing-profile/forbidden errors and a separate diagnostic preserving `/auth/check`. The API now owns the database pool at startup. Go tests/vet/race checks, synthetic authenticated router/middleware cases, and actual profile resolution/RLS checks in isolated UTF-8 PostgreSQL passed. The private live walkthrough is documented in `docs/go-migration/profile-authorization.md`. No schema or Expo changes were made. Task 9 has not started; this combined ticket remains in progress.
 
 ### Task 7 complete — 2026-10-10
 

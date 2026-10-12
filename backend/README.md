@@ -55,12 +55,14 @@ References: [Go HTTP server and routing documentation](https://pkg.go.dev/net/ht
 
 ## Development database
 
-The database package and `go run ./cmd/dbcheck` are implemented separately from the health server. See [development database setup and verification](../docs/go-migration/database-connection.md) for the role migration, private environment variables, Go concepts, and completed local/live checks.
+The API now opens one development database pool at startup. Set the private Task 6 database environment variables before `go run ./cmd/api`; startup exits with a controlled error if configuration or connectivity fails. `go run ./cmd/dbcheck` remains available as a separate connection check. See [development database setup and verification](../docs/go-migration/database-connection.md) for configuration.
 
 ## Authentication
 
-`GET /auth/check` requires a current development Supabase access token in the `Authorization: Bearer <token>` header and returns its verified Auth user ID. It verifies ES256 signatures using public discovery keys, expected issuer/audience, and expiry. It checks identity only; a regular nurse can authenticate too. Profile/charge-nurse authorization is the next ordered task.
+`GET /auth/check` requires a current development Supabase access token in the `Authorization: Bearer <token>` header and returns its verified Auth user ID. It verifies ES256 signatures using public discovery keys, expected issuer/audience, and expiry. It checks identity only; a regular nurse can authenticate too.
 
-Missing or invalid tokens return controlled JSON 401 errors. Required-key retrieval failures return JSON 503 errors. No database credentials, signing secrets, or API keys are needed to run the API for this task. The public `/health` endpoint does not depend on authentication availability. See [authentication design, errors, tests, and private manual requests](../docs/go-migration/api-authentication.md).
+Missing or invalid tokens return controlled JSON 401 errors. Required-key retrieval failures return JSON 503 errors. The public `/health` handler does not query authentication or the database. See [authentication design and checks](../docs/go-migration/api-authentication.md).
+
+`GET /auth/charge-check` additionally resolves the application profile from the verified Auth user ID and requires its database role to be `charge_nurse`. Success returns `profile_id` and `role`; missing profiles and forbidden roles return distinct JSON 403 errors, and database lookup failures return JSON 503. See [profile authorization and manual requests](../docs/go-migration/profile-authorization.md).
 
 Public-key discovery, caching, and background refresh use `jwkset`. Startup attempts discovery for up to five seconds and can start even if retrieval fails. The server supplies a cancellation context to stop background refresh when `run` exits.

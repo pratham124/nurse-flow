@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/url"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -123,6 +124,22 @@ func TestDatabaseOwnershipIntegration(t *testing.T) {
 				t.Fatal(err)
 			}
 			assertAnonymous()
+			profile, err := store.ProfileByAuthUserID(ctx, test.authID)
+			if test.wantRole == "" {
+				if !errors.Is(err, ErrProfileNotFound) || profile.ID != "" {
+					t.Fatal("missing profile did not return ErrProfileNotFound")
+				}
+			} else if err != nil || profile.AuthUserID != test.authID || profile.Role != test.wantRole || profile.ID == "" || profile.ID == profile.AuthUserID {
+				t.Fatalf("profile resolution failed: %v", err)
+			}
+			assertAnonymous()
+			if test.wantRole != "" {
+				upperProfile, upperErr := store.ProfileByAuthUserID(ctx, strings.ToUpper(test.authID))
+				if upperErr != nil || upperProfile.ID != profile.ID {
+					t.Fatal("UUID normalization changed profile resolution")
+				}
+				assertAnonymous()
+			}
 		})
 	}
 
@@ -132,6 +149,9 @@ func TestDatabaseOwnershipIntegration(t *testing.T) {
 		t.Fatal("transaction did not return callback error")
 	}
 	assertAnonymous()
+	if _, err := store.ProfileByAuthUserID(ctx, "not-a-uuid"); err == nil {
+		t.Fatal("invalid Auth identity accepted by profile lookup")
+	}
 	if err := store.WithIdentity(ctx, "not-a-uuid", func(tx *gorm.DB) error { t.Fatal("invalid identity reached query"); return nil }); err == nil {
 		t.Fatal("invalid identity accepted")
 	}
@@ -147,4 +167,10 @@ func TestDatabaseOwnershipIntegration(t *testing.T) {
 			t.Fatalf("expected insufficient privilege for %q", statement)
 		}
 	}
+	cancelled, cancel := context.WithCancel(ctx)
+	cancel()
+	if _, err := store.ProfileByAuthUserID(cancelled, tests[0].authID); err == nil || errors.Is(err, ErrProfileNotFound) {
+		t.Fatal("cancelled lookup must fail as an operation error, not a missing profile")
+	}
+	assertAnonymous()
 }
