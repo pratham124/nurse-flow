@@ -1,6 +1,6 @@
 # Floor-template list endpoint
 
-Task 9 is complete. Local verification and the required development Postgres isolation check passed on 2026-10-17. Task 10's Expo integration has not started.
+Task 9 is complete. Local verification and the required development Postgres isolation check passed on 2026-10-17. Task 10's Expo integration is implemented; its verification status is recorded in `expo-template-read.md`.
 
 ## Agreed contract
 
@@ -47,7 +47,7 @@ The query uses `Find`, which treats zero rows as success. A slice made with `mak
 
 `internal/httpapi/floor_templates.go` defines the one-method `FloorTemplateReader` interface, list envelope, and handler. It gets the profile from request context and supplies its Auth/profile IDs to the reader. Request parameters and identity headers are never used for ownership. `cmd/api/main.go` injects the verifier and readers into `httpapi.NewHandler`; `internal/httpapi/handler.go` registers the routes and wraps them with token verification and charge authorization. HTTP tests live beside these handlers.
 
-The snapshot is deliberately unchanged. In Task 10 the existing `mapTemplateRow` / `requireFloorTemplateSnapshot` in `src/services/serverWorkspaceRepository.ts` will continue to validate the three arrays, shallow-copy their elements, discard unknown top-level snapshot fields, and use the row's ID/name. Go does not tighten array-element validation or silently skip malformed snapshots. Until Task 10, Expo still uses its original Supabase read and mapper.
+The snapshot is deliberately unchanged. Task 10 moves the existing `mapTemplateRow` / `requireFloorTemplateSnapshot` into `src/services/floorTemplateRepository.ts`, where they continue to validate the three arrays, shallow-copy their elements, discard unknown top-level snapshot fields, and use the row's ID/name. Go does not tighten array-element validation or silently skip malformed snapshots. Expo now uses Go for the template-list read and reuses this mapper for the retained Supabase template writes.
 
 ## Verification
 

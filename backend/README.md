@@ -26,7 +26,9 @@ $env:NURSEFLOW_HTTP_ADDR = '127.0.0.1:8081'
 go run ./cmd/api
 ```
 
-Use the configured port in the health request. The Go process reads the environment directly; it does not load the Expo `.env` file. Physical-device access will be configured when Expo integration is implemented.
+Use the configured port in the health request. The Go process reads the environment directly; it does not load the Expo `.env` file. For physical-device access, explicitly bind to `0.0.0.0:8080` and use the computer's LAN address in Expo, as described in [Expo-to-Go setup](../docs/go-migration/expo-template-read.md).
+
+Browser reads are allowed from `http://localhost:8081` and `http://127.0.0.1:8081` by default. `NURSEFLOW_WEB_ORIGINS` overrides this exact, comma-separated list; an explicitly empty value disables browser origins. CORS permits GET preflight with Authorization/Accept and uses no cookies. Actual requests still require token verification and charge authorization. Native requests without an Origin header do not use CORS.
 
 The server allows five seconds to read request headers, ten seconds to read a request or write a response, and sixty seconds for an idle connection. These explicit limits keep connections from waiting indefinitely.
 
@@ -69,11 +71,11 @@ Public-key discovery, caching, and background refresh use `jwkset`. Startup atte
 
 ## Floor templates
 
-`GET /floor-templates` uses the same token and charge-nurse checks, then reads only the authorized profile's templates in `updated_at DESC` order. It returns `{ "templates": [...] }` with the six existing snake_case database fields. `template_snapshot` remains raw JSON; the frontend's existing mapper will validate and adapt it during Task 10.
+`GET /floor-templates` uses the same token and charge-nurse checks, then reads only the authorized profile's templates in `updated_at DESC` order. It returns `{ "templates": [...] }` with the six existing snake_case database fields. `template_snapshot` remains raw JSON; the frontend's existing mapper validates and adapts it in `src/services/floorTemplateRepository.ts`.
 
-An empty list returns HTTP 200 with `{ "templates": [] }`. Template query failures return a controlled HTTP 503 `database_unavailable` error, without partial results. Query parameters and headers cannot select a different owner. Expo's current read path is unchanged.
+An empty list returns HTTP 200 with `{ "templates": [] }`. Template query failures return a controlled HTTP 503 `database_unavailable` error, without partial results. Query parameters and headers cannot select a different owner. Expo now uses this endpoint for template lists; its other reads and writes retain their existing paths.
 
-See [the endpoint contract, implementation, and verification](../docs/go-migration/template-list.md). Ordered Task 9 is complete: local automated checks and the development Postgres isolation check passed. Expo integration is Task 10; the full real-token/API and Expo walkthrough remains Task 11.
+See [the endpoint contract](../docs/go-migration/template-list.md) and [Expo integration/setup](../docs/go-migration/expo-template-read.md). Task 9 is complete. Task 10's implementation and Alpha browser check passed; its remaining manual checks are recorded in the migration plan. The full milestone walkthrough remains Task 11.
 
 ## Windows private credential helper
 

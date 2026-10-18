@@ -18,6 +18,7 @@ The user has confirmed that no additional product features are planned during th
 | Business logic | Small Go service functions; keep HTTP and database details out of domain rules where practical. |
 | Database | Retain Supabase Postgres and the current schema initially. |
 | Authentication | Expo retains Supabase sign-in and token refresh. Go verifies the access token. |
+| Response validation | As each workflow migrates, Expo validates Go API responses with Zod schemas and infers TypeScript response types from them. Preserve existing mapping and failure behavior; Go retains server-side validation and authorization. |
 | Authorization | Go checks role and resource access using verified identity and server data. |
 | Database role | Dedicated role with only required permissions; explicitly design its interaction with existing RLS. |
 | Schema management | Reviewed, versioned migration files; no startup GORM AutoMigrate. |
@@ -36,7 +37,7 @@ The user has confirmed that no additional product features are planned during th
 3. Go verifies the token and resolves the corresponding application profile.
 4. Go checks the charge-nurse role and restricts the query to that profile's templates.
 5. GORM queries the development Postgres database.
-6. Go returns the agreed response; the existing app repository adapts it into the existing application model.
+6. Go returns the agreed response; Expo validates it with Zod, then the existing app repository adapts it into the existing application model.
 
 The client cannot choose another user's identity by supplying a profile ID. A direct ORM connection does not automatically receive the Supabase user's RLS identity. The database role and its policies must be checked explicitly before the first query is enabled.
 
@@ -234,3 +235,15 @@ An ORM transaction alone does not solve every race. Preserve the current locking
 - [x] Ordered task 9 is complete. The contract, manual requests, and test commands are in `template-list.md`; task 10 has not started. The full real-token/API and Expo walkthrough remains task 11.
 - [x] Added `backend/scripts/development.ps1` for Windows DPAPI credential storage after successful connection verification. Synthetic helper checks passed. User reports the development reader password reset succeeded; the password was not shared. The user completed `Save`, and the agent successfully loaded the saved credential through an approved command as that Windows account. The live isolation test passed without exposing credentials.
 - [x] User-requested layout follow-up: moved routing, HTTP handlers, response types, and their existing tests from `cmd/api` into `internal/httpapi`. `cmd/api/main.go` now owns startup/configuration and supplies dependencies to `httpapi.NewHandler`. Routes and behavior are preserved; `go test -race ./... -count=1` and `go vet ./...` passed after the move. No new migration task was implemented.
+
+### 2026-10-17 - Expo template read implementation
+
+- [x] User approved `EXPO_PUBLIC_GO_API_URL`, retained frontend mapping, web/native support, exact local web origins, and visible failures without Supabase fallback.
+- [x] Replaced only the template-list read with authenticated Go HTTP. Moved its existing mapper and owner check into a small repository shared with unchanged Supabase template writes. Workspace loading retains `Promise.all` and whole-load failure behavior.
+- [x] Added bounded requests, controlled errors and response validation, public environment setup, and exact-origin Go CORS preflight for Authorization/Accept. Default web origins are localhost and 127.0.0.1 on port 8081; `NURSEFLOW_WEB_ORIGINS` overrides the list.
+- [x] New repository checks (11) and existing workspace-store checks (9), TypeScript, lint, Go race tests, and Go vet passed. Local browser build and Charge Alpha sign-in passed: the Go-backed workspace displayed Migration Test Floor with two rooms and three beds.
+- [ ] Charge Beta browser empty-state check: its prior fixture password was rejected once; the user does not remember its current password. No password was reset. Automated empty-list coverage passed. This remaining manual check is documented in `expo-template-read.md`; ordered task 10 remains unchecked pending its task-ticket manual criteria.
+- [ ] Physical-device reachability is documented; no physical device was available, so no device result is claimed. The full milestone matrix remains ordered task 11.
+- [x] Additional Task 10 browser verification: stopping Go produced the controlled workspace connection error; restarting Go and pressing Retry restored Alpha's template list. Final app checks passed. Beta's manual empty-state result remains unavailable.
+- [x] User-requested readability follow-up: added pinned Axios 1.20.0 and a shared Go API client with a constant base URL, common timeout/headers, and preserved cookie/redirect behavior. Removed the URL helper, per-call base-URL override, and manual abort timer. The 16 Axios/template checks and nine workspace tests passed; Expo web displayed Alpha's real template through Axios. Beta/device manual status is unchanged.
+- [x] User-requested Task 10 validation follow-up: added pinned Zod 4.6.7 directly to Expo, inferred the row type from a schema, and replaced the manual list/row guard with safeParse. Snapshot mapping and ownership checks are preserved. All 18 Axios/template checks, nine workspace tests, TypeScript, and focused lint passed. This remains part of the Expo-to-Go integration; Beta/device manual criteria are unchanged.

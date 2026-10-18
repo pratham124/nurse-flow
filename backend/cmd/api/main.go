@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/pratham124/nurse-flow/backend/internal/auth"
@@ -36,10 +37,15 @@ func run() error {
 	if address == "" {
 		address = "127.0.0.1:8080"
 	}
+	webOrigins, configured := os.LookupEnv("NURSEFLOW_WEB_ORIGINS")
+	if !configured {
+		webOrigins = "http://localhost:8081,http://127.0.0.1:8081"
+	}
+	handler := httpapi.WithCORS(httpapi.NewHandler(verifier, store, store), strings.Split(webOrigins, ","))
 
 	server := &http.Server{
 		Addr:              address,
-		Handler:           httpapi.NewHandler(verifier, store, store),
+		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      10 * time.Second,

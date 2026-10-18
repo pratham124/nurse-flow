@@ -1,11 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import {
+  loadFloorTemplates,
+  mapTemplateRow,
+  type FloorTemplateRow,
+} from "./floorTemplateRepository";
 import { expireActiveShiftNurseInvites } from "./shiftInviteRepository";
 import type {
   ActiveAssignmentOverridesByBedId,
   ActiveShiftRecord,
   FloorTemplate,
-  FloorTemplateRecord,
   JoinedNurseAssignedBed,
   JoinedNurseAssignmentView,
   ManualAssignmentOverride,
@@ -20,15 +24,6 @@ import type {
   ShiftNurseAccess,
   UserProfile,
 } from "../types/models";
-
-type FloorTemplateRow = {
-  created_at: string;
-  id: string;
-  name: string;
-  owner_profile_id: string;
-  template_snapshot: unknown;
-  updated_at: string;
-};
 
 type ActiveShiftRow = {
   charge_profile_id: string;
@@ -207,27 +202,6 @@ function assertOwnedRecord(
   }
 }
 
-function requireFloorTemplateSnapshot(value: unknown, row: FloorTemplateRow) {
-  const snapshot = value as Partial<FloorTemplate> | undefined;
-
-  if (
-    !snapshot ||
-    !Array.isArray(snapshot.doctorSides) ||
-    !Array.isArray(snapshot.rooms) ||
-    !Array.isArray(snapshot.beds)
-  ) {
-    throw new Error("A saved floor template has an invalid server shape.");
-  }
-
-  return {
-    beds: snapshot.beds.map((bed) => ({ ...bed })),
-    doctorSides: snapshot.doctorSides.map((doctorSide) => ({ ...doctorSide })),
-    id: row.id,
-    name: row.name,
-    rooms: snapshot.rooms.map((room) => ({ ...room })),
-  };
-}
-
 function requireShiftSnapshot(value: unknown) {
   const shift = value as Shift | undefined;
 
@@ -268,17 +242,6 @@ function getActiveShiftPayload(activeShift: Shift) {
     shift_snapshot: activeShift,
     status: activeShift.status,
     updated_at: new Date().toISOString(),
-  };
-}
-
-function mapTemplateRow(row: FloorTemplateRow): FloorTemplateRecord {
-  return {
-    createdAt: row.created_at,
-    id: row.id,
-    name: row.name,
-    ownerProfileId: row.owner_profile_id,
-    templateSnapshot: requireFloorTemplateSnapshot(row.template_snapshot, row),
-    updatedAt: row.updated_at,
   };
 }
 
@@ -515,24 +478,6 @@ function getReusableTemplateSnapshot(
   };
 }
 
-async function loadFloorTemplates(
-  supabase: SupabaseClient,
-  profileId: string,
-) {
-  const { data, error } = await supabase
-    .from("floor_templates")
-    .select(templateColumns)
-    .eq("owner_profile_id", profileId)
-    .order("updated_at", { ascending: false })
-    .overrideTypes<FloorTemplateRow[]>();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data.map(mapTemplateRow);
-}
-
 export async function loadServerActiveShift(
   supabase: SupabaseClient,
   profile: ChargeProfileIdentifier,
@@ -647,14 +592,6 @@ export async function loadServerWorkspace(
       loadServerActiveShift(supabase, profile),
       loadPreviousShiftSnapshots(supabase, profile.id),
     ]);
-
-  floorTemplates.forEach((template) => {
-    assertOwnedRecord(
-      template.ownerProfileId,
-      profile.id,
-      "A server template was returned for the wrong account.",
-    );
-  });
 
   previousShiftSnapshots.forEach((snapshot) => {
     assertOwnedRecord(
