@@ -1,0 +1,31 @@
+name: Go development database
+
+on:
+  push:
+    branches:
+      - codex/go-migration
+
+permissions:
+  contents: read
+
+concurrency:
+  group: go-development-database-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  connectivity:
+    name: Development Postgres connectivity
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Resolve and connect to the development pooler
+        shell: python
+        run: |
+          import socket
+
+          host = "aws-0-us-east-1.pooler.supabase.com"
+          port = 5432
+          addresses = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+          print(f"DNS resolved {host} to {len(addresses)} address candidates.")
+          with socket.create_connection((host, port), timeout=5):
+              print(f"Direct TCP connection to {host}:{port} succeeded.")
