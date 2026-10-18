@@ -31,3 +31,9 @@ Charge Alpha created `Migration Test Floor` through the existing four-step app f
 The existing app then demonstrated the intended boundaries: Charge Alpha listed the template, Charge Beta received the normal zero-template state, and Regular Nurse authenticated but was stopped by the current unsupported-role recovery screen.
 
 A database query verified one `floor_templates` row owned by `charge.alpha@example.com`, with two rooms, three beds, and two doctor sides. `FloorTemplate` stores `rooms` and `beds` as separate top-level arrays; the room objects contain `bedCount` rather than nested bed arrays.
+
+## 2026-10-17 empty-state fixture
+
+At the user's request, a fresh charge-nurse account was created through the existing development Expo signup flow rather than resetting Beta: `charge.empty.20261017.1792286047082@example.com` (Charge Empty). Signup created its ordinary profile and opened the Go-backed workspace with zero templates and the existing "No templates created yet" message. The generated password is not recorded in this repository. Beta's account and password were unchanged; the new fixture replaces only Beta's manual empty-state check, not the existing Alpha/Beta database isolation checks.
+
+A second fresh account, `charge.native.empty.157b102df1@example.com` (Charge Native Empty), was created through Android development signup. Its Go-backed empty state and API outage/Retry recovery passed on the emulator. Its generated password is not recorded.

@@ -4,18 +4,18 @@
 
 **Blocked by:** 02: Read the charge nurse's templates through Go.
 
-**Status:** in-progress (implementation and automated checks complete; Beta manual sign-in unavailable)
+**Status:** done (web and Android verified; no physical-phone LAN test)
 
 - [x] A separate public Go API base URL is configured for isolated development; it contains no database credentials.
 - [x] Only the floor-template list read moves to Go. Other workspace reads and application writes retain their existing paths.
 - [x] Requests send the current Supabase access token while preserving the existing sign-in and refresh lifecycle.
 - [x] Returned templates preserve existing application models and snapshot validation/mapping semantics.
-- [ ] The populated list and existing empty state work in Expo with the development fixtures.
+- [x] The populated list and existing empty state work in Expo with the development fixtures.
 - [x] Authentication, authorization, network, and API errors produce controlled user-facing behavior; no silent fallback hides Go integration failures.
 - [x] Failure of the template read continues to fail the surrounding workspace load as before.
-- [ ] Applicable web and physical-device API configuration and reachability are documented and exercised; a physical device uses an address reachable from that device.
-- [ ] Relevant changed-app checks and a manual Expo walkthrough pass, with implementation and results explained.
-- [ ] Ordered task 10 is marked complete after its criteria pass.
+- [x] Applicable web and Android emulator reachability are exercised; physical-device LAN setup is documented without claiming an unavailable phone test.
+- [x] Relevant changed-app checks and a manual Expo walkthrough pass, with implementation and results explained.
+- [x] Ordered task 10 is marked complete after its criteria pass.
 
 ## Implementation guidance
 
@@ -43,3 +43,9 @@ Readability follow-up: `loadFloorTemplates` now reads as session lookup, authent
 - [x] User-requested Task 10 validation follow-up: added pinned Zod 4.6.7 directly to Expo, inferred the row type from a schema, and replaced the manual list/row guard with safeParse. Snapshot mapping and ownership checks are preserved. All 18 Axios/template checks, nine workspace tests, TypeScript, and focused lint passed. This remains part of the Expo-to-Go integration; Beta/device manual criteria are unchanged.
 
 The Zod browser smoke check passed with Alpha's real Go-backed template list. The validation change is included in the reviewed Task 10 implementation.
+
+## Completion verification on 2026-10-17
+
+The user chose fresh accounts instead of recovering Beta. Real Charge Empty web and Charge Native Empty Android sessions displayed the existing empty state through Go. The earlier Alpha populated web list passed. Stopping Go produced controlled errors on both web and Android; restarting Go and Retry restored both lists. All 18 template-client tests, nine workspace-store tests, TypeScript, lint, Go race tests/vet, live database isolation, and public signing-key discovery passed. Tasks 10 and 11 are complete. Detailed evidence and automated/manual boundaries: [Milestone 1 verification](../../../docs/go-migration/milestone-one-verification.md).
+
+Android used an existing read-only API 34 emulator with scoped ADB reverse ports 8080/8081. No physical-phone LAN or iOS result is claimed. Beta's password was unchanged; the unused local reset helper was removed. Earlier pending Beta/device notes above describe verification history and are superseded by this completion record. Temporary servers and emulator were stopped.

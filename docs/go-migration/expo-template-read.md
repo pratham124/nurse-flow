@@ -208,3 +208,9 @@ Readability follow-up: `loadFloorTemplates` now reads as session lookup, authent
 Zod follow-up verification: all 18 Axios/template checks, nine workspace tests, TypeScript, and focused lint passed. Expo web bundled with Zod 4.6.7 and Alpha's existing development session displayed Migration Test Floor with two rooms and three beds. The manual Beta/device status is unchanged. Temporary verification servers were stopped afterward.
 
 Migration convention agreed on 2026-10-17: use Zod for Expo-side validation of Go API responses as each workflow migrates, with inferred TypeScript response types. Adopt it incrementally alongside each migrated path and preserve existing mapping/error semantics. This decision is recorded in the migration plan's agreed decisions; Go continues to enforce server-side validation and authorization.
+
+## Completion verification on 2026-10-17
+
+The user chose fresh accounts instead of recovering Beta. Real Charge Empty web and Charge Native Empty Android sessions displayed the existing empty state through Go. The earlier Alpha populated web list passed. Stopping Go produced controlled errors on both web and Android; restarting Go and Retry restored both lists. All 18 template-client tests, nine workspace-store tests, TypeScript, lint, Go race tests/vet, live database isolation, and public signing-key discovery passed. Tasks 10 and 11 are complete. Detailed evidence and automated/manual boundaries: [Milestone 1 verification](milestone-one-verification.md).
+
+Android used an existing read-only API 34 emulator with scoped ADB reverse ports 8080/8081. No physical-phone LAN or iOS result is claimed. Beta's password was unchanged; the unused local reset helper was removed. Earlier pending Beta/device notes above describe verification history and are superseded by this completion record. Temporary servers and emulator were stopped.

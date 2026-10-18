@@ -1,6 +1,6 @@
 # Go Backend Migration Plan
 
-Status: consolidated plan approved by the user on 2026-09-12. Read-only live schema inspection recorded in `live-schema-review.md`; no application migration has been implemented. Mandatory understanding checkpoints were removed at the user's request on 2026-10-04; tasks complete after implementation and relevant verification.
+Status: milestone 1 complete on 2026-10-17; ordered tasks 0–11 are done. Verification evidence and limits are recorded in `milestone-one-verification.md`. The consolidated architecture was approved on 2026-09-12. Mandatory understanding checkpoints were removed at the user's request on 2026-10-04; the next workflow requires the bounded design round described below.
 
 ## Purpose and scope
 
@@ -90,36 +90,44 @@ Every item below is a separate implementation task. Do not implement multiple it
 - [x] 7. Add API authentication and error handling: preserve Expo login/refresh; verify tokens using a maintained library and the actual project's signing configuration. Validate signature, issuer, audience as appropriate, and expiry. Never treat decoding alone as verification.
 - [x] 8. Add profile resolution and authorization: derive the application profile from verified identity and enforce the charge-nurse role. Test forbidden-role and missing-profile behavior.
 - [x] 9. Implement the template-list endpoint: agree the route/response contract, preserve current owner filtering, ordering, JSON snapshot mapping, and empty-state semantics. Check two-user isolation against development Postgres.
-- [ ] 10. Integrate the Expo read: introduce a separate public Go API base URL, replace only the template-list data path, send the current access token, preserve application models, and handle errors without silent fallback that hides integration failures.
-- [ ] 11. Complete the milestone walkthrough: test the signed-in list, empty list, expired/invalid token, forbidden role, cross-user isolation, and unavailable API/database. Run relevant Go and changed-app checks, refactor only demonstrated issues, and document the results.
+- [x] 10. Integrate the Expo read: introduce a separate public Go API base URL, replace only the template-list data path, send the current access token, preserve application models, and handle errors without silent fallback that hides integration failures.
+- [x] 11. Complete the milestone walkthrough: test the signed-in list, empty list, expired/invalid token, forbidden role, cross-user isolation, and unavailable API/database. Run relevant Go and changed-app checks, refactor only demonstrated issues, and document the results.
 
 Toolchain versions, token-verification library, exact grants, endpoint schema, environment commands, and test fixtures are task-level details to inspect and explain before their corresponding implementation. They are not permission to introduce new product scope.
 
 ## Learning and completion protocol
 
-Task 7 signing-configuration inspection, the agreed ES256-only design, implementation, and verification are recorded in `api-authentication.md`. The current development key is ES256; Go intentionally rejects legacy HS256. Task 8 profile/charge-nurse authorization is recorded in `profile-authorization.md`. Task 9's template-list endpoint and live isolation check are complete and recorded in `template-list.md`; Expo integration is task 10.
+Milestone 1 is complete; implementation and verification are recorded in the authentication, profile, template-list, Expo-read, and milestone-verification notes.
 
-For each task:
+The user changed the execution style on 2026-10-17: once a milestone is agreed and implementation authorized, complete that entire milestone instead of stopping after every familiar CRUD ticket. Tickets remain independently verifiable workflows and may span multiple contexts within the milestone.
 
-1. Explain the problem, intended change, and meaningful alternatives before implementation.
-2. Implement only that task in readable increments.
-3. Run checks appropriate to the change and provide a manual verification path.
-4. Explain what changed, key decisions, relevant edge cases, and effects on later work.
-5. Answer questions at the requested explanation level without requiring a quiz or restatement.
-6. Mark the ordered task complete when its implementation and relevant checks pass. The historical understanding checklist is not a completion gate.
+1. At kickoff, inspect current code and use grill-with-docs to settle unresolved contract, validation, permissions, and transaction decisions. Preserve settled decisions.
+2. Explain new Go concepts or complex behavior before the affected major change. Repetitions of the established flow need no new review gate.
+3. Work the ready-ticket frontier within the authorized milestone in readable increments. Continue through routine tickets; discuss consequential unresolved choices or scope changes.
+4. Verify each workflow and the combined milestone with appropriate automated checks and a manual/demo path. Record environments/devices and distinguish live results from test doubles.
+5. Give a focused milestone walkthrough emphasizing new concepts, complex rules, and verification. Answer questions without a quiz, restatement, or historical-checklist gate.
+6. Mark only verified tickets/milestones complete. Stop at the agreed boundary unless the next milestone is authorized.
 
-## Later migration milestones: outline only
+Current handoff: the user approved the [remaining milestones and ticket breakdown](remaining-milestones.md) on 2026-10-17. All 23 tickets are published locally under `.scratch/go-migration-next/issues/` with status `ready-for-agent`. This session remains planning only; implementation starts in another session when the user requests it. Next implementation scope: **Milestone 2 — Template writes**, tickets 01 and 02 together.
 
-After milestone 1, conduct another bounded design round before implementing the next workflow:
+## Remaining approved milestones
 
-1. A simple template write, including validation and reviewed transaction behavior.
-2. Remaining template and shift reads/writes.
-3. Assignment overrides and request workflows, preserving locking, stale-state rejection, idempotency, and notification side effects.
-4. Python optimizer coordination and Realtime/push integration. Preserve current externally visible behavior; deployment boundaries and any credential changes require explicit design.
-5. Deployment and full behavior comparison in the isolated environment.
-6. Final integration and cutover: merge validated code, apply only necessary reviewed database changes to the existing project, and configure deployment explicitly. Test records and Auth users are not merged from development. Remove obsolete RPCs/access paths only after their callers and rollback implications are accounted for.
+The user approved this breakdown on 2026-10-17. Full ticket deliverables, blocking edges, and learning topics are in [Remaining milestones](remaining-milestones.md); individual local tickets are under `.scratch/go-migration-next/issues/`.
 
-An ORM transaction alone does not solve every race. Preserve the current locking or version-check mechanism and duplicate-request handling when each write workflow moves. Keep irreversible cleanup separate from enabling its replacement.
+| Milestone | Scope | Tickets | Status |
+| --- | --- | --- | --- |
+| 2 | Save and delete owned floor templates | 01–02 | Planned; next |
+| 3 | Charge workspace reads and shift lifecycle, including carry-over | 03–07 | Planned |
+| 4 | Application profiles, nurse invites, joining, and scoped nurse reads | 08–11 | Planned |
+| 5 | Manual moves, issue/swap requests, and request threads | 12–15 | Planned |
+| 6 | Go/Python optimizer coordination, device registration, and live collaboration parity | 16–19 | Planned |
+| 7 | Hosted development, full parity, explicit cutover, and legacy retirement | 20–23 | Planned |
+
+Work one authorized milestone at a time, completing its routine tickets as a batch. Technical blockers differ from this execution order: unblocked tickets can be verified using retained existing paths and fixtures. Planning approval publishes the tickets; it does not start implementation in this session.
+
+Review unresolved Go/Python, transaction, deployment, and credential boundaries when their milestone starts. Preserve existing behavior, locks/version checks, duplicate-request handling, RLS, Realtime, and notification effects. An ORM transaction alone does not solve every race.
+
+Production enablement follows hosted development verification and explicit approval of the concrete rollout/rollback plan. Test records and Auth users are not copied from development. Retire obsolete RPCs/access paths only after their callers and rollback implications are accounted for, separately from enabling Go.
 
 ## Sources reviewed during planning
 
@@ -247,3 +255,10 @@ An ORM transaction alone does not solve every race. Preserve the current locking
 - [x] Additional Task 10 browser verification: stopping Go produced the controlled workspace connection error; restarting Go and pressing Retry restored Alpha's template list. Final app checks passed. Beta's manual empty-state result remains unavailable.
 - [x] User-requested readability follow-up: added pinned Axios 1.20.0 and a shared Go API client with a constant base URL, common timeout/headers, and preserved cookie/redirect behavior. Removed the URL helper, per-call base-URL override, and manual abort timer. The 16 Axios/template checks and nine workspace tests passed; Expo web displayed Alpha's real template through Axios. Beta/device manual status is unchanged.
 - [x] User-requested Task 10 validation follow-up: added pinned Zod 4.6.7 directly to Expo, inferred the row type from a schema, and replaced the manual list/row guard with safeParse. Snapshot mapping and ownership checks are preserved. All 18 Axios/template checks, nine workspace tests, TypeScript, and focused lint passed. This remains part of the Expo-to-Go integration; Beta/device manual criteria are unchanged.
+
+### 2026-10-17 - Milestone 1 verification complete
+
+- [x] User-authorized parallel checks covered live database/authentication behavior and Android reachability. The user chose fresh synthetic accounts instead of resetting Beta.
+- [x] Real Charge Empty web and Charge Native Empty Android sessions displayed the existing empty state through Go. Alpha's populated web list passed. Stopped Go, observed controlled errors, restarted Go, and verified Retry recovery on both platforms.
+- [x] Live isolation and public key discovery, direct missing/invalid-token requests, Go race tests/vet, 18 template-client checks, nine workspace checks, TypeScript, and lint passed. Automated expiry/role/database-failure tests are distinguished from real-session observations in the report.
+- [x] Tasks 10 and 11 are complete; see [Milestone 1 verification](milestone-one-verification.md). Native testing used an existing read-only Android emulator with scoped ADB reverse; physical-phone LAN and iOS were not tested. Temporary servers/emulator were stopped. No later migration workflow or application refactor was implemented.

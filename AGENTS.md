@@ -28,9 +28,9 @@ request:
 1. Read `docs/go-migration/plan.md` for the current task and progress.
 2. Inspect the branch, working tree, and files from the current task before
    editing.
-3. Resume the first incomplete ordered task. Do not repeat completed tasks or
-   jump ahead.
-4. Before implementing a new ordered task, load the `grill-with-docs` skill. Use
+3. Resume the first ready ticket in the approved milestone identified by the
+   plan; preserve completed work and the milestone boundary.
+4. Before implementing a new milestone, load the `grill-with-docs` skill. Use
    its `grilling` and `domain-modeling` workflow to settle decisions that are not
    already recorded and persist warranted terminology or architecture decisions.
    Do not reopen decisions the user already settled or create documentation for
@@ -38,8 +38,8 @@ request:
 5. After implementation, explain the change and verification results. Do not
    require quizzes, understanding checkpoints, or updates to the historical
    understanding checklist as a condition of completion.
-6. Continue one task at a time using the learning and completion rules in this
-   file.
+6. Follow the milestone execution and learning protocol in the migration plan;
+   it governs Go migration batching instead of the older one-feature rule.
 7. Load the locally installed Supabase skills before relevant Supabase or PostgreSQL work.
 
 ## Learning Rules
