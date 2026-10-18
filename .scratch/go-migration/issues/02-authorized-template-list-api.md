@@ -10,15 +10,20 @@
 - [x] A dedicated database role has reviewed permissions and verified RLS behavior. Existing client RLS protection is preserved, and database credentials remain server-side.
 - [x] Token verification uses a maintained library and the development project's inspected signing configuration; it validates signature, issuer, audience as appropriate, and expiry. Decoding alone never authorizes a request.
 - [x] The application profile is resolved from the verified Auth subject, and only the charge-nurse role is authorized. Missing-profile and forbidden-role behavior is tested.
-- [ ] The agreed template-list route and response preserve owner-profile filtering, descending update-time ordering without a new tie-break rule, and existing snapshot mapping semantics, including row ID/name and validation of doctor-side, room, and bed arrays.
-- [ ] An owner with no templates receives a successful empty collection.
-- [ ] Two charge-nurse fixtures cannot read each other's templates against development Postgres; a client-supplied identity cannot override verified ownership.
-- [ ] Missing, invalid, expired, or otherwise unverifiable credentials are rejected, and database/API failures return consistent controlled errors without internal details or secrets.
-- [ ] Expo sign-in and token refresh retain their existing behavior.
+- [x] The agreed template-list route and response preserve owner-profile filtering, descending update-time ordering without a new tie-break rule, and existing snapshot mapping semantics, including row ID/name and validation of doctor-side, room, and bed arrays.
+- [x] An owner with no templates receives a successful empty collection.
+- [x] Two charge-nurse fixtures cannot read each other's templates against development Postgres; a client-supplied identity cannot override verified ownership.
+- [x] Missing, invalid, expired, or otherwise unverifiable credentials are rejected, and database/API failures return consistent controlled errors without internal details or secrets.
+- [x] Expo sign-in and token refresh retain their existing behavior.
 - [ ] Relevant automated checks and documented manual API requests pass, with implementation and results explained.
-- [ ] Ordered tasks 6, 7, 8, and 9 are marked complete individually after their own implementation and relevant checks pass.
+- [x] Ordered tasks 6, 7, 8, and 9 are marked complete individually after their own implementation and relevant checks pass.
 
 ## Implementation guidance
+
+### Task 9 complete — 2026-10-17
+
+The user chose database-shaped records and retention of the frontend mapper. Implemented `GET /floor-templates`, its owner-filtered query with existing RLS, `updated_at DESC` ordering without a tie-break, raw snapshot response, empty-array success, and controlled 503 query failures. Go race/static checks, real local HTTP tests with synthetic tokens, and isolated UTF-8 Postgres ownership/order checks passed. The SELECT-only development `TestTemplateListIsolationIntegration` passed all seven subtests through the verified Windows credential helper. Ordered task 9 is complete. This combined ticket's full manual API-request checkbox remains open for the milestone walkthrough in task 11; no real-token list-request success is claimed here. See `docs/go-migration/template-list.md`.
+
 
 ### Task 8 complete — 2026-10-11
 

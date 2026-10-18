@@ -13,8 +13,9 @@ import (
 	"gorm.io/gorm"
 )
 
-// Opt in explicitly. A local URL is accepted only here, never in the development API config.
-func TestDatabaseOwnershipIntegration(t *testing.T) {
+// Opt in explicitly. A local URL is accepted only in tests, never in API config.
+func openIntegrationStore(t *testing.T) *Store {
+	t.Helper()
 	if os.Getenv("NURSEFLOW_DATABASE_TESTS") != "1" {
 		t.Skip("set NURSEFLOW_DATABASE_TESTS=1 and fixture Auth UUIDs to verify Postgres")
 	}
@@ -34,6 +35,12 @@ func TestDatabaseOwnershipIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { store.Close() })
+	return store
+}
+
+func TestDatabaseOwnershipIntegration(t *testing.T) {
+	store := openIntegrationStore(t)
+	ctx := context.Background()
 	// Force connection reuse to detect identity leakage across commit and rollback.
 	store.pool.SetMaxOpenConns(1)
 	store.pool.SetMaxIdleConns(1)
@@ -144,7 +151,7 @@ func TestDatabaseOwnershipIntegration(t *testing.T) {
 	}
 
 	rollback := errors.New("intentional rollback")
-	err = store.WithIdentity(ctx, tests[0].authID, func(tx *gorm.DB) error { return rollback })
+	err := store.WithIdentity(ctx, tests[0].authID, func(tx *gorm.DB) error { return rollback })
 	if !errors.Is(err, rollback) {
 		t.Fatal("transaction did not return callback error")
 	}

@@ -18,12 +18,12 @@ type Profile struct {
 func (Profile) TableName() string { return "public.profiles" }
 
 type FloorTemplate struct {
-	ID               string          `gorm:"column:id;type:uuid;primaryKey;->"`
-	OwnerProfileID   string          `gorm:"column:owner_profile_id;type:uuid;->"`
-	Name             string          `gorm:"column:name;->"`
-	TemplateSnapshot json.RawMessage `gorm:"column:template_snapshot;type:jsonb;->"`
-	CreatedAt        time.Time       `gorm:"column:created_at;->"`
-	UpdatedAt        time.Time       `gorm:"column:updated_at;->"`
+	ID               string          `gorm:"column:id;type:uuid;primaryKey;->" json:"id"`
+	OwnerProfileID   string          `gorm:"column:owner_profile_id;type:uuid;->" json:"owner_profile_id"`
+	Name             string          `gorm:"column:name;->" json:"name"`
+	TemplateSnapshot json.RawMessage `gorm:"column:template_snapshot;type:jsonb;->" json:"template_snapshot"`
+	CreatedAt        time.Time       `gorm:"column:created_at;->" json:"created_at"`
+	UpdatedAt        time.Time       `gorm:"column:updated_at;->" json:"updated_at"`
 }
 
 func (FloorTemplate) TableName() string { return "public.floor_templates" }

@@ -1,4 +1,4 @@
-package main
+package httpapi
 
 import (
 	"context"
@@ -24,7 +24,7 @@ func TestHealthEndpoint(t *testing.T) {
 	request := httptest.NewRequest(http.MethodGet, "/health", nil)
 	response := httptest.NewRecorder()
 
-	newHandler(&auth.Verifier{}, nil).ServeHTTP(response, request)
+	NewHandler(&auth.Verifier{}, nil, nil).ServeHTTP(response, request)
 
 	if response.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
@@ -59,7 +59,8 @@ func (p *diagnosticProfiles) ProfileByAuthUserID(_ context.Context, id string) (
 	return p.profile, nil
 }
 
-func TestChargeDiagnosticResponse(t *testing.T) {
+func testDiagnosticVerifier(t *testing.T) (*auth.Verifier, func(string, time.Time) string) {
+	t.Helper()
 	// Serve a synthetic public key through the verifier's HTTP transport; no real
 	// Supabase token or private project credential is needed for this router test.
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -87,20 +88,29 @@ func TestChargeDiagnosticResponse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	return verifier, func(subject string, expiry time.Time) string {
+		t.Helper()
+		token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{
+			"iss": auth.DevelopmentIssuer, "aud": "authenticated", "sub": subject,
+			"role": "authenticated", "exp": expiry.Unix(),
+		})
+		token.Header["kid"] = "diagnostic"
+		bearer, err := token.SignedString(key)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return bearer
+	}
+}
+
+func TestChargeDiagnosticResponse(t *testing.T) {
+	verifier, sign := testDiagnosticVerifier(t)
 	profiles := &diagnosticProfiles{profile: database.Profile{
 		ID:         "10000000-0000-0000-0000-000000000001",
 		AuthUserID: "20000000-0000-0000-0000-000000000001", Role: "charge_nurse",
 	}}
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{
-		"iss": auth.DevelopmentIssuer, "aud": "authenticated", "sub": profiles.profile.AuthUserID,
-		"role": "authenticated", "exp": time.Now().Add(time.Hour).Unix(),
-	})
-	token.Header["kid"] = "diagnostic"
-	bearer, err := token.SignedString(key)
-	if err != nil {
-		t.Fatal(err)
-	}
-	handler := newHandler(verifier, profiles)
+	bearer := sign(profiles.profile.AuthUserID, time.Now().Add(time.Hour))
+	handler := NewHandler(verifier, profiles, nil)
 	request := httptest.NewRequest(http.MethodGet, "/auth/charge-check?profile_id=other", nil)
 	request.Header.Set("Authorization", "Bearer "+bearer)
 	response := httptest.NewRecorder()
@@ -132,6 +142,8 @@ func TestHealthRouting(t *testing.T) {
 		wantStatus int
 	}{
 		{"unsupported method", http.MethodPost, "/health", http.StatusMethodNotAllowed},
+		{"template list unsupported method", http.MethodPost, "/floor-templates", http.StatusMethodNotAllowed},
+		{"unknown template subpath", http.MethodGet, "/floor-templates/missing", http.StatusNotFound},
 		{"unknown path", http.MethodGet, "/missing", http.StatusNotFound},
 	}
 
@@ -139,7 +151,7 @@ func TestHealthRouting(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			request := httptest.NewRequest(test.method, test.path, nil)
 			response := httptest.NewRecorder()
-			newHandler(&auth.Verifier{}, nil).ServeHTTP(response, request)
+			NewHandler(&auth.Verifier{}, nil, nil).ServeHTTP(response, request)
 
 			if response.Code != test.wantStatus {
 				t.Fatalf("status = %d, want %d", response.Code, test.wantStatus)
@@ -149,12 +161,12 @@ func TestHealthRouting(t *testing.T) {
 }
 
 func TestAuthCheckRejectsUnauthenticatedRequest(t *testing.T) {
-	for _, path := range []string{"/auth/check", "/auth/charge-check"} {
+	for _, path := range []string{"/auth/check", "/auth/charge-check", "/floor-templates"} {
 		for _, authorization := range []string{"", "Bearer invalid-token"} {
 			request := httptest.NewRequest(http.MethodGet, path, nil)
 			request.Header.Set("Authorization", authorization)
 			response := httptest.NewRecorder()
-			newHandler(&auth.Verifier{}, nil).ServeHTTP(response, request)
+			NewHandler(&auth.Verifier{}, nil, nil).ServeHTTP(response, request)
 			if response.Code != http.StatusUnauthorized || response.Header().Get("Content-Type") != "application/json" {
 				t.Fatalf("status = %d, body = %s", response.Code, response.Body.String())
 			}

@@ -88,7 +88,7 @@ Every item below is a separate implementation task. Do not implement multiple it
 - [x] 6. Connect to development Postgres: configure GORM, explicit existing-table mappings, connection lifecycle/timeouts, and the dedicated database role. Verify its RLS/grant behavior and avoid automatic schema changes.
 - [x] 7. Add API authentication and error handling: preserve Expo login/refresh; verify tokens using a maintained library and the actual project's signing configuration. Validate signature, issuer, audience as appropriate, and expiry. Never treat decoding alone as verification.
 - [x] 8. Add profile resolution and authorization: derive the application profile from verified identity and enforce the charge-nurse role. Test forbidden-role and missing-profile behavior.
-- [ ] 9. Implement the template-list endpoint: agree the route/response contract, preserve current owner filtering, ordering, JSON snapshot mapping, and empty-state semantics. Check two-user isolation against development Postgres.
+- [x] 9. Implement the template-list endpoint: agree the route/response contract, preserve current owner filtering, ordering, JSON snapshot mapping, and empty-state semantics. Check two-user isolation against development Postgres.
 - [ ] 10. Integrate the Expo read: introduce a separate public Go API base URL, replace only the template-list data path, send the current access token, preserve application models, and handle errors without silent fallback that hides integration failures.
 - [ ] 11. Complete the milestone walkthrough: test the signed-in list, empty list, expired/invalid token, forbidden role, cross-user isolation, and unavailable API/database. Run relevant Go and changed-app checks, refactor only demonstrated issues, and document the results.
 
@@ -96,7 +96,7 @@ Toolchain versions, token-verification library, exact grants, endpoint schema, e
 
 ## Learning and completion protocol
 
-Task 7 signing-configuration inspection, the agreed ES256-only design, implementation, and verification are recorded in `api-authentication.md`. The current development key is ES256; Go intentionally rejects legacy HS256. Task 8 profile/charge-nurse authorization is also complete and recorded in `profile-authorization.md`; the template-list endpoint is task 9.
+Task 7 signing-configuration inspection, the agreed ES256-only design, implementation, and verification are recorded in `api-authentication.md`. The current development key is ES256; Go intentionally rejects legacy HS256. Task 8 profile/charge-nurse authorization is recorded in `profile-authorization.md`. Task 9's template-list endpoint and live isolation check are complete and recorded in `template-list.md`; Expo integration is task 10.
 
 For each task:
 
@@ -224,3 +224,13 @@ An ORM transaction alone does not solve every race. Preserve the current locking
 - [x] API startup now owns the development database pool and requires Task 6's private settings. Health and authentication-only handlers still make no database queries. No schema, dependencies, Expo behavior, or template endpoint changed.
 - [x] Go tests, vet, race checks, router/middleware checks, and actual profile resolution against isolated UTF-8 PostgreSQL passed, including both charge nurses, regular/unknown users, controlled errors, current-role lookup, and identity cleanup. Local test servers were stopped afterward. Live development requests are documented but not claimed as run without private credentials.
 - [x] Implementation, Go concepts, manual requests, and verification are recorded in `profile-authorization.md`. Ordered task 8 is complete; task 9 is next.
+
+### 2026-10-17 - Template-list endpoint implementation
+
+- [x] User selected `GET /floor-templates` with a `{"templates":[...]}` envelope and the six existing snake_case database fields. The raw snapshot remains unchanged; Task 10 retains the frontend mapper.
+- [x] Added the owner-filtered GORM query, existing transaction-local RLS identity, exact `updated_at DESC` ordering, protected route, empty-array semantics, and controlled query errors. No schema, grants, dependencies, or Expo read path changed.
+- [x] Go race tests and static checks passed. HTTP tests cover the route contract, authorization, empty/error cases, and ignored client identity inputs. Actual isolated UTF-8 Postgres checks cover ownership, two nonempty users, ordering/ties, and pooled-identity cleanup.
+- [x] Required development Postgres isolation check passed on 2026-10-17 through `backend/scripts/development.ps1 TestTemplates`, using the privately saved dedicated-role credential. All seven subtests passed: Alpha's template, Beta's empty list, cross-owner reads in both directions, regular-role denial, and unknown-user denial. This was a read-only development check; no fixture data was changed.
+- [x] Ordered task 9 is complete. The contract, manual requests, and test commands are in `template-list.md`; task 10 has not started. The full real-token/API and Expo walkthrough remains task 11.
+- [x] Added `backend/scripts/development.ps1` for Windows DPAPI credential storage after successful connection verification. Synthetic helper checks passed. User reports the development reader password reset succeeded; the password was not shared. The user completed `Save`, and the agent successfully loaded the saved credential through an approved command as that Windows account. The live isolation test passed without exposing credentials.
+- [x] User-requested layout follow-up: moved routing, HTTP handlers, response types, and their existing tests from `cmd/api` into `internal/httpapi`. `cmd/api/main.go` now owns startup/configuration and supplies dependencies to `httpapi.NewHandler`. Routes and behavior are preserved; `go test -race ./... -count=1` and `go vet ./...` passed after the move. No new migration task was implemented.
