@@ -99,3 +99,9 @@ Subsequent commands load the credential only into the child command's process en
 Synthetic helper checks are in `scripts/test-development.ps1`. They mock the Go command and use a separate temporary credential, covering DPAPI round trips, absence of plaintext passwords in saved data/output, environment restoration, and preservation of an existing credential after a failed save. They do not verify a real password or contact Supabase.
 
 Reference: [Microsoft's Windows credential encryption documentation](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/export-clixml#example-3-encrypt-an-exported-credential-object-on-windows).
+
+## GitHub Actions database checks
+
+Backend changes pushed to `codex/go-migration` run the existing read-only template isolation test on a GitHub-hosted runner. The workflow first checks direct development database connectivity, then uses verified TLS and the limited development credential from the branch-restricted `nurseflow-go-development` GitHub environment. This works independently of the laptop and does not depend on Codex Cloud's direct database networking.
+
+See [CI setup and verification](../docs/go-migration/ci-database-checks.md) for configuration names, scope, and how to view or rerun the test. No schema or fixture changes are made by this workflow.
