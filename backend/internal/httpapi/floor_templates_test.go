@@ -15,12 +15,21 @@ import (
 
 	"github.com/pratham124/nurse-flow/backend/internal/database"
 	"github.com/pratham124/nurse-flow/backend/internal/httpresponse"
+	"github.com/pratham124/nurse-flow/backend/internal/templates"
 )
 
 type templateReaderFunc func(context.Context, string, string) ([]database.FloorTemplate, error)
 
 func (f templateReaderFunc) FloorTemplatesByProfile(ctx context.Context, authID, profileID string) ([]database.FloorTemplate, error) {
 	return f(ctx, authID, profileID)
+}
+
+func (f templateReaderFunc) SaveFloorTemplate(context.Context, string, string, string, templates.Snapshot) (database.FloorTemplate, error) {
+	panic("read test unexpectedly wrote a template")
+}
+
+func (f templateReaderFunc) DeleteFloorTemplate(context.Context, string, string, string) error {
+	panic("read test unexpectedly deleted a template")
 }
 
 type testProfileReader struct {

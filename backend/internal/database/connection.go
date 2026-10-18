@@ -17,8 +17,6 @@ import (
 
 const DevelopmentProject = "nmitctyxtjmlakcsmnuj"
 
-var uuidPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
-
 // Store owns one reusable connection pool. Close it when the process finishes.
 type Store struct {
 	db   *gorm.DB
@@ -122,12 +120,21 @@ func (s *Store) Close() error {
 	return s.pool.Close()
 }
 
-// WithIdentity must receive an Auth user ID from server-verified identity, never client input.
+// WithIdentity requires an Auth UUID already validated by the caller (the JWT
+// verifier for HTTP requests), never an unchecked client-supplied identity.
 // The setting is transaction-local so it cannot leak to another pooled request.
 func (s *Store) WithIdentity(ctx context.Context, authUserID string, query func(*gorm.DB) error) error {
-	if !uuidPattern.MatchString(authUserID) {
-		return errors.New("database identity must be an Auth user UUID")
-	}
+	return s.withIdentity(ctx, authUserID, true, query)
+}
+
+// WithWriteIdentity gives a write the same bounded, transaction-local identity.
+// It requires the same validated Auth UUID as WithIdentity.
+// Returning an error from write rolls back every statement in the callback.
+func (s *Store) WithWriteIdentity(ctx context.Context, authUserID string, write func(*gorm.DB) error) error {
+	return s.withIdentity(ctx, authUserID, false, write)
+}
+
+func (s *Store) withIdentity(ctx context.Context, authUserID string, readOnly bool, query func(*gorm.DB) error) error {
 	queryContext, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	return s.db.WithContext(queryContext).Transaction(func(tx *gorm.DB) error {
@@ -138,5 +145,5 @@ func (s *Store) WithIdentity(ctx context.Context, authUserID string, query func(
 			return errors.New("could not set database query timeout")
 		}
 		return query(tx)
-	}, &sql.TxOptions{ReadOnly: true})
+	}, &sql.TxOptions{ReadOnly: readOnly})
 }

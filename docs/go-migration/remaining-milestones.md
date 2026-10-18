@@ -1,17 +1,17 @@
 # Remaining Go migration milestones
 
-Status: approved by the user on 2026-10-17. Tickets published locally; implementation has not started.
+Status: approved by the user on 2026-10-17. Milestone 2 tickets 01–02 are complete; milestones 3–7 have not started.
 Prepared 2026-10-17 from existing code, the migration plan, database baseline, and ownership ADR.
 
 ## Session handoff
 
-The user will start implementation in another session. The agreed execution unit is one whole approved milestone.
+The agreed execution unit is one whole authorized milestone. Milestone 2 is complete; milestone 3 awaits authorization.
 Tickets are complete vertical workflows; work can continue across their contexts without stopping at each familiar CRUD step.
 Explain new Go concepts or complex rules before the affected major change and provide a focused walkthrough afterward.
 No understanding quiz is required. The execution style and ticket breakdown are approved.
 
 One published file per ticket is available under `.scratch/go-migration-next/issues/`.
-All 23 tickets have status `ready-for-agent`; the next implementation milestone is Milestone 2, tickets 01–02.
+Tickets 01–02 are complete, with verification in [template writes](template-writes.md). Tickets 03–23 remain `ready-for-agent`; milestone 3 requires separate authorization.
 This document is the approved index; each tracker ticket remains a separate file.
 
 ## Milestone grouping
@@ -28,11 +28,11 @@ Unblocked tickets can use existing migrated or retained paths and development fi
 
 ## Approved tickets
 
-1. **Save floor templates through Go (Milestone 2)**
+1. **[Done] Save floor templates through Go (Milestone 2)**
    - **Blocked by:** None (can start after the milestone is authorized).
    - **What it delivers:** A charge nurse can create and update their own reusable floor template in Expo through Go, then reload the same saved layout.
 
-2. **Delete owned floor templates through Go (Milestone 2)**
+2. **[Done] Delete owned floor templates through Go (Milestone 2)**
    - **Blocked by:** None (can start after the milestone is authorized).
    - **What it delivers:** A charge nurse can delete an eligible saved template using the existing Expo action, with the same restrictions and visible failures.
 
@@ -140,4 +140,4 @@ Unblocked tickets can use existing migrated or retained paths and development fi
 
 ## Approval and next session
 
-The user approved the breakdown on 2026-10-17. Start Milestone 2 in the next session when requested, completing tickets 01 and 02 as one milestone batch. Review write validation, database permissions, and transaction behavior at kickoff. Other milestones remain planned; this planning session changes no application code.
+The user approved the breakdown and subsequently authorized milestone 2 on 2026-10-17. Tickets 01–02 are complete. Milestone 3 (tickets 03–07) is the next boundary and remains unstarted; load grill-with-docs at its kickoff and preserve settled decisions.

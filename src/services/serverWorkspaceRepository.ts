@@ -2,8 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
   loadFloorTemplates,
-  mapTemplateRow,
-  type FloorTemplateRow,
+  saveFloorTemplate,
+  deleteFloorTemplate,
 } from "./floorTemplateRepository";
 import { expireActiveShiftNurseInvites } from "./shiftInviteRepository";
 import type {
@@ -175,8 +175,6 @@ export type ResetActiveShiftForEditingResult =
 
 type ChargeProfileIdentifier = Pick<UserProfile, "id" | "role">;
 
-const templateColumns =
-  "id, owner_profile_id, name, template_snapshot, created_at, updated_at";
 const activeShiftColumns =
   "id, charge_profile_id, floor_template_id, status, shift_snapshot, created_at, updated_at, ended_at";
 const activeAssignmentOverrideColumns =
@@ -464,20 +462,6 @@ function mapJoinedNurseAssignmentView(
   };
 }
 
-function getReusableTemplateSnapshot(
-  floorTemplate: FloorTemplate,
-): FloorTemplate {
-  return {
-    beds: floorTemplate.beds.map((bed) => ({ ...bed })),
-    doctorSides: floorTemplate.doctorSides.map((doctorSide) => ({
-      ...doctorSide,
-    })),
-    id: floorTemplate.id,
-    name: floorTemplate.name.trim(),
-    rooms: floorTemplate.rooms.map((room) => ({ ...room })),
-  };
-}
-
 export async function loadServerActiveShift(
   supabase: SupabaseClient,
   profile: ChargeProfileIdentifier,
@@ -745,61 +729,7 @@ export async function saveServerFloorTemplate(
 ) {
   assertChargeNurse(profile);
 
-  const templateSnapshot = getReusableTemplateSnapshot(floorTemplate);
-  const basePayload = {
-    name: templateSnapshot.name,
-    template_snapshot: templateSnapshot,
-    updated_at: new Date().toISOString(),
-  };
-  const isExistingServerTemplate = uuidPattern.test(floorTemplate.id);
-
-  if (isExistingServerTemplate) {
-    const { data, error } = await supabase
-      .from("floor_templates")
-      .update(basePayload)
-      .eq("id", floorTemplate.id)
-      .eq("owner_profile_id", profile.id)
-      .select(templateColumns)
-      .single<FloorTemplateRow>();
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    return mapTemplateRow(data);
-  }
-
-  const { data, error } = await supabase
-    .from("floor_templates")
-    .insert({
-      ...basePayload,
-      owner_profile_id: profile.id,
-    })
-    .select(templateColumns)
-    .single<FloorTemplateRow>();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  const savedSnapshot = {
-    ...templateSnapshot,
-    id: data.id,
-  };
-
-  const { data: refreshedData, error: refreshError } = await supabase
-    .from("floor_templates")
-    .update({ template_snapshot: savedSnapshot })
-    .eq("id", data.id)
-    .eq("owner_profile_id", profile.id)
-    .select(templateColumns)
-    .single<FloorTemplateRow>();
-
-  if (refreshError) {
-    throw new Error(refreshError.message);
-  }
-
-  return mapTemplateRow(refreshedData);
+  return saveFloorTemplate(supabase, profile.id, floorTemplate);
 }
 
 export async function deleteServerFloorTemplate(
@@ -809,19 +739,7 @@ export async function deleteServerFloorTemplate(
 ) {
   assertChargeNurse(profile);
 
-  if (!uuidPattern.test(floorTemplateId)) {
-    throw new Error("Only saved account templates can be deleted.");
-  }
-
-  const { error } = await supabase
-    .from("floor_templates")
-    .delete()
-    .eq("id", floorTemplateId)
-    .eq("owner_profile_id", profile.id);
-
-  if (error) {
-    throw new Error(error.message);
-  }
+  return deleteFloorTemplate(supabase, floorTemplateId);
 }
 
 export async function createServerActiveShift(

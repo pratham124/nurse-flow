@@ -1,6 +1,6 @@
 # Go Backend Migration Plan
 
-Status: milestone 1 complete on 2026-10-17; ordered tasks 0–11 are done. Verification evidence and limits are recorded in `milestone-one-verification.md`. The consolidated architecture was approved on 2026-09-12. Mandatory understanding checkpoints were removed at the user's request on 2026-10-04; the next workflow requires the bounded design round described below.
+Status: milestones 1 and 2 complete on 2026-10-17. Milestone 1 ordered tasks 0–11 and milestone 2 tickets 01–02 are done. Verification evidence and limits are recorded in `milestone-one-verification.md` and `template-writes.md`. The consolidated architecture was approved on 2026-09-12. Mandatory understanding checkpoints were removed at the user's request on 2026-10-04; each new milestone requires the bounded design round described below.
 
 ## Purpose and scope
 
@@ -108,7 +108,7 @@ The user changed the execution style on 2026-10-17: once a milestone is agreed a
 5. Give a focused milestone walkthrough emphasizing new concepts, complex rules, and verification. Answer questions without a quiz, restatement, or historical-checklist gate.
 6. Mark only verified tickets/milestones complete. Stop at the agreed boundary unless the next milestone is authorized.
 
-Current handoff: the user approved the [remaining milestones and ticket breakdown](remaining-milestones.md) on 2026-10-17. All 23 tickets are published locally under `.scratch/go-migration-next/issues/` with status `ready-for-agent`. This session remains planning only; implementation starts in another session when the user requests it. Next implementation scope: **Milestone 2 — Template writes**, tickets 01 and 02 together.
+Current handoff: milestone 2 was authorized and completed on 2026-10-17. Tickets 01–02 are complete; tickets 03–23 remain `ready-for-agent` under `.scratch/go-migration-next/issues/`. See [template writes](template-writes.md) for decisions, implementation, verification, and coverage limits. Next scope, only when authorized: **Milestone 3 — Charge shift lifecycle**, tickets 03–07. Do not start it automatically.
 
 ## Remaining approved milestones
 
@@ -116,8 +116,8 @@ The user approved this breakdown on 2026-10-17. Full ticket deliverables, blocki
 
 | Milestone | Scope | Tickets | Status |
 | --- | --- | --- | --- |
-| 2 | Save and delete owned floor templates | 01–02 | Planned; next |
-| 3 | Charge workspace reads and shift lifecycle, including carry-over | 03–07 | Planned |
+| 2 | Save and delete owned floor templates | 01–02 | Complete; verification in template-writes.md |
+| 3 | Charge workspace reads and shift lifecycle, including carry-over | 03–07 | Planned; next authorization boundary |
 | 4 | Application profiles, nurse invites, joining, and scoped nurse reads | 08–11 | Planned |
 | 5 | Manual moves, issue/swap requests, and request threads | 12–15 | Planned |
 | 6 | Go/Python optimizer coordination, device registration, and live collaboration parity | 16–19 | Planned |
@@ -262,3 +262,11 @@ Production enablement follows hosted development verification and explicit appro
 - [x] Real Charge Empty web and Charge Native Empty Android sessions displayed the existing empty state through Go. Alpha's populated web list passed. Stopped Go, observed controlled errors, restarted Go, and verified Retry recovery on both platforms.
 - [x] Live isolation and public key discovery, direct missing/invalid-token requests, Go race tests/vet, 18 template-client checks, nine workspace checks, TypeScript, and lint passed. Automated expiry/role/database-failure tests are distinguished from real-session observations in the report.
 - [x] Tasks 10 and 11 are complete; see [Milestone 1 verification](milestone-one-verification.md). Native testing used an existing read-only Android emulator with scoped ADB reverse; physical-phone LAN and iOS were not tested. Temporary servers/emulator were stopped. No later migration workflow or application refactor was implemented.
+
+### 2026-10-17 - Milestone 2 complete
+
+- [x] Ticket 01: template create/update now uses authenticated Go, complete layout validation, server-owned fields, one identity-scoped write transaction, and shared Axios/Zod integration.
+- [x] Ticket 02: owned template deletion now uses Go with indistinguishable missing/foreign 404s, preserved UI restrictions and database reference effects, and existing workspace refresh.
+- [x] Applied and registered development migration 20261018014344; exact limited grants/RLS and retained client policies were verified.
+- [x] Go race/static checks, local database rollback/reference tests, live development ownership/write tests, Expo checks, browser create/update/reload/outage recovery, and a real-token client/store delete/refresh demo passed. The observed save-navigation race was fixed and manually rechecked.
+- [x] Decisions, walkthrough, advisor findings, fixture cleanup, and explicit browser-swipe/native/clock-skew coverage limits are recorded in template-writes.md. Milestone 3 is unstarted and requires authorization.

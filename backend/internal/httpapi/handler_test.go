@@ -142,8 +142,8 @@ func TestHealthRouting(t *testing.T) {
 		wantStatus int
 	}{
 		{"unsupported method", http.MethodPost, "/health", http.StatusMethodNotAllowed},
-		{"template list unsupported method", http.MethodPost, "/floor-templates", http.StatusMethodNotAllowed},
-		{"unknown template subpath", http.MethodGet, "/floor-templates/missing", http.StatusNotFound},
+		{"template list unsupported method", http.MethodPatch, "/floor-templates", http.StatusMethodNotAllowed},
+		{"unsupported template read", http.MethodGet, "/floor-templates/missing", http.StatusMethodNotAllowed},
 		{"unknown path", http.MethodGet, "/missing", http.StatusNotFound},
 	}
 

@@ -1,83 +1,59 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { isAxiosError, type AxiosResponse } from "axios";
-import { z } from "zod";
+import { isAxiosError } from "axios";
 
+import {
+  floorTemplateListSchema,
+  floorTemplateSaveSchema,
+  toFloorTemplateSnapshot,
+} from "./floorTemplateSchemas";
 import { goApiClient } from "./goApiClient";
 
 import type { FloorTemplate, FloorTemplateRecord } from "../types/models";
 
-const floorTemplateRowSchema = z.object({
-  created_at: z.string(),
-  id: z.string(),
-  name: z.string(),
-  owner_profile_id: z.string(),
-  template_snapshot: z.unknown(),
-  updated_at: z.string(),
-});
+type TemplateAction = "load" | "save" | "delete";
 
-const floorTemplateListSchema = z.object({
-  templates: z.array(floorTemplateRowSchema),
-});
+const sessionActions = {
+  load: "loading",
+  save: "saving",
+  delete: "deleting",
+};
 
-export type FloorTemplateRow = z.infer<typeof floorTemplateRowSchema>;
-
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const invalidResponseMessage =
   "The template service returned an invalid response.";
 
-function requireFloorTemplateSnapshot(value: unknown, row: FloorTemplateRow) {
-  const snapshot = value as Partial<FloorTemplate> | undefined;
-
-  if (
-    !snapshot ||
-    !Array.isArray(snapshot.doctorSides) ||
-    !Array.isArray(snapshot.rooms) ||
-    !Array.isArray(snapshot.beds)
-  ) {
-    throw new Error("A saved floor template has an invalid server shape.");
+function templateRequestErrorMessage(status: number, action: TemplateAction) {
+  if (action === "load" && [400, 404, 413].includes(status)) {
+    return "The template service could not load floor templates. Try again.";
   }
-
-  return {
-    beds: snapshot.beds.map((bed) => ({ ...bed })),
-    doctorSides: snapshot.doctorSides.map((doctorSide) => ({
-      ...doctorSide,
-    })),
-    id: row.id,
-    name: row.name,
-    rooms: snapshot.rooms.map((room) => ({ ...room })),
-  };
-}
-
-// Shared by Go list reads and the existing Supabase template writes.
-export function mapTemplateRow(row: FloorTemplateRow): FloorTemplateRecord {
-  return {
-    createdAt: row.created_at,
-    id: row.id,
-    name: row.name,
-    ownerProfileId: row.owner_profile_id,
-    templateSnapshot: requireFloorTemplateSnapshot(row.template_snapshot, row),
-    updatedAt: row.updated_at,
-  };
-}
-
-function templateRequestErrorMessage(status: number) {
   switch (status) {
+    case 400:
+      return "The floor template layout is incomplete or inconsistent.";
     case 401:
-      return "Your session expired. Sign in again to load floor templates.";
+      return `Your session expired. Sign in again to ${action} floor templates.`;
     case 403:
-      return "This account cannot load charge nurse floor templates.";
+      return `This account cannot ${action} charge nurse floor templates.`;
+    case 404:
+      return "This floor template is no longer available. Refresh and try again.";
+    case 413:
+      return "The floor template is too large.";
     case 503:
       return "Floor templates are temporarily unavailable. Try again.";
     default:
-      return "The template service could not load floor templates. Try again.";
+      return `The template service could not ${action} floor templates. Try again.`;
   }
 }
 
-function throwTemplateRequestError(error: unknown): never {
+function throwTemplateRequestError(
+  error: unknown,
+  action: TemplateAction = "load",
+): never {
   if (!isAxiosError(error)) {
     throw error;
   }
   if (error.response) {
-    throw new Error(templateRequestErrorMessage(error.response.status));
+    throw new Error(templateRequestErrorMessage(error.response.status, action));
   }
   if (error.code === "ETIMEDOUT" || error.code === "ECONNABORTED") {
     throw new Error("The template service took too long. Try again.");
@@ -87,43 +63,84 @@ function throwTemplateRequestError(error: unknown): never {
   );
 }
 
-function parseFloorTemplateList(
-  response: AxiosResponse<unknown>,
-  profileId: string,
-): FloorTemplateRecord[] {
-  if (response.status !== 200) {
-    throw new Error(invalidResponseMessage);
-  }
-  const result = floorTemplateListSchema.safeParse(response.data);
-  if (!result.success) {
-    throw new Error(invalidResponseMessage);
-  }
-
-  const templates = result.data.templates.map(mapTemplateRow);
-  if (templates.some((template) => template.ownerProfileId !== profileId)) {
-    throw new Error("A server template was returned for the wrong account.");
-  }
-  return templates;
-}
-
-export async function loadFloorTemplates(
+async function templateAuthorization(
   supabase: SupabaseClient,
-  profileId: string,
-): Promise<FloorTemplateRecord[]> {
+  action: TemplateAction,
+) {
   const { data, error } = await supabase.auth.getSession();
   if (error) {
     throw new Error("Your session could not be loaded. Sign in again.");
   }
   const accessToken = data.session?.access_token;
   if (!accessToken) {
-    throw new Error("Sign in before loading floor templates.");
+    throw new Error(`Sign in before ${sessionActions[action]} floor templates.`);
   }
+  return { Authorization: `Bearer ${accessToken}` };
+}
 
+export async function loadFloorTemplates(
+  supabase: SupabaseClient,
+  profileId: string,
+): Promise<FloorTemplateRecord[]> {
+  const headers = await templateAuthorization(supabase, "load");
   const response = await goApiClient
-    .get<unknown>("/floor-templates", {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
+    .get<unknown>("/floor-templates", { headers })
     .catch(throwTemplateRequestError);
 
-  return parseFloorTemplateList(response, profileId);
+  const result = floorTemplateListSchema.safeParse(response.data);
+  if (response.status !== 200 || !result.success) {
+    throw new Error(invalidResponseMessage);
+  }
+  const templates = result.data.templates;
+  if (templates.some((template) => template.ownerProfileId !== profileId)) {
+    throw new Error("A server template was returned for the wrong account.");
+  }
+  return templates;
+}
+
+export async function saveFloorTemplate(
+  supabase: SupabaseClient,
+  profileId: string,
+  floorTemplate: FloorTemplate,
+): Promise<FloorTemplateRecord> {
+  const headers = await templateAuthorization(supabase, "save");
+  const snapshot = toFloorTemplateSnapshot(floorTemplate);
+  const existing = uuidPattern.test(floorTemplate.id);
+  const response = await goApiClient
+    .request<unknown>({
+      method: existing ? "PUT" : "POST",
+      url: existing ? `/floor-templates/${floorTemplate.id}` : "/floor-templates",
+      data: { template_snapshot: snapshot },
+      headers,
+    })
+    .catch((error: unknown) => throwTemplateRequestError(error, "save"));
+
+  const result = floorTemplateSaveSchema.safeParse(response.data);
+  if (response.status !== (existing ? 200 : 201) || !result.success) {
+    throw new Error(invalidResponseMessage);
+  }
+  const saved = result.data.template;
+  if (
+    saved.ownerProfileId !== profileId ||
+    (existing && saved.id.toLowerCase() !== floorTemplate.id.toLowerCase())
+  ) {
+    throw new Error("A server template was returned for the wrong account or template.");
+  }
+  return saved;
+}
+
+export async function deleteFloorTemplate(
+  supabase: SupabaseClient,
+  floorTemplateId: string,
+): Promise<void> {
+  if (!uuidPattern.test(floorTemplateId)) {
+    throw new Error("Only saved account templates can be deleted.");
+  }
+  const headers = await templateAuthorization(supabase, "delete");
+  const response = await goApiClient
+    .delete<unknown>(`/floor-templates/${floorTemplateId}`, { headers })
+    .catch((error: unknown) => throwTemplateRequestError(error, "delete"));
+  if (response.status !== 204) {
+    throw new Error(invalidResponseMessage);
+  }
 }

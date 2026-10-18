@@ -10,6 +10,9 @@ GORM maps existing Postgres rows to Go structs. `Profile` maps the separate Auth
 
 `WithIdentity` takes an Auth UUID and a callback. It starts a read-only transaction, supplies the UUID using parameterized `set_config`, and calls the callback with the transaction's GORM handle. `true` makes the setting transaction-local, so commit or rollback clears it before the connection is reused. Use only a server-verified Auth subject when this is connected to an HTTP request; the current fixture tests supply known synthetic UUIDs directly. The database trusts this setting and does not verify access tokens itself.
 
+UUID format validation belongs to the entry point: the HTTP JWT verifier validates the Auth subject, template PUT/DELETE middleware validates path IDs, and profile IDs come from PostgreSQL UUID columns. Store functions trust these validated inputs. Non-HTTP callers must validate externally supplied IDs themselves; integration tests validate their environment fixture IDs before calling the store. Ownership filters and RLS still enforce access independently of UUID format.
+
+
 A `context.Context` carries cancellation and deadlines. Connection checks and read transactions have five-second limits; each transaction also sets a five-second Postgres statement timeout. The URI includes a five-second connection timeout. `defer` schedules cleanup when the surrounding function returns.
 
 ## Reviewed development migration

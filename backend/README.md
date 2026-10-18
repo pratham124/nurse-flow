@@ -28,7 +28,7 @@ go run ./cmd/api
 
 Use the configured port in the health request. The Go process reads the environment directly; it does not load the Expo `.env` file. For physical-device access, explicitly bind to `0.0.0.0:8080` and use the computer's LAN address in Expo, as described in [Expo-to-Go setup](../docs/go-migration/expo-template-read.md).
 
-Browser reads are allowed from `http://localhost:8081` and `http://127.0.0.1:8081` by default. `NURSEFLOW_WEB_ORIGINS` overrides this exact, comma-separated list; an explicitly empty value disables browser origins. CORS permits GET preflight with Authorization/Accept and uses no cookies. Actual requests still require token verification and charge authorization. Native requests without an Origin header do not use CORS.
+Browser requests are allowed from `http://localhost:8081` and `http://127.0.0.1:8081` by default. `NURSEFLOW_WEB_ORIGINS` overrides this exact, comma-separated list; an explicitly empty value disables browser origins. CORS permits GET/POST/PUT/DELETE preflight with Authorization/Accept/Content-Type and uses no cookies. Actual requests still require token verification and charge authorization. Native requests without an Origin header do not use CORS.
 
 The server allows five seconds to read request headers, ten seconds to read a request or write a response, and sixty seconds for an idle connection. These explicit limits keep connections from waiting indefinitely.
 
@@ -73,9 +73,9 @@ Public-key discovery, caching, and background refresh use `jwkset`. Startup atte
 
 `GET /floor-templates` uses the same token and charge-nurse checks, then reads only the authorized profile's templates in `updated_at DESC` order. It returns `{ "templates": [...] }` with the six existing snake_case database fields. `template_snapshot` remains raw JSON; the frontend's existing mapper validates and adapts it in `src/services/floorTemplateRepository.ts`.
 
-An empty list returns HTTP 200 with `{ "templates": [] }`. Template query failures return a controlled HTTP 503 `database_unavailable` error, without partial results. Query parameters and headers cannot select a different owner. Expo now uses this endpoint for template lists; its other reads and writes retain their existing paths.
+An empty list returns HTTP 200 with `{ "templates": [] }`. Template query failures return a controlled HTTP 503 `database_unavailable` error, without partial results. Query parameters and headers cannot select a different owner. Expo uses Go for template lists, saves, and deletes; other workflows retain their existing paths.
 
-See [the endpoint contract](../docs/go-migration/template-list.md) and [Expo integration/setup](../docs/go-migration/expo-template-read.md). Task 9 is complete. Task 10's implementation and Alpha browser check passed; its remaining manual checks are recorded in the migration plan. The full milestone walkthrough remains Task 11.
+`POST /floor-templates` creates a reusable layout; `PUT /floor-templates/{id}` replaces an owned layout. Both accept `{ "template_snapshot": { ... } }` and return `{ "template": { ... } }` with HTTP 201/200. The server validates layout consistency and owns IDs, owner, and timestamps. Creation and snapshot-ID synchronization commit together. `DELETE /floor-templates/{id}` returns 204; missing/foreign update/delete requests return the same 404. Existing UI restrictions and database reference actions remain. See [template writes](../docs/go-migration/template-writes.md), [list contract](../docs/go-migration/template-list.md), and [Expo setup](../docs/go-migration/expo-template-read.md).
 
 ## Windows private credential helper
 
@@ -88,10 +88,13 @@ Subsequent commands load the credential only into the child command's process en
 ```powershell
 ./scripts/development.ps1 Check
 ./scripts/development.ps1 TestTemplates
+./scripts/development.ps1 TestTemplateWrites
 ./scripts/development.ps1 Api
 ```
 
 `TestTemplates` clears any local database override and runs the development-only template isolation test with the documented synthetic account IDs. An agent must run this helper through approved commands as the Windows account that saved the credential; the sandbox account cannot decrypt it. The helper never prints the password or a credential-bearing connection string.
+
+`TestTemplateWrites` uses the same development-only configuration. It creates, updates, and removes its own temporary synthetic templates, checks ownership/role isolation and immutable fields, and leaves the existing fixture templates unchanged. The injected rollback trigger/reference checks run only against the isolated local test database.
 
 Synthetic helper checks are in `scripts/test-development.ps1`. They mock the Go command and use a separate temporary credential, covering DPAPI round trips, absence of plaintext passwords in saved data/output, environment restoration, and preservation of an existing credential after a failed save. They do not verify a real password or contact Supabase.
 

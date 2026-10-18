@@ -7,7 +7,7 @@ import (
 	"github.com/pratham124/nurse-flow/backend/internal/httpresponse"
 )
 
-// WithCORS permits browser reads from exact configured origins. Token and role
+// WithCORS permits browser requests from exact configured origins. Token and role
 // checks still run for the actual request; preflight does not access user data.
 func WithCORS(next http.Handler, origins []string) http.Handler {
 	allowed := make(map[string]bool, len(origins))
@@ -31,20 +31,22 @@ func WithCORS(next http.Handler, origins []string) http.Handler {
 		if r.Method == http.MethodOptions && r.Header.Get("Access-Control-Request-Method") != "" {
 			w.Header().Add("Vary", "Access-Control-Request-Method")
 			w.Header().Add("Vary", "Access-Control-Request-Headers")
-			if r.Header.Get("Access-Control-Request-Method") != http.MethodGet {
+			switch r.Header.Get("Access-Control-Request-Method") {
+			case http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete:
+			default:
 				httpresponse.WriteError(w, http.StatusForbidden, "cors_forbidden", "This web request is not allowed.")
 				return
 			}
 			for _, header := range strings.Split(r.Header.Get("Access-Control-Request-Headers"), ",") {
 				switch strings.ToLower(strings.TrimSpace(header)) {
-				case "", "authorization", "accept":
+				case "", "authorization", "accept", "content-type":
 				default:
 					httpresponse.WriteError(w, http.StatusForbidden, "cors_forbidden", "This web request is not allowed.")
 					return
 				}
 			}
-			w.Header().Set("Access-Control-Allow-Methods", "GET")
-			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Accept")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Accept, Content-Type")
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}

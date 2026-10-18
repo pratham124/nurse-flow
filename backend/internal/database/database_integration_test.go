@@ -6,12 +6,25 @@ import (
 	"errors"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 )
+
+var fixtureUUIDPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+
+// These tests enter below HTTP authentication, so validate their configured IDs here.
+func fixtureAuthID(t *testing.T, name string) string {
+	t.Helper()
+	id := os.Getenv(name)
+	if !fixtureUUIDPattern.MatchString(id) {
+		t.Fatalf("set %s to a fixture Auth UUID", name)
+	}
+	return id
+}
 
 // Opt in explicitly. A local URL is accepted only in tests, never in API config.
 func openIntegrationStore(t *testing.T) *Store {
@@ -88,16 +101,13 @@ func TestDatabaseOwnershipIntegration(t *testing.T) {
 		wantRole      string
 		wantTemplates int
 	}{
-		{"Alpha", os.Getenv("NURSEFLOW_TEST_ALPHA_ID"), "charge_nurse", 1},
-		{"Beta", os.Getenv("NURSEFLOW_TEST_BETA_ID"), "charge_nurse", 0},
-		{"Regular", os.Getenv("NURSEFLOW_TEST_REGULAR_ID"), "regular_nurse", 0},
+		{"Alpha", fixtureAuthID(t, "NURSEFLOW_TEST_ALPHA_ID"), "charge_nurse", 1},
+		{"Beta", fixtureAuthID(t, "NURSEFLOW_TEST_BETA_ID"), "charge_nurse", 0},
+		{"Regular", fixtureAuthID(t, "NURSEFLOW_TEST_REGULAR_ID"), "regular_nurse", 0},
 		{"Unknown", "ffffffff-ffff-ffff-ffff-ffffffffffff", "", 0},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if !uuidPattern.MatchString(test.authID) {
-				t.Fatal("set fixture Auth UUIDs")
-			}
 			err := store.WithIdentity(ctx, test.authID, func(tx *gorm.DB) error {
 				var profiles []Profile
 				var templates []FloorTemplate
@@ -156,16 +166,11 @@ func TestDatabaseOwnershipIntegration(t *testing.T) {
 		t.Fatal("transaction did not return callback error")
 	}
 	assertAnonymous()
-	if _, err := store.ProfileByAuthUserID(ctx, "not-a-uuid"); err == nil {
-		t.Fatal("invalid Auth identity accepted by profile lookup")
-	}
-	if err := store.WithIdentity(ctx, "not-a-uuid", func(tx *gorm.DB) error { t.Fatal("invalid identity reached query"); return nil }); err == nil {
-		t.Fatal("invalid identity accepted")
-	}
 
 	for _, statement := range []string{
 		"UPDATE public.profiles SET display_name = display_name WHERE false",
-		"DELETE FROM public.floor_templates WHERE false",
+		"UPDATE public.floor_templates SET owner_profile_id = owner_profile_id WHERE false",
+		"UPDATE public.floor_templates SET id = id WHERE false",
 		"SELECT * FROM public.active_shifts LIMIT 0",
 	} {
 		err := store.db.Exec(statement).Error

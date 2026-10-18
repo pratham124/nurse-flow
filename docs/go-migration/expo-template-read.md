@@ -19,11 +19,10 @@ The response must be HTTP 200 with a `templates` array and the six expected row
 fields. Invalid envelopes, malformed rows, or any bad snapshot reject the whole
 load. The repository preserves server order and timestamp strings.
 
-The existing `mapTemplateRow` and snapshot mapper moved into this module without
-changing their behavior: require the three arrays; shallow-copy their elements;
-use the row ID/name; discard extra top-level snapshot fields; preserve additional
-element fields without adding element-field validation. Supabase template writes
-reuse this same mapper.
+The template schemas validate and transform both Go list and save responses into
+existing application records. Row ID/name remain authoritative, extra top-level
+snapshot fields are discarded, and additional element fields are preserved.
+The schema-module refactor described below supersedes the original separate mapper.
 
 `serverWorkspaceRepository.ts` calls the new reader inside its existing
 `Promise.all`. Template failure still rejects the workspace. Active shifts,
@@ -33,27 +32,30 @@ and support retry. No fallback to the Supabase template list is present.
 
 ## Response schemas
 
-Task 10 uses pinned Zod 4.6.7 as a direct app dependency. The private
-`floorTemplateRowSchema` defines the six response fields, and
-`floorTemplateListSchema` defines the `templates` array. The exported
-`FloorTemplateRow` type is inferred with `z.infer` and remains shared by the
-existing Supabase write result mappings.
+The pure `floorTemplateSchemas.ts` module owns the template data contract.
+It defines doctor-side, room, and bed fields once, then derives two deliberate
+shapes: save snapshots strip unknown fields, while stored layouts retain extra
+nested element fields for compatibility. Unknown top-level stored fields remain
+discarded. The save snapshot type is inferred from Zod.
 
-Axios response data remains `unknown` until `safeParse` succeeds. A schema
-failure produces the same controlled invalid-response message rather than raw
-Zod issues or partial results. The schemas replace the manual envelope guard,
-`isTemplateRow`, and duplicate row type definition.
+`toFloorTemplateSnapshot` validates the outgoing structure, trims the floor name,
+and returns only reusable fields. Malformed input fails with a controlled layout
+message before HTTP. Go still enforces complete layout consistency and authorization.
 
-The snapshot field deliberately remains `z.unknown()`: the existing snapshot
-mapper still validates its three arrays and preserves their original mapping
-behavior. The required snapshot key is checked even though its value is unknown.
-String IDs, names, and timestamps retain their previous acceptance rules; no
-coercion, defaults, skipped rows, UUID restriction, or date normalization is added.
-Extra envelope and row fields are tolerated and do not change the mapped result.
-The separate profile ownership check remains in place.
+List/save row schemas validate the stored layout, then use a Zod transform to
+produce the existing `FloorTemplateRecord`. Row ID/name remain authoritative;
+missing or stale duplicate snapshot metadata is ignored. The HTTP repository
+receives typed application records directly after safeParse, without a second
+mapping/copy pass or an exported raw-row mapper.
 
+The repository retains current-session lookup, HTTP status checks, ownership
+checks, and controlled error messages. Structural response failures reject the
+whole load. Full layout rules such as exactly two sides, reference validity,
+and contiguous bed numbering remain server write validation.
+
+Zod 4.6.7 remains pinned; no dependency change was required.
 References: [Zod basic usage](https://zod.dev/basics),
-[Zod object schemas](https://zod.dev/api#objects).
+[Zod transforms](https://zod.dev/api#transforms).
 
 ## Failures
 

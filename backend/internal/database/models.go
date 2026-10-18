@@ -27,3 +27,10 @@ type FloorTemplate struct {
 }
 
 func (FloorTemplate) TableName() string { return "public.floor_templates" }
+
+type floorTemplateInsert struct {
+	ID               string `gorm:"type:uuid;default:gen_random_uuid()"`
+	OwnerProfileID   string `gorm:"type:uuid"`
+	Name             string
+	TemplateSnapshot json.RawMessage `gorm:"type:jsonb"`
+}

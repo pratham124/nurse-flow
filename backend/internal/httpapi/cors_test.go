@@ -36,7 +36,10 @@ func TestBrowserTemplateRequests(t *testing.T) {
 		{"unlisted origin", "OPTIONS", "http://localhost:8082", "GET", "authorization", "", 403, false},
 		{"origin suffix", "OPTIONS", "http://localhost:8081.evil.test", "GET", "authorization", "", 403, false},
 		{"null origin", "OPTIONS", "null", "GET", "authorization", "", 403, false},
-		{"write preflight", "OPTIONS", "http://localhost:8081", "POST", "authorization", "", 403, false},
+		{"create preflight", "OPTIONS", "http://localhost:8081", "POST", "authorization, content-type", "", 204, false},
+		{"update preflight", "OPTIONS", "http://localhost:8081", "PUT", "authorization, content-type", "", 204, false},
+		{"delete preflight", "OPTIONS", "http://localhost:8081", "DELETE", "authorization", "", 204, false},
+		{"unsupported method", "OPTIONS", "http://localhost:8081", "PATCH", "authorization", "", 403, false},
 		{"extra header", "OPTIONS", "http://localhost:8081", "GET", "X-Profile-ID", "", 403, false},
 	}
 	for _, test := range tests {
@@ -66,7 +69,7 @@ func TestBrowserTemplateRequests(t *testing.T) {
 				t.Fatal("unexpected cache variation or cookie permission")
 			}
 			if response.Code == http.StatusNoContent {
-				if response.Header().Get("Access-Control-Allow-Methods") != "GET" || !strings.Contains(response.Header().Get("Access-Control-Allow-Headers"), "Authorization") || response.Body.Len() != 0 {
+				if response.Header().Get("Access-Control-Allow-Methods") != "GET, POST, PUT, DELETE" || !strings.Contains(response.Header().Get("Access-Control-Allow-Headers"), "Content-Type") || response.Body.Len() != 0 {
 					t.Fatal("invalid preflight response")
 				}
 			}
