@@ -270,3 +270,18 @@ Production enablement follows hosted development verification and explicit appro
 - [x] Applied and registered development migration 20261018014344; exact limited grants/RLS and retained client policies were verified.
 - [x] Go race/static checks, local database rollback/reference tests, live development ownership/write tests, Expo checks, browser create/update/reload/outage recovery, and a real-token client/store delete/refresh demo passed. The observed save-navigation race was fixed and manually rechecked.
 - [x] Decisions, walkthrough, advisor findings, fixture cleanup, and explicit browser-swipe/native/clock-skew coverage limits are recorded in template-writes.md. Milestone 3 is unstarted and requires authorization.
+
+### 2026-10-18 - Cloud execution experiment
+
+- [x] Pushed the reviewed migration branch through `a372326`, prepared and published a private `nurse-flow` cloud environment, and passed the existing non-database checks. No later milestone implementation was started.
+- [x] Retested the exact development pooler after publishing its restricted allowlist entry in a fresh cloud task. DNS resolution still failed; no database credential was accessed or uploaded.
+- [ ] Live Supabase tests from cloud remain unverified. DNS failure prevented a direct TCP/authentication test; it is not evidence of a port-level denial. See [cloud execution trial](cloud-execution-trial.md) for the observed result and environment limits.
+
+- [x] User-requested cloud retry: the normal turn-scoped network permission was granted, but Python DNS resolution still failed with EAI_AGAIN. No password was used; direct TCP/authentication remain unverified. Details are in the cloud execution trial.
+
+### 2026-10-18 - GitHub Actions live database checks
+
+- [x] Added a migration-branch workflow for backend/workflow changes, with a password-free connectivity probe followed by the existing read-only template isolation test.
+- [x] Created the exact-branch-restricted `nurseflow-go-development` GitHub environment. The existing limited development password was transferred privately from DPAPI to its encrypted environment secret; the public CA certificate is an environment variable. No plaintext password was written to Git or logs.
+- [x] actionlint passed. GitHub-hosted [run 39104411624](https://github.com/pratham124/nurse-flow/actions/runs/39104411624) passed both jobs for `e8ba856`; the actual live test and all seven isolation cases passed without skips or fixture mutation.
+- [x] Cloud coding plus GitHub-hosted live database verification now works independently of the laptop. Direct Codex Cloud database networking is still a separate unresolved limitation. Setup/re-run guidance is in [CI database checks](ci-database-checks.md). No milestone 3 implementation was started.

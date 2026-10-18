@@ -38,4 +38,4 @@ Existing cloud chats retain their own checkout; sync the migration branch before
 
 - [x] actionlint 1.7.12 passed for the workflow.
 - [x] The initial credential-free GitHub runner probe passed: [run 39104180152](https://github.com/pratham124/nurse-flow/actions/runs/39104180152).
-- The complete workflow's live read-only result is recorded below after execution.
+- [x] The complete workflow passed on 2026-10-18 for commit `e8ba85691b2868a514950d061cf887fb7185f9fc`: [run 39104411624](https://github.com/pratham124/nurse-flow/actions/runs/39104411624). Connectivity passed, and `TestTemplateListIsolationIntegration` plus all seven subtests passed without skips. The test executed on GitHub-hosted Ubuntu with verified TLS and the existing limited development role. Existing fixtures were unchanged.
