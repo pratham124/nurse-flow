@@ -1,17 +1,17 @@
 # Remaining Go migration milestones
 
-Status: approved by the user on 2026-10-17. Milestone 2 tickets 01–02 are complete. Milestone 3 was authorized on 2026-10-18; tickets 03–07 are implemented and locally verified, pending live development verification. Milestones 4–7 have not started.
+Status: approved by the user on 2026-10-17. Milestones 2 and 3 (tickets 01–07) are done. The user closed milestone 3 on 2026-10-19 with the remaining manual checks and fixture cleanup deferred as recorded in shift-lifecycle.md. Milestones 4–7 have not started.
 Prepared 2026-10-17 from existing code, the migration plan, database baseline, and ownership ADR.
 
 ## Session handoff
 
-The agreed execution unit is one whole authorized milestone. Milestone 3 is authorized and in review; see [shift lifecycle](shift-lifecycle.md) for implementation, local evidence, and the pending development migration/real-session walkthrough.
+The agreed execution unit is one whole authorized milestone. Milestone 3 is done; see [shift lifecycle](shift-lifecycle.md) for implementation, applied development migrations, local/live evidence, and deferred manual checks. Milestone 4 requires authorization before implementation.
 Tickets are complete vertical workflows; work can continue across their contexts without stopping at each familiar CRUD step.
 Explain new Go concepts or complex rules before the affected major change and provide a focused walkthrough afterward.
 No understanding quiz is required. The execution style and ticket breakdown are approved.
 
 One published file per ticket is available under `.scratch/go-migration-next/issues/`.
-Tickets 01–02 are complete, with verification in [template writes](template-writes.md). Tickets 03–07 are in review pending live verification; tickets 08–23 remain `ready-for-agent` behind their milestone boundaries. The absent local milestone 3 ticket files were reconstructed under the existing issues directory.
+Tickets 01–02 are complete, with verification in [template writes](template-writes.md). Tickets 03–07 are done with the verification limits above; tickets 08–23 remain `ready-for-agent` behind their milestone boundaries. The absent local milestone 3 ticket files were reconstructed under the existing issues directory.
 This document is the approved index; each tracker ticket remains a separate file.
 
 ## Milestone grouping
@@ -36,23 +36,23 @@ Unblocked tickets can use existing migrated or retained paths and development fi
    - **Blocked by:** None (can start after the milestone is authorized).
    - **What it delivers:** A charge nurse can delete an eligible saved template using the existing Expo action, with the same restrictions and visible failures.
 
-3. **Load the charge shift workspace through Go (Milestone 3)** — implemented/local checks passed; live verification pending
+3. **[Done] Load the charge shift workspace through Go (Milestone 3)**
    - **Blocked by:** None (can start after the milestone is authorized).
    - **What it delivers:** The charge nurse resumes the current shift and sees carry-over suggestions through Go, with existing effective assignment overlays and workspace loading behavior.
 
-4. **Start a shift through Go (Milestone 3)** — implemented/local checks passed; live verification pending
+4. **[Done] Start a shift through Go (Milestone 3)**
    - **Blocked by:** None (can start after the milestone is authorized).
    - **What it delivers:** A charge nurse starts a shift from an owned saved template in Expo and can resume the persisted shift.
 
-5. **Save shift setup through Go (Milestone 3)** — implemented/local checks passed; live verification pending
+5. **[Done] Save shift setup through Go (Milestone 3)**
    - **Blocked by:** None (can start after the milestone is authorized).
    - **What it delivers:** Existing shift setup screens save nurses, patients, acuity, side settings, and carry-over review through Go and reload the authoritative workspace.
 
-6. **Reopen an assigned shift for editing through Go (Milestone 3)** — implemented/local checks passed; live verification pending
+6. **[Done] Reopen an assigned shift for editing through Go (Milestone 3)**
    - **Blocked by:** None (can start after the milestone is authorized).
    - **What it delivers:** A charge nurse returns an assigned shift to editing through Go without applying a reset against an assignment that changed meanwhile.
 
-7. **End a shift and retain carry-over through Go (Milestone 3)** — implemented/local checks passed; live verification pending
+7. **[Done] End a shift and retain carry-over through Go (Milestone 3)**
    - **Blocked by:** None (can start after the milestone is authorized).
    - **What it delivers:** The existing End Shift flow retains useful carry-over, expires invites, closes the shift, and refreshes participation through Go.
 

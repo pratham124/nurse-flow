@@ -1,6 +1,6 @@
 # Go Backend Migration Plan
 
-Status: milestones 1 and 2 are complete. Milestone 3 (tickets 03–07) was authorized on 2026-10-18; implementation and local verification are complete, with live development migration and real-session walkthrough pending. See `shift-lifecycle.md`. The existing architecture and milestone execution protocol remain approved; no later milestone is authorized.
+Status: milestones 1–3 are done. Milestone 3 (tickets 03–07) was closed at the user's request on 2026-10-19 after local and live development checks passed, with the remaining manual checks and fixture cleanup deferred. See `shift-lifecycle.md` for the exact verification limits. The existing architecture and milestone execution protocol remain approved; no later milestone is authorized.
 
 ## Purpose and scope
 
@@ -108,7 +108,7 @@ The user changed the execution style on 2026-10-17: once a milestone is agreed a
 5. Give a focused milestone walkthrough emphasizing new concepts, complex rules, and verification. Answer questions without a quiz, restatement, or historical-checklist gate.
 6. Mark only verified tickets/milestones complete. Stop at the agreed boundary unless the next milestone is authorized.
 
-Current handoff: **Milestone 3 — Charge shift lifecycle** is authorized. Tickets 03–07 are implemented and locally verified, including actual HTTP/client/store and restored-Postgres checks. See [shift lifecycle](shift-lifecycle.md) for the contract, decisions, evidence, and pending development verification. Apply migration `20261018160805` only to `nmitctyxtjmlakcsmnuj`, review live grants/advisors, and complete the real-session Expo walkthrough before marking the milestone done. Development credentials are environment-specific: the Windows helper uses DPAPI, while the branch-restricted CI environment provides read-only template checks; see [CI database checks](ci-database-checks.md) and [cloud execution limits](cloud-execution-trial.md). Do not start milestone 4.
+Current handoff: **Milestone 3 — Charge shift lifecycle is done.** Tickets 03–07 are implemented and verified with local checks, real Supabase-token lifecycle requests, development role isolation, and a partial browser/Android walkthrough. Migrations `20261018160805` and `20261020055621` are applied and registered only in `nmitctyxtjmlakcsmnuj`; live catalog/advisor checks passed. The user explicitly closed the milestone with final UI checks and fixture cleanup deferred; see [shift lifecycle](shift-lifecycle.md) for the evidence and limits. Development credentials are environment-specific: the Windows helper uses DPAPI, while the branch-restricted CI environment provides read-only template checks; see [CI database checks](ci-database-checks.md) and [cloud execution limits](cloud-execution-trial.md). Milestone 4 requires authorization before implementation.
 
 ## Remaining approved milestones
 
@@ -117,7 +117,7 @@ The user approved this breakdown on 2026-10-17. Full ticket deliverables, blocki
 | Milestone | Scope | Tickets | Status |
 | --- | --- | --- | --- |
 | 2 | Save and delete owned floor templates | 01–02 | Complete; verification in template-writes.md |
-| 3 | Charge workspace reads and shift lifecycle, including carry-over | 03–07 | Implemented/local checks passed; live development verification pending |
+| 3 | Charge workspace reads and shift lifecycle, including carry-over | 03–07 | Done; verification limits and deferred manual checks in shift-lifecycle.md |
 | 4 | Application profiles, nurse invites, joining, and scoped nurse reads | 08–11 | Planned |
 | 5 | Manual moves, issue/swap requests, and request threads | 12–15 | Planned |
 | 6 | Go/Python optimizer coordination, device registration, and live collaboration parity | 16–19 | Planned |
@@ -293,7 +293,7 @@ Production enablement follows hosted development verification and explicit appro
 - [x] Implemented tickets 03–07: Go workspace reads/overlays, owned atomic start, validated setup saves with draft-origin revisions, baseline-checked reopen, and atomic carry-over/invite expiry/closure. Retained business triggers and joined-nurse ended-state semantics.
 - [x] Generated migration `20261018160805` with limited column grants and owner RLS. Applied only to isolated local PostgreSQL restored from the full captured baseline; no hosted database changes.
 - [x] Local checks cover HTTP auth/errors, domain validation, concurrency, ownership, transaction rollback, trigger effects, reference lock order, and the actual Axios/Zod/store-to-Go-to-Postgres demo. Expo web export passed. See shift-lifecycle.md for final check results and coverage limits.
-- [ ] Apply/register the migration in nurseflow-go-dev, run the read-only catalog/advisor review and dedicated-role checks, then complete real-session Expo browser/available native walkthroughs. Milestone 3 remains in review until these pass. Milestone 4 has not started.
+- [x] Development migration/catalog/advisor/role checks and real-session lifecycle demo completed in the Windows handoff below. The user later closed the milestone with the remaining manual walkthrough checks deferred; see shift-lifecycle.md. Milestone 4 has not started.
 - [x] User-requested UUID readability follow-up: replaced manual UUID generation with pinned `github.com/google/uuid` v1.6.0, preserving `NewID() (string, error)` and version 4 IDs. Updated AGENTS.md to favor maintained libraries for standard functionality when they reduce custom code and improve readability. `go test ./...` and `go vet ./...` passed; this follow-up does not complete the pending live milestone checks.
 - [x] User-requested backend library cleanup: shared UUID validation now uses `google/uuid` with the existing dashed-format restriction across Auth subjects, route IDs, and shift-start input. Pinned `rs/cors` v1.11.1 handles CORS policy checks; an adapter retains exact origins, deny-all empty configuration, JSON 403 errors, advertised methods/headers, and header case/spacing tolerance. UUID/Auth/route and CORS regression tests, `go test -race ./...`, `go vet ./...`, and diff checks passed. Frontend schema cleanup and shared JSON decoding remain separate follow-ups; live milestone checks are still pending.
 - [x] User-requested remaining cleanup: frontend Zod schemas now validate optimizer responses, manual overrides, joined-nurse access/beds/history, and saved-record UUIDs. Reused existing nested shift schemas, retained ownership/status checks and legacy aliases, normalized nullable RPC fields, and kept UUID version/casing rules. Template and shift handlers now share a bounded standard-library Go JSON decoder with endpoint-specific errors, unknown-field rejection, and one non-null value per request. All 70 focused frontend checks, TypeScript, focused lint, Go race tests/vet, Expo web export (22 routes), and diff checks passed. No new frontend dependency or hosted database change; real-session milestone walkthroughs remain pending.
@@ -303,3 +303,10 @@ Production enablement follows hosted development verification and explicit appro
 ### 2026-10-19 - Reviewed work merged into the migration branch
 
 - [x] Merged `review-milestone-3` into `codex/go-migration`, retaining the target branch's CI workflow and cloud/database verification history alongside milestone 3 and the reviewed cleanup. Resolved the migration-log conflict by preserving both histories and the current milestone boundary. Go race tests/vet, TypeScript, lint, 70 focused frontend tests, and diff checks passed. Hosted milestone 3 migration and real-session walkthroughs remain pending.
+
+### 2026-10-19 - Milestone 3 development verification and closeout
+
+- [x] Applied and registered lifecycle migration `20261018160805` and policy initplan follow-up `20261020055621` only in nurseflow-go-dev. Existing tables, functions, triggers, and client policies are preserved. Final advisors: 55 existing findings, no new findings. Dedicated-role live workspace isolation passed.
+- [x] Verified real Supabase-token requests through Axios/Zod/Zustand, Go, and development Postgres: duplicate starts, stale saves, owner/role/token rejection, baseline-checked reopen, invite expiry, joined ready/removed/ended states, populated carry-over, and empty replacement.
+- [x] Browser setup/save/reload/end walkthrough and Android emulator sign-in/list/start reached the migrated workflows. Added screen-focus guards for missing-draft redirects discovered during the browser walkthrough. TypeScript, lint, 56 focused frontend checks, Go race tests, and vet passed after the code change.
+- [x] User requested stopping the remaining walkthrough and then explicitly requested marking milestone 3 done and pushing the changes. Marked tickets 03–07 done with the remaining UI regression, full native flow, live UI outage/retry, and synthetic fixture cleanup deferred in shift-lifecycle.md. Temporary test processes were stopped. No production change or milestone 4 implementation.

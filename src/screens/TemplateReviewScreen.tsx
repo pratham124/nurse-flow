@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { router } from "expo-router";
+import { useIsFocused } from "@react-navigation/native";
 import { StyleSheet, Text, View } from "react-native";
 
 import {
@@ -144,6 +145,7 @@ function isCompletedFloorTemplate(
 }
 
 export default function TemplateReviewScreen() {
+  const isFocused = useIsFocused();
   const hasSavedTemplate = useRef(false);
   const { draftFloorTemplate, resetWorkflowDraft } = useWorkflowDraft();
   const saveFloorTemplate = useServerWorkspace(
@@ -167,10 +169,10 @@ export default function TemplateReviewScreen() {
       : "Create a floor template before saving.");
 
   useEffect(() => {
-    if (!draftFloorTemplate && !hasSavedTemplate.current) {
+    if (isFocused && !draftFloorTemplate && !hasSavedTemplate.current) {
       router.replace("/floor-details");
     }
-  }, [draftFloorTemplate]);
+  }, [draftFloorTemplate, isFocused]);
 
   if (!draftFloorTemplate) {
     return null;

@@ -1,15 +1,16 @@
 # Milestone 3: Charge shift lifecycle
 
-Status on 2026-10-18: tickets 03–07 are implemented and verified locally. Applying
-the migration to `nurseflow-go-dev`, verifying its live grants, and completing a
-real-session Expo walkthrough are pending. The milestone is **not marked done**.
-No production or hosted development database was changed in this session.
+Status on 2026-10-19: **Milestone 3 is done**, as requested by the user after
+stopping the final walkthrough. Tickets 03–07 are implemented, local checks pass,
+and development migrations and live lifecycle checks pass. The remaining manual
+checks and fixture cleanup below are deferred, not reported as passed.
+Only the isolated development project was changed; production is unchanged.
 
 The user authorized this milestone and approved stale setup rejection and atomic,
 authoritative End Shift. See [ADR 0002](../adr/0002-go-shift-lifecycle-transactions.md).
 The absent local ticket files were reconstructed from the approved milestone
 index under `.scratch/go-migration-next/issues/03` through `07`; their status is
-in review, pending live verification. Milestones 4–7 remain untouched.
+done with the verification limits recorded here. Milestones 4–7 remain untouched.
 
 ## Request contract
 
@@ -105,10 +106,13 @@ details, invite issuance, ownership changes, shift deletion, and direct
 notification writes remain inaccessible. No public workflow RPC is executable by
 the Go role. See [read-only catalog verification](verify-shift-lifecycle-role.sql).
 
-Before using the updated app against hosted development, apply this migration
-as the development administrator to project **`nmitctyxtjmlakcsmnuj`** and register
-its version through the existing migration workflow. The Go login cannot grant
-itself permissions. Do not apply it to production or copy fixture credentials.
+Migration `20261018160805` and follow-up
+[`20261020055621`](../../supabase/migrations/20261020055621_go_shift_lifecycle_policy_initplans.sql)
+are applied and registered in **`nmitctyxtjmlakcsmnuj`**. The follow-up wraps
+`current_setting` in a scalar SELECT so the verified transaction identity is
+evaluated once per statement. It preserves the same ownership predicates,
+WITH CHECK rules, roles, and grants. All four migration versions match the
+development history. The Go login cannot grant itself permissions.
 
 ## Verification performed
 
@@ -136,15 +140,38 @@ itself permissions. Do not apply it to production or copy fixture credentials.
   checks and TypeScript/focused lint passed during implementation.
 - [x] Expo web static export succeeded for all 22 routes. The existing web push
   listener warning remains; export is not a real-session browser walkthrough.
-- [ ] Development migration application/history, live catalog/advisor review,
-  dedicated-role checks, and real Supabase-token requests.
-- [ ] Expo browser and available native-device walkthrough against development,
-  including outage/retry and joined-nurse ended-versus-removed state.
+- [x] Development migration application/history and live catalog review: all
+  11 RLS tables, 26 pre-existing policies, 29 public functions, and seven triggers
+  preserved; 12 limited-role lifecycle policies added. Forbidden owner changes,
+  shift deletion, invite hashes, nurse email, and public workflow EXECUTE remain
+  unavailable to Go. The final advisor comparison is 55 before/55 after with
+  no new findings; existing findings were not remediated in this milestone.
+- [x] Dedicated-role development workspace isolation passed, including both
+  owner directions, regular-user rejection, and unknown identity.
+- [x] Real Supabase sign-ins through actual Axios/Zod/Zustand, local Go, and
+  development Postgres: start/duplicate start, setup/stale save/reload,
+  cross-owner denial, malformed token, forbidden role, assigned-save rejection,
+  stale/matching reopen, invite expiry, joined ready/access-removed/shift-ended,
+  populated carry-over, and empty replacement. Assigned baseline and access
+  fixtures were staged only for newly created synthetic accounts; the retained
+  joined-nurse RPC was exercised rather than reimplemented.
+- [x] Expo browser: created a two-room template, started/resumed a shift, saved
+  admitting side/nurse/patient/acuity, reloaded persisted setup, and ended the
+  populated shift. Android Pixel 5/API 34 emulator: real sign-in, template list,
+  and shift start reached setup through the development API using ADB forwarding.
+- [x] Fixed a walkthrough-discovered navigation issue: mounted, unfocused rooms,
+  doctor-side, and template-review screens could redirect when the draft was
+  cleared. Missing-draft redirects now require screen focus. TypeScript, lint,
+  56 template/shift/workspace checks, Go race tests, and vet passed afterward.
 
-The cloud runtime has no configured database credentials. The previously saved
-Windows DPAPI credential cannot be decrypted in this Linux workspace. Supabase
-was found as an available plugin but was not connected when these checks ran.
-No live result or physical-device/iOS result is claimed.
+Deferred at the user's request: finish the browser carry-over/navigation
+regression check, the full Android setup/end walkthrough, and live UI outage/retry.
+The stopped-API repository behavior passed in the earlier local HTTP demo;
+that does not count as a live UI outage test. No physical-device or iOS result
+is claimed. The temporary API, Metro, and emulator processes were stopped.
+Synthetic development accounts/templates/shifts remain from the interrupted
+walkthrough; fixture cleanup was not performed. Ignored scratch evidence is
+local only, and no credentials are included in this handoff.
 
 ## Repeat the checks
 
@@ -167,7 +194,7 @@ For a fresh disposable local cluster, apply in order:
 
 1. `backend/internal/database/testdata/shift-lifecycle-managed.sql`
 2. `supabase/baseline/restore-development.draft.sql`
-3. All three `supabase/migrations/*.sql`, in version order
+3. All four `supabase/migrations/*.sql`, in version order
 4. `backend/internal/database/testdata/shift-lifecycle-fixtures.sql`
 
 Use UTF-8, a `postgres` administrator, and `wal_level=logical`. Managed stubs and
@@ -181,8 +208,8 @@ go test -race ./internal/database -run 'Test(ShiftLifecycleIntegration|ShiftWork
 
 With development credentials available on the original Windows account, run
 `backend/scripts/development.ps1 TestShifts` after applying the migration. It uses
-the existing private helper and performs read-only ownership checks. That new
-dispatch action was reviewed here but could not be executed on Linux.
+the existing private helper and performs read-only ownership checks. This
+dispatch action passed on Windows against the migrated development project.
 
 For the live Expo walkthrough: start/resume an owned template, save each setup
 screen and reload, try an older draft after another save, reopen an assigned
