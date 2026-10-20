@@ -42,6 +42,13 @@ The server allows five seconds to read request headers, ten seconds to read a re
 
 The server uses the Go standard library for HTTP. `cmd/api/main.go` owns startup, configuration, and dependency wiring. Routes, HTTP handlers, response types, and their tests live together in `internal/httpapi`. Authentication middleware and token verification live in `internal/auth`; shared JSON response helpers live in `internal/httpresponse`. Database queries use GORM in `internal/database`.
 
+Charge shift reads and lifecycle operations also use Go. See the
+[milestone 3 contract, transactions, and verification](../docs/go-migration/shift-lifecycle.md)
+before enabling them against development: migration `20261018160805` is required
+and has only been applied to isolated local PostgreSQL in this session. Shift
+rules live in `internal/shifts`; Expo uses `shiftRepository.ts` and
+`shiftSchemas.ts` through the shared Axios client.
+
 ## Checks
 
 Run from `backend`:
@@ -73,7 +80,7 @@ Public-key discovery, caching, and background refresh use `jwkset`. Startup atte
 
 `GET /floor-templates` uses the same token and charge-nurse checks, then reads only the authorized profile's templates in `updated_at DESC` order. It returns `{ "templates": [...] }` with the six existing snake_case database fields. `template_snapshot` remains raw JSON; the frontend's existing mapper validates and adapts it in `src/services/floorTemplateRepository.ts`.
 
-An empty list returns HTTP 200 with `{ "templates": [] }`. Template query failures return a controlled HTTP 503 `database_unavailable` error, without partial results. Query parameters and headers cannot select a different owner. Expo uses Go for template lists, saves, and deletes; other workflows retain their existing paths.
+An empty list returns HTTP 200 with `{ "templates": [] }`. Template query failures return a controlled HTTP 503 `database_unavailable` error, without partial results. Query parameters and headers cannot select a different owner. Expo uses Go for template lists, saves, deletes, and the charge shift lifecycle described above. Unmigrated invite, joined-nurse, request, and optimizer workflows retain their existing paths.
 
 `POST /floor-templates` creates a reusable layout; `PUT /floor-templates/{id}` replaces an owned layout. Both accept `{ "template_snapshot": { ... } }` and return `{ "template": { ... } }` with HTTP 201/200. The server validates layout consistency and owns IDs, owner, and timestamps. Creation and snapshot-ID synchronization commit together. `DELETE /floor-templates/{id}` returns 204; missing/foreign update/delete requests return the same 404. Existing UI restrictions and database reference actions remain. See [template writes](../docs/go-migration/template-writes.md), [list contract](../docs/go-migration/template-list.md), and [Expo setup](../docs/go-migration/expo-template-read.md).
 
@@ -89,12 +96,18 @@ Subsequent commands load the credential only into the child command's process en
 ./scripts/development.ps1 Check
 ./scripts/development.ps1 TestTemplates
 ./scripts/development.ps1 TestTemplateWrites
+./scripts/development.ps1 TestShifts
 ./scripts/development.ps1 Api
 ```
 
 `TestTemplates` clears any local database override and runs the development-only template isolation test with the documented synthetic account IDs. An agent must run this helper through approved commands as the Windows account that saved the credential; the sandbox account cannot decrypt it. The helper never prints the password or a credential-bearing connection string.
 
 `TestTemplateWrites` uses the same development-only configuration. It creates, updates, and removes its own temporary synthetic templates, checks ownership/role isolation and immutable fields, and leaves the existing fixture templates unchanged. The injected rollback trigger/reference checks run only against the isolated local test database.
+
+`TestShifts` performs read-only active-shift/carry-over ownership and role checks
+using the same fixture identities. It requires the milestone 3 migration. The
+staged lifecycle, failure-injection, and HTTP/client demo tests run only with an
+explicit isolated loopback test URL; they never stage fixtures in development.
 
 Synthetic helper checks are in `scripts/test-development.ps1`. They mock the Go command and use a separate temporary credential, covering DPAPI round trips, absence of plaintext passwords in saved data/output, environment restoration, and preservation of an existing credential after a failed save. They do not verify a real password or contact Supabase.
 

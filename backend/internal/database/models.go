@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// These read-only mappings describe existing tables; they do not create them.
+// Profile is a read-only mapping of an existing application profile.
 type Profile struct {
 	ID          string    `gorm:"column:id;type:uuid;primaryKey;->"`
 	AuthUserID  string    `gorm:"column:auth_user_id;type:uuid;->"`
@@ -15,8 +15,10 @@ type Profile struct {
 	UpdatedAt   time.Time `gorm:"column:updated_at;->"`
 }
 
+// TableName maps Profile to the existing profiles table.
 func (Profile) TableName() string { return "public.profiles" }
 
+// FloorTemplate is a read-only mapping of a saved reusable layout.
 type FloorTemplate struct {
 	ID               string          `gorm:"column:id;type:uuid;primaryKey;->" json:"id"`
 	OwnerProfileID   string          `gorm:"column:owner_profile_id;type:uuid;->" json:"owner_profile_id"`
@@ -26,6 +28,7 @@ type FloorTemplate struct {
 	UpdatedAt        time.Time       `gorm:"column:updated_at;->" json:"updated_at"`
 }
 
+// TableName maps FloorTemplate to the existing floor_templates table.
 func (FloorTemplate) TableName() string { return "public.floor_templates" }
 
 type floorTemplateInsert struct {

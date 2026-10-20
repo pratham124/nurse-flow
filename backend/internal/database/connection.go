@@ -1,3 +1,4 @@
+// Package database maps existing tables and runs identity-scoped database operations.
 package database
 
 import (
@@ -15,6 +16,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+// DevelopmentProject identifies the isolated Supabase project used by this backend.
 const DevelopmentProject = "nmitctyxtjmlakcsmnuj"
 
 // Store owns one reusable connection pool. Close it when the process finishes.
@@ -56,6 +58,7 @@ func DevelopmentURL() (string, error) {
 	return connection.String(), nil
 }
 
+// OpenDevelopment opens and verifies a connection using development-only settings.
 func OpenDevelopment(ctx context.Context) (*Store, error) {
 	connectionURL, err := DevelopmentURL()
 	if err != nil {
@@ -92,6 +95,7 @@ func open(ctx context.Context, connectionURL string) (*Store, error) {
 	return store, nil
 }
 
+// Check verifies connectivity and requires the limited database role.
 func (s *Store) Check(ctx context.Context) error {
 	checkContext, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
@@ -116,6 +120,7 @@ func (s *Store) Check(ctx context.Context) error {
 	return nil
 }
 
+// Close releases the store's database connection pool.
 func (s *Store) Close() error {
 	return s.pool.Close()
 }
@@ -145,5 +150,13 @@ func (s *Store) withIdentity(ctx context.Context, authUserID string, readOnly bo
 			return errors.New("could not set database query timeout")
 		}
 		return query(tx)
-	}, &sql.TxOptions{ReadOnly: readOnly})
+	}, identityTransactionOptions(readOnly))
+}
+
+func identityTransactionOptions(readOnly bool) *sql.TxOptions {
+	options := &sql.TxOptions{ReadOnly: readOnly}
+	if readOnly {
+		options.Isolation = sql.LevelRepeatableRead
+	}
+	return options
 }

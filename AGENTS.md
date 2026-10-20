@@ -49,7 +49,7 @@ request:
 - Implement one feature at a time.
 - Do not jump ahead to future phases.
 - Keep code readable and beginner-friendly.
-- Avoid extra libraries unless clearly justified.
+- Prefer maintained, established libraries for standard functionality (such as UUID generation) when they reduce custom code and improve readability. Keep dependencies focused and explain why each is needed.
 - Prefer simple local-first solutions before adding infrastructure.
 - Never add code I cannot reasonably understand and explain.
 

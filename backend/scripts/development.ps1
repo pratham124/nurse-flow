@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('Save', 'Check', 'TestTemplates', 'TestTemplateWrites', 'Api')]
+    [ValidateSet('Save', 'Check', 'TestTemplates', 'TestTemplateWrites', 'TestShifts', 'Api')]
     [string]$Action = 'Check',
     [string]$CredentialPath = (Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'NurseFlow/go-dev-credential.xml'),
     [string]$CertificatePath = $env:NURSEFLOW_DB_SSLROOTCERT
@@ -49,7 +49,7 @@ $environment = @{
     NURSEFLOW_DB_PASSWORD = $settings.Credential.GetNetworkCredential().Password
     NURSEFLOW_DB_SSLROOTCERT = $settings.CertificatePath
 }
-if ($Action -in @('TestTemplates', 'TestTemplateWrites')) {
+if ($Action -in @('TestTemplates', 'TestTemplateWrites', 'TestShifts')) {
     $environment.NURSEFLOW_DATABASE_TESTS = '1'
     $environment.NURSEFLOW_TEST_DATABASE_URL = $null
     $environment.NURSEFLOW_TEST_ALPHA_ID = '4ea34fc9-d17b-411e-83a0-8a82cf9b8977'
@@ -69,6 +69,7 @@ try {
     switch ($Action) {
         'TestTemplates' { & go test ./internal/database -run '^TestTemplateListIsolationIntegration$' -v -count=1 }
         'TestTemplateWrites' { & go test ./internal/database -run '^TestTemplateWritesIntegration$' -v -count=1 }
+        'TestShifts' { & go test ./internal/database -run '^TestShiftWorkspaceIsolationIntegration$' -v -count=1 }
         'Api' { & go run ./cmd/api }
         default { & go run ./cmd/dbcheck }
     }

@@ -1,6 +1,6 @@
 # Go Backend Migration Plan
 
-Status: milestones 1 and 2 complete on 2026-10-17. Milestone 1 ordered tasks 0–11 and milestone 2 tickets 01–02 are done. Verification evidence and limits are recorded in `milestone-one-verification.md` and `template-writes.md`. The consolidated architecture was approved on 2026-09-12. Mandatory understanding checkpoints were removed at the user's request on 2026-10-04; each new milestone requires the bounded design round described below.
+Status: milestones 1 and 2 are complete. Milestone 3 (tickets 03–07) was authorized on 2026-10-18; implementation and local verification are complete, with live development migration and real-session walkthrough pending. See `shift-lifecycle.md`. The existing architecture and milestone execution protocol remain approved; no later milestone is authorized.
 
 ## Purpose and scope
 
@@ -108,7 +108,7 @@ The user changed the execution style on 2026-10-17: once a milestone is agreed a
 5. Give a focused milestone walkthrough emphasizing new concepts, complex rules, and verification. Answer questions without a quiz, restatement, or historical-checklist gate.
 6. Mark only verified tickets/milestones complete. Stop at the agreed boundary unless the next milestone is authorized.
 
-Current handoff: milestone 2 was authorized and completed on 2026-10-17. Tickets 01–02 are complete; tickets 03–23 remain `ready-for-agent` under `.scratch/go-migration-next/issues/`. See [template writes](template-writes.md) for decisions, implementation, verification, and coverage limits. Next scope, only when authorized: **Milestone 3 — Charge shift lifecycle**, tickets 03–07. Do not start it automatically.
+Current handoff: **Milestone 3 — Charge shift lifecycle** is authorized. Tickets 03–07 are implemented and locally verified, including actual HTTP/client/store and restored-Postgres checks. See [shift lifecycle](shift-lifecycle.md) for the contract, decisions, evidence, and pending development verification. Apply migration `20261018160805` only to `nmitctyxtjmlakcsmnuj`, review live grants/advisors, and complete the real-session Expo walkthrough before marking the milestone done. Development credentials are environment-specific: the Windows helper uses DPAPI, while the branch-restricted CI environment provides read-only template checks; see [CI database checks](ci-database-checks.md) and [cloud execution limits](cloud-execution-trial.md). Do not start milestone 4.
 
 ## Remaining approved milestones
 
@@ -117,7 +117,7 @@ The user approved this breakdown on 2026-10-17. Full ticket deliverables, blocki
 | Milestone | Scope | Tickets | Status |
 | --- | --- | --- | --- |
 | 2 | Save and delete owned floor templates | 01–02 | Complete; verification in template-writes.md |
-| 3 | Charge workspace reads and shift lifecycle, including carry-over | 03–07 | Planned; next authorization boundary |
+| 3 | Charge workspace reads and shift lifecycle, including carry-over | 03–07 | Implemented/local checks passed; live development verification pending |
 | 4 | Application profiles, nurse invites, joining, and scoped nurse reads | 08–11 | Planned |
 | 5 | Manual moves, issue/swap requests, and request threads | 12–15 | Planned |
 | 6 | Go/Python optimizer coordination, device registration, and live collaboration parity | 16–19 | Planned |
@@ -285,3 +285,21 @@ Production enablement follows hosted development verification and explicit appro
 - [x] Created the exact-branch-restricted `nurseflow-go-development` GitHub environment. The existing limited development password was transferred privately from DPAPI to its encrypted environment secret; the public CA certificate is an environment variable. No plaintext password was written to Git or logs.
 - [x] actionlint passed. GitHub-hosted [run 39104411624](https://github.com/pratham124/nurse-flow/actions/runs/39104411624) passed both jobs for `e8ba856`; the actual live test and all seven isolation cases passed without skips or fixture mutation.
 - [x] Cloud coding plus GitHub-hosted live database verification now works independently of the laptop. Direct Codex Cloud database networking is still a separate unresolved limitation. Setup/re-run guidance is in [CI database checks](ci-database-checks.md). No milestone 3 implementation was started.
+
+### 2026-10-18 - Milestone 3 implementation and local verification
+
+- [x] User authorized the charge shift lifecycle milestone and approved rejection of stale setup saves and atomic End Shift derived from authoritative server state.
+- [x] Restored and loaded the exact previously used grill-with-docs, grilling, domain-modeling, and Supabase skills from Git history into `/workspace/shared/skills`, outside the application repository.
+- [x] Implemented tickets 03–07: Go workspace reads/overlays, owned atomic start, validated setup saves with draft-origin revisions, baseline-checked reopen, and atomic carry-over/invite expiry/closure. Retained business triggers and joined-nurse ended-state semantics.
+- [x] Generated migration `20261018160805` with limited column grants and owner RLS. Applied only to isolated local PostgreSQL restored from the full captured baseline; no hosted database changes.
+- [x] Local checks cover HTTP auth/errors, domain validation, concurrency, ownership, transaction rollback, trigger effects, reference lock order, and the actual Axios/Zod/store-to-Go-to-Postgres demo. Expo web export passed. See shift-lifecycle.md for final check results and coverage limits.
+- [ ] Apply/register the migration in nurseflow-go-dev, run the read-only catalog/advisor review and dedicated-role checks, then complete real-session Expo browser/available native walkthroughs. Milestone 3 remains in review until these pass. Milestone 4 has not started.
+- [x] User-requested UUID readability follow-up: replaced manual UUID generation with pinned `github.com/google/uuid` v1.6.0, preserving `NewID() (string, error)` and version 4 IDs. Updated AGENTS.md to favor maintained libraries for standard functionality when they reduce custom code and improve readability. `go test ./...` and `go vet ./...` passed; this follow-up does not complete the pending live milestone checks.
+- [x] User-requested backend library cleanup: shared UUID validation now uses `google/uuid` with the existing dashed-format restriction across Auth subjects, route IDs, and shift-start input. Pinned `rs/cors` v1.11.1 handles CORS policy checks; an adapter retains exact origins, deny-all empty configuration, JSON 403 errors, advertised methods/headers, and header case/spacing tolerance. UUID/Auth/route and CORS regression tests, `go test -race ./...`, `go vet ./...`, and diff checks passed. Frontend schema cleanup and shared JSON decoding remain separate follow-ups; live milestone checks are still pending.
+- [x] User-requested remaining cleanup: frontend Zod schemas now validate optimizer responses, manual overrides, joined-nurse access/beds/history, and saved-record UUIDs. Reused existing nested shift schemas, retained ownership/status checks and legacy aliases, normalized nullable RPC fields, and kept UUID version/casing rules. Template and shift handlers now share a bounded standard-library Go JSON decoder with endpoint-specific errors, unknown-field rejection, and one non-null value per request. All 70 focused frontend checks, TypeScript, focused lint, Go race tests/vet, Expo web export (22 routes), and diff checks passed. No new frontend dependency or hosted database change; real-session milestone walkthroughs remain pending.
+- [x] User-requested typed snapshot construction: `shifts.New` now builds an `initialSnapshot` struct with named load-range fields and marshals it once, replacing the heterogeneous field map and per-field encoding loop. Retained the map for later edits that preserve unknown workflow fields. Existing JSON fields/defaults, including empty arrays, are covered by the updated shift test; `go test ./...`, `go vet ./...`, formatting, and diff checks passed.
+- [x] User-requested Go convention cleanup: made `BaselineID` decoding/fallback explicit, changed `Snapshot.set` to error-first flow, documented exported backend declarations, replaced numeric handler statuses with `net/http` constants, and named the carry-over suggestion fields. Added baseline fallback coverage; backend tests, `go vet ./...`, formatting, and diff checks passed. JSON contracts, successful carry-over behavior, and the pending live milestone boundary are preserved.
+
+### 2026-10-19 - Reviewed work merged into the migration branch
+
+- [x] Merged `review-milestone-3` into `codex/go-migration`, retaining the target branch's CI workflow and cloud/database verification history alongside milestone 3 and the reviewed cleanup. Resolved the migration-log conflict by preserving both histories and the current milestone boundary. Go race tests/vet, TypeScript, lint, 70 focused frontend tests, and diff checks passed. Hosted milestone 3 migration and real-session walkthroughs remain pending.

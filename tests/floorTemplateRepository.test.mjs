@@ -94,6 +94,27 @@ test("delete uses authenticated Go DELETE, requires saved ID and 204 success", a
   await assert.rejects(deleteFloorTemplate(client(), savedID), /invalid response/);
 });
 
+test("saved-template UUID validation preserves versions, casing and dashed format", async () => {
+  let calls = 0;
+  mock.method(goApiClient, "delete", async () => {
+    calls++;
+    return { status: 204, data: "" };
+  });
+  for (const version of [1, 2, 3, 4, 5]) {
+    await deleteFloorTemplate(client(), `ABCDEF01-0000-${version}000-8000-000000000001`);
+  }
+  for (const value of [
+    "00000000-0000-0000-0000-000000000000",
+    "abcdef01-0000-7000-8000-000000000001",
+    "abcdef01000040008000000000000001",
+    "abcdef01-0000-4000-0000-000000000001",
+    `{${savedID}}`, `urn:uuid:${savedID}`,
+  ]) {
+    await assert.rejects(deleteFloorTemplate(client(), value), /Only saved/);
+  }
+  assert.equal(calls, 5);
+});
+
 test("write errors are visible and do not expose server details or fall back", async () => {
   for (const [status, message] of [[400, /incomplete or inconsistent/], [401, /session expired/], [403, /cannot save/], [404, /no longer available/], [413, /too large/], [503, /temporarily unavailable/], [500, /could not save/]]) {
     mock.method(goApiClient, "request", async () => { throw new AxiosError("private", "ERR_BAD_RESPONSE", undefined, undefined, { status, data: { error: { message: "SQL password" } } }); });

@@ -1,12 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { z } from "zod";
 
-export type AssignmentOptimizerStatus =
-  | "saved"
-  | "stale"
-  | "invalid_input"
-  | "timed_out"
-  | "unavailable"
-  | "failed";
+const optimizerStatusSchema = z.enum([
+  "saved", "stale", "invalid_input", "timed_out", "unavailable", "failed",
+]);
+const responseEnvelopeSchema = z.looseObject({ status: z.unknown().optional() });
+const optionalResponseTextSchema = z.string().trim().min(1).optional();
+
+export type AssignmentOptimizerStatus = z.infer<typeof optimizerStatusSchema>;
 
 export type AssignmentOptimizerResult =
   | { resultId: string; runId: string; status: "saved" }
@@ -27,17 +28,7 @@ type RequestAssignmentOptimizationOptions = {
   fetchImplementation?: typeof fetch;
 };
 
-type OptimizerResponseBody = Record<string, unknown>;
-
 const optimizerPath = "/v1/assignment-runs";
-const responseStatuses = new Set<AssignmentOptimizerStatus>([
-  "saved",
-  "stale",
-  "invalid_input",
-  "timed_out",
-  "unavailable",
-  "failed",
-]);
 
 export class OptimizerRepositoryError extends Error {}
 
@@ -51,27 +42,15 @@ function requireText(value: string, fieldName: string) {
   return normalizedValue;
 }
 
-function getOptionalText(body: OptimizerResponseBody, fieldName: string) {
-  const value = body[fieldName];
-
-  if (value === undefined) {
-    return undefined;
-  }
-
-  if (typeof value !== "string" || !value.trim()) {
+function getOptionalText(value: unknown) {
+  const result = optionalResponseTextSchema.safeParse(value);
+  if (!result.success) {
     throw new OptimizerRepositoryError(
       "The assignment service returned an invalid response.",
     );
   }
 
-  return value.trim();
-}
-
-function isResponseStatus(value: unknown): value is AssignmentOptimizerStatus {
-  return (
-    typeof value === "string" &&
-    responseStatuses.has(value as AssignmentOptimizerStatus)
-  );
+  return result.data;
 }
 
 function hasExpectedHttpStatus(
@@ -98,15 +77,17 @@ export function parseAssignmentOptimizerResponse(
   httpStatus: number,
   value: unknown,
 ): AssignmentOptimizerResult {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
+  const envelope = responseEnvelopeSchema.safeParse(value);
+  if (!envelope.success) {
     throw new OptimizerRepositoryError(
       "The assignment service returned an invalid response.",
     );
   }
 
-  const body = value as OptimizerResponseBody;
+  const body = envelope.data;
+  const status = optimizerStatusSchema.safeParse(body.status);
 
-  if (!isResponseStatus(body.status)) {
+  if (!status.success) {
     if (httpStatus === 401) {
       throw new OptimizerRepositoryError(
         "Your session expired. Sign in again before running assignment.",
@@ -120,7 +101,7 @@ export function parseAssignmentOptimizerResponse(
     }
 
     if (body.status === "conflict" && httpStatus === 409) {
-      const runId = getOptionalText(body, "runId");
+      const runId = getOptionalText(body.runId);
 
       return {
         ...(runId ? { runId } : {}),
@@ -139,16 +120,16 @@ export function parseAssignmentOptimizerResponse(
     );
   }
 
-  if (!hasExpectedHttpStatus(body.status, httpStatus)) {
+  if (!hasExpectedHttpStatus(status.data, httpStatus)) {
     throw new OptimizerRepositoryError(
       "The assignment service returned an invalid response.",
     );
   }
 
-  const runId = getOptionalText(body, "runId");
-  const resultId = getOptionalText(body, "resultId");
+  const runId = getOptionalText(body.runId);
+  const resultId = getOptionalText(body.resultId);
 
-  if (body.status === "saved") {
+  if (status.data === "saved") {
     if (!runId || !resultId) {
       throw new OptimizerRepositoryError(
         "The assignment service returned an invalid saved result.",
@@ -170,7 +151,7 @@ export function parseAssignmentOptimizerResponse(
 
   return {
     ...(runId ? { runId } : {}),
-    status: body.status,
+    status: status.data,
   };
 }
 

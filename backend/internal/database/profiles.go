@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// ErrProfileNotFound indicates that the verified Auth user has no application profile.
 var ErrProfileNotFound = errors.New("application profile not found")
 
 // ProfileByAuthUserID resolves a server-verified Auth subject to its application profile.

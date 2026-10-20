@@ -16,6 +16,7 @@ type ProfileReader interface {
 
 type profileContextKey struct{}
 
+// ProfileFromContext retrieves the charge-nurse profile authorized by RequireChargeNurse.
 func ProfileFromContext(ctx context.Context) (database.Profile, bool) {
 	profile, ok := ctx.Value(profileContextKey{}).(database.Profile)
 	return profile, ok

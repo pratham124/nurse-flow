@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import * as Crypto from "expo-crypto";
+import { savedAccountIdSchema } from "./identifierSchemas";
 
 import type {
   ActiveShiftRecord,
@@ -119,8 +120,6 @@ const inviteColumns =
   "id, shift_id, nurse_id, created_by_profile_id, token_hash, status, created_at, expires_at, used_at, used_by_profile_id, revoked_at";
 const accessColumns =
   "id, shift_id, nurse_id, nurse_name, nurse_profile_id, nurse_email, status, created_at, updated_at";
-const uuidPattern =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const inviteCodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const inviteCodePattern = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
 const inviteCodeLength = 6;
@@ -136,7 +135,7 @@ function assertOwnedActiveShift(
   activeShift: ActiveShiftRecord,
   profile: UserProfile,
 ) {
-  if (!uuidPattern.test(activeShift.id)) {
+  if (!savedAccountIdSchema.safeParse(activeShift.id).success) {
     throw new Error("Start a server-backed shift before creating nurse invites.");
   }
 

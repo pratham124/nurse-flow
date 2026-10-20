@@ -75,6 +75,7 @@ type signingKeyStore struct {
 	jwkset.Storage
 }
 
+// KeyReplaceAll keeps only unambiguous ES256 signing keys on the P-256 curve.
 func (s *signingKeyStore) KeyReplaceAll(ctx context.Context, keys []jwkset.JWK) error {
 	accepted := make([]jwkset.JWK, 0, len(keys))
 	seen := make(map[string]bool)
@@ -97,6 +98,7 @@ func (s *signingKeyStore) KeyReplaceAll(ctx context.Context, keys []jwkset.JWK) 
 // boundedKeyTransport limits downloads while the library performs the HTTP request.
 type boundedKeyTransport struct{}
 
+// RoundTrip delegates the HTTP request and caps the signing-key response at 64 KiB.
 func (boundedKeyTransport) RoundTrip(request *http.Request) (*http.Response, error) {
 	response, err := http.DefaultTransport.RoundTrip(request)
 	if err != nil {

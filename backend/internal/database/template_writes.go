@@ -12,6 +12,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+// ErrTemplateNotFound indicates that a template is missing or belongs to another profile.
 var ErrTemplateNotFound = errors.New("floor template not found")
 
 // SaveFloorTemplate uses an empty ID only for creation. Updates never upsert a

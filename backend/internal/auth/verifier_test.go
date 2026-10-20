@@ -211,6 +211,9 @@ func TestRejectToken(t *testing.T) {
 		{"future issued at", func(c *accessClaims) { c.IssuedAt = jwt.NewNumericDate(fixtureTime.Add(time.Minute)) }},
 		{"missing subject", func(c *accessClaims) { c.Subject = "" }},
 		{"invalid subject", func(c *accessClaims) { c.Subject = "not-a-user-id" }},
+		{"compact subject", func(c *accessClaims) { c.Subject = strings.ReplaceAll(fixtureUserID, "-", "") }},
+		{"braced subject", func(c *accessClaims) { c.Subject = "{" + fixtureUserID + "}" }},
+		{"URN subject", func(c *accessClaims) { c.Subject = "urn:uuid:" + fixtureUserID }},
 		{"anonymous API key", func(c *accessClaims) { c.Role = "anon" }},
 		{"service role", func(c *accessClaims) { c.Role = "service_role" }},
 	}
