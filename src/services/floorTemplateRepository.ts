@@ -7,6 +7,7 @@ import {
   toFloorTemplateSnapshot,
 } from "./floorTemplateSchemas";
 import { goApiClient } from "./goApiClient";
+import { savedAccountIdSchema } from "./identifierSchemas";
 
 import type { FloorTemplate, FloorTemplateRecord } from "../types/models";
 
@@ -18,8 +19,6 @@ const sessionActions = {
   delete: "deleting",
 };
 
-const uuidPattern =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const invalidResponseMessage =
   "The template service returned an invalid response.";
 
@@ -105,7 +104,7 @@ export async function saveFloorTemplate(
 ): Promise<FloorTemplateRecord> {
   const headers = await templateAuthorization(supabase, "save");
   const snapshot = toFloorTemplateSnapshot(floorTemplate);
-  const existing = uuidPattern.test(floorTemplate.id);
+  const existing = savedAccountIdSchema.safeParse(floorTemplate.id).success;
   const response = await goApiClient
     .request<unknown>({
       method: existing ? "PUT" : "POST",
@@ -133,7 +132,7 @@ export async function deleteFloorTemplate(
   supabase: SupabaseClient,
   floorTemplateId: string,
 ): Promise<void> {
-  if (!uuidPattern.test(floorTemplateId)) {
+  if (!savedAccountIdSchema.safeParse(floorTemplateId).success) {
     throw new Error("Only saved account templates can be deleted.");
   }
   const headers = await templateAuthorization(supabase, "delete");

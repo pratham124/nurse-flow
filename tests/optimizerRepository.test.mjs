@@ -150,6 +150,28 @@ test("rejects malformed or contradictory service responses", () => {
   );
 });
 
+test("normalizes response text while rejecting non-string and blank identifiers", () => {
+  assert.deepEqual(parseAssignmentOptimizerResponse(200, {
+    status: "saved", runId: " run ", resultId: " result ", futureField: true,
+  }), { status: "saved", runId: "run", resultId: "result" });
+  for (const runId of [null, 42, [], " "]) {
+    assert.throws(() => parseAssignmentOptimizerResponse(409, { status: "stale", runId }),
+      OptimizerRepositoryError);
+  }
+  assert.deepEqual(parseAssignmentOptimizerResponse(413, { status: "invalid_input" }),
+    { status: "invalid_input" });
+});
+
+test("preserves session, authorization, and running response messages", () => {
+  for (const [status, body, message] of [
+    [401, {}, /session expired/],
+    [403, {}, /cannot run assignment/],
+    [202, { status: "running" }, /still calculating/],
+  ]) {
+    assert.throws(() => parseAssignmentOptimizerResponse(status, body), message);
+  }
+});
+
 test("normalizes a mutation conflict to stale so the app refreshes", () => {
   assert.deepEqual(
     parseAssignmentOptimizerResponse(409, {

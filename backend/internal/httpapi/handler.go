@@ -11,7 +11,7 @@ import (
 )
 
 // NewHandler connects the routes to the supplied verifier and database readers.
-func NewHandler(verifier *auth.Verifier, profiles auth.ProfileReader, templates FloorTemplateStore) http.Handler {
+func NewHandler(verifier *auth.Verifier, profiles auth.ProfileReader, templates FloorTemplateStore, shifts ShiftStore) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", healthHandler)
 	mux.Handle("GET /auth/check", verifier.RequireIdentity(http.HandlerFunc(authCheckHandler)))
@@ -20,6 +20,7 @@ func NewHandler(verifier *auth.Verifier, profiles auth.ProfileReader, templates 
 	mux.Handle("POST /floor-templates", verifier.RequireIdentity(auth.RequireChargeNurse(profiles, saveFloorTemplateHandler(templates))))
 	mux.Handle("PUT /floor-templates/{id}", verifier.RequireIdentity(auth.RequireChargeNurse(profiles, requireUUID(saveFloorTemplateHandler(templates)))))
 	mux.Handle("DELETE /floor-templates/{id}", verifier.RequireIdentity(auth.RequireChargeNurse(profiles, requireUUID(deleteFloorTemplateHandler(templates)))))
+	registerShiftRoutes(mux, verifier, profiles, shifts)
 	return mux
 }
 

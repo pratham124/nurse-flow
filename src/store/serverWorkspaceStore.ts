@@ -97,9 +97,6 @@ type ServerWorkspaceStoreActions = {
   saveFloorTemplate: (
     floorTemplate: FloorTemplate,
   ) => Promise<FloorTemplateRecord>;
-  savePreviousShiftSnapshot: (
-    snapshot: PreviousShiftSnapshot,
-  ) => Promise<void>;
   setJoinedNurseAccessState: (state: JoinedNurseAccessState) => void;
   setJoinedNurseRealtimeConnectionState: (
     state: RealtimeConnectionState,
@@ -132,7 +129,6 @@ export type ServerWorkspaceDependencies = {
   resolveShiftNurseSwapRequestOnServer: typeof import("../services/serverWorkspaceRepository").resolveShiftNurseSwapRequest;
   saveServerActiveShift: typeof import("../services/serverWorkspaceRepository").saveServerActiveShift;
   saveServerFloorTemplate: typeof import("../services/serverWorkspaceRepository").saveServerFloorTemplate;
-  saveServerPreviousShiftSnapshot: typeof import("../services/serverWorkspaceRepository").saveServerPreviousShiftSnapshot;
   submitJoinedNurseIssueRequestToServer: typeof import("../services/serverWorkspaceRepository").submitJoinedNurseIssueRequest;
   submitJoinedNurseSwapRequestToServer: typeof import("../services/serverWorkspaceRepository").submitJoinedNurseSwapRequest;
   updateShiftNurseIssueStatusOnServer: typeof import("../services/serverWorkspaceRepository").updateShiftNurseIssueStatus;
@@ -585,7 +581,11 @@ export function createServerWorkspaceStore({
             throw new Error(result.message);
           }
 
-          return result.shiftSnapshot;
+          const refreshedShift = workspace.activeShift;
+          if (!refreshedShift || refreshedShift.id !== activeShiftRecord.id) {
+            throw new Error("This active shift is no longer available.");
+          }
+          return refreshedShift.shiftSnapshot;
         },
         async runAssignmentOptimizer(input) {
           const authState = getAuthState();
@@ -726,34 +726,6 @@ export function createServerWorkspaceStore({
           applyWorkspace(workspace);
 
           return savedTemplate;
-        },
-        async savePreviousShiftSnapshot(snapshot) {
-          const authState = getAuthState();
-
-          if (
-            authState.status !== "signed_in" ||
-            authState.profile.role !== "charge_nurse"
-          ) {
-            throw new Error("Sign in as a charge nurse to save carry-over.");
-          }
-
-          const supabase = getSupabaseClient();
-
-          if (!supabase) {
-            throw new Error("Supabase is not configured yet.");
-          }
-
-          await dependencies.saveServerPreviousShiftSnapshot(
-            supabase,
-            authState.profile,
-            snapshot,
-          );
-          const workspace = await dependencies.loadServerWorkspace(
-            supabase,
-            authState.profile,
-          );
-
-          applyWorkspace(workspace);
         },
         setJoinedNurseAccessState,
         setJoinedNurseRealtimeConnectionState(

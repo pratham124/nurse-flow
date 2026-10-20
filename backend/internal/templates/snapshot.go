@@ -6,8 +6,10 @@ import (
 	"strings"
 )
 
+// ErrInvalidLayout indicates missing layout data or inconsistent room/bed references.
 var ErrInvalidLayout = errors.New("floor template layout is incomplete or inconsistent")
 
+// Snapshot describes a reusable floor layout copied into a new shift.
 type Snapshot struct {
 	ID          string       `json:"id"`
 	Name        string       `json:"name"`
@@ -16,11 +18,13 @@ type Snapshot struct {
 	Beds        []Bed        `json:"beds"`
 }
 
+// DoctorSide identifies one of the floor's two doctor sides.
 type DoctorSide struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
+// Room groups beds under a doctor side and declares their expected count.
 type Room struct {
 	ID           string `json:"id"`
 	DoctorSideID string `json:"doctorSideId"`
@@ -28,6 +32,7 @@ type Room struct {
 	BedCount     int    `json:"bedCount"`
 }
 
+// Bed identifies a numbered bed within a room.
 type Bed struct {
 	ID        string `json:"id"`
 	RoomID    string `json:"roomId"`

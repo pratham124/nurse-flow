@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -21,7 +22,7 @@ func TestBrowserTemplateRequests(t *testing.T) {
 		queries++
 		return []database.FloorTemplate{}, nil
 	})
-	handler := WithCORS(NewHandler(verifier, testProfileReader{profile: profile}, reader), []string{"http://localhost:8081", " http://127.0.0.1:8081 "})
+	handler := WithCORS(NewHandler(verifier, testProfileReader{profile: profile}, reader, nil), []string{"http://localhost:8081", " http://127.0.0.1:8081 "})
 	tests := []struct {
 		name, method, origin, preflightMethod, headers, token string
 		status                                                int
@@ -29,6 +30,8 @@ func TestBrowserTemplateRequests(t *testing.T) {
 	}{
 		{"preflight", "OPTIONS", "http://localhost:8081", "GET", "authorization", "", 204, false},
 		{"header case and spacing", "OPTIONS", "http://127.0.0.1:8081", "GET", " Authorization, Accept ", "", 204, false},
+		{"duplicate unsorted headers", "OPTIONS", "http://localhost:8081", "PUT", " Content-Type, Authorization, ACCEPT, authorization, , ", "", 204, false},
+		{"no requested headers", "OPTIONS", "http://localhost:8081", "GET", "", "", 204, false},
 		{"authorized", "GET", "http://localhost:8081", "", "", sign(profile.AuthUserID, time.Now().Add(time.Hour)), 200, true},
 		{"missing token", "GET", "http://localhost:8081", "", "", "", 401, false},
 		{"invalid token", "GET", "http://localhost:8081", "", "", "invalid", 401, false},
@@ -92,5 +95,59 @@ func TestCORSCanBeDisabled(t *testing.T) {
 	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", "/health", nil))
 	if !called {
 		t.Fatal("empty allowlist blocked a request without Origin")
+	}
+}
+
+func TestCORSRejectionContract(t *testing.T) {
+	const origin = "http://localhost:8081"
+	for _, test := range []struct {
+		name, method, origin, requestedMethod, headers, code string
+		status                                               int
+		called                                               bool
+	}{
+		{"unlisted actual origin", "GET", "http://localhost:8082", "", "", "origin_forbidden", 403, false},
+		{"exact origin case", "GET", "http://LOCALHOST:8081", "", "", "origin_forbidden", 403, false},
+		{"unsupported preflight method", "OPTIONS", origin, "PATCH", "authorization", "cors_forbidden", 403, false},
+		{"OPTIONS as requested method", "OPTIONS", origin, "OPTIONS", "authorization", "cors_forbidden", 403, false},
+		{"HEAD as requested method", "OPTIONS", origin, "HEAD", "authorization", "cors_forbidden", 403, false},
+		{"unsupported preflight header", "OPTIONS", origin, "GET", "authorization, x-profile-id", "cors_forbidden", 403, false},
+		{"actual method reaches router", "PATCH", origin, "", "", "", 418, true},
+		{"plain OPTIONS reaches router", "OPTIONS", origin, "", "", "", 418, true},
+		{"no-origin OPTIONS reaches router", "OPTIONS", "", "GET", "authorization", "", 418, true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			called := false
+			handler := WithCORS(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				called = true
+				w.WriteHeader(http.StatusTeapot)
+			}), []string{origin})
+			request := httptest.NewRequest(test.method, "/health", nil)
+			request.Header.Set("Origin", test.origin)
+			request.Header.Set("Access-Control-Request-Method", test.requestedMethod)
+			request.Header.Set("Access-Control-Request-Headers", test.headers)
+			response := httptest.NewRecorder()
+			handler.ServeHTTP(response, request)
+			if response.Code != test.status || called != test.called {
+				t.Fatalf("status=%d called=%v", response.Code, called)
+			}
+			wantOrigin := ""
+			if test.origin == origin {
+				wantOrigin = origin
+			}
+			if got := response.Header().Get("Access-Control-Allow-Origin"); got != wantOrigin {
+				t.Fatalf("allowed origin=%q, want %q", got, wantOrigin)
+			}
+			if test.code != "" {
+				if response.Header().Get("Access-Control-Allow-Methods") != "" || response.Header().Get("Access-Control-Allow-Headers") != "" {
+					t.Fatal("rejected request advertised preflight permissions")
+				}
+				var body struct {
+					Error struct{ Code string } `json:"error"`
+				}
+				if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || body.Error.Code != test.code {
+					t.Fatalf("unexpected error response: %s", response.Body.String())
+				}
+			}
+		})
 	}
 }

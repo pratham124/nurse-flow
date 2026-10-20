@@ -4,20 +4,22 @@ package auth
 import (
 	"context"
 	"errors"
-	"regexp"
 	"strings"
 	"time"
 
 	"github.com/MicahParks/jwkset"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/pratham124/nurse-flow/backend/internal/identifiers"
 )
 
+// DevelopmentIssuer is the trusted token issuer for the isolated development project.
 const DevelopmentIssuer = "https://nmitctyxtjmlakcsmnuj.supabase.co/auth/v1"
 
 var (
+	// ErrUnauthenticated indicates a missing or invalid access token.
 	ErrUnauthenticated = errors.New("access token is missing or invalid")
-	ErrUnavailable     = errors.New("token verification is temporarily unavailable")
-	userIDPattern      = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+	// ErrUnavailable indicates that trusted signing keys are temporarily unavailable.
+	ErrUnavailable = errors.New("token verification is temporarily unavailable")
 )
 
 // Identity contains only the verified Auth subject, not a NurseFlow profile or role.
@@ -37,10 +39,12 @@ type Verifier struct {
 	keys   jwkset.Storage
 }
 
+// NewDevelopment starts a verifier restricted to the development project's issuer.
 func NewDevelopment(ctx context.Context) (*Verifier, error) {
 	return newVerifier(ctx, DevelopmentIssuer+"/.well-known/jwks.json", 5*time.Minute, 30*time.Second)
 }
 
+// Verify checks the token signature and required claims before returning its identity.
 func (v *Verifier) Verify(ctx context.Context, rawToken string) (Identity, error) {
 	if rawToken == "" || len(rawToken) > 8192 {
 		return Identity{}, ErrUnauthenticated
@@ -65,7 +69,7 @@ func (v *Verifier) Verify(ctx context.Context, rawToken string) (Identity, error
 		}
 		return Identity{}, ErrUnauthenticated
 	}
-	if !token.Valid || claims.Role != "authenticated" || !userIDPattern.MatchString(claims.Subject) {
+	if !token.Valid || claims.Role != "authenticated" || !identifiers.ValidUUID(claims.Subject) {
 		return Identity{}, ErrUnauthenticated
 	}
 	return Identity{AuthUserID: strings.ToLower(claims.Subject)}, nil

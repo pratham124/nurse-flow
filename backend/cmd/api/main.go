@@ -41,7 +41,7 @@ func run() error {
 	if !configured {
 		webOrigins = "http://localhost:8081,http://127.0.0.1:8081"
 	}
-	handler := httpapi.WithCORS(httpapi.NewHandler(verifier, store, store), strings.Split(webOrigins, ","))
+	handler := httpapi.WithCORS(httpapi.NewHandler(verifier, store, store, store), strings.Split(webOrigins, ","))
 
 	server := &http.Server{
 		Addr:              address,

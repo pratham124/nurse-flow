@@ -50,6 +50,8 @@ func TestTemplateWrites(t *testing.T) {
 		{"invalid delete ID", "DELETE", "/floor-templates/local", "", "valid", "charge_nurse", "", nil, 400, "invalid_id", 0},
 		{"nonhex update ID", "PUT", "/floor-templates/g0000000-0000-4000-8000-000000000001", `{"template_snapshot":` + testLayout + `}`, "valid", "charge_nurse", "application/json", nil, 400, "invalid_id", 0},
 		{"malformed delete ID", "DELETE", "/floor-templates/30000000000040008000000000000001", "", "valid", "charge_nurse", "", nil, 400, "invalid_id", 0},
+		{"braced delete ID", "DELETE", "/floor-templates/{" + testTemplateID + "}", "", "valid", "charge_nurse", "", nil, 400, "invalid_id", 0},
+		{"URN delete ID", "DELETE", "/floor-templates/urn:uuid:" + testTemplateID, "", "valid", "charge_nurse", "", nil, 400, "invalid_id", 0},
 		{"missing token before ID check", "PUT", "/floor-templates/local", `{}`, "", "charge_nurse", "application/json", nil, 401, "unauthenticated", 0},
 		{"forbidden role before ID check", "DELETE", "/floor-templates/local", "", "valid", "regular_nurse", "", nil, 403, "forbidden", 0},
 		{"invalid Auth subject", "PUT", "/floor-templates/" + testTemplateID, `{}`, "invalid-subject", "charge_nurse", "application/json", nil, 401, "unauthenticated", 0},
@@ -65,7 +67,7 @@ func TestTemplateWrites(t *testing.T) {
 		{"shift data", "POST", "/floor-templates", `{"template_snapshot":` + strings.Replace(testLayout, `"name":" Floor "`, `"name":" Floor ","patients":[]`, 1) + `}`, "valid", "charge_nurse", "application/json", nil, 400, "invalid_template", 0},
 		{"fractional count", "POST", "/floor-templates", `{"template_snapshot":` + strings.Replace(testLayout, `"bedCount":1`, `"bedCount":1.5`, 1) + `}`, "valid", "charge_nurse", "application/json", nil, 400, "invalid_template", 0},
 		{"wrong media type", "POST", "/floor-templates", `{}`, "valid", "charge_nurse", "text/plain", nil, 415, "unsupported_media_type", 0},
-		{"large body", "POST", "/floor-templates", `{"template_snapshot":` + strings.Replace(testLayout, " Floor ", strings.Repeat("x", maxTemplateBodyBytes), 1) + `}`, "valid", "charge_nurse", "application/json", nil, 413, "template_too_large", 0},
+		{"large body", "POST", "/floor-templates", `{"template_snapshot":` + strings.Replace(testLayout, " Floor ", strings.Repeat("x", maxJSONRequestBodyBytes), 1) + `}`, "valid", "charge_nurse", "application/json", nil, 413, "template_too_large", 0},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -111,7 +113,7 @@ func TestTemplateWrites(t *testing.T) {
 				request.Header.Set("Authorization", "Bearer "+sign(subject, expiry))
 			}
 			response := httptest.NewRecorder()
-			NewHandler(verifier, testProfileReader{profile: profile}, store).ServeHTTP(response, request)
+			NewHandler(verifier, testProfileReader{profile: profile}, store, nil).ServeHTTP(response, request)
 			if response.Code != test.wantStatus || calls != test.wantCalls {
 				t.Fatalf("status=%d calls=%d body=%s", response.Code, calls, response.Body.String())
 			}
