@@ -104,6 +104,8 @@ export interface Bed {
 
 export interface Shift {
   id: string;
+  /** Version of the server row this draft came from; never stored in its JSON. */
+  serverRevision?: string;
   floorTemplateId: string;
   floorName: string;
   startedAt?: string;

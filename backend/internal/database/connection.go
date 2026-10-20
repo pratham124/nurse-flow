@@ -145,5 +145,13 @@ func (s *Store) withIdentity(ctx context.Context, authUserID string, readOnly bo
 			return errors.New("could not set database query timeout")
 		}
 		return query(tx)
-	}, &sql.TxOptions{ReadOnly: readOnly})
+	}, identityTransactionOptions(readOnly))
+}
+
+func identityTransactionOptions(readOnly bool) *sql.TxOptions {
+	options := &sql.TxOptions{ReadOnly: readOnly}
+	if readOnly {
+		options.Isolation = sql.LevelRepeatableRead
+	}
+	return options
 }

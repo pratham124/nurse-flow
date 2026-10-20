@@ -43,7 +43,6 @@ import {
   isCompletedFloorTemplate,
   createShiftFromTemplate,
   copyFloorTemplate,
-  createPreviousShiftSnapshot,
 } from "../helpers/shiftHelpers";
 
 const COMPACT_TEMPLATE_CARD_MAX_WIDTH = 350;
@@ -214,7 +213,6 @@ export default function Index() {
     previousShiftSnapshots,
     realtimeConnectionState,
     retryLoadWorkspace,
-    savePreviousShiftSnapshot: saveServerPreviousShiftSnapshot,
     startActiveShift,
     workspaceState,
   } = useServerWorkspace(
@@ -228,7 +226,6 @@ export default function Index() {
       previousShiftSnapshots: state.previousShiftSnapshots,
       realtimeConnectionState: state.realtimeConnectionState,
       retryLoadWorkspace: state.retryLoadWorkspace,
-      savePreviousShiftSnapshot: state.savePreviousShiftSnapshot,
       startActiveShift: state.startActiveShift,
       workspaceState: state.workspaceState,
     })),
@@ -370,22 +367,6 @@ export default function Index() {
 
   async function handleConfirmEndActiveShift() {
     if (visibleActiveShift) {
-      const previousShiftSnapshot =
-        createPreviousShiftSnapshot(visibleActiveShift);
-
-      try {
-        await saveServerPreviousShiftSnapshot(previousShiftSnapshot);
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Carry-over could not be saved. Try again.";
-
-        setTemplateEditMessage(message);
-        setEndShiftConfirmationVisible(false);
-        return;
-      }
-
       try {
         await endActiveShift(visibleActiveShift);
       } catch (error) {

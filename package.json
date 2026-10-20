@@ -14,6 +14,7 @@
     "test:request-lifecycle": "tsx --test tests/nurseRequestLifecycle.test.mjs tests/notificationTap.test.mjs",
     "test:responsive-layout": "tsx --test tests/responsiveLayout.test.mjs",
     "test:go-templates": "tsx --test tests/floorTemplateRepository.test.mjs tests/goApiClient.test.mjs",
+    "test:go-shifts": "tsx --test tests/shiftRepository.test.mjs",
     "test:server-workspace-store": "tsx --test tests/serverWorkspaceStore.test.mjs",
     "test:phase8-performance": "tsx --test tests/floorBoardLookup.test.mjs",
     "test:phase9-fixtures": "tsx --test tests/phase9OptimizerFixtures.test.mjs",

@@ -1,6 +1,6 @@
 # Go Backend Migration Plan
 
-Status: milestones 1 and 2 complete on 2026-10-17. Milestone 1 ordered tasks 0–11 and milestone 2 tickets 01–02 are done. Verification evidence and limits are recorded in `milestone-one-verification.md` and `template-writes.md`. The consolidated architecture was approved on 2026-09-12. Mandatory understanding checkpoints were removed at the user's request on 2026-10-04; each new milestone requires the bounded design round described below.
+Status: milestones 1 and 2 are complete. Milestone 3 (tickets 03–07) was authorized on 2026-10-18; implementation and local verification are complete, with live development migration and real-session walkthrough pending. See `shift-lifecycle.md`. The existing architecture and milestone execution protocol remain approved; no later milestone is authorized.
 
 ## Purpose and scope
 
@@ -108,7 +108,7 @@ The user changed the execution style on 2026-10-17: once a milestone is agreed a
 5. Give a focused milestone walkthrough emphasizing new concepts, complex rules, and verification. Answer questions without a quiz, restatement, or historical-checklist gate.
 6. Mark only verified tickets/milestones complete. Stop at the agreed boundary unless the next milestone is authorized.
 
-Current handoff: milestone 2 was authorized and completed on 2026-10-17. Tickets 01–02 are complete; tickets 03–23 remain `ready-for-agent` under `.scratch/go-migration-next/issues/`. See [template writes](template-writes.md) for decisions, implementation, verification, and coverage limits. Next scope, only when authorized: **Milestone 3 — Charge shift lifecycle**, tickets 03–07. Do not start it automatically.
+Current handoff: **Milestone 3 — Charge shift lifecycle** is authorized. Tickets 03–07 are implemented and locally verified, including actual HTTP/client/store and restored-Postgres checks. See [shift lifecycle](shift-lifecycle.md) for the contract, decisions, evidence, and pending development verification. Apply migration `20261018160805` only to `nmitctyxtjmlakcsmnuj`, review live grants/advisors, and complete the real-session Expo walkthrough before marking the milestone done. This Linux cloud environment has no development credentials or connected Supabase plugin; the Windows DPAPI credential is unavailable here. Do not start milestone 4.
 
 ## Remaining approved milestones
 
@@ -117,7 +117,7 @@ The user approved this breakdown on 2026-10-17. Full ticket deliverables, blocki
 | Milestone | Scope | Tickets | Status |
 | --- | --- | --- | --- |
 | 2 | Save and delete owned floor templates | 01–02 | Complete; verification in template-writes.md |
-| 3 | Charge workspace reads and shift lifecycle, including carry-over | 03–07 | Planned; next authorization boundary |
+| 3 | Charge workspace reads and shift lifecycle, including carry-over | 03–07 | Implemented/local checks passed; live development verification pending |
 | 4 | Application profiles, nurse invites, joining, and scoped nurse reads | 08–11 | Planned |
 | 5 | Manual moves, issue/swap requests, and request threads | 12–15 | Planned |
 | 6 | Go/Python optimizer coordination, device registration, and live collaboration parity | 16–19 | Planned |
@@ -270,3 +270,12 @@ Production enablement follows hosted development verification and explicit appro
 - [x] Applied and registered development migration 20261018014344; exact limited grants/RLS and retained client policies were verified.
 - [x] Go race/static checks, local database rollback/reference tests, live development ownership/write tests, Expo checks, browser create/update/reload/outage recovery, and a real-token client/store delete/refresh demo passed. The observed save-navigation race was fixed and manually rechecked.
 - [x] Decisions, walkthrough, advisor findings, fixture cleanup, and explicit browser-swipe/native/clock-skew coverage limits are recorded in template-writes.md. Milestone 3 is unstarted and requires authorization.
+
+### 2026-10-18 - Milestone 3 implementation and local verification
+
+- [x] User authorized the charge shift lifecycle milestone and approved rejection of stale setup saves and atomic End Shift derived from authoritative server state.
+- [x] Restored and loaded the exact previously used grill-with-docs, grilling, domain-modeling, and Supabase skills from Git history into `/workspace/shared/skills`, outside the application repository.
+- [x] Implemented tickets 03–07: Go workspace reads/overlays, owned atomic start, validated setup saves with draft-origin revisions, baseline-checked reopen, and atomic carry-over/invite expiry/closure. Retained business triggers and joined-nurse ended-state semantics.
+- [x] Generated migration `20261018160805` with limited column grants and owner RLS. Applied only to isolated local PostgreSQL restored from the full captured baseline; no hosted database changes.
+- [x] Local checks cover HTTP auth/errors, domain validation, concurrency, ownership, transaction rollback, trigger effects, reference lock order, and the actual Axios/Zod/store-to-Go-to-Postgres demo. Expo web export passed. See shift-lifecycle.md for final check results and coverage limits.
+- [ ] Apply/register the migration in nurseflow-go-dev, run the read-only catalog/advisor review and dedicated-role checks, then complete real-session Expo browser/available native walkthroughs. Milestone 3 remains in review until these pass. Milestone 4 has not started.

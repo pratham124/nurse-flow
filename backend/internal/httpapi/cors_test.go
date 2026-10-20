@@ -21,7 +21,7 @@ func TestBrowserTemplateRequests(t *testing.T) {
 		queries++
 		return []database.FloorTemplate{}, nil
 	})
-	handler := WithCORS(NewHandler(verifier, testProfileReader{profile: profile}, reader), []string{"http://localhost:8081", " http://127.0.0.1:8081 "})
+	handler := WithCORS(NewHandler(verifier, testProfileReader{profile: profile}, reader, nil), []string{"http://localhost:8081", " http://127.0.0.1:8081 "})
 	tests := []struct {
 		name, method, origin, preflightMethod, headers, token string
 		status                                                int

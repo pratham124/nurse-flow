@@ -171,7 +171,7 @@ func TestDatabaseOwnershipIntegration(t *testing.T) {
 		"UPDATE public.profiles SET display_name = display_name WHERE false",
 		"UPDATE public.floor_templates SET owner_profile_id = owner_profile_id WHERE false",
 		"UPDATE public.floor_templates SET id = id WHERE false",
-		"SELECT * FROM public.active_shifts LIMIT 0",
+		"DELETE FROM public.active_shifts WHERE false",
 	} {
 		err := store.db.Exec(statement).Error
 		var postgresError *pgconn.PgError
