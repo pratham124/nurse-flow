@@ -83,7 +83,7 @@ func TestFloorTemplatesEndpoint(t *testing.T) {
 				}
 				return test.rows, test.queryErr
 			})
-			server := httptest.NewServer(NewHandler(verifier, testProfileReader{test.profile, test.profileErr}, reader, nil))
+			server := httptest.NewServer(NewHandler(verifier, testProfileReader{test.profile, test.profileErr}, reader, nil, nil, nil, nil))
 			defer server.Close()
 			// A separate transport sends real local HTTP requests while public-key
 			// discovery continues to use the synthetic key fixture.
@@ -161,7 +161,7 @@ func TestFloorTemplatesRejectsExpiredToken(t *testing.T) {
 	request.Header.Set("Authorization", "Bearer "+sign("20000000-0000-0000-0000-000000000001", time.Now().Add(-time.Minute)))
 	response := httptest.NewRecorder()
 	// Nil readers would panic if token rejection did not stop the request first.
-	NewHandler(verifier, nil, nil, nil).ServeHTTP(response, request)
+	NewHandler(verifier, nil, nil, nil, nil, nil, nil).ServeHTTP(response, request)
 	if response.Code != http.StatusUnauthorized {
 		t.Fatalf("expired token received %d", response.Code)
 	}

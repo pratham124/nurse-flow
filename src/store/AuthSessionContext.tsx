@@ -10,6 +10,7 @@ import {
 import type { Session } from "@supabase/supabase-js";
 
 import { signOutCurrentSession } from "../services/authRepository";
+import { notificationsEnabled } from "../config/featureFlags";
 import { disableCurrentDevicePushToken } from "../services/devicePushTokenRepository";
 import { loadUserProfile } from "../services/profileRepository";
 import {
@@ -59,7 +60,7 @@ async function getStateForSession(
     };
   }
 
-  const profile = await loadUserProfile(supabase, session.user.id);
+  const profile = await loadUserProfile(session.access_token);
 
   if (!profile) {
     return {
@@ -135,7 +136,7 @@ export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
   const signOut = useCallback(async () => {
     const client = getSupabaseClient();
 
-    if (authState.status === "signed_in" && client) {
+    if (notificationsEnabled && authState.status === "signed_in" && client) {
       await disableCurrentDevicePushToken(client, authState.profile.id);
     }
 

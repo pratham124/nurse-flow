@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -22,7 +23,7 @@ func TestBrowserTemplateRequests(t *testing.T) {
 		queries++
 		return []database.FloorTemplate{}, nil
 	})
-	handler := WithCORS(NewHandler(verifier, testProfileReader{profile: profile}, reader, nil), []string{"http://localhost:8081", " http://127.0.0.1:8081 "})
+	handler := WithCORS(NewHandler(verifier, testProfileReader{profile: profile}, reader, nil, nil, nil, nil), []string{"http://localhost:8081", " http://127.0.0.1:8081 "})
 	tests := []struct {
 		name, method, origin, preflightMethod, headers, token string
 		status                                                int
@@ -147,6 +148,48 @@ func TestCORSRejectionContract(t *testing.T) {
 				if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || body.Error.Code != test.code {
 					t.Fatalf("unexpected error response: %s", response.Body.String())
 				}
+			}
+		})
+	}
+}
+
+// The profile, invite, and joined-workspace routes need no new methods or headers,
+// but browsers must be able to preflight and read them like the other routes.
+func TestBrowserAccessRequests(t *testing.T) {
+	verifier, sign := testDiagnosticVerifier(t)
+	store := &accessStoreStub{validation: database.InviteValidation{Status: "blocked", Reason: "not_found"}}
+	handler := WithCORS(NewHandler(verifier, profileLookup{profile: accessProfile}, nil, nil, store, store, store), []string{"http://localhost:8081"})
+	const origin = "http://localhost:8081"
+	for _, route := range []struct{ method, path string }{
+		{"PUT", "/profile"}, {"GET", "/profile"}, {"POST", "/invites/validate"}, {"POST", "/invites/accept"},
+		{"GET", "/joined-workspace"}, {"GET", "/shifts/" + testTemplateID + "/invites"},
+		{"POST", "/shifts/" + testTemplateID + "/invites"}, {"POST", "/shifts/" + testTemplateID + "/invites/regenerate"},
+	} {
+		t.Run(route.method+" "+route.path, func(t *testing.T) {
+			preflight := httptest.NewRequest("OPTIONS", route.path, nil)
+			preflight.Header.Set("Origin", origin)
+			preflight.Header.Set("Access-Control-Request-Method", route.method)
+			preflight.Header.Set("Access-Control-Request-Headers", "authorization, content-type")
+			response := httptest.NewRecorder()
+			handler.ServeHTTP(response, preflight)
+			if response.Code != http.StatusNoContent || response.Header().Get("Access-Control-Allow-Origin") != origin {
+				t.Fatalf("preflight status=%d headers=%v", response.Code, response.Header())
+			}
+			var body io.Reader
+			switch {
+			case strings.HasPrefix(route.path, "/invites/"):
+				body = strings.NewReader(`{"code":"K7QX2M"}`)
+			case route.method == "POST":
+				body = strings.NewReader(`{"nurse_id":"n1"}`)
+			}
+			actual := httptest.NewRequest(route.method, route.path, body)
+			actual.Header.Set("Content-Type", "application/json")
+			actual.Header.Set("Origin", origin)
+			actual.Header.Set("Authorization", "Bearer "+sign(accessAuthUserID, time.Now().Add(time.Hour)))
+			response = httptest.NewRecorder()
+			handler.ServeHTTP(response, actual)
+			if response.Code != http.StatusOK && response.Code != http.StatusCreated || response.Header().Get("Access-Control-Allow-Origin") != origin {
+				t.Fatalf("status=%d headers=%v body=%s", response.Code, response.Header(), response.Body.String())
 			}
 		})
 	}

@@ -1,6 +1,6 @@
 # Go Backend Migration Plan
 
-Status: milestones 1–3 are done. Milestone 3 (tickets 03–07) was closed at the user's request on 2026-10-19 after local and live development checks passed, with the remaining manual checks and fixture cleanup deferred. See `shift-lifecycle.md` for the exact verification limits. The existing architecture and milestone execution protocol remain approved; no later milestone is authorized.
+Status: milestones 1–4 are done (milestone 4 on 2026-10-24). Milestone 3 (tickets 03–07) was closed at the user's request on 2026-10-19 after local and live development checks passed, with the remaining manual checks and fixture cleanup deferred. See `shift-lifecycle.md` for the exact verification limits. The existing architecture and milestone execution protocol remain approved; no later milestone is authorized.
 
 ## Purpose and scope
 
@@ -110,6 +110,8 @@ The user changed the execution style on 2026-10-17: once a milestone is agreed a
 
 Current handoff: **Milestone 3 — Charge shift lifecycle is done.** Tickets 03–07 are implemented and verified with local checks, real Supabase-token lifecycle requests, development role isolation, and a partial browser/Android walkthrough. Migrations `20261018160805` and `20261020055621` are applied and registered only in `nmitctyxtjmlakcsmnuj`; live catalog/advisor checks passed. The user explicitly closed the milestone with final UI checks and fixture cleanup deferred; see [shift lifecycle](shift-lifecycle.md) for the evidence and limits. Development credentials are environment-specific: the Windows helper uses DPAPI, while the branch-restricted CI environment provides read-only template checks; see [CI database checks](ci-database-checks.md) and [cloud execution limits](cloud-execution-trial.md). Milestone 4 requires authorization before implementation.
 
+Update 2026-10-24: the user authorized **Milestone 4** and settled its decisions; see [profiles, invites, and joined-nurse access](profiles-invites-access.md), `CONTEXT.md`, and ADR 0003. The user also disabled notifications for now: an off-by-default Expo flag hides permission, device registration, and tap handling; the notification-target lookup in ticket 11, device registration (ticket 18), and notification navigation in ticket 19 are deferred by that decision. Database notification triggers and Realtime live refresh are unchanged.
+
 ## Remaining approved milestones
 
 The user approved this breakdown on 2026-10-17. Full ticket deliverables, blocking edges, and learning topics are in [Remaining milestones](remaining-milestones.md); individual local tickets are under `.scratch/go-migration-next/issues/`.
@@ -118,7 +120,7 @@ The user approved this breakdown on 2026-10-17. Full ticket deliverables, blocki
 | --- | --- | --- | --- |
 | 2 | Save and delete owned floor templates | 01–02 | Complete; verification in template-writes.md |
 | 3 | Charge workspace reads and shift lifecycle, including carry-over | 03–07 | Done; verification limits and deferred manual checks in shift-lifecycle.md |
-| 4 | Application profiles, nurse invites, joining, and scoped nurse reads | 08–11 | Planned |
+| 4 | Application profiles, nurse invites, joining, and scoped nurse reads | 08–11 | Done; verification and limits in profiles-invites-access.md |
 | 5 | Manual moves, issue/swap requests, and request threads | 12–15 | Planned |
 | 6 | Go/Python optimizer coordination, device registration, and live collaboration parity | 16–19 | Planned |
 | 7 | Hosted development, full parity, explicit cutover, and legacy retirement | 20–23 | Planned |
@@ -310,3 +312,11 @@ Production enablement follows hosted development verification and explicit appro
 - [x] Verified real Supabase-token requests through Axios/Zod/Zustand, Go, and development Postgres: duplicate starts, stale saves, owner/role/token rejection, baseline-checked reopen, invite expiry, joined ready/removed/ended states, populated carry-over, and empty replacement.
 - [x] Browser setup/save/reload/end walkthrough and Android emulator sign-in/list/start reached the migrated workflows. Added screen-focus guards for missing-draft redirects discovered during the browser walkthrough. TypeScript, lint, 56 focused frontend checks, Go race tests, and vet passed after the code change.
 - [x] User requested stopping the remaining walkthrough and then explicitly requested marking milestone 3 done and pushing the changes. Marked tickets 03–07 done with the remaining UI regression, full native flow, live UI outage/retry, and synthetic fixture cleanup deferred in shift-lifecycle.md. Temporary test processes were stopped. No production change or milestone 4 implementation.
+
+### 2026-10-24 - Milestone 4 kickoff
+
+- [x] User authorized milestone 4 (tickets 08–11). Grill-with-docs settled profile endpoints, token-derived display names, conflict-safe provisioning, server-generated invite codes, locked generate/regenerate transactions, a combined invite/access read, code-unlocked joining policies (ADR 0003), a per-profile join lock, and a Go-built joined-nurse projection.
+- [x] User disabled notifications for now: off-by-default `EXPO_PUBLIC_NOTIFICATIONS_ENABLED`; the notification-target lookup is not migrated; tickets 18 and 19's notification parts are deferred by user decision.
+- [x] Implemented tickets 08–11 with the reviewed migration `20261024120000`, two-axis code review fixes, and local Go/PostgreSQL/Expo verification.
+- [x] Applied and registered the migration only in nurseflow-go-dev; read-only catalog check matched local; advisors added only expected permissive-policy warnings; live template/shift isolation passed.
+- [x] Real-session Expo web walkthrough passed signup, restore, invite generate/regenerate, revoked/used codes, join, scoped joined view, and End Shift. Fixed a walkthrough-discovered JWT clock-skew rejection with a 30-second leeway. Native and live unsupported-role checks were not run. Milestone 4 is done; milestone 5 requires authorization.

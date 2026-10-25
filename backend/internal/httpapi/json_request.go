@@ -7,6 +7,8 @@ import (
 	"io"
 	"mime"
 	"net/http"
+
+	"github.com/pratham124/nurse-flow/backend/internal/httpresponse"
 )
 
 const maxJSONRequestBodyBytes = 1 << 20
@@ -44,4 +46,32 @@ func decodeJSONRequest(w http.ResponseWriter, r *http.Request, body any) error {
 		return errors.New("multiple JSON values")
 	}
 	return nil
+}
+
+// jsonRejection holds one handler's public messages for a rejected request body.
+type jsonRejection struct {
+	mediaTypeMessage string
+	tooLargeCode     string
+	tooLargeMessage  string
+	invalidCode      string
+	invalidMessage   string
+}
+
+// decodeOrReject decodes the body like decodeJSONRequest and, on failure, writes
+// the matching error response and reports false.
+func decodeOrReject(w http.ResponseWriter, r *http.Request, body any, rejection jsonRejection) bool {
+	err := decodeJSONRequest(w, r, body)
+	if err == nil {
+		return true
+	}
+	var tooLarge *http.MaxBytesError
+	switch {
+	case errors.Is(err, errUnsupportedJSONMediaType):
+		httpresponse.WriteError(w, http.StatusUnsupportedMediaType, "unsupported_media_type", rejection.mediaTypeMessage)
+	case errors.As(err, &tooLarge):
+		httpresponse.WriteError(w, http.StatusRequestEntityTooLarge, rejection.tooLargeCode, rejection.tooLargeMessage)
+	default:
+		httpresponse.WriteError(w, http.StatusBadRequest, rejection.invalidCode, rejection.invalidMessage)
+	}
+	return false
 }

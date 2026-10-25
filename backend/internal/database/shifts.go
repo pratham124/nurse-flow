@@ -176,10 +176,21 @@ func (s *Store) StartShift(ctx context.Context, authID, profileID, templateID st
 	return saved, nil
 }
 
-func lockShift(tx *gorm.DB, profileID, id string) (ActiveShift, error) {
+// lockOwnedShift locks a shift owned by the profile, ended or not. Callers decide
+// whether an ended shift is acceptable.
+func lockOwnedShift(tx *gorm.DB, profileID, id string) (ActiveShift, error) {
 	var row ActiveShift
-	err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ? AND charge_profile_id = ? AND ended_at IS NULL", id, profileID).Take(&row).Error
+	err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ? AND charge_profile_id = ?", id, profileID).Take(&row).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return row, ErrShiftNotFound
+	}
+	return row, err
+}
+
+// lockShift locks an owned shift that has not ended.
+func lockShift(tx *gorm.DB, profileID, id string) (ActiveShift, error) {
+	row, err := lockOwnedShift(tx, profileID, id)
+	if err == nil && row.EndedAt != nil {
 		return row, ErrShiftNotFound
 	}
 	return row, err

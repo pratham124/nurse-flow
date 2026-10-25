@@ -1,6 +1,6 @@
 # Remaining Go migration milestones
 
-Status: approved by the user on 2026-10-17. Milestones 2 and 3 (tickets 01–07) are done. The user closed milestone 3 on 2026-10-19 with the remaining manual checks and fixture cleanup deferred as recorded in shift-lifecycle.md. Milestones 4–7 have not started.
+Status: approved by the user on 2026-10-17. Milestones 2 and 3 (tickets 01–07) are done. The user closed milestone 3 on 2026-10-19 with the remaining manual checks and fixture cleanup deferred as recorded in shift-lifecycle.md. Milestone 4 (tickets 08–11) was completed on 2026-10-24 (see profiles-invites-access.md); milestones 5–7 have not started. Notifications are disabled by user decision on 2026-10-24: ticket 11's notification-target lookup, ticket 18, and ticket 19's notification navigation are deferred until the user re-enables them.
 Prepared 2026-10-17 from existing code, the migration plan, database baseline, and ownership ADR.
 
 ## Session handoff
@@ -56,19 +56,19 @@ Unblocked tickets can use existing migrated or retained paths and development fi
    - **Blocked by:** None (can start after the milestone is authorized).
    - **What it delivers:** The existing End Shift flow retains useful carry-over, expires invites, closes the shift, and refreshes participation through Go.
 
-8. **Load and provision the application profile through Go (Milestone 4)**
+8. **[Done] Load and provision the application profile through Go (Milestone 4)**
    - **Blocked by:** None (can start after the milestone is authorized).
    - **What it delivers:** After Supabase sign-in or signup, Expo loads or creates the same application profile through Go while Supabase continues owning authentication and refresh.
 
-9. **Manage nurse invites through Go (Milestone 4)**
+9. **[Done] Manage nurse invites through Go (Milestone 4)**
    - **Blocked by:** None (can start after the milestone is authorized).
    - **What it delivers:** The charge nurse sees invite/access status and generates or regenerates an eligible nurse's invite using Go.
 
-10. **Validate and accept nurse invites through Go (Milestone 4)**
+10. **[Done] Validate and accept nurse invites through Go (Milestone 4)**
    - **Blocked by:** None (can start after the milestone is authorized).
    - **What it delivers:** The existing code/deep-link join flow validates and accepts a nurse invite through Go and opens the joined workspace.
 
-11. **Read the joined nurse workspace through Go (Milestone 4)**
+11. **[Done] Read the joined nurse workspace through Go (Milestone 4)**
    - **Blocked by:** None (can start after the milestone is authorized).
    - **What it delivers:** A joined nurse sees only their own effective assignment through Go and receives the existing ended-shift/access-removed state on refresh or notification navigation.
 

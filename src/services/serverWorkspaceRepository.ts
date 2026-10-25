@@ -6,6 +6,9 @@ import {
   saveFloorTemplate,
   deleteFloorTemplate,
 } from "./floorTemplateRepository";
+import { goApiClient } from "./goApiClient";
+import { getGoAuthHeaders } from "./goApiAuth";
+import { readGoApiFailure, throwGoNetworkError } from "./goApiErrors";
 import { loadServerActiveShift, loadPreviousShiftSnapshots } from "./shiftRepository";
 import {
   joinedNurseAssignedBedSchema,
@@ -297,23 +300,47 @@ export async function loadServerWorkspace(
   };
 }
 
+const joinedWorkspaceResponseSchema = z.object({
+  assignment: z.record(z.string(), z.unknown()).nullable(),
+});
+
+function joinedWorkspaceRequestError(error: unknown): never {
+  const failure = readGoApiFailure(error);
+
+  if (!failure) {
+    return throwGoNetworkError(error, "workspace service");
+  }
+
+  if (failure.status === 401) {
+    throw new Error("Your session expired. Sign in again.");
+  }
+
+  throw new Error(
+    failure.message || "Your shared workspace is temporarily unavailable. Try again.",
+  );
+}
+
 export async function loadJoinedNurseAssignmentView(
   supabase: SupabaseClient,
   profile: UserProfile,
 ) {
-  const { data, error } = await supabase.rpc(
-    "get_joined_nurse_assignment_view",
-  );
+  const headers = await getGoAuthHeaders(supabase);
+  const response = await goApiClient
+    .get<unknown>("/joined-workspace", { headers })
+    .catch(joinedWorkspaceRequestError);
+  const envelope = joinedWorkspaceResponseSchema.safeParse(response.data);
 
-  if (error) {
-    throw new Error(error.message);
+  if (response.status !== 200 || !envelope.success) {
+    throw new Error("The nurse assignment view has an invalid server shape.");
   }
 
-  if (!data) {
+  if (!envelope.data.assignment) {
     return undefined;
   }
 
-  const result = joinedNurseAssignmentResultSchema.safeParse(data);
+  const result = joinedNurseAssignmentResultSchema.safeParse(
+    envelope.data.assignment,
+  );
   if (!result.success) {
     throw new Error("The nurse assignment view has an invalid server shape.");
   }

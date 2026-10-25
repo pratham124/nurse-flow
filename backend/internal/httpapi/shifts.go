@@ -129,21 +129,13 @@ func writeShift(w http.ResponseWriter, status int, row database.ActiveShift) {
 }
 
 func decodeShiftRequest(w http.ResponseWriter, r *http.Request, body any) bool {
-	err := decodeJSONRequest(w, r, body)
-	if err == nil {
-		return true
-	}
-	if errors.Is(err, errUnsupportedJSONMediaType) {
-		httpresponse.WriteError(w, http.StatusUnsupportedMediaType, "unsupported_media_type", "Send shift changes as application/json.")
-		return false
-	}
-	var tooLarge *http.MaxBytesError
-	if errors.As(err, &tooLarge) {
-		httpresponse.WriteError(w, http.StatusRequestEntityTooLarge, "shift_too_large", "The shift setup is too large.")
-	} else {
-		httpresponse.WriteError(w, http.StatusBadRequest, "invalid_shift", "Send one valid shift request with only editable fields.")
-	}
-	return false
+	return decodeOrReject(w, r, body, jsonRejection{
+		mediaTypeMessage: "Send shift changes as application/json.",
+		tooLargeCode:     "shift_too_large",
+		tooLargeMessage:  "The shift setup is too large.",
+		invalidCode:      "invalid_shift",
+		invalidMessage:   "Send one valid shift request with only editable fields.",
+	})
 }
 
 func writeShiftError(w http.ResponseWriter, err error) {

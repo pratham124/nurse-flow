@@ -86,7 +86,7 @@ func (s *signingKeyStore) KeyReplaceAll(ctx context.Context, keys []jwkset.JWK) 
 		}
 		publicKey, ok := key.Key().(*ecdsa.PublicKey)
 		if !ok || publicKey.Curve != elliptic.P256() || metadata.KID == "" ||
-			len(metadata.KID) > 256 || seen[metadata.KID] || (metadata.USE != "" && metadata.USE != jwkset.UseSig) {
+			seen[metadata.KID] || (metadata.USE != "" && metadata.USE != jwkset.UseSig) {
 			return ErrUnavailable
 		}
 		seen[metadata.KID] = true

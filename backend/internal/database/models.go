@@ -5,14 +5,14 @@ import (
 	"time"
 )
 
-// Profile is a read-only mapping of an existing application profile.
+// Profile maps an application profile. Go only reads it; new rows come from EnsureProfile.
 type Profile struct {
-	ID          string    `gorm:"column:id;type:uuid;primaryKey;->"`
-	AuthUserID  string    `gorm:"column:auth_user_id;type:uuid;->"`
-	DisplayName string    `gorm:"column:display_name;->"`
-	Role        string    `gorm:"column:role;->"`
-	CreatedAt   time.Time `gorm:"column:created_at;->"`
-	UpdatedAt   time.Time `gorm:"column:updated_at;->"`
+	ID          string    `gorm:"column:id;type:uuid;primaryKey;->" json:"id"`
+	AuthUserID  string    `gorm:"column:auth_user_id;type:uuid;->" json:"auth_user_id"`
+	DisplayName string    `gorm:"column:display_name;->" json:"display_name"`
+	Role        string    `gorm:"column:role;->" json:"role"`
+	CreatedAt   time.Time `gorm:"column:created_at;->" json:"created_at"`
+	UpdatedAt   time.Time `gorm:"column:updated_at;->" json:"updated_at"`
 }
 
 // TableName maps Profile to the existing profiles table.

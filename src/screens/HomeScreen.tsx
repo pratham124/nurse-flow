@@ -27,6 +27,7 @@ import { LoadingState } from "../components/LoadingState";
 import { NurseFlowLogo } from "../components/NurseFlowLogo";
 import { NotificationPermissionDialog } from "../components/NotificationPermissionCard";
 import { useAuthSession } from "../store/AuthSessionContext";
+import { notificationsEnabled } from "../config/featureFlags";
 import { useNotificationPermission } from "../store/NotificationPermissionContext";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { useWorkflowDraft } from "../store/WorkflowDraftContext";
@@ -435,17 +436,19 @@ export default function Index() {
           {profile ? (
             <Text style={styles.accountName}>{profile.displayName}</Text>
           ) : null}
-          <Pressable
-            accessibilityLabel="Open notification status"
-            accessibilityRole="button"
-            onPress={() => setNotificationDialogVisible(true)}
-            style={({ pressed }) => [
-              styles.notificationButton,
-              pressed && styles.notificationButtonPressed,
-            ]}
-          >
-            <BellIcon color={colors.brand.burgundy} size={19} />
-          </Pressable>
+          {notificationsEnabled ? (
+            <Pressable
+              accessibilityLabel="Open notification status"
+              accessibilityRole="button"
+              onPress={() => setNotificationDialogVisible(true)}
+              style={({ pressed }) => [
+                styles.notificationButton,
+                pressed && styles.notificationButtonPressed,
+              ]}
+            >
+              <BellIcon color={colors.brand.burgundy} size={19} />
+            </Pressable>
+          ) : null}
           <Pressable
             accessibilityRole="button"
             onPress={handleSignOut}
@@ -632,13 +635,15 @@ export default function Index() {
         title="End active shift?"
         visible={endShiftConfirmationVisible}
       />
-      <NotificationPermissionDialog
-        onClose={() => setNotificationDialogVisible(false)}
-        onRetryRegistration={retryRegistration}
-        permissionStatus={permissionStatus}
-        registrationState={registrationState}
-        visible={notificationDialogVisible}
-      />
+      {notificationsEnabled ? (
+        <NotificationPermissionDialog
+          onClose={() => setNotificationDialogVisible(false)}
+          onRetryRegistration={retryRegistration}
+          permissionStatus={permissionStatus}
+          registrationState={registrationState}
+          visible={notificationDialogVisible}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

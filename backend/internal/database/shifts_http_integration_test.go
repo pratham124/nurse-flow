@@ -100,7 +100,7 @@ func TestShiftLifecycleHTTPDemo(t *testing.T) {
 		}
 		return value
 	}
-	server := httptest.NewServer(httpapi.WithCORS(httpapi.NewHandler(verifier, store, store, store), []string{"http://localhost:8081"}))
+	server := httptest.NewServer(httpapi.WithCORS(httpapi.NewHandler(verifier, store, store, store, store, store, store), []string{"http://localhost:8081"}))
 	defer server.Close()
 	root, err := filepath.Abs("../../..")
 	if err != nil {

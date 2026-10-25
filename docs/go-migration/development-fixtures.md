@@ -37,3 +37,12 @@ A database query verified one `floor_templates` row owned by `charge.alpha@examp
 At the user's request, a fresh charge-nurse account was created through the existing development Expo signup flow rather than resetting Beta: `charge.empty.20261017.1792286047082@example.com` (Charge Empty). Signup created its ordinary profile and opened the Go-backed workspace with zero templates and the existing "No templates created yet" message. The generated password is not recorded in this repository. Beta's account and password were unchanged; the new fixture replaces only Beta's manual empty-state check, not the existing Alpha/Beta database isolation checks.
 
 A second fresh account, `charge.native.empty.157b102df1@example.com` (Charge Native Empty), was created through Android development signup. Its Go-backed empty state and API outage/Retry recovery passed on the emulator. Its generated password is not recorded.
+
+## 2026-10-24 milestone 4 walkthrough fixtures
+
+Two synthetic accounts were created through the development Expo signup flow:
+`charge.m4b.20261024@example.com` (charge side; template "M4 Floor" and one
+ended shift) and `charge.m4.20261024@example.com` (first-login provisioning and
+the joined nurse "Ben"). Passwords are not recorded in this repository. The
+ended shift's assignment was staged by the user with a one-row SQL update
+because the optimizer is not configured in development. No cleanup was performed.

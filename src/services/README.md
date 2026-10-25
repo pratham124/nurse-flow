@@ -15,8 +15,10 @@ setup belongs in `realtimeWorkspaceRepository`, and shift invite record reads or
 writes belong in `shiftInviteRepository`.
 
 For the Phase 6 nurse invite flow, the screen should ask
-`shiftInviteRepository` to create, validate, accept, regenerate, revoke, or
-expire invite codes. Screens should not store raw invite codes anywhere durable.
+`shiftInviteRepository` to list invites and nurse access, generate or
+regenerate a code, and validate or accept a code. All of these call the Go API;
+the server creates, hashes, revokes, and expires codes, and never returns the
+hash. Screens should not store raw invite codes anywhere durable.
 
 For the Phase 6 live update flow, `ServerWorkspaceContext` starts a realtime
 listener only after the signed-in user has an active charge shift or linked

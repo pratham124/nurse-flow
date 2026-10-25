@@ -366,7 +366,6 @@ export interface ShiftNurseInviteRecord {
   shiftId: string;
   nurseId: string;
   createdByProfileId: string;
-  tokenHash: string;
   status: ShiftNurseInviteStatus;
   createdAt: string;
   expiresAt: string;

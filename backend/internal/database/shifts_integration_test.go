@@ -321,9 +321,15 @@ func TestShiftLifecycleIntegration(t *testing.T) {
 			"UPDATE public.active_shifts SET charge_profile_id=charge_profile_id WHERE false",
 			"UPDATE public.active_shifts SET floor_template_id=floor_template_id WHERE false",
 			"DELETE FROM public.active_shifts WHERE false",
-			"SELECT token_hash FROM public.shift_nurse_invites LIMIT 0",
-			"SELECT nurse_email FROM public.shift_nurse_access LIMIT 0",
-			"INSERT INTO public.shift_nurse_invites DEFAULT VALUES",
+			// Milestone 4 deliberately granted invite and access reads and invite
+			// issuing, but never deletes or edits of identity, ownership, or hashes.
+			"DELETE FROM public.shift_nurse_invites WHERE false",
+			"DELETE FROM public.shift_nurse_access WHERE false",
+			"UPDATE public.shift_nurse_invites SET token_hash=token_hash WHERE false",
+			"UPDATE public.shift_nurse_invites SET shift_id=shift_id WHERE false",
+			"UPDATE public.shift_nurse_access SET shift_id=shift_id WHERE false",
+			"UPDATE public.profiles SET role=role WHERE false",
+			"DELETE FROM public.profiles WHERE false",
 		} {
 			err := store.db.Exec(statement).Error
 			var pgErr *pgconn.PgError

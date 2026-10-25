@@ -1,10 +1,14 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { AxiosError } from "axios";
+import test, { afterEach, mock } from "node:test";
 
 import {
   confirmManualAssignmentOverride,
   loadJoinedNurseAssignmentView,
 } from "../src/services/serverWorkspaceRepository.ts";
+import { goApiClient } from "../src/services/goApiClient.ts";
+
+afterEach(() => mock.restoreAll());
 
 const profile = { id: "nurse-profile" };
 const override = {
@@ -66,21 +70,48 @@ test("rejects malformed override fields, projections, and warning entries", asyn
     /manual assignment override returned an invalid result/);
 });
 
+// The joined workspace now comes from the Go API; Supabase only supplies the token.
+function joinedClient() {
+  return {
+    auth: { async getSession() { return { data: { session: { access_token: "joined-token" } }, error: null }; } },
+    rpc() { assert.fail("joined workspace must not fall back to Supabase RPC"); },
+  };
+}
+
+function goReturns(assignment, status = 200) {
+  const calls = [];
+  mock.method(goApiClient, "get", async (url, config) => {
+    calls.push({ url, ...config });
+    return { status, data: { assignment } };
+  });
+  return calls;
+}
+
+function goFails(status, data) {
+  mock.method(goApiClient, "get", async () => {
+    throw new AxiosError("failed", "ERR_BAD_RESPONSE", {}, {}, { status, data });
+  });
+}
+
 test("parses joined nurse nested data and preserves future layout fields", async () => {
-  const result = await loadJoinedNurseAssignmentView(client(view), profile);
+  const calls = goReturns(view);
+  const result = await loadJoinedNurseAssignmentView(joinedClient(), profile);
   assert.deepEqual(result.assignedBeds, view.assignedBeds);
   assert.deepEqual(result.requestHistory, []);
   assert.equal(result.access.nurseProfileId, profile.id);
+  assert.equal(calls[0].url, "/joined-workspace");
+  assert.equal(calls[0].headers.Authorization, "Bearer joined-token");
 });
 
 test("supports legacy snake_case fields and null bed states", async () => {
-  const result = await loadJoinedNurseAssignmentView(client({
+  goReturns({
     shiftId: null, floorName: null, nurseName: null,
     shift_id: "shift", floor_name: "Floor", nurse_name: "Nurse",
     assigned_beds: [{ ...assignedBed, bedState: null }],
     request_history: null,
     access: { id: "access", status: "linked", nurseProfileId: null, nurse_profile_id: profile.id, nurse_email: null },
-  }), profile);
+  });
+  const result = await loadJoinedNurseAssignmentView(joinedClient(), profile);
   assert.equal(result.shiftId, "shift");
   assert.equal(result.assignedBeds[0].bedState, undefined);
   assert.equal(result.access.nurseEmail, undefined);
@@ -94,7 +125,9 @@ test("preserves ownership and linked-access checks", async () => {
     [{ status: "pending_link" }, /No shift access yet/],
     [{ status: "unknown" }, /unsupported status/],
   ]) {
-    await assert.rejects(loadJoinedNurseAssignmentView(client({ ...view, access }), profile), message);
+    mock.restoreAll();
+    goReturns({ ...view, access });
+    await assert.rejects(loadJoinedNurseAssignmentView(joinedClient(), profile), message);
   }
 });
 
@@ -106,12 +139,22 @@ test("rejects incomplete nested records and malformed history at the boundary", 
     { ...view, requestHistory: [{}] },
     { ...view, floorName: 42 },
   ]) {
-    await assert.rejects(loadJoinedNurseAssignmentView(client(data), profile), /nurse assignment view/);
+    mock.restoreAll();
+    goReturns(data);
+    await assert.rejects(loadJoinedNurseAssignmentView(joinedClient(), profile), /nurse assignment view/);
   }
 });
 
-test("keeps no-active-assignment and RPC failures distinct", async () => {
-  assert.equal(await loadJoinedNurseAssignmentView(client(null), profile), undefined);
-  await assert.rejects(loadJoinedNurseAssignmentView(client(null, { message: "RPC unavailable" }), profile),
-    /RPC unavailable/);
+test("keeps no-active-assignment (null) and server failures distinct", async () => {
+  goReturns(null);
+  assert.equal(await loadJoinedNurseAssignmentView(joinedClient(), profile), undefined);
+  mock.restoreAll();
+  goFails(503, { error: { code: "database_unavailable", message: "Database is unavailable." } });
+  await assert.rejects(loadJoinedNurseAssignmentView(joinedClient(), profile), /Database is unavailable/);
+  mock.restoreAll();
+  goFails(401, { error: { code: "unauthorized", message: "no" } });
+  await assert.rejects(loadJoinedNurseAssignmentView(joinedClient(), profile), /session expired/);
+  mock.restoreAll();
+  goReturns(undefined);
+  await assert.rejects(loadJoinedNurseAssignmentView(joinedClient(), profile), /invalid server shape/);
 });

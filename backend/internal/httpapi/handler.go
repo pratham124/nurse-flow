@@ -10,8 +10,8 @@ import (
 	"github.com/pratham124/nurse-flow/backend/internal/httpresponse"
 )
 
-// NewHandler connects the routes to the supplied verifier and database readers.
-func NewHandler(verifier *auth.Verifier, profiles auth.ProfileReader, templates FloorTemplateStore, shifts ShiftStore) http.Handler {
+// NewHandler connects the routes to the supplied verifier and database stores.
+func NewHandler(verifier *auth.Verifier, profiles auth.ProfileReader, templates FloorTemplateStore, shifts ShiftStore, profileStore ProfileStore, inviteStore InviteStore, joinedStore JoinedWorkspaceStore) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", healthHandler)
 	mux.Handle("GET /auth/check", verifier.RequireIdentity(http.HandlerFunc(authCheckHandler)))
@@ -21,6 +21,9 @@ func NewHandler(verifier *auth.Verifier, profiles auth.ProfileReader, templates 
 	mux.Handle("PUT /floor-templates/{id}", verifier.RequireIdentity(auth.RequireChargeNurse(profiles, requireUUID(saveFloorTemplateHandler(templates)))))
 	mux.Handle("DELETE /floor-templates/{id}", verifier.RequireIdentity(auth.RequireChargeNurse(profiles, requireUUID(deleteFloorTemplateHandler(templates)))))
 	registerShiftRoutes(mux, verifier, profiles, shifts)
+	registerProfileRoutes(mux, verifier, profiles, profileStore)
+	registerInviteRoutes(mux, verifier, profiles, inviteStore)
+	registerJoinedWorkspaceRoutes(mux, verifier, profiles, joinedStore)
 	return mux
 }
 

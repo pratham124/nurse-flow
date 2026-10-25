@@ -194,6 +194,30 @@ func TestVerifyToken(t *testing.T) {
 	}
 }
 
+// Supabase's clock ran about 5 seconds ahead of the API host during the
+// milestone 4 walkthrough, so a token used right after signup looked "issued in
+// the future". Small differences within the leeway must still be accepted.
+func TestAcceptSmallClockSkew(t *testing.T) {
+	key := testPrivateKey(t)
+	verifier, _ := testVerifier(t, key)
+	tests := []struct {
+		name   string
+		change func(*accessClaims)
+	}{
+		{"issued slightly ahead", func(c *accessClaims) { c.IssuedAt = jwt.NewNumericDate(fixtureTime.Add(5 * time.Second)) }},
+		{"expired moments ago", func(c *accessClaims) { c.ExpiresAt = jwt.NewNumericDate(fixtureTime.Add(-5 * time.Second)) }},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			claims := fixtureClaims()
+			test.change(&claims)
+			if _, err := verifier.Verify(context.Background(), signedToken(t, key, "first", claims)); err != nil {
+				t.Fatalf("error = %v", err)
+			}
+		})
+	}
+}
+
 func TestRejectToken(t *testing.T) {
 	key := testPrivateKey(t)
 	verifier, _ := testVerifier(t, key)
@@ -201,7 +225,7 @@ func TestRejectToken(t *testing.T) {
 		name   string
 		change func(*accessClaims)
 	}{
-		{"expired", func(c *accessClaims) { c.ExpiresAt = jwt.NewNumericDate(fixtureTime.Add(-time.Second)) }},
+		{"expired", func(c *accessClaims) { c.ExpiresAt = jwt.NewNumericDate(fixtureTime.Add(-time.Minute)) }},
 		{"missing expiration", func(c *accessClaims) { c.ExpiresAt = nil }},
 		{"wrong issuer", func(c *accessClaims) { c.Issuer = "https://another-project.supabase.co/auth/v1" }},
 		{"missing issuer", func(c *accessClaims) { c.Issuer = "" }},
