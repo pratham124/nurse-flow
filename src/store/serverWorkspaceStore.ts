@@ -188,6 +188,19 @@ export function getActiveParticipation(
   return { type: "none" };
 }
 
+function requireActiveShiftId(workspaceState: ServerWorkspaceState) {
+  const shiftId =
+    workspaceState.status === "ready" || workspaceState.status === "empty"
+      ? workspaceState.workspace.activeShift?.id
+      : undefined;
+
+  if (!shiftId) {
+    throw new Error("This active shift is no longer available.");
+  }
+
+  return shiftId;
+}
+
 function hasActiveChargeShift(workspaceState: ServerWorkspaceState) {
   return (
     (workspaceState.status === "ready" || workspaceState.status === "empty") &&
@@ -521,9 +534,12 @@ export function createServerWorkspaceStore({
             throw new Error("Supabase is not configured yet.");
           }
 
+          const shiftId = requireActiveShiftId(get().workspaceState);
+
           await dependencies.resolveShiftNurseSwapRequestOnServer(supabase, {
             nextStatus,
             requestId,
+            shiftId,
           });
           const workspace = await dependencies.loadServerWorkspace(
             supabase,
@@ -841,9 +857,12 @@ export function createServerWorkspaceStore({
             throw new Error("Supabase is not configured yet.");
           }
 
+          const shiftId = requireActiveShiftId(get().workspaceState);
+
           await dependencies.updateShiftNurseIssueStatusOnServer(supabase, {
             nextStatus,
             requestId,
+            shiftId,
           });
           const workspace = await dependencies.loadServerWorkspace(
             supabase,

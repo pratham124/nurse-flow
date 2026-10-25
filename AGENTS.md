@@ -58,6 +58,22 @@ request:
 - Use modern conventions (e.g., fetch latest docs via MCP server).
 - Prefer named `ComponentNameProps` types for React component props so component boundaries stay easy to read and explain. Reserve inline object prop types for tiny non-component callbacks or helpers.
 
+## Tradeoff Log
+
+Keep a running log of tradeoffs in `docs/tradeoffs.md` (create it if missing). Its purpose is interview prep: I use it to answer questions like "what tradeoffs did you make on this project?" When we choose one approach over a real alternative (a library, a data shape, a simplification, something deferred, a known limitation we accept), add an entry in the same turn:
+
+- **Date and topic**
+- **Problem:** what we needed to solve, and the constraints that mattered
+- **Chose:** what we did
+- **Over:** the alternative(s) we passed on
+- **Why:** the reasoning
+- **Cost:** what we gave up
+- **Would change if:** what would make a different choice better (scale, more users, a team, new requirements)
+
+Write each entry in plain, specific language I could say out loud in an interview, tied to this project's details, with no jargon I couldn't explain.
+
+Newest entries go at the top. Skip trivial choices: log a tradeoff only if a future reader might reasonably ask "why did we do it this way?" and the answer isn't obvious from the code. Naming, formatting, and picking between near-equivalent options don't qualify. Big architecture decisions still get an ADR in `docs/adr/`; link the ADR from the log entry.
+
 ## Development And Testing Skills
 
 - For any new React Native, Expo, TypeScript, navigation, state, component, styling, or app architecture development task, load and use `@building-react-native-apps` before planning or implementation when that skill is available.

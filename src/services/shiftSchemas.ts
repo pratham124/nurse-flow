@@ -56,7 +56,7 @@ const flag = z.looseObject({
   bedId: z.string().optional(),
   teamId: z.string().optional(),
 });
-const request = z.looseObject({
+export const nurseRequestSchema = z.looseObject({
   id: z.string(),
   type: z.enum(["issue", "swap"]),
   status: z.enum(["pending", "accepted", "declined"]),
@@ -127,7 +127,7 @@ export const shiftSnapshotSchema = z.object({
     })
     .optional(),
   flags: z.array(flag),
-  nurseRequests: z.array(request).optional(),
+  nurseRequests: z.array(nurseRequestSchema).optional(),
   carryOverReviewedAt: z.string().optional(),
 });
 

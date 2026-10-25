@@ -1,21 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { z } from "zod";
+
+import { goApiClient } from "./goApiClient";
+import { getGoAuthHeaders } from "./goApiAuth";
+import { readGoApiFailure, throwGoNetworkError } from "./goApiErrors";
 
 import type { NurseRequestMessage } from "../types/models";
-
-type RequestMessageSnapshot = {
-  authorProfileId?: string;
-  body?: string;
-  clientMutationId?: string | null;
-  createdAt?: string;
-  id?: string;
-  requestId?: string;
-  shiftId?: string;
-};
-
-type AppendRequestMessageRpcResult = {
-  message?: unknown;
-  status?: string;
-};
 
 export type ListRequestMessagesInput = {
   requestId: string;
@@ -77,20 +67,26 @@ function getClientMutationId(clientMutationId?: string) {
   return normalizedId;
 }
 
-function requireRequestMessage(value: unknown): NurseRequestMessage {
-  const message = value as RequestMessageSnapshot | undefined;
+const requestMessageSchema = z.object({
+  authorProfileId: z.string().min(1),
+  body: z.string().min(1),
+  clientMutationId: z.string().nullish(),
+  createdAt: z.string().min(1),
+  id: z.string().min(1),
+  requestId: z.string().min(1),
+  shiftId: z.string().min(1),
+});
 
-  if (
-    !message?.id ||
-    !message.shiftId ||
-    !message.requestId ||
-    !message.authorProfileId ||
-    !message.body ||
-    !message.createdAt
-  ) {
-    throw new Error("A request message has an invalid server shape.");
-  }
+const messageListSchema = z.object({ messages: z.array(requestMessageSchema) });
 
+const appendResultSchema = z.object({
+  message: requestMessageSchema,
+  status: z.enum(["saved", "duplicate"]),
+});
+
+function toNurseRequestMessage(
+  message: z.infer<typeof requestMessageSchema>,
+): NurseRequestMessage {
   return {
     authorProfileId: message.authorProfileId,
     body: message.body,
@@ -100,6 +96,28 @@ function requireRequestMessage(value: unknown): NurseRequestMessage {
     requestId: message.requestId,
     shiftId: message.shiftId,
   };
+}
+
+// Turns a failed Go request into an error the screen can show. The server's
+// own message is used when it sent one.
+function threadRequestError(error: unknown): never {
+  const failure = readGoApiFailure(error);
+
+  if (!failure) {
+    return throwGoNetworkError(error, "request thread service");
+  }
+
+  if (failure.status === 401) {
+    throw new Error("Your session expired. Sign in again.");
+  }
+
+  throw new Error(
+    failure.message || "The request thread is temporarily unavailable. Try again.",
+  );
+}
+
+function getMessagesPath(thread: { requestId: string; shiftId: string }) {
+  return `/shifts/${encodeURIComponent(thread.shiftId)}/requests/${encodeURIComponent(thread.requestId)}/messages`;
 }
 
 function requireThreadInput(input: ListRequestMessagesInput) {
@@ -120,20 +138,17 @@ export async function listRequestMessages(
   input: ListRequestMessagesInput,
 ) {
   const thread = requireThreadInput(input);
-  const { data, error } = await supabase.rpc("list_nurse_request_messages", {
-    p_request_id: thread.requestId,
-    p_shift_id: thread.shiftId,
-  });
+  const headers = await getGoAuthHeaders(supabase);
+  const response = await goApiClient
+    .get<unknown>(getMessagesPath(thread), { headers })
+    .catch(threadRequestError);
+  const result = messageListSchema.safeParse(response.data);
 
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  if (!Array.isArray(data)) {
+  if (response.status !== 200 || !result.success) {
     throw new Error("The request thread returned an invalid server shape.");
   }
 
-  return data.map(requireRequestMessage);
+  return result.data.messages.map(toNurseRequestMessage);
 }
 
 export async function appendRequestMessage(
@@ -143,25 +158,25 @@ export async function appendRequestMessage(
   const thread = requireThreadInput(input);
   const body = getRequestMessageBody(input.body);
   const clientMutationId = getClientMutationId(input.clientMutationId);
-  const { data, error } = await supabase.rpc("append_nurse_request_message", {
-    p_body: body,
-    p_client_mutation_id: clientMutationId ?? null,
-    p_request_id: thread.requestId,
-    p_shift_id: thread.shiftId,
-  });
+  const headers = await getGoAuthHeaders(supabase);
+  const response = await goApiClient
+    .post<unknown>(
+      getMessagesPath(thread),
+      clientMutationId ? { body, client_mutation_id: clientMutationId } : { body },
+      { headers },
+    )
+    .catch(threadRequestError);
+  const result = appendResultSchema.safeParse(response.data);
 
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  const result = data as AppendRequestMessageRpcResult | null;
-
-  if (result?.status !== "saved" && result?.status !== "duplicate") {
+  if (
+    !result.success ||
+    (response.status !== 200 && response.status !== 201)
+  ) {
     throw new Error("The request message returned an invalid server result.");
   }
 
   return {
-    message: requireRequestMessage(result.message),
-    status: result.status,
+    message: toNurseRequestMessage(result.data.message),
+    status: result.data.status,
   };
 }

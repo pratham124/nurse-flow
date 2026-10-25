@@ -46,3 +46,13 @@ ended shift) and `charge.m4.20261024@example.com` (first-login provisioning and
 the joined nurse "Ben"). Passwords are not recorded in this repository. The
 ended shift's assignment was staged by the user with a one-row SQL update
 because the optimizer is not configured in development. No cleanup was performed.
+
+## 2026-10-24 milestone 5 walkthrough fixtures
+
+Two synthetic accounts were created through the development Expo signup flow with
+generated passwords that were never displayed or stored:
+`charge.m5c.mvnedr67@example.com` (Charge M5; template "M5 Floor" and one active
+assigned shift with manual moves, requests and thread messages) and
+`charge.m5n.mvnedr67@example.com` (Nurse M5, joined as "Ben"). They cannot be signed
+into again. The shift's assignment was staged with `.scratch/m5-stage-assignment.sql`
+because the optimizer is not configured in development. No cleanup was performed.

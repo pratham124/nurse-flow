@@ -11,7 +11,7 @@ import (
 )
 
 // NewHandler connects the routes to the supplied verifier and database stores.
-func NewHandler(verifier *auth.Verifier, profiles auth.ProfileReader, templates FloorTemplateStore, shifts ShiftStore, profileStore ProfileStore, inviteStore InviteStore, joinedStore JoinedWorkspaceStore) http.Handler {
+func NewHandler(verifier *auth.Verifier, profiles auth.ProfileReader, templates FloorTemplateStore, shifts ShiftStore, profileStore ProfileStore, inviteStore InviteStore, joinedStore JoinedWorkspaceStore, requestStore RequestStore, threadStore ThreadStore) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", healthHandler)
 	mux.Handle("GET /auth/check", verifier.RequireIdentity(http.HandlerFunc(authCheckHandler)))
@@ -24,6 +24,8 @@ func NewHandler(verifier *auth.Verifier, profiles auth.ProfileReader, templates 
 	registerProfileRoutes(mux, verifier, profiles, profileStore)
 	registerInviteRoutes(mux, verifier, profiles, inviteStore)
 	registerJoinedWorkspaceRoutes(mux, verifier, profiles, joinedStore)
+	registerRequestRoutes(mux, verifier, profiles, requestStore)
+	registerThreadRoutes(mux, verifier, profiles, threadStore)
 	return mux
 }
 

@@ -10,6 +10,7 @@ import { goApiClient } from "./goApiClient";
 import { getGoAuthHeaders } from "./goApiAuth";
 import { readGoApiFailure, throwGoNetworkError } from "./goApiErrors";
 import { loadServerActiveShift, loadPreviousShiftSnapshots } from "./shiftRepository";
+import { nurseRequestSchema } from "./shiftSchemas";
 import {
   joinedNurseAssignedBedSchema,
   joinedNurseAssignmentResultSchema,
@@ -57,14 +58,16 @@ type SubmitJoinedNurseSwapRequestInput = {
   sourceBedId: string;
 };
 
-type ResolveShiftNurseSwapRequestInput = {
+export type ResolveShiftNurseSwapRequestInput = {
   nextStatus: Extract<NurseRequestStatus, "accepted" | "declined">;
   requestId: string;
+  shiftId: string;
 };
 
-type UpdateShiftNurseIssueStatusInput = {
+export type UpdateShiftNurseIssueStatusInput = {
   nextStatus: NurseIssueReviewStatus;
   requestId: string;
+  shiftId: string;
 };
 
 export type ConfirmManualAssignmentOverrideInput = {
@@ -227,30 +230,55 @@ function mapJoinedNurseAssignmentView(
   };
 }
 
+// Turns a failed Go request into an error the screen can show. The server's
+// own user-facing message is used when it sent one.
+function requestWriteError(
+  error: unknown,
+  serviceName: string,
+  fallbackMessage: string,
+): never {
+  const failure = readGoApiFailure(error);
+
+  if (!failure) {
+    return throwGoNetworkError(error, serviceName);
+  }
+
+  if (failure.status === 401) {
+    throw new Error("Your session expired. Sign in again.");
+  }
+
+  throw new Error(failure.message || fallbackMessage);
+}
+
 export async function confirmManualAssignmentOverride(
   supabase: SupabaseClient,
   input: ConfirmManualAssignmentOverrideInput,
 ): Promise<ConfirmManualAssignmentOverrideResult> {
-  const { data, error } = await supabase.rpc(
-    "confirm_manual_assignment_override",
-    {
-      p_baseline_assignment_result_id: input.baselineAssignmentResultId,
-      p_bed_id: input.bedId,
-      p_client_mutation_id: input.clientMutationId,
-      p_from_nurse_id: input.fromNurseId,
-      p_related_swap_request_id: input.relatedSwapRequestId ?? null,
-      p_shift_id: input.shiftId,
-      p_to_nurse_id: input.toNurseId,
-      p_warning_acknowledgements: input.warningAcknowledgements,
-    },
-  );
+  const headers = await getGoAuthHeaders(supabase);
+  const response = await goApiClient
+    .post<unknown>(
+      `/shifts/${encodeURIComponent(input.shiftId)}/assignment-moves`,
+      {
+        baseline_assignment_result_id: input.baselineAssignmentResultId,
+        bed_id: input.bedId,
+        client_mutation_id: input.clientMutationId,
+        from_nurse_id: input.fromNurseId,
+        related_swap_request_id: input.relatedSwapRequestId ?? null,
+        to_nurse_id: input.toNurseId,
+        warning_acknowledgements: input.warningAcknowledgements,
+      },
+      { headers },
+    )
+    .catch((error) =>
+      requestWriteError(
+        error,
+        "assignment service",
+        "The assignment move could not be saved. Try again.",
+      ),
+    );
 
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  const parsed = manualAssignmentOverrideResultSchema.safeParse(data);
-  if (!parsed.success) {
+  const parsed = manualAssignmentOverrideResultSchema.safeParse(response.data);
+  if (response.status !== 200 || !parsed.success) {
     throw new Error("The manual assignment override returned an invalid result.");
   }
   const result = parsed.data;
@@ -305,18 +333,10 @@ const joinedWorkspaceResponseSchema = z.object({
 });
 
 function joinedWorkspaceRequestError(error: unknown): never {
-  const failure = readGoApiFailure(error);
-
-  if (!failure) {
-    return throwGoNetworkError(error, "workspace service");
-  }
-
-  if (failure.status === 401) {
-    throw new Error("Your session expired. Sign in again.");
-  }
-
-  throw new Error(
-    failure.message || "Your shared workspace is temporarily unavailable. Try again.",
+  return requestWriteError(
+    error,
+    "workspace service",
+    "Your shared workspace is temporarily unavailable. Try again.",
   );
 }
 
@@ -383,6 +403,30 @@ export async function loadJoinedNurseNotificationTargetState(
   return { status: "shift_ended" };
 }
 
+const requestEnvelopeSchema = z.object({ request: nurseRequestSchema });
+
+async function postNurseRequest(
+  supabase: SupabaseClient,
+  path: string,
+  body: Record<string, string>,
+  expectedStatus: number,
+  fallbackMessage: string,
+) {
+  const headers = await getGoAuthHeaders(supabase);
+  const response = await goApiClient
+    .post<unknown>(path, body, { headers })
+    .catch((error) =>
+      requestWriteError(error, "request service", fallbackMessage),
+    );
+
+  if (
+    response.status !== expectedStatus ||
+    !requestEnvelopeSchema.safeParse(response.data).success
+  ) {
+    throw new Error("The request service returned an invalid server shape.");
+  }
+}
+
 export async function submitJoinedNurseIssueRequest(
   supabase: SupabaseClient,
   request: SubmitJoinedNurseIssueRequestInput,
@@ -393,13 +437,13 @@ export async function submitJoinedNurseIssueRequest(
     throw new Error("Add issue details before submitting.");
   }
 
-  const { error } = await supabase.rpc("submit_joined_nurse_issue_request", {
-    request_message: message,
-  });
-
-  if (error) {
-    throw new Error(error.message);
-  }
+  await postNurseRequest(
+    supabase,
+    "/joined-workspace/issue-requests",
+    { message },
+    201,
+    "Your issue could not be submitted. Try again.",
+  );
 }
 
 export async function submitJoinedNurseSwapRequest(
@@ -416,42 +460,43 @@ export async function submitJoinedNurseSwapRequest(
     throw new Error("Add swap details before submitting.");
   }
 
-  const { error } = await supabase.rpc("submit_joined_nurse_swap_request", {
-    request_message: message,
-    source_bed_id: request.sourceBedId,
-  });
+  await postNurseRequest(
+    supabase,
+    "/joined-workspace/swap-requests",
+    { message, source_bed_id: request.sourceBedId },
+    201,
+    "Your swap request could not be submitted. Try again.",
+  );
+}
 
-  if (error) {
-    throw new Error(error.message);
-  }
+function getShiftRequestPath(shiftId: string, requestId: string, action: string) {
+  return `/shifts/${encodeURIComponent(shiftId)}/requests/${encodeURIComponent(requestId)}/${action}`;
 }
 
 export async function resolveShiftNurseSwapRequest(
   supabase: SupabaseClient,
   request: ResolveShiftNurseSwapRequestInput,
 ) {
-  const { error } = await supabase.rpc("resolve_shift_nurse_swap_request", {
-    next_status: request.nextStatus,
-    request_id: request.requestId,
-  });
-
-  if (error) {
-    throw new Error(error.message);
-  }
+  await postNurseRequest(
+    supabase,
+    getShiftRequestPath(request.shiftId, request.requestId, "swap-resolution"),
+    { status: request.nextStatus },
+    200,
+    "The swap request could not be resolved. Try again.",
+  );
 }
 
 export async function updateShiftNurseIssueStatus(
   supabase: SupabaseClient,
   request: UpdateShiftNurseIssueStatusInput,
 ) {
-  const { error } = await supabase.rpc("update_shift_nurse_issue_status", {
-    p_next_status: request.nextStatus,
-    p_request_id: request.requestId,
-  });
-
-  if (error) {
-    throw new Error(error.message);
-  }
+  await postNurseRequest(
+    supabase,
+    getShiftRequestPath(request.shiftId, request.requestId, "issue-status"),
+    { status: request.nextStatus },
+    200,
+    "The issue status could not be updated. Try again.",
+  );
 }
 
 export async function saveServerFloorTemplate(

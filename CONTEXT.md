@@ -21,3 +21,33 @@ _Avoid_: Membership, seat
 **Invite code**:
 A single-use, 6-character credential for one nurse slot on one shift; only its hash is stored.
 _Avoid_: Join token, invite link (the link only carries the code)
+
+### Assignments and requests
+
+**Generated assignment**:
+The optimizer's bed-to-nurse result stored on the shift; it is the baseline every manual move is checked against.
+_Avoid_: Original assignment, plan
+
+**Manual move**:
+A charge nurse's confirmed reassignment of one bed to another nurse. Only the newest move for a bed is active; earlier ones are kept as superseded history.
+_Avoid_: Override (in conversation), drag
+
+**Effective nurse**:
+The nurse a bed belongs to right now: the active manual move's target, otherwise the generated assignment's nurse.
+_Avoid_: Current owner, assigned nurse (when the generated one is meant)
+
+**Nurse request**:
+Something a joined nurse asks the charge nurse for on the current shift; either an issue request or a swap request.
+_Avoid_: Ticket, message
+
+**Issue request**:
+A nurse request reporting a problem; the charge nurse moves it between open, reviewed and resolved.
+_Avoid_: Complaint, flag
+
+**Swap request**:
+A nurse request asking to hand one of the nurse's own beds to someone else. Accepting it only approves the swap; it is completed later by a manual move of that bed.
+_Avoid_: Trade, transfer
+
+**Request thread**:
+The messages exchanged about one nurse request, visible only to the shift's charge nurse and the requesting nurse while they have access.
+_Avoid_: Chat, conversation

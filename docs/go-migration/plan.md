@@ -1,6 +1,6 @@
 # Go Backend Migration Plan
 
-Status: milestones 1–4 are done (milestone 4 on 2026-10-24). Milestone 3 (tickets 03–07) was closed at the user's request on 2026-10-19 after local and live development checks passed, with the remaining manual checks and fixture cleanup deferred. See `shift-lifecycle.md` for the exact verification limits. The existing architecture and milestone execution protocol remain approved; no later milestone is authorized.
+Status: milestones 1–5 are done (milestones 4 and 5 on 2026-10-24). Milestone 3 (tickets 03–07) was closed at the user's request on 2026-10-19 after local and live development checks passed, with the remaining manual checks and fixture cleanup deferred. See `shift-lifecycle.md` for the exact verification limits. The existing architecture and milestone execution protocol remain approved. Milestone 5 was authorized and completed on 2026-10-24; milestones 6–7 are not authorized.
 
 ## Purpose and scope
 
@@ -121,7 +121,7 @@ The user approved this breakdown on 2026-10-17. Full ticket deliverables, blocki
 | 2 | Save and delete owned floor templates | 01–02 | Complete; verification in template-writes.md |
 | 3 | Charge workspace reads and shift lifecycle, including carry-over | 03–07 | Done; verification limits and deferred manual checks in shift-lifecycle.md |
 | 4 | Application profiles, nurse invites, joining, and scoped nurse reads | 08–11 | Done; verification and limits in profiles-invites-access.md |
-| 5 | Manual moves, issue/swap requests, and request threads | 12–15 | Planned |
+| 5 | Manual moves, issue/swap requests, and request threads | 12–15 | Done; verification and limits in moves-requests-threads.md |
 | 6 | Go/Python optimizer coordination, device registration, and live collaboration parity | 16–19 | Planned |
 | 7 | Hosted development, full parity, explicit cutover, and legacy retirement | 20–23 | Planned |
 
@@ -320,3 +320,11 @@ Production enablement follows hosted development verification and explicit appro
 - [x] Implemented tickets 08–11 with the reviewed migration `20261024120000`, two-axis code review fixes, and local Go/PostgreSQL/Expo verification.
 - [x] Applied and registered the migration only in nurseflow-go-dev; read-only catalog check matched local; advisors added only expected permissive-policy warnings; live template/shift isolation passed.
 - [x] Real-session Expo web walkthrough passed signup, restore, invite generate/regenerate, revoked/used codes, join, scoped joined view, and End Shift. Fixed a walkthrough-discovered JWT clock-skew rejection with a 30-second leeway. Native and live unsupported-role checks were not run. Milestone 4 is done; milestone 5 requires authorization.
+
+### 2026-10-24 - Milestone 5 implementation and local verification
+
+- [x] User authorized milestone 5 (tickets 12–15) and accepted every recommended decision: shift IDs in charge review URLs, `/joined-workspace/*-requests` submissions, a joined-nurse `active_shifts` UPDATE policy with Go-enforced append-only requests (ADR 0004), effective-owner swap checks, the RPC-shaped move contract, payload-blind move replay, the retained swap-completion trigger with Go pre-checks, a `go_private.caller_is_thread_actor` predicate, and 200 `{request}` review responses.
+- [x] Added glossary terms, ADR 0004, migration `20261024180000`, and the contract in `moves-requests-threads.md`. Implemented Go routes, pure rules, transactions and Expo Axios/Zod integration for all four tickets.
+- [x] Local PostgreSQL integration, Go race/vet/format, Expo type/lint/145 tests, and a two-axis review with fixes passed; see moves-requests-threads.md.
+- [x] Applied and registered the migration only in nurseflow-go-dev; the read-only catalog check matched local; advisors added only one expected permissive-policy warning; live template/shift isolation passed.
+- [x] Real-session Expo web walkthrough (charge and joined nurse in separate browser contexts) passed issue submit/review/resolve/reopen, both thread participants with retry/reuse checks, swap submit/accept/decline, swap completion through the move dialog, a board move with live joined-nurse refresh, replay/stale moves, and the effective-owner swap rule. Native, live warning acknowledgements, and outsider thread calls were not exercised live. Milestone 5 is done; milestone 6 requires authorization.

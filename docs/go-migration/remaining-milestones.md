@@ -1,6 +1,6 @@
 # Remaining Go migration milestones
 
-Status: approved by the user on 2026-10-17. Milestones 2 and 3 (tickets 01–07) are done. The user closed milestone 3 on 2026-10-19 with the remaining manual checks and fixture cleanup deferred as recorded in shift-lifecycle.md. Milestone 4 (tickets 08–11) was completed on 2026-10-24 (see profiles-invites-access.md); milestones 5–7 have not started. Notifications are disabled by user decision on 2026-10-24: ticket 11's notification-target lookup, ticket 18, and ticket 19's notification navigation are deferred until the user re-enables them.
+Status: approved by the user on 2026-10-17. Milestones 2 and 3 (tickets 01–07) are done. The user closed milestone 3 on 2026-10-19 with the remaining manual checks and fixture cleanup deferred as recorded in shift-lifecycle.md. Milestone 4 (tickets 08–11) was completed on 2026-10-24 (see profiles-invites-access.md); Milestone 5 (tickets 12–15) was completed on 2026-10-24 (see moves-requests-threads.md); milestones 6–7 have not started. Notifications are disabled by user decision on 2026-10-24: ticket 11's notification-target lookup, ticket 18, and ticket 19's notification navigation are deferred until the user re-enables them.
 Prepared 2026-10-17 from existing code, the migration plan, database baseline, and ownership ADR.
 
 ## Session handoff
@@ -72,19 +72,19 @@ Unblocked tickets can use existing migrated or retained paths and development fi
    - **Blocked by:** None (can start after the milestone is authorized).
    - **What it delivers:** A joined nurse sees only their own effective assignment through Go and receives the existing ended-shift/access-removed state on refresh or notification navigation.
 
-12. **Confirm manual assignment moves through Go (Milestone 5)**
+12. **[Done] Confirm manual assignment moves through Go (Milestone 5)**
    - **Blocked by:** None (can start after the milestone is authorized).
    - **What it delivers:** The charge nurse confirms a bed move through Go, receives the effective board, and sees a stale result if the assignment or current owner changed.
 
-13. **Submit and review issue requests through Go (Milestone 5)**
+13. **[Done] Submit and review issue requests through Go (Milestone 5)**
    - **Blocked by:** None (can start after the milestone is authorized).
    - **What it delivers:** A joined nurse submits an issue through Go and charge can review, resolve, or reopen it using the existing screens.
 
-14. **Submit and resolve swap requests through Go (Milestone 5)**
+14. **[Done] Submit and resolve swap requests through Go (Milestone 5)**
    - **Blocked by:** 12: Confirm manual assignment moves through Go.
    - **What it delivers:** A joined nurse requests a swap, charge accepts or declines it through Go, and an accepted swap can complete through the migrated manual-move flow.
 
-15. **Read and send request messages through Go (Milestone 5)**
+15. **[Done] Read and send request messages through Go (Milestone 5)**
    - **Blocked by:** None (can start after the milestone is authorized).
    - **What it delivers:** The authorized nurse and charge can read and send messages in the existing request thread through Go.
 

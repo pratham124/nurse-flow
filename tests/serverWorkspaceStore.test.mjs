@@ -249,3 +249,42 @@ test("keeps screen-level mutation status out of the shared source state", async 
 
   assert.deepEqual(legacyMutationStateReferences, []);
 });
+
+test("charge review actions pass the active shift id and reload the workspace", async () => {
+  const calls = [];
+  const store = createSignedInStore({
+    loadServerWorkspace: async () => readyWorkspace,
+    resolveShiftNurseSwapRequestOnServer: async (_client, input) => {
+      calls.push(["swap", input]);
+    },
+    updateShiftNurseIssueStatusOnServer: async (_client, input) => {
+      calls.push(["issue", input]);
+    },
+  });
+  store.getState().applyWorkspace(readyWorkspace);
+
+  await store.getState().resolveNurseSwapRequest("nurse-request-1", "accepted");
+  await store.getState().updateNurseIssueStatus("nurse-request-2", "reviewed");
+
+  assert.deepEqual(calls, [
+    ["swap", { nextStatus: "accepted", requestId: "nurse-request-1", shiftId: shift.id }],
+    ["issue", { nextStatus: "reviewed", requestId: "nurse-request-2", shiftId: shift.id }],
+  ]);
+});
+
+test("charge review actions fail without an active shift and send nothing", async () => {
+  const store = createSignedInStore({
+    resolveShiftNurseSwapRequestOnServer: async () => assert.fail("no request expected"),
+    updateShiftNurseIssueStatusOnServer: async () => assert.fail("no request expected"),
+  });
+
+  await assert.rejects(
+    store.getState().resolveNurseSwapRequest("r", "accepted"),
+    /no longer available/,
+  );
+  store.getState().applyWorkspace({ ...readyWorkspace, activeShift: undefined });
+  await assert.rejects(
+    store.getState().updateNurseIssueStatus("r", "resolved"),
+    /no longer available/,
+  );
+});
