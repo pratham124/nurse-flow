@@ -116,6 +116,23 @@ func TestSetupValidation(t *testing.T) {
 	}
 }
 
+// Shifts saved before the two-character limit can hold longer initials; their
+// carry-over suggestions keep only the first two trimmed characters.
+func TestCarryOverShortensLongInitials(t *testing.T) {
+	s := Snapshot{
+		"nurses":    json.RawMessage(`[]`),
+		"beds":      json.RawMessage(`[{"id":"b1","roomId":"r1","label":"101-1"},{"id":"b2","roomId":"r1","label":"101-2"}]`),
+		"bedStates": json.RawMessage(`[{"id":"s1","bedId":"b1","patient":{"initials":" J.S. "}},{"id":"s2","bedId":"b2","patient":{"initials":"ÉÖÜ"}}]`),
+	}
+	_, patients, err := s.CarryOver()
+	if err != nil || len(patients) != 2 {
+		t.Fatalf("carry-over failed: %v", err)
+	}
+	if patients[0].Patient.Initials != "J." || patients[1].Patient.Initials != "ÉÖ" {
+		t.Fatalf("initials = %q, %q", patients[0].Patient.Initials, patients[1].Patient.Initials)
+	}
+}
+
 func TestReopenAndCarryOver(t *testing.T) {
 	s, setup := testSnapshot(t)
 	setup.Nurses = []Nurse{{"n", "Nurse", "RN", "mid", 5}}
@@ -132,7 +149,7 @@ func TestReopenAndCarryOver(t *testing.T) {
 		t.Fatal("baseline normalization changed")
 	}
 	nurses, patients, err := s.CarryOver()
-	if err != nil || len(nurses) != 1 || len(patients) != 1 || nurses[0].PreviousNurseID != "n" || patients[0].PreviousBedLabel != "101-1" || patients[0].Patient.Initials != " AB " || patients[0].Acuity != "yellow" {
+	if err != nil || len(nurses) != 1 || len(patients) != 1 || nurses[0].PreviousNurseID != "n" || patients[0].PreviousBedLabel != "101-1" || patients[0].Patient.Initials != "AB" || patients[0].Acuity != "yellow" {
 		t.Fatalf("carry-over changed: %v", err)
 	}
 	if nurses[0].ID == nurses[0].PreviousNurseID {
