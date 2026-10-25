@@ -16,6 +16,7 @@ import type {
   PatientCarryOverSuggestion,
   Shift,
 } from "../types/models";
+import { shortenPatientInitials } from "../utils/patientInitials";
 import { carryOverReviewFlow } from "../utils/workflowFlows";
 
 // ---------------------------------------------------------------------------
@@ -98,7 +99,11 @@ function getShiftWithCarryOver(
 
     return {
       ...bedState,
-      patient: { ...match.patient },
+      // Suggestions saved before the two-character limit may be longer.
+      patient: {
+        ...match.patient,
+        initials: shortenPatientInitials(match.patient.initials),
+      },
       acuity: match.acuity,
     };
   });
@@ -170,7 +175,7 @@ function NurseSuggestionRow({ suggestion, isIncluded, onToggle }: NurseSuggestio
 }
 
 function PatientSuggestionRow({ suggestion, isIncluded, onToggle }: PatientSuggestionRowProps) {
-  const displayName = suggestion.patient.initials.trim() || "Patient";
+  const displayName = shortenPatientInitials(suggestion.patient.initials) || "Patient";
 
   return (
     <Pressable

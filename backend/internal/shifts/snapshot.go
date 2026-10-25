@@ -305,13 +305,25 @@ func (s Snapshot) CarryOver() ([]NurseSuggestion, []PatientSuggestion, error) {
 		if !ok {
 			label = "Unknown bed"
 		}
+		patient := *state.Patient
+		patient.Initials = shortInitials(patient.Initials)
 		patientSuggestions = append(patientSuggestions, PatientSuggestion{
 			ID:               id,
 			PreviousBedID:    state.BedID,
 			PreviousBedLabel: label,
-			Patient:          *state.Patient,
+			Patient:          patient,
 			Acuity:           state.Acuity,
 		})
 	}
 	return nurseSuggestions, patientSuggestions, nil
+}
+
+// shortInitials trims initials and keeps at most the first two characters, so
+// shifts saved before the limit cannot carry longer initials forward.
+func shortInitials(initials string) string {
+	letters := []rune(strings.TrimSpace(initials))
+	if len(letters) > maxPatientInitials {
+		letters = letters[:maxPatientInitials]
+	}
+	return string(letters)
 }

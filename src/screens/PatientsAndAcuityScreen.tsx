@@ -20,6 +20,7 @@ import { useActiveShiftDraft } from "../hooks/useActiveShiftDraft";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
 import { getShiftCensus, isOccupiedBedState } from "../utils/census";
+import { patientInitialsMaxLength } from "../utils/patientInitials";
 import type {
   Acuity,
   Bed,
@@ -39,8 +40,6 @@ const sexOptions = ["F", "M", "Other"];
 const acuityOptions: Acuity[] = ["green", "yellow", "red"];
 const wholeNumberAgeMessage = "Age must be a whole number.";
 const acuityRequiredMessage = "Select an acuity level for all occupied beds.";
-// Keep patient identifiers minimal; the server rejects longer initials too.
-const patientInitialsMaxLength = 2;
 
 type PatientField = "initials" | "age" | "sex" | "diagnosis";
 type CensusFilter = (typeof censusFilters)[number]["value"];
