@@ -90,6 +90,7 @@ func TestSetupValidation(t *testing.T) {
 		{"duplicate state", func(s *Setup) { s.BedStates[0].ID = s.BedStates[1].ID }},
 		{"invalid acuity", func(s *Setup) { s.BedStates[0].Acuity = "purple" }},
 		{"negative age", func(s *Setup) { age := -1; s.BedStates[0].Patient = &Patient{Initials: "AB", Age: &age} }},
+		{"initials over two characters", func(s *Setup) { s.BedStates[0].Patient = &Patient{Initials: "ABC"} }},
 		{"invalid license", func(s *Setup) { s.Nurses = []Nurse{{"n", "Nurse", "doctor", "mid", 5}} }},
 		{"duplicate nurse", func(s *Setup) { n := Nurse{"n", "Nurse", "RN", "mid", 5}; s.Nurses = []Nurse{n, n} }},
 	} {
@@ -107,6 +108,11 @@ func TestSetupValidation(t *testing.T) {
 	setup.BedStates[0].Patient = &Patient{Initials: ""}
 	if err := setup.Validate(s); err != nil {
 		t.Fatal("unfinished setup rejected")
+	}
+	// The two-character limit counts trimmed characters, not bytes.
+	setup.BedStates[0].Patient = &Patient{Initials: " ÉÖ "}
+	if err := setup.Validate(s); err != nil {
+		t.Fatal("two accented initials rejected")
 	}
 }
 

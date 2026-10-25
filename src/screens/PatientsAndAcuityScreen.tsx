@@ -39,6 +39,8 @@ const sexOptions = ["F", "M", "Other"];
 const acuityOptions: Acuity[] = ["green", "yellow", "red"];
 const wholeNumberAgeMessage = "Age must be a whole number.";
 const acuityRequiredMessage = "Select an acuity level for all occupied beds.";
+// Keep patient identifiers minimal; the server rejects longer initials too.
+const patientInitialsMaxLength = 2;
 
 type PatientField = "initials" | "age" | "sex" | "diagnosis";
 type CensusFilter = (typeof censusFilters)[number]["value"];
@@ -401,10 +403,11 @@ function BedPatientForm({
 
       <PlaceholderInput
         label="Patient initials"
+        maxLength={patientInitialsMaxLength}
         onChangeText={(value) =>
           onUpdatePatientField(bedRow.bed.id, "initials", value)
         }
-        placeholder="J.S."
+        placeholder="JS"
         value={patient?.initials ?? ""}
       />
 

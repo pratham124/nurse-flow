@@ -6,6 +6,7 @@ import (
 	"errors"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/pratham124/nurse-flow/backend/internal/templates"
@@ -13,6 +14,10 @@ import (
 
 // ErrInvalidSetup indicates missing or inconsistent shift setup data.
 var ErrInvalidSetup = errors.New("shift setup is incomplete or inconsistent")
+
+// maxPatientInitials keeps stored patient identifiers short, so a shift never
+// holds more than two letters about who a patient is.
+const maxPatientInitials = 2
 
 // Snapshot preserves stored fields owned by other workflows, including request
 // history and optimizer results. Setup edits replace only the fields below.
@@ -211,7 +216,8 @@ func (input Setup) Validate(s Snapshot) error {
 		}
 		seen[state.BedID], stateIDs[state.ID] = true, true
 		if p := state.Patient; p != nil {
-			if (p.Age != nil && *p.Age < 0) || (p.Sex != "" && p.Sex != "female" && p.Sex != "male" && p.Sex != "other" && p.Sex != "unknown") {
+			if (p.Age != nil && *p.Age < 0) || (p.Sex != "" && p.Sex != "female" && p.Sex != "male" && p.Sex != "other" && p.Sex != "unknown") ||
+				utf8.RuneCountInString(strings.TrimSpace(p.Initials)) > maxPatientInitials {
 				return ErrInvalidSetup
 			}
 		}
