@@ -49,6 +49,14 @@ and has only been applied to isolated local PostgreSQL in this session. Shift
 rules live in `internal/shifts`; Expo uses `shiftRepository.ts` and
 `shiftSchemas.ts` through the shared Axios client.
 
+Manual moves (`POST /shifts/{id}/assignment-moves`), nurse requests
+(`/joined-workspace/issue-requests`, `/joined-workspace/swap-requests`, and the
+charge `issue-status`/`swap-resolution` routes), and request threads
+(`/shifts/{id}/requests/{requestId}/messages`) are milestone 5; see
+[moves, requests, and threads](../docs/go-migration/moves-requests-threads.md)
+for contracts and migration `20261024180000`. Pure move and request rules live in
+`internal/shifts` (`moves.go`, `requests.go`, `threads.go`).
+
 ## Checks
 
 Run from `backend`:
@@ -80,7 +88,7 @@ Public-key discovery, caching, and background refresh use `jwkset`. Startup atte
 
 `GET /floor-templates` uses the same token and charge-nurse checks, then reads only the authorized profile's templates in `updated_at DESC` order. It returns `{ "templates": [...] }` with the six existing snake_case database fields. `template_snapshot` remains raw JSON; the frontend's existing mapper validates and adapts it in `src/services/floorTemplateRepository.ts`.
 
-An empty list returns HTTP 200 with `{ "templates": [] }`. Template query failures return a controlled HTTP 503 `database_unavailable` error, without partial results. Query parameters and headers cannot select a different owner. Expo uses Go for template lists, saves, deletes, and the charge shift lifecycle described above. Unmigrated invite, joined-nurse, request, and optimizer workflows retain their existing paths.
+An empty list returns HTTP 200 with `{ "templates": [] }`. Template query failures return a controlled HTTP 503 `database_unavailable` error, without partial results. Query parameters and headers cannot select a different owner. Expo uses Go for template lists, saves, deletes, the charge shift lifecycle, profiles, invites and joining, the joined-nurse view, manual moves, nurse requests, and request threads. The optimizer and device notifications retain their existing paths.
 
 `POST /floor-templates` creates a reusable layout; `PUT /floor-templates/{id}` replaces an owned layout. Both accept `{ "template_snapshot": { ... } }` and return `{ "template": { ... } }` with HTTP 201/200. The server validates layout consistency and owns IDs, owner, and timestamps. Creation and snapshot-ID synchronization commit together. `DELETE /floor-templates/{id}` returns 204; missing/foreign update/delete requests return the same 404. Existing UI restrictions and database reference actions remain. See [template writes](../docs/go-migration/template-writes.md), [list contract](../docs/go-migration/template-list.md), and [Expo setup](../docs/go-migration/expo-template-read.md).
 

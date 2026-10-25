@@ -24,7 +24,7 @@ func TestHealthEndpoint(t *testing.T) {
 	request := httptest.NewRequest(http.MethodGet, "/health", nil)
 	response := httptest.NewRecorder()
 
-	NewHandler(&auth.Verifier{}, nil, nil, nil, nil, nil, nil).ServeHTTP(response, request)
+	NewHandler(&auth.Verifier{}, nil, nil, nil, nil, nil, nil, nil, nil).ServeHTTP(response, request)
 
 	if response.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
@@ -121,7 +121,7 @@ func TestChargeDiagnosticResponse(t *testing.T) {
 		AuthUserID: "20000000-0000-0000-0000-000000000001", Role: "charge_nurse",
 	}}
 	bearer := sign(profiles.profile.AuthUserID, time.Now().Add(time.Hour))
-	handler := NewHandler(verifier, profiles, nil, nil, nil, nil, nil)
+	handler := NewHandler(verifier, profiles, nil, nil, nil, nil, nil, nil, nil)
 	request := httptest.NewRequest(http.MethodGet, "/auth/charge-check?profile_id=other", nil)
 	request.Header.Set("Authorization", "Bearer "+bearer)
 	response := httptest.NewRecorder()
@@ -162,7 +162,7 @@ func TestHealthRouting(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			request := httptest.NewRequest(test.method, test.path, nil)
 			response := httptest.NewRecorder()
-			NewHandler(&auth.Verifier{}, nil, nil, nil, nil, nil, nil).ServeHTTP(response, request)
+			NewHandler(&auth.Verifier{}, nil, nil, nil, nil, nil, nil, nil, nil).ServeHTTP(response, request)
 
 			if response.Code != test.wantStatus {
 				t.Fatalf("status = %d, want %d", response.Code, test.wantStatus)
@@ -177,7 +177,7 @@ func TestAuthCheckRejectsUnauthenticatedRequest(t *testing.T) {
 			request := httptest.NewRequest(http.MethodGet, path, nil)
 			request.Header.Set("Authorization", authorization)
 			response := httptest.NewRecorder()
-			NewHandler(&auth.Verifier{}, nil, nil, nil, nil, nil, nil).ServeHTTP(response, request)
+			NewHandler(&auth.Verifier{}, nil, nil, nil, nil, nil, nil, nil, nil).ServeHTTP(response, request)
 			if response.Code != http.StatusUnauthorized || response.Header().Get("Content-Type") != "application/json" {
 				t.Fatalf("status = %d, body = %s", response.Code, response.Body.String())
 			}

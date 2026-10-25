@@ -90,7 +90,7 @@ func TestShiftRoutes(t *testing.T) {
 			r.Header.Set("Content-Type", "application/json")
 			r.Header.Set("Authorization", "Bearer "+sign(profile.AuthUserID, time.Now().Add(time.Hour)))
 			w := httptest.NewRecorder()
-			NewHandler(verifier, testProfileReader{profile: profile}, nil, store, nil, nil, nil).ServeHTTP(w, r)
+			NewHandler(verifier, testProfileReader{profile: profile}, nil, store, nil, nil, nil, nil, nil).ServeHTTP(w, r)
 			if w.Code != tt.want || calls != tt.calls {
 				t.Fatalf("status=%d calls=%d body=%s", w.Code, calls, w.Body.String())
 			}
@@ -137,7 +137,7 @@ func TestShiftRoutes(t *testing.T) {
 				}
 				w := httptest.NewRecorder()
 				store := shiftStoreStub{call: func(context.Context, string, string, string) error { t.Fatal("unauthorized database call"); return nil }}
-				NewHandler(verifier, testProfileReader{profile: current, err: profileErr}, nil, store, nil, nil, nil).ServeHTTP(w, r)
+				NewHandler(verifier, testProfileReader{profile: current, err: profileErr}, nil, store, nil, nil, nil, nil, nil).ServeHTTP(w, r)
 				if w.Code != want {
 					t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
 				}
