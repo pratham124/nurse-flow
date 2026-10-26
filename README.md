@@ -105,12 +105,13 @@ Copy `.env.example` to `.env` and set:
 ```dotenv
 EXPO_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
 EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
-EXPO_PUBLIC_OPTIMIZER_SERVICE_URL=https://your-optimizer-service.example
 EXPO_PUBLIC_GO_API_URL=http://127.0.0.1:8080
 ```
 
 Use the Supabase publishable key in the app. Database credentials and secret keys
-belong only on the backend. Restart Expo after changing these values.
+belong only on the backend. The app reaches the assignment optimizer through
+the Go API (`EXPO_PUBLIC_GO_API_URL`), so it needs no optimizer URL of its own.
+Restart Expo after changing these values.
 
 For the migration branch, start the local Go API using the [backend instructions](backend/README.md).
 See [Expo-to-Go setup](docs/go-migration/expo-template-read.md) for web origins and physical-device addresses.

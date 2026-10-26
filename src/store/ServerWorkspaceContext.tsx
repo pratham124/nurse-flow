@@ -140,6 +140,12 @@ export function ServerWorkspaceProvider({
           `[Realtime] Charge active shift listener ${connectionState}.`,
         );
       },
+      onReconnected: () => {
+        console.info(
+          `[Realtime] Charge active shift listener reconnected; refreshing server state for ${subscribedActiveShiftId}.`,
+        );
+        void refreshActiveShiftFromServer();
+      },
       onShiftChanged: () => {
         void refreshActiveShiftFromServer();
       },
@@ -225,6 +231,12 @@ export function ServerWorkspaceProvider({
       },
       onNurseAccessChanged: () => {
         void refreshJoinedNurseAccess("access_changed");
+      },
+      onReconnected: () => {
+        console.info(
+          `[Realtime] Joined nurse listener reconnected; refreshing nurse-scoped view for shift ${subscribedShiftId}.`,
+        );
+        void refreshJoinedNurseAccess("shift_changed");
       },
       onShiftChanged: () => {
         void refreshJoinedNurseAccess("shift_changed");

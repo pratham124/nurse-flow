@@ -40,9 +40,12 @@ author and request access from the signed-in session; screens never choose an
 author identity or query another nurse's thread directly.
 
 Phase 9 uses `optimizerRepository` as the only mobile boundary for requesting
-an initial assignment or rerun. It sends the authenticated access token plus
-the shift ID, client mutation ID, current server revision, and optional prior
-baseline ID. It never sends a client-generated assignment result. After a
+an initial assignment or rerun. It calls the Go API
+(`POST /active-shifts/{shiftId}/assignment-runs`, which coordinates the
+optimizer) with the authenticated access token plus the client mutation ID,
+current server revision, and optional prior baseline ID. This one call waits
+up to 150 seconds; no response at all becomes an `unavailable` outcome so the
+screen can retry with the same mutation ID. It never sends a client-generated assignment result. After a
 saved or stale response, the server workspace store reloads the authoritative
 Supabase workspace before the screen continues.
 

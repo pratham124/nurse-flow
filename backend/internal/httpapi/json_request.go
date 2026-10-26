@@ -21,11 +21,16 @@ var (
 // decodeJSONRequest accepts one non-null JSON value with only known fields.
 // Handlers retain their own public error messages and domain validation.
 func decodeJSONRequest(w http.ResponseWriter, r *http.Request, body any) error {
+	return decodeJSONRequestLimit(w, r, body, maxJSONRequestBodyBytes)
+}
+
+// decodeJSONRequestLimit is decodeJSONRequest with a handler-chosen body size limit.
+func decodeJSONRequestLimit(w http.ResponseWriter, r *http.Request, body any, limit int64) error {
 	mediaType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if err != nil || mediaType != "application/json" {
 		return errUnsupportedJSONMediaType
 	}
-	r.Body = http.MaxBytesReader(w, r.Body, maxJSONRequestBodyBytes)
+	r.Body = http.MaxBytesReader(w, r.Body, limit)
 	decoder := json.NewDecoder(r.Body)
 	var raw json.RawMessage
 	if err := decoder.Decode(&raw); err != nil {

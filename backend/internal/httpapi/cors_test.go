@@ -23,7 +23,7 @@ func TestBrowserTemplateRequests(t *testing.T) {
 		queries++
 		return []database.FloorTemplate{}, nil
 	})
-	handler := WithCORS(NewHandler(verifier, testProfileReader{profile: profile}, reader, nil, nil, nil, nil, nil, nil), []string{"http://localhost:8081", " http://127.0.0.1:8081 "})
+	handler := WithCORS(NewHandler(verifier, testProfileReader{profile: profile}, reader, nil, nil, nil, nil, nil, nil, nil), []string{"http://localhost:8081", " http://127.0.0.1:8081 "})
 	tests := []struct {
 		name, method, origin, preflightMethod, headers, token string
 		status                                                int
@@ -158,7 +158,7 @@ func TestCORSRejectionContract(t *testing.T) {
 func TestBrowserAccessRequests(t *testing.T) {
 	verifier, sign := testDiagnosticVerifier(t)
 	store := &accessStoreStub{validation: database.InviteValidation{Status: "blocked", Reason: "not_found"}}
-	handler := WithCORS(NewHandler(verifier, profileLookup{profile: accessProfile}, nil, nil, store, store, store, nil, nil), []string{"http://localhost:8081"})
+	handler := WithCORS(NewHandler(verifier, profileLookup{profile: accessProfile}, nil, nil, store, store, store, nil, nil, nil), []string{"http://localhost:8081"})
 	const origin = "http://localhost:8081"
 	for _, route := range []struct{ method, path string }{
 		{"PUT", "/profile"}, {"GET", "/profile"}, {"POST", "/invites/validate"}, {"POST", "/invites/accept"},

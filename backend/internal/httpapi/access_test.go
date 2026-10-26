@@ -101,7 +101,7 @@ func TestProfileRoutes(t *testing.T) {
 			request := httptest.NewRequest(tt.method, "/profile?role=regular_nurse", strings.NewReader(tt.body))
 			request.Header.Set("Authorization", "Bearer "+token(tt.extra))
 			response := httptest.NewRecorder()
-			NewHandler(verifier, tt.lookup, nil, nil, store, store, store, nil, nil).ServeHTTP(response, request)
+			NewHandler(verifier, tt.lookup, nil, nil, store, store, store, nil, nil, nil).ServeHTTP(response, request)
 			if response.Code != tt.want {
 				t.Fatalf("status=%d body=%s", response.Code, response.Body.String())
 			}
@@ -127,7 +127,7 @@ func TestProfileRoutes(t *testing.T) {
 	t.Run("profile routes require authentication", func(t *testing.T) {
 		for _, method := range []string{"GET", "PUT"} {
 			response := httptest.NewRecorder()
-			NewHandler(verifier, profileLookup{}, nil, nil, &accessStoreStub{}, &accessStoreStub{}, &accessStoreStub{}, nil, nil).ServeHTTP(response, httptest.NewRequest(method, "/profile", nil))
+			NewHandler(verifier, profileLookup{}, nil, nil, &accessStoreStub{}, &accessStoreStub{}, &accessStoreStub{}, nil, nil, nil).ServeHTTP(response, httptest.NewRequest(method, "/profile", nil))
 			if response.Code != 401 {
 				t.Fatalf("%s status=%d", method, response.Code)
 			}
@@ -137,7 +137,7 @@ func TestProfileRoutes(t *testing.T) {
 		response := httptest.NewRecorder()
 		request := httptest.NewRequest("PUT", "/profile", nil)
 		request.Header.Set("Authorization", "Bearer "+token(nil))
-		NewHandler(verifier, profileLookup{}, nil, nil, &accessStoreStub{err: errors.New("private")}, nil, nil, nil, nil).ServeHTTP(response, request)
+		NewHandler(verifier, profileLookup{}, nil, nil, &accessStoreStub{err: errors.New("private")}, nil, nil, nil, nil, nil).ServeHTTP(response, request)
 		if response.Code != 503 || strings.Contains(response.Body.String(), "private") {
 			t.Fatalf("status=%d body=%s", response.Code, response.Body.String())
 		}
@@ -176,7 +176,7 @@ func TestInviteRoutes(t *testing.T) {
 			request.Header.Set("Content-Type", "application/json")
 			request.Header.Set("Authorization", "Bearer "+sign(accessAuthUserID, time.Now().Add(time.Hour)))
 			response := httptest.NewRecorder()
-			NewHandler(verifier, profileLookup{profile: accessProfile}, nil, nil, store, store, store, nil, nil).ServeHTTP(response, request)
+			NewHandler(verifier, profileLookup{profile: accessProfile}, nil, nil, store, store, store, nil, nil, nil).ServeHTTP(response, request)
 			if response.Code != tt.want || len(store.calls) != tt.wantCalls {
 				t.Fatalf("status=%d calls=%v body=%s", response.Code, store.calls, response.Body.String())
 			}
@@ -212,7 +212,7 @@ func TestInviteRoutes(t *testing.T) {
 		request.Header.Set("Content-Type", "text/plain")
 		request.Header.Set("Authorization", "Bearer "+sign(accessAuthUserID, time.Now().Add(time.Hour)))
 		response := httptest.NewRecorder()
-		NewHandler(verifier, profileLookup{profile: accessProfile}, nil, nil, &accessStoreStub{}, &accessStoreStub{}, &accessStoreStub{}, nil, nil).ServeHTTP(response, request)
+		NewHandler(verifier, profileLookup{profile: accessProfile}, nil, nil, &accessStoreStub{}, &accessStoreStub{}, &accessStoreStub{}, nil, nil, nil).ServeHTTP(response, request)
 		if response.Code != http.StatusUnsupportedMediaType {
 			t.Fatalf("status=%d", response.Code)
 		}
@@ -245,7 +245,7 @@ func TestJoiningRoutes(t *testing.T) {
 				request.Header.Set("Content-Type", "application/json")
 				request.Header.Set("Authorization", "Bearer "+sign(accessAuthUserID, time.Now().Add(time.Hour)))
 				response := httptest.NewRecorder()
-				NewHandler(verifier, profileLookup{profile: accessProfile}, nil, nil, store, store, store, nil, nil).ServeHTTP(response, request)
+				NewHandler(verifier, profileLookup{profile: accessProfile}, nil, nil, store, store, store, nil, nil, nil).ServeHTTP(response, request)
 				if response.Code != tt.want || len(store.calls) != tt.wantCalls {
 					t.Fatalf("status=%d calls=%v body=%s", response.Code, store.calls, response.Body.String())
 				}
@@ -275,7 +275,7 @@ func TestJoiningRoutes(t *testing.T) {
 		request.Header.Set("Content-Type", "application/json")
 		request.Header.Set("Authorization", "Bearer "+sign(accessAuthUserID, time.Now().Add(time.Hour)))
 		response := httptest.NewRecorder()
-		NewHandler(verifier, profileLookup{profile: regular}, nil, nil, store, store, store, nil, nil).ServeHTTP(response, request)
+		NewHandler(verifier, profileLookup{profile: regular}, nil, nil, store, store, store, nil, nil, nil).ServeHTTP(response, request)
 		if response.Code != 403 || len(store.calls) != 0 {
 			t.Fatalf("status=%d calls=%v", response.Code, store.calls)
 		}
@@ -288,7 +288,7 @@ func TestJoinedWorkspaceRoute(t *testing.T) {
 		request := httptest.NewRequest("GET", "/joined-workspace", nil)
 		request.Header.Set("Authorization", "Bearer "+sign(accessAuthUserID, time.Now().Add(time.Hour)))
 		response := httptest.NewRecorder()
-		NewHandler(verifier, profileLookup{profile: accessProfile}, nil, nil, store, store, store, nil, nil).ServeHTTP(response, request)
+		NewHandler(verifier, profileLookup{profile: accessProfile}, nil, nil, store, store, store, nil, nil, nil).ServeHTTP(response, request)
 		return response
 	}
 	if response := get(&accessStoreStub{}); response.Code != 200 || strings.TrimSpace(response.Body.String()) != `{"assignment":null}` {
