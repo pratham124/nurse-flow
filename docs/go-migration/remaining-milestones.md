@@ -1,6 +1,6 @@
 # Remaining Go migration milestones
 
-Status: approved by the user on 2026-10-17. Milestones 2 and 3 (tickets 01–07) are done. The user closed milestone 3 on 2026-10-19 with the remaining manual checks and fixture cleanup deferred as recorded in shift-lifecycle.md. Milestone 4 (tickets 08–11) was completed on 2026-10-24 (see profiles-invites-access.md); Milestone 5 (tickets 12–15) was completed on 2026-10-24 (see moves-requests-threads.md); milestones 6–7 have not started. Notifications are disabled by user decision on 2026-10-24: ticket 11's notification-target lookup, ticket 18, and ticket 19's notification navigation are deferred until the user re-enables them.
+Status: approved by the user on 2026-10-17. Milestones 2 and 3 (tickets 01–07) are done. The user closed milestone 3 on 2026-10-19 with the remaining manual checks and fixture cleanup deferred as recorded in shift-lifecycle.md. Milestone 4 (tickets 08–11) was completed on 2026-10-24 (see profiles-invites-access.md); Milestone 5 (tickets 12–15) was completed on 2026-10-24 (see moves-requests-threads.md); Milestone 6 (tickets 16–19) was implemented on 2026-10-25 (see assignment-runs.md): 16–17 verified, 18 deferred, 19 verified on web and Android, closeout pending; milestone 7 has not started. Notifications are disabled by user decision on 2026-10-24: ticket 11's notification-target lookup, ticket 18, and ticket 19's notification navigation are deferred until the user re-enables them.
 Prepared 2026-10-17 from existing code, the migration plan, database baseline, and ownership ADR.
 
 ## Session handoff
@@ -88,19 +88,19 @@ Unblocked tickets can use existing migrated or retained paths and development fi
    - **Blocked by:** None (can start after the milestone is authorized).
    - **What it delivers:** The authorized nurse and charge can read and send messages in the existing request thread through Go.
 
-16. **Run the first assignment through Go and Python (Milestone 6)**
+16. **[Done] Run the first assignment through Go and Python (Milestone 6)**
    - **Blocked by:** None (can start after the milestone is authorized).
    - **What it delivers:** Expo starts a first assignment through Go, retains the existing Python solver, and reloads only a committed authoritative result.
 
-17. **Rerun assignments safely through Go (Milestone 6)**
+17. **[Done] Rerun assignments safely through Go (Milestone 6)**
    - **Blocked by:** 16: Run the first assignment through Go and Python.
    - **What it delivers:** The charge nurse reruns an assignment through Go while stale runs cannot overwrite newer setup, assignments, or moves.
 
-18. **Register and disable device notifications through Go (Milestone 6)**
+18. **[Deferred: notifications disabled] Register and disable device notifications through Go (Milestone 6)**
    - **Blocked by:** None (can start after the milestone is authorized).
    - **What it delivers:** The signed-in device registers its existing notification token through Go and disables it on sign-out as before.
 
-19. **Verify migrated workflows and live collaboration (Milestone 6)**
+19. **[Done on web and Android; notification parts deferred] Verify migrated workflows and live collaboration (Milestone 6)**
    - **Blocked by:** 01: Save floor templates through Go; 02: Delete owned floor templates through Go; 03: Load the charge shift workspace through Go; 04: Start a shift through Go; 05: Save shift setup through Go; 06: Reopen an assigned shift for editing through Go; 07: End a shift and retain carry-over through Go; 08: Load and provision the application profile through Go; 09: Manage nurse invites through Go; 10: Validate and accept nurse invites through Go; 11: Read the joined nurse workspace through Go; 12: Confirm manual assignment moves through Go; 13: Submit and review issue requests through Go; 14: Submit and resolve swap requests through Go; 15: Read and send request messages through Go; 16: Run the first assignment through Go and Python; 17: Rerun assignments safely through Go; 18: Register and disable device notifications through Go.
    - **What it delivers:** Charge and joined-nurse devices stay consistent across migrated writes, reconnects, and notification navigation using retained Supabase Realtime and delivery.
 

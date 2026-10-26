@@ -1,6 +1,6 @@
 # Go Backend Migration Plan
 
-Status: milestones 1–5 are done (milestones 4 and 5 on 2026-10-24). Milestone 3 (tickets 03–07) was closed at the user's request on 2026-10-19 after local and live development checks passed, with the remaining manual checks and fixture cleanup deferred. See `shift-lifecycle.md` for the exact verification limits. The existing architecture and milestone execution protocol remain approved. Milestone 5 was authorized and completed on 2026-10-24; milestones 6–7 are not authorized.
+Status: milestones 1–5 are done (milestones 4 and 5 on 2026-10-24). Milestone 3 (tickets 03–07) was closed at the user's request on 2026-10-19 after local and live development checks passed, with the remaining manual checks and fixture cleanup deferred. See `shift-lifecycle.md` for the exact verification limits. The existing architecture and milestone execution protocol remain approved. Milestone 5 was authorized and completed on 2026-10-24. Milestone 6 was authorized on 2026-10-25 and is implemented and verified, except the deferred notification work (verified on web and Android); it awaits the user's closeout. Milestone 7 is not authorized.
 
 ## Purpose and scope
 
@@ -122,7 +122,7 @@ The user approved this breakdown on 2026-10-17. Full ticket deliverables, blocki
 | 3 | Charge workspace reads and shift lifecycle, including carry-over | 03–07 | Done; verification limits and deferred manual checks in shift-lifecycle.md |
 | 4 | Application profiles, nurse invites, joining, and scoped nurse reads | 08–11 | Done; verification and limits in profiles-invites-access.md |
 | 5 | Manual moves, issue/swap requests, and request threads | 12–15 | Done; verification and limits in moves-requests-threads.md |
-| 6 | Go/Python optimizer coordination, device registration, and live collaboration parity | 16–19 | Planned |
+| 6 | Go/Python optimizer coordination, device registration, and live collaboration parity | 16–19 | 16–17 verified; 18 deferred (notifications off); 19 verified on web and Android; see assignment-runs.md |
 | 7 | Hosted development, full parity, explicit cutover, and legacy retirement | 20–23 | Planned |
 
 Work one authorized milestone at a time, completing its routine tickets as a batch. Technical blockers differ from this execution order: unblocked tickets can be verified using retained existing paths and fixtures. Planning approval publishes the tickets; it does not start implementation in this session.
@@ -328,3 +328,14 @@ Production enablement follows hosted development verification and explicit appro
 - [x] Local PostgreSQL integration, Go race/vet/format, Expo type/lint/145 tests, and a two-axis review with fixes passed; see moves-requests-threads.md.
 - [x] Applied and registered the migration only in nurseflow-go-dev; the read-only catalog check matched local; advisors added only one expected permissive-policy warning; live template/shift isolation passed.
 - [x] Real-session Expo web walkthrough (charge and joined nurse in separate browser contexts) passed issue submit/review/resolve/reopen, both thread participants with retry/reuse checks, swap submit/accept/decline, swap completion through the move dialog, a board move with live joined-nurse refresh, replay/stale moves, and the effective-owner swap rule. Native, live warning acknowledgements, and outsider thread calls were not exercised live. Milestone 5 is done; milestone 6 requires authorization.
+
+### 2026-10-25 - Milestone 6 implementation and verification
+
+- [x] The user authorized milestone 6 and settled its boundary in a grilling session (decisions 1–15 in [assignment runs](assignment-runs.md)). Go coordinates runs; Python is a solver-only `/v1/solve` behind a shared secret; the legacy Python route stays until ticket 23. ADR 0005, glossary terms (assignment run, rerun), and tradeoff entries were added.
+- [x] Implemented tickets 16–17: migration `20261025120000`, Go prepare/finalize/fail transactions, a typed output-validator port, the solver client and coordinator with detached deadlines, the Python `/v1/solve` endpoint and configuration split, and the Expo transport through Axios with a 150 s timeout.
+- [x] Two-axis code review with fixes. Local Go/PostgreSQL/Python/Expo checks pass.
+- [x] Applied and registered the migration only in nurseflow-go-dev. The read-only catalog check matched; live isolation passed.
+- [x] Real-session walkthrough: rerun, replay, stale, conflict, unavailable-then-retry in the UI, and joined-nurse live refresh. It found that an immediate retry after an unreachable solver waited for the lease; the user chose to release never-delivered runs (decision 10 amended), and the fix was re-verified live.
+- [x] Follow-up: Python 3.13.14 container tests passed. Live solver timeout, invalid output, and Go's 125 s deadline were exercised with a stub solver against real Go, development data, and Expo. Ticket 19's web checks passed: unsaved input, offline cached view, reconnect, sign-out, access removal, and End Shift. They found a pre-existing gap: there is no automatic refetch after a reconnect.
+- [x] Fixed the reconnect refetch at the user's request (a refetch once on recovery; 160 Expo tests). Updated the local emulator to 37.2.12 and verified Android live: joined-nurse join, live refresh, the reconnect fix on device, and a charge assignment run through Go and Python.
+- [ ] Ticket 18 and notification navigation stay deferred; iOS and physical devices were not tested. Changes are uncommitted for the user's review.

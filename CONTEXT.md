@@ -28,6 +28,14 @@ _Avoid_: Join token, invite link (the link only carries the code)
 The optimizer's bed-to-nurse result stored on the shift; it is the baseline every manual move is checked against.
 _Avoid_: Original assignment, plan
 
+**Assignment run**:
+One request by the charge nurse to calculate a generated assignment for the shift as it was when they reviewed it. A run is running, succeeded, failed, or stale. Repeating the same request returns the same run instead of starting another.
+_Avoid_: Optimization, job, solve (the solver's calculation is only one step of a run)
+
+**Rerun**:
+An assignment run on a shift that already has a generated assignment. When it succeeds it replaces that assignment, and every active manual move becomes superseded.
+_Avoid_: Regenerate, reassign
+
 **Manual move**:
 A charge nurse's confirmed reassignment of one bed to another nurse. Only the newest move for a bed is active; earlier ones are kept as superseded history.
 _Avoid_: Override (in conversation), drag

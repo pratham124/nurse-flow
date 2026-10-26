@@ -113,7 +113,7 @@ func TestTemplateWrites(t *testing.T) {
 				request.Header.Set("Authorization", "Bearer "+sign(subject, expiry))
 			}
 			response := httptest.NewRecorder()
-			NewHandler(verifier, testProfileReader{profile: profile}, store, nil, nil, nil, nil, nil, nil).ServeHTTP(response, request)
+			NewHandler(verifier, testProfileReader{profile: profile}, store, nil, nil, nil, nil, nil, nil, nil).ServeHTTP(response, request)
 			if response.Code != test.wantStatus || calls != test.wantCalls {
 				t.Fatalf("status=%d calls=%d body=%s", response.Code, calls, response.Body.String())
 			}

@@ -101,7 +101,7 @@ func TestRequestRoutes(t *testing.T) {
 			request.Header.Set("Content-Type", "application/json")
 			request.Header.Set("Authorization", "Bearer "+sign(accessAuthUserID, time.Now().Add(time.Hour)))
 			response := httptest.NewRecorder()
-			NewHandler(verifier, profileLookup{profile: accessProfile}, nil, nil, nil, nil, nil, store, nil).ServeHTTP(response, request)
+			NewHandler(verifier, profileLookup{profile: accessProfile}, nil, nil, nil, nil, nil, store, nil, nil).ServeHTTP(response, request)
 			if response.Code != tt.want || len(store.calls) != tt.wantCalls {
 				t.Fatalf("status=%d calls=%v body=%s", response.Code, store.calls, response.Body.String())
 			}
@@ -126,7 +126,7 @@ func TestRequestRouteResponses(t *testing.T) {
 		request.Header.Set("Content-Type", "application/json")
 		request.Header.Set("Authorization", "Bearer "+sign(accessAuthUserID, time.Now().Add(time.Hour)))
 		response := httptest.NewRecorder()
-		NewHandler(verifier, profileLookup{profile: accessProfile}, nil, nil, nil, nil, nil, store, nil).ServeHTTP(response, request)
+		NewHandler(verifier, profileLookup{profile: accessProfile}, nil, nil, nil, nil, nil, store, nil, nil).ServeHTTP(response, request)
 		return response
 	}
 	t.Run("stale move is a 200 with the camelCase shape", func(t *testing.T) {
@@ -179,7 +179,7 @@ func TestRequestRoutesRequireAChargeProfile(t *testing.T) {
 				}
 				store := &requestStoreStub{}
 				response := httptest.NewRecorder()
-				NewHandler(verifier, profileLookup{profile: regular}, nil, nil, nil, nil, nil, store, nil).ServeHTTP(response, request)
+				NewHandler(verifier, profileLookup{profile: regular}, nil, nil, nil, nil, nil, store, nil, nil).ServeHTTP(response, request)
 				if response.Code != want || len(store.calls) != 0 {
 					t.Fatalf("status=%d calls=%v", response.Code, store.calls)
 				}

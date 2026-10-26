@@ -161,6 +161,12 @@ export function useRequestThread({
       onMessageChanged: () => {
         void refreshMessages(false);
       },
+      onReconnected: () => {
+        console.info(
+          `[Realtime] Request thread listener reconnected; refreshing messages for ${activeRequestId}.`,
+        );
+        void refreshMessages(false);
+      },
       requestId: activeRequestId,
       shiftId: activeShiftId,
       supabase: activeSupabase,

@@ -211,7 +211,7 @@ func (input Setup) Validate(s Snapshot) error {
 	stateIDs := map[string]bool{}
 	for _, state := range input.BedStates {
 		if strings.TrimSpace(state.ID) == "" || stateIDs[state.ID] || !bedIDs[state.BedID] || seen[state.BedID] ||
-			(state.Acuity != "" && state.Acuity != "green" && state.Acuity != "yellow" && state.Acuity != "red") {
+			(state.Acuity != "" && !knownAcuities[state.Acuity]) {
 			return ErrInvalidSetup
 		}
 		seen[state.BedID], stateIDs[state.ID] = true, true
@@ -244,6 +244,10 @@ func (s Snapshot) ApplySetup(input Setup) (json.RawMessage, error) {
 	}
 	return json.Marshal(s)
 }
+
+// knownAcuities are the acuity values a patient's bed can have. A bed with a
+// patient but any other acuity (or none) is not ready for the optimizer.
+var knownAcuities = map[string]bool{"green": true, "yellow": true, "red": true}
 
 // BaselineID returns the generated assignment's ID, trimmed of whitespace.
 // Missing or malformed assignment data is treated as having no baseline.

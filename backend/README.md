@@ -30,7 +30,24 @@ Use the configured port in the health request. The Go process reads the environm
 
 Browser requests are allowed from `http://localhost:8081` and `http://127.0.0.1:8081` by default. `NURSEFLOW_WEB_ORIGINS` overrides this exact, comma-separated list; an explicitly empty value disables browser origins. CORS permits GET/POST/PUT/DELETE preflight with Authorization/Accept/Content-Type and uses no cookies. Actual requests still require token verification and charge authorization. Native requests without an Origin header do not use CORS.
 
-The server allows five seconds to read request headers, ten seconds to read a request or write a response, and sixty seconds for an idle connection. These explicit limits keep connections from waiting indefinitely.
+The server allows five seconds to read request headers, ten seconds to read a request or write a response, and sixty seconds for an idle connection. These explicit limits keep connections from waiting indefinitely. The one exception is `POST /active-shifts/{id}/assignment-runs`, which extends its own write deadline to 140 seconds because a solve may take about two minutes.
+
+### Optimizer (solver) configuration
+
+The API refuses to start unless both of these are set, so a missing token is found at startup rather than by the first optimizer run:
+
+- `NURSEFLOW_SOLVER_URL`: base address of the Python optimizer service, for example `http://127.0.0.1:8090` (an `http` or `https` URL; the API appends `/v1/solve`).
+- `NURSEFLOW_SOLVER_TOKEN`: the shared secret the API sends as `Authorization: Bearer ...`. It must equal the solver's own `NURSEFLOW_SOLVER_TOKEN`. Keep it server-side; it is never logged.
+
+Local example, with the Python solver started separately (see `optimizer-service/README.md`) on port 8090:
+
+```powershell
+$env:NURSEFLOW_SOLVER_URL = 'http://127.0.0.1:8090'
+$env:NURSEFLOW_SOLVER_TOKEN = 'a-long-random-local-secret'
+go run ./cmd/api
+```
+
+Go coordinates each run (prepare, solve, finalize) and the solver only solves; see [assignment runs](../docs/go-migration/assignment-runs.md) and ADR 0005. Migration `20261025120000` gives the Go role the `optimizer_runs` access it needs. The run workflow lives in `internal/assignmentruns`, the Python call in `internal/solver`, the database steps in `internal/database/assignment_runs.go`, and the ported output validation in `internal/shifts/run_output.go`.
 
 ## How the code fits together
 

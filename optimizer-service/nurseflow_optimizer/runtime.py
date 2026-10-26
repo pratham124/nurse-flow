@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .auth import SupabaseJwtVerifier
 from .http_api import create_app
-from .service import OptimizerServiceDependencies
+from .service import OptimizerServiceDependencies, SolverConfig
 from .supabase_clients import SupabaseFinalizeClient, SupabasePrepareClient
 
 OPTIMIZER_VERSION = "phase9-v1-ortools-9.15.6755"
@@ -22,8 +22,39 @@ def _required_environment(name: str) -> str:
     return value
 
 
-def build_dependencies_from_environment() -> OptimizerServiceDependencies:
-    """Read only server-side configuration; no value is returned to the app."""
+SUPABASE_SETTINGS = (
+    "NURSEFLOW_SUPABASE_URL",
+    "NURSEFLOW_SUPABASE_PUBLISHABLE_KEY",
+    "NURSEFLOW_SUPABASE_SECRET_KEY",
+)
+
+
+def build_solver_config_from_environment() -> SolverConfig | None:
+    """Enable `/v1/solve` only when a non-blank shared token is configured."""
+
+    token = os.environ.get("NURSEFLOW_SOLVER_TOKEN", "").strip()
+    if not token:
+        return None
+    return SolverConfig(solver_token=token, optimizer_version=OPTIMIZER_VERSION)
+
+
+def build_dependencies_from_environment() -> OptimizerServiceDependencies | None:
+    """Read only server-side configuration; no value is returned to the app.
+
+    Returns None when no Supabase setting is present (legacy route disabled).
+    A partial configuration is a mistake, so it fails at startup.
+    """
+
+    configured = [
+        name for name in SUPABASE_SETTINGS if os.environ.get(name, "").strip()
+    ]
+    if not configured:
+        return None
+    if len(configured) != len(SUPABASE_SETTINGS):
+        raise RuntimeError(
+            "Incomplete Supabase configuration; set all of: "
+            + ", ".join(SUPABASE_SETTINGS)
+        )
 
     supabase_url = _required_environment("NURSEFLOW_SUPABASE_URL").rstrip("/")
     publishable_key = _required_environment("NURSEFLOW_SUPABASE_PUBLISHABLE_KEY")
@@ -63,13 +94,23 @@ def build_dependencies_from_environment() -> OptimizerServiceDependencies:
 def create_app_from_environment() -> FastAPI:
     """Uvicorn factory used by local development and the container command."""
 
-    app = create_app(build_dependencies_from_environment())
+    dependencies = build_dependencies_from_environment()
+    solver_config = build_solver_config_from_environment()
+    if dependencies is None and solver_config is None:
+        raise RuntimeError(
+            "Configure NURSEFLOW_SOLVER_TOKEN and/or the NURSEFLOW_SUPABASE_* "
+            "settings; no route would be enabled."
+        )
+
+    app = create_app(dependencies, solver_config)
     local_web_origin = os.environ.get(
         "NURSEFLOW_LOCAL_WEB_ORIGIN",
         "",
     ).strip()
 
-    if local_web_origin:
+    # Browser access exists only for the legacy mobile-web route. A
+    # solver-only service is server-to-server and never answers CORS.
+    if local_web_origin and dependencies is not None:
         app.add_middleware(
             CORSMiddleware,
             allow_origins=[local_web_origin],

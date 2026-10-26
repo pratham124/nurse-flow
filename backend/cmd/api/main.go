@@ -9,9 +9,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pratham124/nurse-flow/backend/internal/assignmentruns"
 	"github.com/pratham124/nurse-flow/backend/internal/auth"
 	"github.com/pratham124/nurse-flow/backend/internal/database"
 	"github.com/pratham124/nurse-flow/backend/internal/httpapi"
+	"github.com/pratham124/nurse-flow/backend/internal/solver"
 )
 
 func main() {
@@ -33,6 +35,12 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("configure authentication: %w", err)
 	}
+	// Check the solver settings at startup, so a missing token is not found by the
+	// first charge nurse who runs the optimizer.
+	solverClient, err := solver.New(os.Getenv("NURSEFLOW_SOLVER_URL"), os.Getenv("NURSEFLOW_SOLVER_TOKEN"))
+	if err != nil {
+		return fmt.Errorf("configure solver (set NURSEFLOW_SOLVER_URL and NURSEFLOW_SOLVER_TOKEN): %w", err)
+	}
 	address := os.Getenv("NURSEFLOW_HTTP_ADDR")
 	if address == "" {
 		address = "127.0.0.1:8080"
@@ -41,7 +49,7 @@ func run() error {
 	if !configured {
 		webOrigins = "http://localhost:8081,http://127.0.0.1:8081"
 	}
-	handler := httpapi.WithCORS(httpapi.NewHandler(verifier, store, store, store, store, store, store, store, store), strings.Split(webOrigins, ","))
+	handler := httpapi.WithCORS(httpapi.NewHandler(verifier, store, store, store, store, store, store, store, store, assignmentruns.NewCoordinator(store, solverClient)), strings.Split(webOrigins, ","))
 
 	server := &http.Server{
 		Addr:              address,

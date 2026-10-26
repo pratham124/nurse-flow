@@ -6,6 +6,79 @@ Entries before 2026-10-24 were backfilled from the ADRs, phase docs, and the Go 
 
 ---
 
+## 2026-10-25: Go coordinates assignment runs; Python only solves
+
+- **Problem:** Running an assignment takes three steps: lock the shift and record a run, calculate the assignment (up to two minutes), then save it if nothing changed meanwhile. Python did all three, using PL/pgSQL functions and the Supabase secret key. Moving it to Go meant choosing which side owns what.
+- **Chose:** Go owns the run: it records it, checks the shift, saves the result, and marks failures, all in its own short transactions as the signed-in charge nurse. Python becomes a pure calculator behind `POST /v1/solve`, protected by a shared secret only Go and Python know.
+- **Over:** (1) Go as a thin pass-through to the unchanged Python endpoint. (2) Go calling the old database functions. (3) Google Cloud Run's built-in service-to-service identity tokens instead of a shared secret.
+- **Why:** Options 1 and 2 would leave the workflow in PL/pgSQL, which this migration exists to remove. Saving as the signed-in user keeps the database's ownership checks, and the Supabase secret key disappears from the calculation path. A shared secret works locally and on any host, while identity tokens would lock us into Cloud Run before hosting is decided.
+- **Cost:** A shared secret has to be rotated by hand and is only as safe as the two servers' environment settings. Until the old path is retired, the run rules exist twice: once in Go and once in SQL for the production app.
+- **Would change if:** Both services end up on Google Cloud (then use identity tokens), or the calculator became a queue-based background job.
+- **ADR:** [0005](adr/0005-go-coordinates-assignment-runs.md)
+
+## 2026-10-25: Port the result check to typed Go, slightly stricter than the SQL
+
+- **Problem:** Before saving a solver result, the database ran a 250-line PL/pgSQL check: every nurse is on one team, a red bed has an RN, no nurse goes over their load, and so on. Moving finalize to Go meant deciding where that check lives.
+- **Chose:** Rewrite it as a pure Go function that decodes the result into typed structs, with the same check order and error codes. Where the SQL let a missing field slip through, Go rejects it.
+- **Over:** (1) Calling the existing SQL function from Go. (2) A word-for-word Go port that copied the SQL's missing-field quirks.
+- **Why:** Option 1 would leave the logic in PL/pgSQL, which this migration retires. Option 2 was faithful but needed helper names like "json arrow operator" and SQL NULL rules to follow, which I couldn't explain cleanly. Rejecting a malformed result is never less safe than accepting it.
+- **Cost:** Until the old path is retired, the Go and SQL checks disagree on malformed results. Python never produces those, but the two copies have to be kept in mind.
+- **Would change if:** Results came from a source other than our own validated solver. Then the stricter check would matter more, and I'd add more cases.
+
+## 2026-10-25: Keep calculating when the phone disconnects
+
+- **Problem:** A run can take two minutes. If the phone loses signal, Go cancels the request by default, so the calculation would be thrown away.
+- **Chose:** Go detaches the run from the phone's connection and gives it its own 135-second deadline. A retry with the same request ID then gets "still running" or the saved result.
+- **Over:** Cancelling with the request, then letting a retry start again after the recovery window.
+- **Why:** Patchy Wi-Fi on a hospital floor shouldn't waste a long calculation, and the old Python service already finished runs this way.
+- **Cost:** The server keeps working for someone who may have left, and a run can finish after the user gave up (they see it on the next reload).
+- **Would change if:** Runs became queued background jobs with a status the app polls.
+
+## 2026-10-25: 150-second recovery window for an interrupted run
+
+- **Problem:** A run interrupted by a crash stays "running". A retry can take it over after a waiting period, but must not start a second calculation while the first could still be working.
+- **Chose:** 150 seconds, longer than Go's 135-second run deadline.
+- **Over:** The 90 seconds the live database function still uses.
+- **Why:** With a 135-second deadline, a 90-second window would let a retry start a duplicate calculation while the first one was still running. The reviewed repository SQL and the Python README already said 150.
+- **Cost:** After a real crash, a nurse waits up to 2.5 minutes before a retry can take over.
+- **Would change if:** Calculations got much faster, or a heartbeat showed whether a run was still alive.
+
+## 2026-10-25: A timestamp as the shift's version number
+
+- **Problem:** Optimistic concurrency needs a version that changes on every write to a shift. A run remembers the version it was based on, and finalize only saves if the version hasn't changed during the two-minute solve. Timestamps are known to be unreliable for ordering events across machines, because clocks drift and repeat.
+- **Chose:** Keep using the shift's `updated_at` as its version. Every Go write sets it to "now, or one microsecond after the stored value, whichever is later". It's compared only for exact equality, under the shift's row lock, in a single database.
+- **Over:** A dedicated integer `revision` column incremented on every write.
+- **Why:** We never use the timestamp to decide which write came first; the row lock decides that, and the timestamp is just a token compared for equality. The "always later than the stored value" rule means it never repeats even if a server clock is wrong. The app, the old SQL functions, Python, and `optimizer_runs.expected_shift_revision` all already use `updated_at`, and the migration keeps the existing schema and API contract.
+- **Cost:** A server clock that runs ahead puts `updated_at` in the future, so it's misleading if read as a real time. While the old SQL writers still exist they set `updated_at = now()` without the "later than stored" guard, so during cutover mixed old and new writers could in theory move the version backwards.
+- **Would change if:** The old SQL writers are retired (cutover, ticket 23) or more services write shifts. Then add an integer `revision` column, which needs no clock at all.
+
+## 2026-10-25: Refetch once when a live connection comes back
+
+- **Problem:** In the milestone 6 walkthrough, a nurse's phone went offline while the charge nurse reran the assignment. On reconnect, the app showed "Live" again but never fetched the change it had missed, because Realtime only sends small "something changed" messages and doesn't replay the ones sent while a device was offline. The same gap exists on `main`.
+- **Chose:** Each live subscription remembers whether it has been live before. When it comes back to live after dropping, it refetches once through Go. This covers the charge board, the joined-nurse view, and request threads. I initially recorded it as out of scope; the user asked for it to be fixed.
+- **Over:** (1) Refetching every time the connection reports "live", including the first time. (2) Polling on a timer. (3) Leaving the manual Refresh button as the only way to recover.
+- **Why:** One refetch at the moment of recovery closes the gap without extra traffic, and the first "live" doesn't need it because the screen has just loaded fresh data.
+- **Cost:** A small product change mixed into the backend migration, and one extra request after every reconnect.
+- **Would change if:** Realtime could replay missed messages, or devices kept a revision number they could compare after reconnecting.
+
+## 2026-10-25: Let a retry go straight through when the solver was down
+
+- **Problem:** Go records the run before it calls Python. In the live walkthrough, with Python stopped, the app correctly showed "unavailable". But the immediate retry then said "still calculating" for 2.5 minutes, because the run looked like it might still be solving. The old Python path never created a run in that case, so retrying just worked.
+- **Chose:** When the connection to Python is refused or its address can't be found, the request provably never arrived. Go marks the run "solver unreachable", and a retry with the same request ID takes it over immediately. Every other failure (a timeout, or a connection dropped mid-request) keeps the 150-second wait, because Python might still be working.
+- **Over:** (1) Checking Python's health before creating the run. That still breaks if Python goes down between the check and the call. (2) Accepting the 2.5-minute wait and changing the message.
+- **Why:** It restores the old behavior for the common "service is down" case without risking two calculations at once.
+- **Cost:** The run-recovery rule now has two cases, so it's more to explain and test.
+- **Would change if:** Runs moved to a queue, where "not yet picked up" is a natural, separate state.
+
+## 2026-10-25: The Go API refuses to start without solver settings
+
+- **Problem:** Go now needs the solver address and secret. Most local Go work doesn't need the solver running.
+- **Chose:** Make both settings required: the API won't start without them.
+- **Over:** Starting anyway and answering assignment requests with "unavailable".
+- **Why:** A missing setting shows up immediately at startup rather than in the middle of a demo or deployment.
+- **Cost:** Local development always needs the two settings, even when the solver isn't running (a placeholder address works; runs then report "unavailable").
+- **Would change if:** Several optional integrations piled up, where per-feature switches would be easier.
+
 ## 2026-10-24: Who enforces "a nurse can only add a request"
 
 - **Problem:** A joined nurse submits an issue or swap request by appending it to the shift's JSON snapshot. Moving this write to Go meant deciding where the "only append one request" rule lives.
