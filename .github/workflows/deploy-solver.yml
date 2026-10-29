@@ -1,0 +1,63 @@
+name: Deploy solver
+
+on:
+  push:
+    branches:
+      - main
+      - codex/go-migration
+    paths:
+      - "optimizer-service/**"
+      - ".github/workflows/deploy-solver.yml"
+      - ".github/workflows/cloud-run-solver.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Python checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out the tested commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up the service's Python version
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13.14"
+
+      - name: Install pinned dependencies
+        run: python -m pip install --no-cache-dir -r optimizer-service/requirements.lock
+
+      - name: Test
+        run: python -m unittest discover -s optimizer-service/tests -p "test_*.py"
+
+  development:
+    name: Development
+    needs: test
+    if: github.repository == 'pratham124/nurse-flow'
+    uses: ./.github/workflows/cloud-run-solver.yml
+    # Callers must grant id-token; the reusable workflow cannot raise it.
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      environment: gcp-development
+      service: nurseflow-solver-dev
+
+  # Production runs only from main, and only after development succeeded.
+  # It then waits for the gcp-production environment's required reviewer.
+  production:
+    name: Production
+    needs: development
+    if: github.repository == 'pratham124/nurse-flow' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/cloud-run-solver.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      environment: gcp-production
+      service: nurseflow-solver-prod

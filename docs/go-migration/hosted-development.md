@@ -29,7 +29,7 @@ each need their own explicit approval and have not started.
 | 13 | GitHub trust | A `gcp-development` environment, limited to `codex/go-migration`, holds only non-secret IDs. Google trusts tokens only from repository ID `1225352400`, that branch, and that environment. The deployer account can push images and manage Cloud Run, but has no Secret Manager access itself. It can deploy code that runs as the runtime accounts, which do read secrets, so push access to the branch is effectively secret access. That is inherent to continuous deployment; branch access is the real boundary. |
 | 14 | Solver deploy | Same pattern, in its own workflow. |
 | 15 | Rollback | One documented `gcloud run services update-traffic` command. Each deploy summary prints it with the exact previous revision. |
-| 16 | Bootstrap | A checked-in, re-runnable gcloud script (`deploy/development/bootstrap-gcp.ps1`), not Terraform (tradeoff log). |
+| 16 | Bootstrap | A checked-in, re-runnable gcloud script (`deploy/bootstrap-gcp.ps1`), not Terraform (tradeoff log). |
 | 17 | Store release | App Store / Play Store release is a proposed follow-on milestone after the cutover, not part of milestone 7. |
 
 ## What was built (ticket 20)
@@ -40,11 +40,11 @@ each need their own explicit approval and have not started.
 | `backend/Dockerfile`, `backend/.dockerignore` | Two-stage build: Go 1.27.1 compiles a static binary, and `distroless/static-debian12:nonroot` runs it. |
 | `backend/certs/supabase-root-2021-ca.crt` | The public Supabase Root 2021 CA (SHA-256 `80:70:25:AD:…:CA:FA`, expires 2031-04-26), so Postgres TLS stays `verify-full`. It is the same certificate as the CI environment's `NURSEFLOW_DB_CA_CERT_PEM`. |
 | `deploy/development/api.env.yaml` | The API's non-secret settings. The workflow appends the solver URL. |
-| `deploy/development/bootstrap-gcp.ps1` | One-time GCP and GitHub setup. |
-| `.github/workflows/deploy-api-development.yml` | Go checks, then a deploy of `nurseflow-api-dev`. |
-| `.github/workflows/deploy-solver-development.yml` | Python checks, then a deploy of `nurseflow-solver-dev`. |
+| `deploy/bootstrap-gcp.ps1` | One-time GCP and GitHub setup. |
+| `.github/workflows/deploy-api.yml` | Go checks, then a deploy of `nurseflow-api-dev`. |
+| `.github/workflows/deploy-solver.yml` | Python checks, then a deploy of `nurseflow-solver-dev`. |
 
-The two workflows repeat the same deploy steps on purpose. Each file reads top to bottom without a shared composite action. Extract one if a third service appears.
+The two workflows originally repeated the same deploy steps, and each file read top to bottom. Ticket 22's prep moved the deploy steps into reusable workflows (`cloud-run-api.yml`, `cloud-run-solver.yml`), because production needed them as well (see below).
 
 ### How a deploy protects the running version
 
@@ -71,7 +71,7 @@ password, so you run them. Use `!` in Claude Code to run a command in this sessi
 1. Install the [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) for Windows, then run `! gcloud auth login`.
 2. Find your billing account: `! gcloud billing accounts list`.
 3. Choose a globally unique project ID, then run:
-   `! powershell -File deploy/development/bootstrap-gcp.ps1 -ProjectId nurseflow-dev-<suffix> -BillingAccount <id>`.
+   `! powershell -File deploy/bootstrap-gcp.ps1 -ProjectId nurseflow-dev-<suffix> -BillingAccount <id>`.
    It prompts (hidden) for the **development** `nurseflow_go` password, which is the one saved by `backend/scripts/development.ps1 Save`. It generates the solver token itself.
 4. Commit and push the branch. Both workflows trigger because their files are new. If the API job ran before the solver existed, it stops with "Run the solver deploy workflow first". Re-run it after the solver run finishes.
 5. Copy the API URL from the run summary into Expo's `.env` as `EXPO_PUBLIC_GO_API_URL`, then restart Expo.
@@ -189,7 +189,7 @@ On the server side, the legacy Python `/v1/assignment-runs` route
 RPCs with the Supabase secret key. The production app on `main` still uses this
 route and the other legacy RPCs, so they remain until ticket 23.
 
-### Production change list (draft for ticket 22's approval)
+### Production change list (draft, superseded by "Ticket 22: production cutover" below)
 
 1. Apply the seven reviewed migrations in order to production `mkljczezkyqtuplzedpj`. Before that, re-run the read-only catalog comparison against production, because the development baseline came from it.
    - `20261008060018_go_template_read_role`
@@ -213,9 +213,79 @@ route and the other legacy RPCs, so they remain until ticket 23.
 - **Database:** the migrations are additive, so the legacy paths keep working with them applied. Rollback does not reverse migrations unless a specific defect requires it.
 - **Triggers to roll back:** any smoke check fails; a charge or joined-nurse workflow error appears that development did not show; or authorization isolation is in doubt.
 
+## Ticket 22: production cutover
+
+The user approved starting ticket 22 on 2026-10-29. A grilling session settled the decisions below, and they supersede the draft change list and rollback plan above. As of this writing, the prep is done and nothing has been applied to production.
+
+Facts found first:
+- `main`'s app calls the Python optimizer at `http://127.0.0.1:8080`, because Phase 9 was never deployed. There is no hosted production backend to replace.
+- The production Supabase project `nurseflow` (`mkljczezkyqtuplzedpj`, `us-east-1`) was paused (`INACTIVE`) and must be restored first.
+- The GCP project `nurseflow-512906` exists but is empty.
+
+### Decisions
+
+| # | Area | Decision |
+| --- | --- | --- |
+| 1 | Users | No outside users yet. They arrive with the App Store release (milestone 8). |
+| 2 | Host | Production runs in its own GCP project, `nurseflow-512906`, set up with `deploy/bootstrap-gcp.ps1 -Environment production`. Development secrets and permissions never reach it. |
+| 3 | Solver | Solver-only, like development: `/v1/solve` with its own shared token, no Supabase keys. `main`'s old direct-call route is never hosted. |
+| 4 | Gate | The `gcp-production` GitHub environment allows only `main` and requires the user's approval for every deploy. |
+| 5 | Order | 1. Restore the paused production Supabase project. 2. Read-only catalog comparison. 3. Apply the 7 migrations. 4. Set the `nurseflow_go` password. 5. Production bootstrap. 6. PR merge into `main`. 7. Approve the production deploys (solver first). 8. Point the app at production. 9. Smoke checks. |
+| 6 | Password | The user generates it, sets it in production's SQL editor (`alter role nurseflow_go login password '…'`), and pastes it at the bootstrap's hidden prompt. The agent never sees it. |
+| 7 | Migrations | The agent runs the read-only comparison and applies the 7 files with the Supabase CLI only after the user's explicit "apply". |
+| 8 | Origins | Mobile-only, so production's `NURSEFLOW_WEB_ORIGINS` is empty and the API refuses every browser origin. Development keeps localhost. |
+| 9 | Triggers | `deploy-api.yml` and `deploy-solver.yml` run on pushes to `main` and `codex/go-migration`. Development deploys automatically. Production runs only from `main`, only after development succeeded, and waits for approval. |
+| 10 | Instances | Production starts at `min-instances 0`, since the measured cold start was 4.1 s. Whether to keep one instance warm is decided at milestone 8. |
+| 11 | Smoke accounts | Two reusable production test accounts (a charge and a nurse), created and signed in by the user with passwords in their password manager. No development fixtures are copied. |
+| 12 | Local setup | After the merge, one folder: `.env` holds production settings and `.env.dev` holds development settings (`npm run start:dev`). The migration worktree is removed during ticket 23's cleanup. |
+| 13 | Rollback | See below. Migrations stay in place, and a defect gets a fix-forward migration. |
+| 14 | Ticket 23 | Can run after about a week of stable production use, because no store build will ever use the old paths. From milestone 8 on, Go API changes must keep working for app versions already installed. |
+| 15 | Merge | Through a GitHub pull request that the user merges. |
+
+### What the prep changed
+
+| File | Change |
+| --- | --- |
+| `.github/workflows/cloud-run-api.yml`, `cloud-run-solver.yml` | New reusable deploy steps (`workflow_call`), unchanged in substance. Each environment passes its GitHub environment, service name, and settings file. The runtime service account has the same name as the service. A per-service concurrency group means a production job waiting for approval never blocks development. |
+| `.github/workflows/deploy-api.yml`, `deploy-solver.yml` | Renamed from `*-development.yml`. The jobs are test, then development, then production (on `main` only). |
+| `deploy/production/api.env.yaml` | The production ref, the `us-east-1` pooler host, and empty origins. |
+| `deploy/bootstrap-gcp.ps1` | Moved out of `deploy/development/`. `-Environment production` uses the `-prod` names, the `gcp-production` environment, `main` only, and the signed-in GitHub user as required reviewer. Development allows `main` and `codex/go-migration`. Google's condition is now `assertion.ref in [...]`. The GitHub environment settings go through a temporary JSON file, because Windows PowerShell prefixes piped input with a byte order mark that GitHub rejects. |
+| `package.json` | `npm run start:dev` starts Expo with `.env.dev` loaded through Node's `--env-file`. Expo does not override variables that are already set. The file is not named `.env.development`, because Expo loads that file on every `expo start`. |
+
+Development was re-bootstrapped on 2026-10-29 with the new script. Its GitHub environment now allows `main` and `codex/go-migration`, and Google's condition lists both refs.
+
+### Rollback
+
+| Stage | How to undo |
+| --- | --- |
+| Catalog comparison | Read-only, so nothing to undo. |
+| Migrations | They only add roles, policies, grants, and functions. `main`'s current app ignores them, so nothing needs undoing. Each file runs in a transaction, and a failure undoes that file; stop and fix before continuing. |
+| `nurseflow_go` password | `alter role nurseflow_go nologin;` in the production SQL editor. |
+| Production bootstrap | Nothing is user-facing. Leave it, or delete the project. |
+| Bad API update after the first production deploy | Run the command printed in the deploy summary: `gcloud run services update-traffic nurseflow-api-prod --region us-east4 --project nurseflow-512906 --to-revisions <previous>=100` |
+| Go itself (any time after the merge) | `git revert -m 1 <merge commit>` on `main`, then restart Expo. The old direct-Supabase paths still work: the migrations were additive, Go writes the same tables, and ticket 23 has not removed anything. |
+| Emergency stop | Block public traffic with `gcloud run services remove-iam-policy-binding nurseflow-api-prod --region us-east4 --project nurseflow-512906 --member allUsers --role roles/run.invoker`, or cut database access with `alter role nurseflow_go nologin;`. Undo either the same way. |
+
+Roll back if a smoke check fails, if a charge or joined-nurse error appears that development did not show, or if isolation is in doubt.
+
+### Production smoke checks
+
+- The deploy summary shows candidate `/health` ok and a 401 without a token. A request with `Origin: http://localhost:8081` returns 403 `origin_forbidden`, which confirms the empty origins value took effect.
+- With the two production test accounts:
+  - sign in, and create and list a template;
+  - start a shift, add nurses and patients, and run assignment through the production solver;
+  - generate an invite, and join on the second account;
+  - one live update and one refetch on the nurse;
+  - an issue request with a thread message;
+  - End Shift.
+- Isolation: the nurse account cannot use the charge's template or shift.
+
 ## Ticket 23 notes
 
 Before removing an RPC, policy, or the legacy Python route, prove that no
-supported app version still calls it. Once store builds exist (proposed milestone
-8), old installed versions keep calling legacy paths for months. Retirement then
-waits for a minimum-supported-version decision, not just the rollback window.
+supported app version still calls it. The cutover happens before any store build
+(proposed milestone 8), so no store version ever uses the legacy paths. Ticket 23
+can therefore run after about a week of stable production use (ticket 22,
+decision 14). Once store builds exist, old installed versions keep calling
+whatever API they shipped with for months. From then on, Go API changes must keep
+working for installed versions until a minimum supported version is decided.

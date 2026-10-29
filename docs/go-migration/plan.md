@@ -354,3 +354,9 @@ Production enablement follows hosted development verification and explicit appro
 - [x] The user ran the bootstrap script for `nurseflow-dev-2610`. Commit `3ebae95` deployed both services through the workflows. Ticket 20's live checks passed: health and auth, Expo web and Android against `run.app`, a blocked bad revision, rollback and roll-forward, and an assignment run through the hosted solver.
 - [x] Ticket 21's hosted matrix passed on web (Playwright) and Android (Pixel 7 Pro API 33). It covered the full charge workflow, the joined nurse, requests and threads, live updates, reconnect, access removal, End Shift, isolation, sign-out, and run concurrency. Results and findings are in [hosted development](hosted-development.md#ticket-21-hosted-matrix-2026-10-29).
 - [ ] Ticket 18 and notification navigation stay deferred. iOS and physical devices were not tested. Tickets 22–23 need separate approvals.
+
+### 2026-10-29 - Ticket 22 approved and prepared
+
+- [x] The user approved starting ticket 22. A grilling session settled 15 decisions, recorded in [hosted development](hosted-development.md#ticket-22-production-cutover) and ADR 0007. Production goes in its own GCP project `nurseflow-512906`, deploys from `main` after development and only with the user's approval, allows no browser origins, and starts at zero instances.
+- [x] Prep: reusable Cloud Run deploy workflows with test → development → production jobs; `deploy/production/api.env.yaml`; the bootstrap script moved to `deploy/` with `-Environment production`; `npm run start:dev`. Development was re-bootstrapped so `main` may deploy it.
+- [ ] Cutover steps 1–9 (restore the paused production Supabase project first). Nothing has been applied to production yet.
