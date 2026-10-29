@@ -1,6 +1,6 @@
 # Go Backend Migration Plan
 
-Status: milestones 1–5 are done (milestones 4 and 5 on 2026-10-24). Milestone 3 (tickets 03–07) was closed at the user's request on 2026-10-19 after local and live development checks passed, with the remaining manual checks and fixture cleanup deferred. See `shift-lifecycle.md` for the exact verification limits. The existing architecture and milestone execution protocol remain approved. Milestone 5 was authorized and completed on 2026-10-24. Milestone 6 was authorized on 2026-10-25 and is implemented and verified, except the deferred notification work (verified on web and Android); the user closed it on 2026-10-25 by authorizing milestone 7. Milestone 7 is in progress: ticket 20 is implemented and awaits the user's Google Cloud setup and live checks, ticket 21 is partly prepared, and tickets 22–23 need separate approvals. See `hosted-development.md`.
+Status: milestones 1–5 are done (milestones 4 and 5 on 2026-10-24). Milestone 3 (tickets 03–07) was closed at the user's request on 2026-10-19 after local and live development checks passed, with the remaining manual checks and fixture cleanup deferred. See `shift-lifecycle.md` for the exact verification limits. The existing architecture and milestone execution protocol remain approved. Milestone 5 was authorized and completed on 2026-10-24. Milestone 6 was authorized on 2026-10-25 and is implemented and verified, except the deferred notification work (verified on web and Android); the user closed it on 2026-10-25 by authorizing milestone 7. Milestone 7 is in progress: tickets 20 and 21 were done on 2026-10-29 against the hosted development stack (`nurseflow-dev-2610`), and tickets 22–23 need separate approvals. See `hosted-development.md`.
 
 ## Purpose and scope
 
@@ -347,4 +347,10 @@ Production enablement follows hosted development verification and explicit appro
 - [x] Implemented ticket 20's code: the project-ref selection (tests for both refs and rejection cases), the Go Dockerfile with the public Supabase CA, the API/solver deploy workflows (test, SHA-tagged image, no-traffic candidate, smoke check, traffic switch, rollback command in the summary), and the bootstrap script.
 - [x] Local checks: Go format, vet, build, race tests, and a static Linux build pass. 118 Python tests pass. The workflows parse. The bootstrap helpers were tested against a fake gcloud, which found and fixed a byte-order mark added to secrets. Not run: `docker build` (daemon stopped), actionlint (fetch blocked), and any real gcloud/gh call.
 - [x] Ticket 21 preparation: the remaining-legacy-caller inventory, the production change list, and the rollback plan are drafted in hosted-development.md and not applied.
-- [ ] User: GCP setup, push, and ticket 20 live checks, then ticket 21's hosted matrix. Tickets 22–23 need separate approvals. Changes are uncommitted for the user's review.
+- [x] User: GCP setup, push, and ticket 20 live checks, then ticket 21's hosted matrix (done 2026-10-29; see below).
+
+### 2026-10-29 - Tickets 20 and 21 verified on hosted development
+
+- [x] The user ran the bootstrap script for `nurseflow-dev-2610`. Commit `3ebae95` deployed both services through the workflows. Ticket 20's live checks passed: health and auth, Expo web and Android against `run.app`, a blocked bad revision, rollback and roll-forward, and an assignment run through the hosted solver.
+- [x] Ticket 21's hosted matrix passed on web (Playwright) and Android (Pixel 7 Pro API 33). It covered the full charge workflow, the joined nurse, requests and threads, live updates, reconnect, access removal, End Shift, isolation, sign-out, and run concurrency. Results and findings are in [hosted development](hosted-development.md#ticket-21-hosted-matrix-2026-10-29).
+- [ ] Ticket 18 and notification navigation stay deferred. iOS and physical devices were not tested. Tickets 22–23 need separate approvals.

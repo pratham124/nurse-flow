@@ -118,7 +118,57 @@ Setup ran against GCP project `nurseflow-dev-2610`. Commit `3ebae95` was the fir
 - [x] Rollback with the printed command, from `00005-bev` to `00001-joc`, took a few seconds and `/health` stayed ok. Rolled forward again the same way.
 - [x] Assignment run through the hosted API and solver: `POST /active-shifts/{id}/assignment-runs` returned `saved` with a new result ID. The solver's request log shows `POST /v1/solve` returning 200 at the same moment. The run was sent from the signed-in development session using the app's own request shape. The shift was the milestone 5 fixture's 2-bed floor, so the solve took 0.2 s.
 
-Seen during the checks, not caused by hosting: Supabase Realtime once returned `MissingPartition` for the charge active-shift listener, then connected ("Live") on the next load.
+Seen during the checks, not caused by hosting: Supabase Realtime once returned `MissingPartition` for the charge active-shift listener on the first connection after the development project had been idle since 2026-10-26. The client rejoined on its own about a second later ("listener live"), and today's `realtime.messages` partition existed afterwards. Realtime traffic goes straight to Supabase, not through Cloud Run.
+
+## Ticket 21 hosted matrix (2026-10-29)
+
+Stack: the hosted API (`nurseflow-api-dev-00005-bev`) and solver on Cloud Run, the development Supabase project, and Expo running locally. Only Metro's port was reversed to Android, so all API traffic crossed the internet.
+
+Devices:
+- Charge: Charge M5 on Expo web in Playwright (Chromium).
+- Joined nurse: Charge M7 Android on the Pixel 7 Pro API 33 emulator, using the existing debug app on the current Metro bundle and driven with `adb` and `uiautomator`.
+- Isolation: a separate browser context with a fresh synthetic account.
+
+iOS and physical devices were not tested; none were available.
+
+| Area | Check | Result |
+| --- | --- | --- |
+| Charge workflow (web UI) | End shift, carry-over review (2 nurses, 2 patients), start shift, setup, Run assignment | Passed. The board showed Ava → 201 and Ben → 202. |
+| Charge workflow (web UI) | Create template "M7 Hosted Floor" (4 steps) | `POST /floor-templates` 201 |
+| Charge workflow | Delete it with the app's request | `DELETE` 204, and the template is gone. The swipe-to-delete control could not be driven by a mouse drag (see findings). |
+| Invites and joining | Generate a code in the UI and join on Android | The scoped view showed only Room 202, Bed 1, and Realtime was Live. |
+| Invites and joining | A used code after a reopen | Refused: "That code has already been used". |
+| Invites and joining | A new code | Joined. |
+| Live updates | One charge rerun | Exactly one change event and one `GET /joined-workspace` on Android, within the same second. An unsent issue draft was kept. |
+| Requests and threads | Issue from Android | It appeared live on the charge's Requests list. Charge reply → shown on Android. Nurse reply → shown live on web. Reviewed and Resolved statuses reached Android live. |
+| Requests and threads | Swap from Android | Appeared live. Accept → Android showed "Accepted — assignment change pending". |
+| Manual move | Move a bed to the other nurse (app request shape) | `422 invalid_move`, "The selected nurse does not cover this room". This is correct: on this floor each nurse covers one room. Successful moves were verified through the UI in ticket 12. The move swipe could not be driven by a mouse (see findings). |
+| Reconnect | Android offline, charge rerun, back online | The badge showed "Live issue" with a transport failure. Back online, it showed "reconnected; refreshing" and made one refetch. The missed change appeared. |
+| Access removal | Charge "Edit active shift" (reopen) | Android showed "Access removed" within seconds, and the charge's invite list showed Ben as "Removed". The first attempt overlapped a network blip and showed "Shift ended" (see findings). |
+| End Shift | Charge ends the shift while the nurse is joined | Android showed "Shift ended" within seconds. |
+| Sign-out | Separate-context account signs out | Returned to `/login` with the stored session cleared. |
+| Isolation (fresh account) | Own data | Templates 0, active shift null, joined workspace empty. |
+| Isolation (fresh account) | Charge M5's records | Template `DELETE` → 404 `template_not_found`. Run on M5's shift → 403 `forbidden`. Move on M5's shift → 404 `shift_not_found`. |
+| Run safety (app request shape) | Replay | Same run and result. |
+| Run safety (app request shape) | Stale revision; old baseline | 409 `stale` for both. |
+| Run safety (app request shape) | Reused mutation with new preconditions | 409 `conflict`. |
+| Run safety (app request shape) | Unknown field; no token | 422 `invalid_input`; 401. |
+| Run safety (app request shape) | Two runs at once, same preconditions | One saved (200). The other returned 202 `running` with the same run ID, and only the winner is current. |
+| Cold start | UI run after the API had been idle about 16 minutes and the solver about 20 | Both services started new instances. The API was ready in 0.5 s (database and key checks included) and the solver (uvicorn and OR-Tools) in 2.4 s. The board appeared 4.1 s after the click. |
+| Warm solver | Earlier runs | 0.05–0.2 s per solve. The solver was still warm about 14 minutes after its last request. |
+
+Findings (none caused by hosting):
+
+1. **The access-removal label can say "Shift ended".** If a Realtime reconnect happens at the moment the charge reopens the shift, the nurse sees "Shift ended" instead of "Access removed". The reconnect refresh added in milestone 6 calls `refreshJoinedNurseAccess("shift_changed")`. Access is still removed either way; only the wording is wrong. A possible follow-up is to label a reconnect refresh by what the refetch finds, not by the event type. Not changed here.
+2. **The swipe actions did not respond to a mouse drag on web.** The template-delete and bed-move controls use `PanResponder`, and Playwright's mouse drag did not reveal them. The UI predates the migration, and it is unconfirmed whether a real desktop mouse has the same problem. The underlying requests were exercised directly.
+3. **Realtime `MissingPartition`.** It happened once after the project had been idle, and recovered within about a second (see ticket 20).
+
+Release gates still open for ticket 22:
+- The production decisions in the change list below: hosting location, the production `nurseflow_go` password, and `min-instances` for real users. The 4 s cold start is acceptable for development; production can keep one instance warm.
+- Merging into `main`.
+- iOS and physical devices are untested.
+- Notifications stay deferred (ticket 18 and notification navigation).
+- A store release is proposed for milestone 8.
 
 ## Ticket 21 preparation (not applied)
 
