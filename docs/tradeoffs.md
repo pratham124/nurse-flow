@@ -6,6 +6,43 @@ Entries before 2026-10-24 were backfilled from the ADRs, phase docs, and the Go 
 
 ---
 
+## 2026-10-29: Production deploys wait for my approval, after development succeeds
+
+- **Problem:** Production needed the same Cloud Run deploys as development. A bad change shouldn't reach production just because it was merged, but the process also shouldn't depend on my laptop.
+- **Chose:** One workflow per service on `main` that tests, deploys to development, and then deploys to production. The production step runs only from `main`, only after development passed, and waits until I click "Approve" in GitHub (a required reviewer on the `gcp-production` environment).
+- **Over:** (1) Deploying production automatically on every push to `main`. (2) Separate production workflows that run independently of development.
+- **Why:** Every production deploy has already been tested and deployed to development, and I see it before it goes out. With no outside users yet, the extra click costs almost nothing, and it builds the habit before the App Store release.
+- **Cost:** Production waits until I approve, so a fix isn't live until I act. Each environment builds its own image from the same commit, so the production image is a rebuild, not the exact bytes development tested.
+- **Would change if:** Deploys become frequent enough that approval is a bottleneck (then auto-promote after a soak period), or rebuild differences ever cause a bug (then promote one image across projects).
+- **ADR:** [0007](adr/0007-production-cloud-run-promotion-with-approval.md)
+
+## 2026-10-29: Production in its own GCP project
+
+- **Problem:** Production needs its own database password, solver token, and deploy permissions, and someone working on development shouldn't be able to reach them.
+- **Chose:** A separate GCP project (`nurseflow-512906`), set up by the same bootstrap script with `-Environment production`.
+- **Over:** Adding production services to the development project.
+- **Why:** In Cloud Run, whoever can deploy can run code as the service's account, and that account can read the secrets. Sharing a project would make development deploy access equal to production secret access. A separate project makes that boundary structural and costs nothing extra.
+- **Cost:** Two projects to look after, and each environment builds its own image.
+- **Would change if:** I moved to a single project with very fine-grained per-service permissions and tooling to audit them, which isn't worth it at this size.
+
+## 2026-10-29: Shared reusable deploy steps instead of copied workflow files
+
+- **Problem:** With production added, the API and solver deploy steps would have existed four times (two services, two environments).
+- **Chose:** Two reusable workflows (`cloud-run-api.yml`, `cloud-run-solver.yml`) that each environment calls with its own name, service, and settings file.
+- **Over:** Keeping self-contained files that read top to bottom, which is what I chose for development alone on 2026-10-26.
+- **Why:** At two copies, readability won. At four, a safety fix such as a smoke check could easily land in one copy and not the others.
+- **Cost:** You have to read two files to follow one deploy, and inputs have to be passed through environment variables, never interpolated straight into scripts.
+- **Would change if:** The environments' deploy steps started needing genuinely different logic. Then separate files would be clearer than flags.
+
+## 2026-10-29: Production starts with zero always-on instances
+
+- **Problem:** A scaled-to-zero service makes the first request after idle wait for a cold start. Keeping one instance warm costs money every month.
+- **Chose:** `min-instances 0` in production until the App Store release.
+- **Over:** One warm API instance from day one.
+- **Why:** I measured a 4.1 s cold start for a full assignment run (API 0.5 s, solver 2.4 s), and there are no outside users yet.
+- **Cost:** The first action after a quiet period takes a few seconds longer.
+- **Would change if:** Real nurses use the app. A slow first tap at shift start would be noticeable, so this is on the store-release checklist.
+
 ## 2026-10-26: Deploy development from GitHub Actions with Workload Identity Federation
 
 - **Problem:** The Go API and solver needed a repeatable way to reach Cloud Run. Each deploy should be traceable to a commit, and a bad build must not replace a working one.

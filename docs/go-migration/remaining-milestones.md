@@ -113,7 +113,7 @@ Unblocked tickets can use existing migrated or retained paths and development fi
    - **Blocked by:** 19: Verify migrated workflows and live collaboration; 20: Run Expo against a hosted development Go API.
    - **What it delivers:** The complete existing charge/joined-nurse workflow passes on the hosted development stack with documented behavior parity and rollback readiness.
 
-22. **Enable the Go migration in the existing environment (Milestone 7)**
+22. **[Approved 2026-10-29; prepared, cutover steps pending] Enable the Go migration in the existing environment (Milestone 7)**
    - **Blocked by:** 21: Verify all migrated workflows on hosted development.
    - **What it delivers:** After explicit approval of the concrete cutover, the existing app uses the validated Go workflows against its existing environment.
 

@@ -1,15 +1,18 @@
 <#
 .SYNOPSIS
-One-time, re-runnable setup of NurseFlow's hosted development environment on Google Cloud.
+One-time, re-runnable setup of a NurseFlow hosted environment (development or production) on Google Cloud.
 
 .DESCRIPTION
-Creates, or confirms, everything the two deploy workflows need:
+Each environment lives in its own GCP project. Creates, or confirms, everything
+the deploy workflows need there:
   - the GCP project, linked to billing, with the required APIs enabled
   - an Artifact Registry repository for the container images
   - one runtime service account per Cloud Run service, plus a deployer account
   - the database password and solver token in Secret Manager
   - Workload Identity Federation, so GitHub Actions can deploy without a stored Google key
-  - the branch-restricted "gcp-development" GitHub environment and its non-secret variables
+  - the branch-restricted GitHub environment ("gcp-development" or
+    "gcp-production") and its non-secret variables; production deploys also
+    wait for the signed-in GitHub user's approval
 
 Every step checks before it creates, so running the script again only fills in
 what is missing. Secret values are never printed, written to disk, or passed on
@@ -20,12 +23,17 @@ Requires Windows, the gcloud CLI signed in (gcloud auth login), and the GitHub
 CLI signed in with admin access to the repository (gh auth login).
 
 .EXAMPLE
-./deploy/development/bootstrap-gcp.ps1 -ProjectId nurseflow-dev-1234 -BillingAccount 012345-6789AB-CDEF01
+./deploy/bootstrap-gcp.ps1 -ProjectId nurseflow-dev-1234 -BillingAccount 012345-6789AB-CDEF01
+
+.EXAMPLE
+./deploy/bootstrap-gcp.ps1 -Environment production -ProjectId nurseflow-512906
 #>
 param(
     # GCP project IDs are globally unique; choose one such as nurseflow-dev-<suffix>.
     [Parameter(Mandatory)]
     [string]$ProjectId,
+    [ValidateSet('development', 'production')]
+    [string]$Environment = 'development',
     # Needed only the first time, if the project is not linked to billing yet.
     [string]$BillingAccount,
     [switch]$RotateDatabasePassword,
@@ -41,12 +49,21 @@ $GitHubRepository = 'pratham124/nurse-flow'
 # Trust the numeric repository ID, which stays the same even if the repository
 # is renamed or a different repository later takes the same name.
 $GitHubRepositoryId = '1225352400'
-$GitHubBranch = 'codex/go-migration'
-$GitHubEnvironment = 'gcp-development'
+if ($Environment -eq 'production') {
+    # Production deploys only from main, after a required reviewer approves.
+    $GitHubBranches = @('main')
+    $GitHubEnvironment = 'gcp-production'
+    $ServiceSuffix = 'prod'
+} else {
+    # Development keeps the migration branch until it is retired (ticket 23).
+    $GitHubBranches = @('main', 'codex/go-migration')
+    $GitHubEnvironment = 'gcp-development'
+    $ServiceSuffix = 'dev'
+}
 $Pool = 'github'
 $Provider = 'nurseflow-deploy'
-$ApiAccount = "nurseflow-api-dev@$ProjectId.iam.gserviceaccount.com"
-$SolverAccount = "nurseflow-solver-dev@$ProjectId.iam.gserviceaccount.com"
+$ApiAccount = "nurseflow-api-$ServiceSuffix@$ProjectId.iam.gserviceaccount.com"
+$SolverAccount = "nurseflow-solver-$ServiceSuffix@$ProjectId.iam.gserviceaccount.com"
 $DeployerAccount = "nurseflow-deployer@$ProjectId.iam.gserviceaccount.com"
 $DatabaseSecret = 'nurseflow-db-password'
 $SolverSecret = 'nurseflow-solver-token'
@@ -152,8 +169,8 @@ if (-not (Test-Gcloud artifacts repositories describe $Repository --location $Re
 
 Write-Step 'Service accounts'
 $accounts = @(
-    @{ Email = $ApiAccount; Name = 'NurseFlow API (development runtime)' },
-    @{ Email = $SolverAccount; Name = 'NurseFlow solver (development runtime)' },
+    @{ Email = $ApiAccount; Name = "NurseFlow API ($Environment runtime)" },
+    @{ Email = $SolverAccount; Name = "NurseFlow solver ($Environment runtime)" },
     @{ Email = $DeployerAccount; Name = 'NurseFlow GitHub deployer' }
 )
 foreach ($serviceAccount in $accounts) {
@@ -170,8 +187,8 @@ foreach ($secret in $DatabaseSecret, $SolverSecret) {
     }
 }
 if ($RotateDatabasePassword -or -not (Test-SecretHasVersion $DatabaseSecret)) {
-    # The limited nurseflow_go password for the DEVELOPMENT Supabase project only.
-    $secure = Read-Host 'Development nurseflow_go database password (hidden)' -AsSecureString
+    # The limited nurseflow_go password for this environment's Supabase project only.
+    $secure = Read-Host "$($Environment.ToUpper()) nurseflow_go database password (hidden)" -AsSecureString
     $password = [System.Net.NetworkCredential]::new('', $secure).Password
     if (-not $password) {
         throw 'The password must not be empty.'
@@ -214,10 +231,11 @@ Write-Step 'Workload Identity Federation for GitHub Actions'
 if (-not (Test-Gcloud iam workload-identity-pools describe $Pool --location global --project $ProjectId)) {
     Invoke-Checked gcloud iam workload-identity-pools create $Pool --location global --display-name 'GitHub Actions' --project $ProjectId
 }
-# Google accepts a GitHub token only from this repository, on this branch, in
-# the gcp-development environment.
+# Google accepts a GitHub token only from this repository, on an allowed
+# branch, in this environment's GitHub environment.
 $mapping = 'google.subject=assertion.sub,attribute.repository_id=assertion.repository_id,attribute.ref=assertion.ref,attribute.environment=assertion.environment'
-$condition = "assertion.repository_id == '$GitHubRepositoryId' && assertion.ref == 'refs/heads/$GitHubBranch' && assertion.environment == '$GitHubEnvironment'"
+$allowedRefs = ($GitHubBranches | ForEach-Object { "'refs/heads/$_'" }) -join ', '
+$condition = "assertion.repository_id == '$GitHubRepositoryId' && assertion.ref in [$allowedRefs] && assertion.environment == '$GitHubEnvironment'"
 $providerVerb = 'create-oidc'
 if (Test-Gcloud iam workload-identity-pools providers describe $Provider --workload-identity-pool $Pool --location global --project $ProjectId) {
     $providerVerb = 'update-oidc'
@@ -227,13 +245,34 @@ $principal = "principalSet://iam.googleapis.com/projects/$projectNumber/location
 Invoke-Checked gcloud iam service-accounts add-iam-policy-binding $DeployerAccount --member $principal --role roles/iam.workloadIdentityUser --project $ProjectId --format none
 
 Write-Step "GitHub environment $GitHubEnvironment"
-Invoke-Checked gh api --method PUT "repos/$GitHubRepository/environments/$GitHubEnvironment" -F 'deployment_branch_policy[protected_branches]=false' -F 'deployment_branch_policy[custom_branch_policies]=true' --silent
+$environmentSettings = @{
+    deployment_branch_policy = @{ protected_branches = $false; custom_branch_policies = $true }
+}
+if ($Environment -eq 'production') {
+    # Each production deploy waits until the signed-in GitHub user approves it.
+    $reviewerId = & gh api user --jq '.id'
+    if ($LASTEXITCODE -ne 0 -or -not $reviewerId) {
+        throw 'Could not read the signed-in GitHub user.'
+    }
+    $environmentSettings.reviewers = @(@{ type = 'User'; id = [long]$reviewerId })
+}
+# Sent through a file because Windows PowerShell prefixes piped input with a
+# byte order mark, which GitHub rejects as invalid JSON. The settings are not secret.
+$settingsFile = [System.IO.Path]::GetTempFileName()
+try {
+    [System.IO.File]::WriteAllText($settingsFile, ($environmentSettings | ConvertTo-Json -Depth 4 -Compress), (New-Object System.Text.UTF8Encoding $false))
+    Invoke-Checked gh api --method PUT "repos/$GitHubRepository/environments/$GitHubEnvironment" --input $settingsFile --silent
+} finally {
+    Remove-Item -LiteralPath $settingsFile -ErrorAction SilentlyContinue
+}
 $branches = & gh api "repos/$GitHubRepository/environments/$GitHubEnvironment/deployment-branch-policies" --jq '.branch_policies[].name'
 if ($LASTEXITCODE -ne 0) {
     throw 'Could not read the environment branch policies.'
 }
-if (@($branches) -notcontains $GitHubBranch) {
-    Invoke-Checked gh api --method POST "repos/$GitHubRepository/environments/$GitHubEnvironment/deployment-branch-policies" -f "name=$GitHubBranch" -f 'type=branch' --silent
+foreach ($branch in $GitHubBranches) {
+    if (@($branches) -notcontains $branch) {
+        Invoke-Checked gh api --method POST "repos/$GitHubRepository/environments/$GitHubEnvironment/deployment-branch-policies" -f "name=$branch" -f 'type=branch' --silent
+    }
 }
 $variables = [ordered]@{
     GCP_PROJECT_ID = $ProjectId
@@ -244,6 +283,6 @@ foreach ($name in $variables.Keys) {
     Invoke-Checked gh variable set $name --env $GitHubEnvironment --repo $GitHubRepository --body $variables[$name]
 }
 
-Write-Host "`nSetup complete for $ProjectId." -ForegroundColor Green
-Write-Host 'Next: push the branch. Deploy the solver first; if the API workflow ran before the solver existed, use "Re-run jobs" on it.'
+Write-Host "`nSetup complete for $ProjectId ($Environment)." -ForegroundColor Green
+Write-Host 'Next: push to an allowed branch. Deploy the solver first; if the API workflow ran before the solver existed, use "Re-run jobs" on it.'
 Write-Host 'See docs/go-migration/hosted-development.md for verification and rollback.'

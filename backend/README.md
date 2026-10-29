@@ -43,7 +43,7 @@ The ref picks the token issuer (`https://<ref>.supabase.co/auth/v1`), the databa
 
 ### Hosted development
 
-`Dockerfile` builds a static, non-root image with the public Supabase CA at `/etc/nurseflow/` and `NURSEFLOW_HTTP_ADDR=:8080`. GitHub Actions deploys it to Cloud Run from `codex/go-migration` (`.github/workflows/deploy-api-development.yml`). Setup, verification, and rollback are in [hosted development](../docs/go-migration/hosted-development.md).
+`Dockerfile` builds a static, non-root image with the public Supabase CA at `/etc/nurseflow/` and `NURSEFLOW_HTTP_ADDR=:8080`. GitHub Actions deploys it to Cloud Run from `codex/go-migration` (`.github/workflows/deploy-api.yml`). Setup, verification, and rollback are in [hosted development](../docs/go-migration/hosted-development.md).
 
 ### Optimizer (solver) configuration
 
