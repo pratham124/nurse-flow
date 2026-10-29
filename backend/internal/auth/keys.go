@@ -13,7 +13,7 @@ import (
 	"golang.org/x/time/rate"
 )
 
-func newVerifier(ctx context.Context, endpoint string, refreshInterval, refreshPause time.Duration) (*Verifier, error) {
+func newVerifier(ctx context.Context, issuer, endpoint string, refreshInterval, refreshPause time.Duration) (*Verifier, error) {
 	store := &signingKeyStore{Storage: jwkset.NewMemoryStorage()}
 	remote, err := jwkset.NewStorageFromHTTP(endpoint, jwkset.HTTPClientStorageOptions{
 		Ctx: ctx,
@@ -51,7 +51,7 @@ func newVerifier(ctx context.Context, endpoint string, refreshInterval, refreshP
 	if err != nil {
 		return nil, ErrUnavailable
 	}
-	return &Verifier{issuer: DevelopmentIssuer, now: time.Now, keys: keys}, nil
+	return &Verifier{issuer: issuer, now: time.Now, keys: keys}, nil
 }
 
 func (v *Verifier) publicKey(ctx context.Context, keyID string) (*ecdsa.PublicKey, error) {
@@ -75,6 +75,7 @@ type signingKeyStore struct {
 	jwkset.Storage
 }
 
+// KeyReplaceAll keeps only unambiguous ES256 signing keys on the P-256 curve.
 func (s *signingKeyStore) KeyReplaceAll(ctx context.Context, keys []jwkset.JWK) error {
 	accepted := make([]jwkset.JWK, 0, len(keys))
 	seen := make(map[string]bool)
@@ -85,7 +86,7 @@ func (s *signingKeyStore) KeyReplaceAll(ctx context.Context, keys []jwkset.JWK) 
 		}
 		publicKey, ok := key.Key().(*ecdsa.PublicKey)
 		if !ok || publicKey.Curve != elliptic.P256() || metadata.KID == "" ||
-			len(metadata.KID) > 256 || seen[metadata.KID] || (metadata.USE != "" && metadata.USE != jwkset.UseSig) {
+			seen[metadata.KID] || (metadata.USE != "" && metadata.USE != jwkset.UseSig) {
 			return ErrUnavailable
 		}
 		seen[metadata.KID] = true
@@ -97,6 +98,7 @@ func (s *signingKeyStore) KeyReplaceAll(ctx context.Context, keys []jwkset.JWK) 
 // boundedKeyTransport limits downloads while the library performs the HTTP request.
 type boundedKeyTransport struct{}
 
+// RoundTrip delegates the HTTP request and caps the signing-key response at 64 KiB.
 func (boundedKeyTransport) RoundTrip(request *http.Request) (*http.Response, error) {
 	response, err := http.DefaultTransport.RoundTrip(request)
 	if err != nil {

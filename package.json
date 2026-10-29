@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
+    "start:dev": "node --env-file=.env.dev node_modules/expo/bin/cli start",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
     "ios": "expo run:ios",
@@ -13,7 +14,9 @@
     "test:request-realtime": "tsx --test tests/realtimeWorkspaceRepository.test.mjs",
     "test:request-lifecycle": "tsx --test tests/nurseRequestLifecycle.test.mjs tests/notificationTap.test.mjs",
     "test:responsive-layout": "tsx --test tests/responsiveLayout.test.mjs",
-    "test:server-workspace-store": "tsx --test tests/serverWorkspaceStore.test.mjs",
+    "test:go-templates": "tsx --test tests/floorTemplateRepository.test.mjs tests/goApiClient.test.mjs",
+    "test:go-shifts": "tsx --test tests/shiftRepository.test.mjs",
+    "test:server-workspace-store": "tsx --test tests/serverWorkspaceStore.test.mjs tests/serverWorkspaceRepository.test.mjs",
     "test:phase8-performance": "tsx --test tests/floorBoardLookup.test.mjs",
     "test:phase9-fixtures": "tsx --test tests/phase9OptimizerFixtures.test.mjs",
     "test:phase9-normalization": "python -m unittest discover -s optimizer-service/tests -p \"test_*.py\"",
@@ -28,6 +31,7 @@
     "@react-navigation/elements": "^2.9.10",
     "@react-navigation/native": "^7.1.33",
     "@supabase/supabase-js": "^2.108.2",
+    "axios": "1.20.0",
     "expo": "~55.0.24",
     "expo-clipboard": "~55.0.14",
     "expo-constants": "~55.0.15",
@@ -55,6 +59,7 @@
     "react-native-url-polyfill": "^3.0.0",
     "react-native-web": "~0.21.0",
     "react-native-worklets": "0.7.4",
+    "zod": "4.6.7",
     "zustand": "^5.0.15"
   },
   "devDependencies": {

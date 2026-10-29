@@ -1,19 +1,33 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { z } from "zod";
 
-import { expireActiveShiftNurseInvites } from "./shiftInviteRepository";
+import {
+  loadFloorTemplates,
+  saveFloorTemplate,
+  deleteFloorTemplate,
+} from "./floorTemplateRepository";
+import { goApiClient } from "./goApiClient";
+import { getGoAuthHeaders } from "./goApiAuth";
+import { readGoApiFailure, throwGoNetworkError } from "./goApiErrors";
+import { loadServerActiveShift, loadPreviousShiftSnapshots } from "./shiftRepository";
+import { nurseRequestSchema } from "./shiftSchemas";
+import {
+  joinedNurseAssignedBedSchema,
+  joinedNurseAssignmentResultSchema,
+  manualAssignmentOverrideResultSchema,
+  manualAssignmentOverrideSchema,
+  requestHistorySchema,
+  shiftNurseAccessSchema,
+} from "./serverWorkspaceSchemas";
 import type {
   ActiveAssignmentOverridesByBedId,
-  ActiveShiftRecord,
   FloorTemplate,
-  FloorTemplateRecord,
   JoinedNurseAssignedBed,
   JoinedNurseAssignmentView,
   ManualAssignmentOverride,
   NurseIssueReviewStatus,
   OverrideWarningAcknowledgementInput,
   NurseRequestStatus,
-  PreviousShiftSnapshot,
-  ServerPreviousShiftSnapshot,
   ServerWorkspace,
   Shift,
   ShiftAccessStatus,
@@ -21,102 +35,9 @@ import type {
   UserProfile,
 } from "../types/models";
 
-type FloorTemplateRow = {
-  created_at: string;
-  id: string;
-  name: string;
-  owner_profile_id: string;
-  template_snapshot: unknown;
-  updated_at: string;
-};
+export { createServerActiveShift, endServerActiveShift, loadServerActiveShift, resetServerActiveShiftForEditing, saveServerActiveShift } from "./shiftRepository";
 
-type ActiveShiftRow = {
-  charge_profile_id: string;
-  created_at: string;
-  ended_at: string | null;
-  floor_template_id: string;
-  id: string;
-  shift_snapshot: unknown;
-  status: string;
-  updated_at: string;
-};
-
-type ManualAssignmentOverrideRow = {
-  baseline_assignment_result_id: string;
-  bed_id: string;
-  client_mutation_id: string | null;
-  created_at: string;
-  created_by_profile_id: string;
-  from_nurse_id: string;
-  id: string;
-  related_swap_request_id: string | null;
-  server_sequence: number;
-  shift_id: string;
-  status: "active" | "superseded";
-  superseded_at: string | null;
-  to_nurse_id: string;
-  warning_acknowledgements: unknown;
-};
-
-type ManualAssignmentOverrideRpcResult = {
-  activeAssignmentOverridesByBedId?: unknown;
-  currentBaselineAssignmentResultId?: string;
-  currentEffectiveNurseId?: string;
-  message?: string;
-  override?: unknown;
-  status?: string;
-};
-
-type ResetActiveShiftForEditingRpcResult = {
-  activeAssignmentOverridesByBedId?: unknown;
-  active_assignment_overrides_by_bed_id?: unknown;
-  message?: string;
-  shiftSnapshot?: unknown;
-  shift_snapshot?: unknown;
-  status?: string;
-};
-
-type PreviousShiftSnapshotRow = {
-  charge_profile_id: string;
-  completed_at: string;
-  floor_template_id: string;
-  id: string;
-  nurse_suggestions: unknown;
-  patient_suggestions: unknown;
-};
-
-type JoinedNurseAssignmentRpcResult = {
-  access: unknown;
-  assignedBeds?: unknown;
-  assigned_beds?: unknown;
-  floorName?: string;
-  floor_name?: string;
-  nurseName?: string;
-  nurse_name?: string;
-  requestHistory?: unknown;
-  request_history?: unknown;
-  shiftId?: string;
-  shift_id?: string;
-};
-
-type ShiftNurseAccessSnapshot = {
-  createdAt?: string;
-  created_at?: string;
-  id?: string;
-  nurseEmail?: string | null;
-  nurseId?: string;
-  nurseName?: string;
-  nurseProfileId?: string | null;
-  nurse_email?: string | null;
-  nurse_id?: string;
-  nurse_name?: string;
-  nurse_profile_id?: string | null;
-  shiftId?: string;
-  shift_id?: string;
-  status?: string;
-  updatedAt?: string;
-  updated_at?: string;
-};
+type JoinedNurseAssignmentRpcResult = z.infer<typeof joinedNurseAssignmentResultSchema>;
 
 type NotificationTargetAccessRow = {
   id: string;
@@ -137,14 +58,16 @@ type SubmitJoinedNurseSwapRequestInput = {
   sourceBedId: string;
 };
 
-type ResolveShiftNurseSwapRequestInput = {
+export type ResolveShiftNurseSwapRequestInput = {
   nextStatus: Extract<NurseRequestStatus, "accepted" | "declined">;
   requestId: string;
+  shiftId: string;
 };
 
-type UpdateShiftNurseIssueStatusInput = {
+export type UpdateShiftNurseIssueStatusInput = {
   nextStatus: NurseIssueReviewStatus;
   requestId: string;
+  shiftId: string;
 };
 
 export type ConfirmManualAssignmentOverrideInput = {
@@ -178,19 +101,6 @@ export type ResetActiveShiftForEditingResult =
       status: "stale";
     };
 
-type ChargeProfileIdentifier = Pick<UserProfile, "id" | "role">;
-
-const templateColumns =
-  "id, owner_profile_id, name, template_snapshot, created_at, updated_at";
-const activeShiftColumns =
-  "id, charge_profile_id, floor_template_id, status, shift_snapshot, created_at, updated_at, ended_at";
-const activeAssignmentOverrideColumns =
-  "id, shift_id, baseline_assignment_result_id, bed_id, from_nurse_id, to_nurse_id, created_by_profile_id, created_at, status, superseded_at, server_sequence, related_swap_request_id, warning_acknowledgements, client_mutation_id";
-const previousShiftColumns =
-  "id, charge_profile_id, floor_template_id, completed_at, nurse_suggestions, patient_suggestions";
-const uuidPattern =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 function assertChargeNurse(profile: Pick<UserProfile, "role">) {
   if (profile.role !== "charge_nurse") {
     throw new Error("Sign in with a NurseFlow account to manage charge nurse templates.");
@@ -207,146 +117,15 @@ function assertOwnedRecord(
   }
 }
 
-function requireFloorTemplateSnapshot(value: unknown, row: FloorTemplateRow) {
-  const snapshot = value as Partial<FloorTemplate> | undefined;
-
-  if (
-    !snapshot ||
-    !Array.isArray(snapshot.doctorSides) ||
-    !Array.isArray(snapshot.rooms) ||
-    !Array.isArray(snapshot.beds)
-  ) {
-    throw new Error("A saved floor template has an invalid server shape.");
-  }
-
-  return {
-    beds: snapshot.beds.map((bed) => ({ ...bed })),
-    doctorSides: snapshot.doctorSides.map((doctorSide) => ({ ...doctorSide })),
-    id: row.id,
-    name: row.name,
-    rooms: snapshot.rooms.map((room) => ({ ...room })),
-  };
-}
-
-function requireShiftSnapshot(value: unknown) {
-  const shift = value as Shift | undefined;
-
-  if (
-    !shift ||
-    !Array.isArray(shift.doctorSides) ||
-    !Array.isArray(shift.rooms) ||
-    !Array.isArray(shift.beds) ||
-    !Array.isArray(shift.nurses) ||
-    !Array.isArray(shift.bedStates) ||
-    !Array.isArray(shift.flags)
-  ) {
-    throw new Error("The active shift has an invalid server shape.");
-  }
-
-  return {
-    admittingDoctorSideId: shift.admittingDoctorSideId,
-    assignmentResult: shift.assignmentResult,
-    bedStates: shift.bedStates,
-    beds: shift.beds,
-    carryOverReviewedAt: shift.carryOverReviewedAt,
-    doctorSides: shift.doctorSides,
-    flags: shift.flags,
-    floorName: shift.floorName,
-    floorTemplateId: shift.floorTemplateId,
-    id: shift.id,
-    nurseRequests: shift.nurseRequests,
-    nurses: shift.nurses,
-    rooms: shift.rooms,
-    sideLoadLimits: shift.sideLoadLimits,
-    startedAt: shift.startedAt,
-    status: shift.status,
-  };
-}
-
-function getActiveShiftPayload(activeShift: Shift) {
-  return {
-    shift_snapshot: activeShift,
-    status: activeShift.status,
-    updated_at: new Date().toISOString(),
-  };
-}
-
-function mapTemplateRow(row: FloorTemplateRow): FloorTemplateRecord {
-  return {
-    createdAt: row.created_at,
-    id: row.id,
-    name: row.name,
-    ownerProfileId: row.owner_profile_id,
-    templateSnapshot: requireFloorTemplateSnapshot(row.template_snapshot, row),
-    updatedAt: row.updated_at,
-  };
-}
-
-function mapActiveShiftRow(row: ActiveShiftRow): ActiveShiftRecord {
-  if (row.status !== "setup" && row.status !== "assigned") {
-    throw new Error("The active shift has an unsupported status.");
-  }
-
-  return {
-    chargeProfileId: row.charge_profile_id,
-    createdAt: row.created_at,
-    endedAt: row.ended_at ?? undefined,
-    floorTemplateId: row.floor_template_id,
-    id: row.id,
-    shiftSnapshot: requireShiftSnapshot(row.shift_snapshot),
-    status: row.status,
-    updatedAt: row.updated_at,
-  };
-}
-
-function mapManualAssignmentOverrideRow(
-  row: ManualAssignmentOverrideRow,
-): ManualAssignmentOverride {
-  return {
-    baselineAssignmentResultId: row.baseline_assignment_result_id,
-    bedId: row.bed_id,
-    createdAt: row.created_at,
-    createdByProfileId: row.created_by_profile_id,
-    fromNurseId: row.from_nurse_id,
-    id: row.id,
-    relatedSwapRequestId: row.related_swap_request_id ?? undefined,
-    serverSequence: row.server_sequence,
-    shiftId: row.shift_id,
-    status: row.status,
-    supersededAt: row.superseded_at ?? undefined,
-    toNurseId: row.to_nurse_id,
-    warningAcknowledgements: Array.isArray(row.warning_acknowledgements)
-      ? row.warning_acknowledgements
-      : [],
-  } as ManualAssignmentOverride;
-}
-
 function requireManualAssignmentOverride(
   value: unknown,
 ): ManualAssignmentOverride {
-  const override = value as Partial<ManualAssignmentOverride> | undefined;
-
-  if (
-    !override?.id ||
-    !override.shiftId ||
-    !override.baselineAssignmentResultId ||
-    !override.bedId ||
-    !override.fromNurseId ||
-    !override.toNurseId ||
-    !override.createdByProfileId ||
-    !override.createdAt ||
-    (override.status !== "active" && override.status !== "superseded") ||
-    typeof override.serverSequence !== "number"
-  ) {
+  const result = manualAssignmentOverrideSchema.safeParse(value);
+  if (!result.success) {
     throw new Error("A manual assignment override has an invalid server shape.");
   }
 
-  return {
-    ...override,
-    warningAcknowledgements: Array.isArray(override.warningAcknowledgements)
-      ? override.warningAcknowledgements
-      : [],
-  } as ManualAssignmentOverride;
+  return result.data;
 }
 
 function requireActiveAssignmentOverrideProjection(
@@ -364,64 +143,16 @@ function requireActiveAssignmentOverrideProjection(
   );
 }
 
-async function loadActiveAssignmentOverrides(
-  supabase: SupabaseClient,
-  shiftId: string,
-) {
-  const { data, error } = await supabase
-    .from("manual_assignment_overrides")
-    .select(activeAssignmentOverrideColumns)
-    .eq("shift_id", shiftId)
-    .eq("status", "active")
-    .overrideTypes<ManualAssignmentOverrideRow[]>();
-
-  if (error) {
-    if (error.code === "42P01" || error.code === "PGRST205") {
-      return {};
-    }
-
-    throw new Error(error.message);
-  }
-
-  return Object.fromEntries(
-    data.map((row) => {
-      const override = mapManualAssignmentOverrideRow(row);
-
-      return [override.bedId, override];
-    }),
-  );
-}
-
-function mapPreviousShiftRow(
-  row: PreviousShiftSnapshotRow,
-): ServerPreviousShiftSnapshot {
-  const nurseSuggestions = Array.isArray(row.nurse_suggestions)
-    ? row.nurse_suggestions
-    : [];
-  const patientSuggestions = Array.isArray(row.patient_suggestions)
-    ? row.patient_suggestions
-    : [];
-
-  return {
-    chargeProfileId: row.charge_profile_id,
-    completedAt: row.completed_at,
-    floorTemplateId: row.floor_template_id,
-    id: row.id,
-    nurseSuggestions,
-    patientSuggestions,
-  } as ServerPreviousShiftSnapshot;
-}
-
 function requireShiftNurseAccess(
   value: unknown,
   profile: UserProfile,
   shiftId: string,
 ): ShiftNurseAccess {
-  const access = value as ShiftNurseAccessSnapshot | undefined;
-
-  if (!access) {
+  const result = shiftNurseAccessSchema.safeParse(value);
+  if (!result.success) {
     throw new Error("Shift access has an invalid server shape.");
   }
+  const access = result.data;
 
   const status = access.status ?? "";
   const nurseProfileId =
@@ -462,18 +193,12 @@ function requireNurseAssignedBeds(value: unknown): JoinedNurseAssignedBed[] {
   }
 
   return value.map((assignedBed) => {
-    const bedView = assignedBed as Partial<JoinedNurseAssignedBed>;
-
-    if (!bedView.bed || !bedView.doctorSide || !bedView.room) {
+    const result = joinedNurseAssignedBedSchema.safeParse(assignedBed);
+    if (!result.success) {
       throw new Error("The nurse assignment view has a missing bed, room, or side.");
     }
 
-    return {
-      bed: { ...bedView.bed },
-      bedState: bedView.bedState ? { ...bedView.bedState } : undefined,
-      doctorSide: { ...bedView.doctorSide },
-      room: { ...bedView.room },
-    };
+    return result.data;
   });
 }
 
@@ -490,116 +215,73 @@ function mapJoinedNurseAssignmentView(
   if (!shiftId || !floorName || !nurseName) {
     throw new Error("The nurse assignment view has an invalid server shape.");
   }
+  const history = requestHistorySchema.safeParse(requestHistory);
+  if (!history.success) {
+    throw new Error("The nurse assignment view has an invalid server shape.");
+  }
 
   return {
     access: requireShiftNurseAccess(result.access, profile, shiftId),
     assignedBeds: requireNurseAssignedBeds(assignedBeds),
     floorName,
     nurseName,
-    requestHistory: Array.isArray(requestHistory) ? requestHistory : [],
+    requestHistory: history.data,
     shiftId,
   };
 }
 
-function getReusableTemplateSnapshot(
-  floorTemplate: FloorTemplate,
-): FloorTemplate {
-  return {
-    beds: floorTemplate.beds.map((bed) => ({ ...bed })),
-    doctorSides: floorTemplate.doctorSides.map((doctorSide) => ({
-      ...doctorSide,
-    })),
-    id: floorTemplate.id,
-    name: floorTemplate.name.trim(),
-    rooms: floorTemplate.rooms.map((room) => ({ ...room })),
-  };
-}
+// Turns a failed Go request into an error the screen can show. The server's
+// own user-facing message is used when it sent one.
+function requestWriteError(
+  error: unknown,
+  serviceName: string,
+  fallbackMessage: string,
+): never {
+  const failure = readGoApiFailure(error);
 
-async function loadFloorTemplates(
-  supabase: SupabaseClient,
-  profileId: string,
-) {
-  const { data, error } = await supabase
-    .from("floor_templates")
-    .select(templateColumns)
-    .eq("owner_profile_id", profileId)
-    .order("updated_at", { ascending: false })
-    .overrideTypes<FloorTemplateRow[]>();
-
-  if (error) {
-    throw new Error(error.message);
+  if (!failure) {
+    return throwGoNetworkError(error, serviceName);
   }
 
-  return data.map(mapTemplateRow);
-}
-
-export async function loadServerActiveShift(
-  supabase: SupabaseClient,
-  profile: ChargeProfileIdentifier,
-) {
-  assertChargeNurse(profile);
-
-  const { data, error } = await supabase
-    .from("active_shifts")
-    .select(activeShiftColumns)
-    .eq("charge_profile_id", profile.id)
-    .is("ended_at", null)
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle<ActiveShiftRow>();
-
-  if (error) {
-    throw new Error(error.message);
+  if (failure.status === 401) {
+    throw new Error("Your session expired. Sign in again.");
   }
 
-  if (!data) {
-    return undefined;
-  }
-
-  const activeShift = mapActiveShiftRow(data);
-
-  assertOwnedRecord(
-    activeShift.chargeProfileId,
-    profile.id,
-    "A server shift was returned for the wrong account.",
-  );
-
-  return {
-    ...activeShift,
-    activeAssignmentOverridesByBedId: await loadActiveAssignmentOverrides(
-      supabase,
-      activeShift.id,
-    ),
-  };
+  throw new Error(failure.message || fallbackMessage);
 }
 
 export async function confirmManualAssignmentOverride(
   supabase: SupabaseClient,
   input: ConfirmManualAssignmentOverrideInput,
 ): Promise<ConfirmManualAssignmentOverrideResult> {
-  const { data, error } = await supabase.rpc(
-    "confirm_manual_assignment_override",
-    {
-      p_baseline_assignment_result_id: input.baselineAssignmentResultId,
-      p_bed_id: input.bedId,
-      p_client_mutation_id: input.clientMutationId,
-      p_from_nurse_id: input.fromNurseId,
-      p_related_swap_request_id: input.relatedSwapRequestId ?? null,
-      p_shift_id: input.shiftId,
-      p_to_nurse_id: input.toNurseId,
-      p_warning_acknowledgements: input.warningAcknowledgements,
-    },
-  );
+  const headers = await getGoAuthHeaders(supabase);
+  const response = await goApiClient
+    .post<unknown>(
+      `/shifts/${encodeURIComponent(input.shiftId)}/assignment-moves`,
+      {
+        baseline_assignment_result_id: input.baselineAssignmentResultId,
+        bed_id: input.bedId,
+        client_mutation_id: input.clientMutationId,
+        from_nurse_id: input.fromNurseId,
+        related_swap_request_id: input.relatedSwapRequestId ?? null,
+        to_nurse_id: input.toNurseId,
+        warning_acknowledgements: input.warningAcknowledgements,
+      },
+      { headers },
+    )
+    .catch((error) =>
+      requestWriteError(
+        error,
+        "assignment service",
+        "The assignment move could not be saved. Try again.",
+      ),
+    );
 
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  const result = data as ManualAssignmentOverrideRpcResult | null;
-
-  if (result?.status !== "saved" && result?.status !== "stale") {
+  const parsed = manualAssignmentOverrideResultSchema.safeParse(response.data);
+  if (response.status !== 200 || !parsed.success) {
     throw new Error("The manual assignment override returned an invalid result.");
   }
+  const result = parsed.data;
 
   return {
     activeAssignmentOverridesByBedId:
@@ -617,24 +299,6 @@ export async function confirmManualAssignmentOverride(
   };
 }
 
-async function loadPreviousShiftSnapshots(
-  supabase: SupabaseClient,
-  profileId: string,
-) {
-  const { data, error } = await supabase
-    .from("previous_shift_snapshots")
-    .select(previousShiftColumns)
-    .eq("charge_profile_id", profileId)
-    .order("completed_at", { ascending: false })
-    .overrideTypes<PreviousShiftSnapshotRow[]>();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data.map(mapPreviousShiftRow);
-}
-
 export async function loadServerWorkspace(
   supabase: SupabaseClient,
   profile: UserProfile,
@@ -645,16 +309,8 @@ export async function loadServerWorkspace(
     await Promise.all([
       loadFloorTemplates(supabase, profile.id),
       loadServerActiveShift(supabase, profile),
-      loadPreviousShiftSnapshots(supabase, profile.id),
+      loadPreviousShiftSnapshots(supabase, profile),
     ]);
-
-  floorTemplates.forEach((template) => {
-    assertOwnedRecord(
-      template.ownerProfileId,
-      profile.id,
-      "A server template was returned for the wrong account.",
-    );
-  });
 
   previousShiftSnapshots.forEach((snapshot) => {
     assertOwnedRecord(
@@ -672,26 +328,43 @@ export async function loadServerWorkspace(
   };
 }
 
+const joinedWorkspaceResponseSchema = z.object({
+  assignment: z.record(z.string(), z.unknown()).nullable(),
+});
+
+function joinedWorkspaceRequestError(error: unknown): never {
+  return requestWriteError(
+    error,
+    "workspace service",
+    "Your shared workspace is temporarily unavailable. Try again.",
+  );
+}
+
 export async function loadJoinedNurseAssignmentView(
   supabase: SupabaseClient,
   profile: UserProfile,
 ) {
-  const { data, error } = await supabase.rpc(
-    "get_joined_nurse_assignment_view",
-  );
+  const headers = await getGoAuthHeaders(supabase);
+  const response = await goApiClient
+    .get<unknown>("/joined-workspace", { headers })
+    .catch(joinedWorkspaceRequestError);
+  const envelope = joinedWorkspaceResponseSchema.safeParse(response.data);
 
-  if (error) {
-    throw new Error(error.message);
+  if (response.status !== 200 || !envelope.success) {
+    throw new Error("The nurse assignment view has an invalid server shape.");
   }
 
-  if (!data) {
+  if (!envelope.data.assignment) {
     return undefined;
   }
 
-  return mapJoinedNurseAssignmentView(
-    data as JoinedNurseAssignmentRpcResult,
-    profile,
+  const result = joinedNurseAssignmentResultSchema.safeParse(
+    envelope.data.assignment,
   );
+  if (!result.success) {
+    throw new Error("The nurse assignment view has an invalid server shape.");
+  }
+  return mapJoinedNurseAssignmentView(result.data, profile);
 }
 
 export async function loadJoinedNurseNotificationTargetState(
@@ -730,6 +403,30 @@ export async function loadJoinedNurseNotificationTargetState(
   return { status: "shift_ended" };
 }
 
+const requestEnvelopeSchema = z.object({ request: nurseRequestSchema });
+
+async function postNurseRequest(
+  supabase: SupabaseClient,
+  path: string,
+  body: Record<string, string>,
+  expectedStatus: number,
+  fallbackMessage: string,
+) {
+  const headers = await getGoAuthHeaders(supabase);
+  const response = await goApiClient
+    .post<unknown>(path, body, { headers })
+    .catch((error) =>
+      requestWriteError(error, "request service", fallbackMessage),
+    );
+
+  if (
+    response.status !== expectedStatus ||
+    !requestEnvelopeSchema.safeParse(response.data).success
+  ) {
+    throw new Error("The request service returned an invalid server shape.");
+  }
+}
+
 export async function submitJoinedNurseIssueRequest(
   supabase: SupabaseClient,
   request: SubmitJoinedNurseIssueRequestInput,
@@ -740,13 +437,13 @@ export async function submitJoinedNurseIssueRequest(
     throw new Error("Add issue details before submitting.");
   }
 
-  const { error } = await supabase.rpc("submit_joined_nurse_issue_request", {
-    request_message: message,
-  });
-
-  if (error) {
-    throw new Error(error.message);
-  }
+  await postNurseRequest(
+    supabase,
+    "/joined-workspace/issue-requests",
+    { message },
+    201,
+    "Your issue could not be submitted. Try again.",
+  );
 }
 
 export async function submitJoinedNurseSwapRequest(
@@ -763,42 +460,43 @@ export async function submitJoinedNurseSwapRequest(
     throw new Error("Add swap details before submitting.");
   }
 
-  const { error } = await supabase.rpc("submit_joined_nurse_swap_request", {
-    request_message: message,
-    source_bed_id: request.sourceBedId,
-  });
+  await postNurseRequest(
+    supabase,
+    "/joined-workspace/swap-requests",
+    { message, source_bed_id: request.sourceBedId },
+    201,
+    "Your swap request could not be submitted. Try again.",
+  );
+}
 
-  if (error) {
-    throw new Error(error.message);
-  }
+function getShiftRequestPath(shiftId: string, requestId: string, action: string) {
+  return `/shifts/${encodeURIComponent(shiftId)}/requests/${encodeURIComponent(requestId)}/${action}`;
 }
 
 export async function resolveShiftNurseSwapRequest(
   supabase: SupabaseClient,
   request: ResolveShiftNurseSwapRequestInput,
 ) {
-  const { error } = await supabase.rpc("resolve_shift_nurse_swap_request", {
-    next_status: request.nextStatus,
-    request_id: request.requestId,
-  });
-
-  if (error) {
-    throw new Error(error.message);
-  }
+  await postNurseRequest(
+    supabase,
+    getShiftRequestPath(request.shiftId, request.requestId, "swap-resolution"),
+    { status: request.nextStatus },
+    200,
+    "The swap request could not be resolved. Try again.",
+  );
 }
 
 export async function updateShiftNurseIssueStatus(
   supabase: SupabaseClient,
   request: UpdateShiftNurseIssueStatusInput,
 ) {
-  const { error } = await supabase.rpc("update_shift_nurse_issue_status", {
-    p_next_status: request.nextStatus,
-    p_request_id: request.requestId,
-  });
-
-  if (error) {
-    throw new Error(error.message);
-  }
+  await postNurseRequest(
+    supabase,
+    getShiftRequestPath(request.shiftId, request.requestId, "issue-status"),
+    { status: request.nextStatus },
+    200,
+    "The issue status could not be updated. Try again.",
+  );
 }
 
 export async function saveServerFloorTemplate(
@@ -808,61 +506,7 @@ export async function saveServerFloorTemplate(
 ) {
   assertChargeNurse(profile);
 
-  const templateSnapshot = getReusableTemplateSnapshot(floorTemplate);
-  const basePayload = {
-    name: templateSnapshot.name,
-    template_snapshot: templateSnapshot,
-    updated_at: new Date().toISOString(),
-  };
-  const isExistingServerTemplate = uuidPattern.test(floorTemplate.id);
-
-  if (isExistingServerTemplate) {
-    const { data, error } = await supabase
-      .from("floor_templates")
-      .update(basePayload)
-      .eq("id", floorTemplate.id)
-      .eq("owner_profile_id", profile.id)
-      .select(templateColumns)
-      .single<FloorTemplateRow>();
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    return mapTemplateRow(data);
-  }
-
-  const { data, error } = await supabase
-    .from("floor_templates")
-    .insert({
-      ...basePayload,
-      owner_profile_id: profile.id,
-    })
-    .select(templateColumns)
-    .single<FloorTemplateRow>();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  const savedSnapshot = {
-    ...templateSnapshot,
-    id: data.id,
-  };
-
-  const { data: refreshedData, error: refreshError } = await supabase
-    .from("floor_templates")
-    .update({ template_snapshot: savedSnapshot })
-    .eq("id", data.id)
-    .eq("owner_profile_id", profile.id)
-    .select(templateColumns)
-    .single<FloorTemplateRow>();
-
-  if (refreshError) {
-    throw new Error(refreshError.message);
-  }
-
-  return mapTemplateRow(refreshedData);
+  return saveFloorTemplate(supabase, profile.id, floorTemplate);
 }
 
 export async function deleteServerFloorTemplate(
@@ -872,230 +516,5 @@ export async function deleteServerFloorTemplate(
 ) {
   assertChargeNurse(profile);
 
-  if (!uuidPattern.test(floorTemplateId)) {
-    throw new Error("Only saved account templates can be deleted.");
-  }
-
-  const { error } = await supabase
-    .from("floor_templates")
-    .delete()
-    .eq("id", floorTemplateId)
-    .eq("owner_profile_id", profile.id);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-}
-
-export async function createServerActiveShift(
-  supabase: SupabaseClient,
-  profile: UserProfile,
-  activeShift: Shift,
-) {
-  assertChargeNurse(profile);
-
-  if (!uuidPattern.test(activeShift.floorTemplateId)) {
-    throw new Error("Save the floor template to this account before starting a shift.");
-  }
-
-  const { data, error } = await supabase
-    .from("active_shifts")
-    .insert({
-      charge_profile_id: profile.id,
-      floor_template_id: activeShift.floorTemplateId,
-      ...getActiveShiftPayload(activeShift),
-    })
-    .select(activeShiftColumns)
-    .single<ActiveShiftRow>();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  const serverShiftSnapshot = {
-    ...activeShift,
-    id: data.id,
-  };
-
-  const { data: refreshedData, error: refreshError } = await supabase
-    .from("active_shifts")
-    .update(getActiveShiftPayload(serverShiftSnapshot))
-    .eq("id", data.id)
-    .eq("charge_profile_id", profile.id)
-    .select(activeShiftColumns)
-    .single<ActiveShiftRow>();
-
-  if (refreshError) {
-    throw new Error(refreshError.message);
-  }
-
-  return mapActiveShiftRow(refreshedData);
-}
-
-export async function saveServerActiveShift(
-  supabase: SupabaseClient,
-  profile: UserProfile,
-  activeShift: Shift,
-) {
-  assertChargeNurse(profile);
-
-  if (!uuidPattern.test(activeShift.id)) {
-    throw new Error("Start this shift from a saved account template before saving changes.");
-  }
-
-  const { data, error } = await supabase
-    .from("active_shifts")
-    .update(getActiveShiftPayload(activeShift))
-    .eq("id", activeShift.id)
-    .eq("charge_profile_id", profile.id)
-    .is("ended_at", null)
-    .select(activeShiftColumns)
-    .single<ActiveShiftRow>();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return mapActiveShiftRow(data);
-}
-
-export async function resetServerActiveShiftForEditing(
-  supabase: SupabaseClient,
-  profile: UserProfile,
-  shiftId: string,
-  expectedBaselineAssignmentResultId: string,
-): Promise<ResetActiveShiftForEditingResult> {
-  assertChargeNurse(profile);
-
-  if (!uuidPattern.test(shiftId)) {
-    throw new Error("Only a server-backed active shift can be edited.");
-  }
-
-  const { data, error } = await supabase.rpc(
-    "reset_active_shift_for_editing",
-    {
-      p_expected_baseline_assignment_result_id:
-        expectedBaselineAssignmentResultId,
-      p_shift_id: shiftId,
-    },
-  );
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  const result = data as ResetActiveShiftForEditingRpcResult | undefined;
-
-  if (result?.status === "stale") {
-    return {
-      message:
-        result.message ??
-        "The assignment changed. Review the current board before editing.",
-      status: "stale",
-    };
-  }
-
-  if (result?.status !== "saved") {
-    throw new Error("The server returned an invalid shift-edit reset result.");
-  }
-
-  return {
-    activeAssignmentOverridesByBedId:
-      requireActiveAssignmentOverrideProjection(
-        result.activeAssignmentOverridesByBedId ??
-          result.active_assignment_overrides_by_bed_id,
-      ),
-    shiftSnapshot: requireShiftSnapshot(
-      result.shiftSnapshot ?? result.shift_snapshot,
-    ),
-    status: "saved",
-  };
-}
-
-export async function endServerActiveShift(
-  supabase: SupabaseClient,
-  profile: UserProfile,
-  activeShift: Shift,
-) {
-  assertChargeNurse(profile);
-
-  if (!uuidPattern.test(activeShift.id)) {
-    throw new Error("Only server active shifts can be ended from this account.");
-  }
-
-  const currentActiveShift = await loadServerActiveShift(supabase, profile);
-
-  if (!currentActiveShift || currentActiveShift.id !== activeShift.id) {
-    throw new Error("This active shift is no longer open.");
-  }
-
-  await expireActiveShiftNurseInvites(supabase, profile, currentActiveShift);
-
-  const now = new Date().toISOString();
-  const { data, error } = await supabase
-    .from("active_shifts")
-    .update({
-      ended_at: now,
-      shift_snapshot: activeShift,
-      updated_at: now,
-    })
-    .eq("id", activeShift.id)
-    .eq("charge_profile_id", profile.id)
-    .is("ended_at", null)
-    .select(activeShiftColumns)
-    .single<ActiveShiftRow>();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return mapActiveShiftRow(data);
-}
-
-export async function saveServerPreviousShiftSnapshot(
-  supabase: SupabaseClient,
-  profile: UserProfile,
-  snapshot: PreviousShiftSnapshot,
-) {
-  assertChargeNurse(profile);
-
-  if (!uuidPattern.test(snapshot.floorTemplateId)) {
-    throw new Error("Save the floor template to this account before saving carry-over.");
-  }
-
-  const { error: deleteError } = await supabase
-    .from("previous_shift_snapshots")
-    .delete()
-    .eq("charge_profile_id", profile.id)
-    .eq("floor_template_id", snapshot.floorTemplateId);
-
-  if (deleteError) {
-    throw new Error(deleteError.message);
-  }
-
-  const hasUsefulSuggestions =
-    snapshot.nurseSuggestions.length > 0 ||
-    snapshot.patientSuggestions.length > 0;
-
-  if (!hasUsefulSuggestions) {
-    return undefined;
-  }
-
-  const { data, error } = await supabase
-    .from("previous_shift_snapshots")
-    .insert({
-      charge_profile_id: profile.id,
-      completed_at: snapshot.completedAt,
-      floor_template_id: snapshot.floorTemplateId,
-      nurse_suggestions: snapshot.nurseSuggestions,
-      patient_suggestions: snapshot.patientSuggestions,
-    })
-    .select(previousShiftColumns)
-    .single<PreviousShiftSnapshotRow>();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return mapPreviousShiftRow(data);
+  return deleteFloorTemplate(supabase, floorTemplateId);
 }

@@ -22,7 +22,9 @@ The app supports:
 ### Current architecture
 
 The Expo app uses Supabase Auth for login and accesses application data through
-Supabase's Data API. Postgres holds the data, RLS policies, PL/pgSQL workflow
+Supabase's Data API. On the Go migration branch, floor-template list reads use
+the local Go API; other reads and writes keep their existing paths. Postgres
+holds the data, RLS policies, PL/pgSQL workflow
 functions, and triggers. A separate Python optimizer runs on Google Cloud Run.
 
 ```mermaid
@@ -30,6 +32,7 @@ flowchart TD
     App["Expo app · React Native / TypeScript"]
     Auth["Supabase Auth"]
     API["Supabase Data API"]
+    GoRead["Local Go API · Template list"]
     DB["Supabase Postgres · Tables / JSONB snapshots<br/>RLS / RPC functions / triggers"]
     subgraph CloudRun["Google Cloud Run"]
         Optimizer["Python optimizer · FastAPI / OR-Tools"]
@@ -38,6 +41,8 @@ flowchart TD
 
     App <-->|"Sign-in and token refresh"| Auth
     App <-->|"Table queries and RPC calls"| API
+    App <-->|"Template list with access token"| GoRead
+    GoRead <-->|"GORM · Authorized owner read"| DB
     API <--> DB
     App <-->|"Authenticated assignment requests"| Optimizer
     Optimizer <-->|"Prepare and finalize RPCs"| API
@@ -49,8 +54,7 @@ flowchart TD
 
 The planned Go API uses `net/http` for HTTP handling, service functions for
 authorization and business logic, and GORM for Postgres access. Supabase Auth,
-Realtime, and the Python optimizer remain separate services. The Go API is not
-implemented yet.
+Realtime, and the Python optimizer remain separate services. The local template-list endpoint is implemented; the broader workflow migration remains planned.
 
 ```mermaid
 flowchart TD
@@ -101,11 +105,16 @@ Copy `.env.example` to `.env` and set:
 ```dotenv
 EXPO_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
 EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
-EXPO_PUBLIC_OPTIMIZER_SERVICE_URL=https://your-optimizer-service.example
+EXPO_PUBLIC_GO_API_URL=http://127.0.0.1:8080
 ```
 
 Use the Supabase publishable key in the app. Database credentials and secret keys
-belong only on the backend. Restart Expo after changing these values.
+belong only on the backend. The app reaches the assignment optimizer through
+the Go API (`EXPO_PUBLIC_GO_API_URL`), so it needs no optimizer URL of its own.
+Restart Expo after changing these values.
+
+For the migration branch, start the local Go API using the [backend instructions](backend/README.md).
+See [Expo-to-Go setup](docs/go-migration/expo-template-read.md) for web origins and physical-device addresses.
 
 For backend setup, see the [Supabase setup guide](docs/phase-5/supabase-auth-setup.md)
 and [optimizer service instructions](optimizer-service/README.md).

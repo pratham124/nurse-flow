@@ -8,6 +8,7 @@ type ChargeActiveShiftSubscriptionOptions = {
     connectionState: RealtimeConnectionState,
     error?: Error,
   ) => void;
+  onReconnected?: () => void;
   onShiftChanged: () => void;
   supabase: SupabaseClient;
 };
@@ -19,6 +20,7 @@ type JoinedNurseAssignmentSubscriptionOptions = {
     error?: Error,
   ) => void;
   onNurseAccessChanged: () => void;
+  onReconnected?: () => void;
   onShiftChanged: () => void;
   shiftId: string;
   supabase: SupabaseClient;
@@ -30,6 +32,7 @@ type RequestThreadSubscriptionOptions = {
     error?: Error,
   ) => void;
   onMessageChanged: () => void;
+  onReconnected?: () => void;
   requestId: string;
   shiftId: string;
   supabase: SupabaseClient;
@@ -51,6 +54,10 @@ type PrivateBroadcastSubscriptionOptions = {
     connectionState: RealtimeConnectionState,
     error?: Error,
   ) => void;
+  // Called once each time the subscription is live again after it was live
+  // and then dropped. Broadcasts sent while it was down are never delivered,
+  // so the caller should refetch.
+  onReconnected?: () => void;
   supabase: SupabaseClient;
 };
 
@@ -83,12 +90,15 @@ function removeStaleChannels(supabase: SupabaseClient, topicPrefix: string) {
     });
 }
 
-function subscribeToPrivateBroadcastChannels({
+export function subscribeToPrivateBroadcastChannels({
   channels: channelDefinitions,
   onConnectionStateChange,
+  onReconnected,
   supabase,
 }: PrivateBroadcastSubscriptionOptions) {
   let isActive = true;
+  let hasBeenLive = false;
+  let hasLeftLiveSinceBeingLive = false;
   const activeChannels: RealtimeChannel[] = [];
   const connectionStateByTopic = new Map<string, RealtimeConnectionState>(
     channelDefinitions.map((channelDefinition) => [
@@ -110,6 +120,18 @@ function subscribeToPrivateBroadcastChannels({
     }
 
     onConnectionStateChange(combinedConnectionState, error);
+
+    if (combinedConnectionState !== "live") {
+      hasLeftLiveSinceBeingLive = hasBeenLive;
+      return;
+    }
+
+    hasBeenLive = true;
+
+    if (hasLeftLiveSinceBeingLive) {
+      hasLeftLiveSinceBeingLive = false;
+      onReconnected?.();
+    }
   }
 
   void supabase.realtime
@@ -176,6 +198,7 @@ function subscribeToPrivateBroadcastChannels({
 export function subscribeToChargeActiveShift({
   activeShiftId,
   onConnectionStateChange,
+  onReconnected,
   onShiftChanged,
   supabase,
 }: ChargeActiveShiftSubscriptionOptions) {
@@ -189,6 +212,7 @@ export function subscribeToChargeActiveShift({
       },
     ],
     onConnectionStateChange,
+    onReconnected,
     supabase,
   });
 }
@@ -197,6 +221,7 @@ export function subscribeToJoinedNurseAssignmentView({
   accessId,
   onConnectionStateChange,
   onNurseAccessChanged,
+  onReconnected,
   onShiftChanged,
   shiftId,
   supabase,
@@ -218,6 +243,7 @@ export function subscribeToJoinedNurseAssignmentView({
       },
     ],
     onConnectionStateChange,
+    onReconnected,
     supabase,
   });
 }
@@ -225,6 +251,7 @@ export function subscribeToJoinedNurseAssignmentView({
 export function subscribeToRequestThread({
   onConnectionStateChange,
   onMessageChanged,
+  onReconnected,
   requestId,
   shiftId,
   supabase,
@@ -242,6 +269,7 @@ export function subscribeToRequestThread({
       },
     ],
     onConnectionStateChange,
+    onReconnected,
     supabase,
   });
 }

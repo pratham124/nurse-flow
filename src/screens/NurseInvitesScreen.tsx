@@ -18,9 +18,7 @@ import {
 } from "../components/workflow";
 import {
   generateShiftNurseInviteCode,
-  getShiftNurseInviteCodeHash,
-  loadShiftNurseAccessForActiveShift,
-  loadShiftNurseInvitesForActiveShift,
+  loadShiftNurseInvitesAndAccess,
   regenerateShiftNurseInviteCode,
   type GeneratedShiftNurseInviteCode,
 } from "../services/shiftInviteRepository";
@@ -486,13 +484,14 @@ export default function NurseInvitesScreen() {
     setLoadStatus("loading");
 
     try {
-      const [loadedInvites, loadedAccess] = await Promise.all([
-        loadShiftNurseInvitesForActiveShift(supabase, profile, activeShift),
-        loadShiftNurseAccessForActiveShift(supabase, profile, activeShift),
-      ]);
+      const loaded = await loadShiftNurseInvitesAndAccess(
+        supabase,
+        profile,
+        activeShift,
+      );
 
-      setInviteRecords(loadedInvites);
-      setAccessRecords(loadedAccess);
+      setInviteRecords(loaded.invites);
+      setAccessRecords(loaded.access);
       setLoadStatus("ready");
     } catch (error) {
       setLoadErrorMessage(
@@ -574,7 +573,6 @@ export default function NurseInvitesScreen() {
     void runInviteAction(nurseId, () =>
       generateShiftNurseInviteCode(supabase, profile, {
         activeShift,
-        getTokenHash: getShiftNurseInviteCodeHash,
         nurseId,
       }),
     );
@@ -622,7 +620,6 @@ export default function NurseInvitesScreen() {
     void runInviteAction(nurseId, () =>
       regenerateShiftNurseInviteCode(supabase, profile, {
         activeShift,
-        getTokenHash: getShiftNurseInviteCodeHash,
         nurseId,
       }),
     );

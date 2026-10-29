@@ -4,30 +4,43 @@ package auth
 import (
 	"context"
 	"errors"
-	"regexp"
 	"strings"
 	"time"
 
 	"github.com/MicahParks/jwkset"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/pratham124/nurse-flow/backend/internal/identifiers"
 )
 
-const DevelopmentIssuer = "https://nmitctyxtjmlakcsmnuj.supabase.co/auth/v1"
+// Issuer is the trusted token issuer for one Supabase project.
+func Issuer(projectRef string) string {
+	return "https://" + projectRef + ".supabase.co/auth/v1"
+}
 
 var (
+	// ErrUnauthenticated indicates a missing or invalid access token.
 	ErrUnauthenticated = errors.New("access token is missing or invalid")
-	ErrUnavailable     = errors.New("token verification is temporarily unavailable")
-	userIDPattern      = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+	// ErrUnavailable indicates that trusted signing keys are temporarily unavailable.
+	ErrUnavailable = errors.New("token verification is temporarily unavailable")
 )
 
-// Identity contains only the verified Auth subject, not a NurseFlow profile or role.
+// clockSkewLeeway tolerates small clock differences when checking iat, nbf, and exp.
+const clockSkewLeeway = 30 * time.Second
+
+// Identity contains the verified Auth subject and the two read-only claims used
+// to name a new profile. It is not a NurseFlow profile or role.
 type Identity struct {
-	AuthUserID string
+	AuthUserID  string
+	Email       string
+	DisplayName string // user_metadata.display_name; chosen by the user, never used for authorization
 }
 
 type accessClaims struct {
 	jwt.RegisteredClaims
 	Role string `json:"role"`
+	// Read leniently (any JSON type) so an unusual value cannot reject a valid token.
+	Email        any `json:"email,omitempty"`
+	UserMetadata any `json:"user_metadata,omitempty"`
 }
 
 // Verifier uses library-managed public keys and validates our access-token rules.
@@ -37,10 +50,13 @@ type Verifier struct {
 	keys   jwkset.Storage
 }
 
-func NewDevelopment(ctx context.Context) (*Verifier, error) {
-	return newVerifier(ctx, DevelopmentIssuer+"/.well-known/jwks.json", 5*time.Minute, 30*time.Second)
+// New starts a verifier restricted to one Supabase project's issuer.
+func New(ctx context.Context, projectRef string) (*Verifier, error) {
+	issuer := Issuer(projectRef)
+	return newVerifier(ctx, issuer, issuer+"/.well-known/jwks.json", 5*time.Minute, 30*time.Second)
 }
 
+// Verify checks the token signature and required claims before returning its identity.
 func (v *Verifier) Verify(ctx context.Context, rawToken string) (Identity, error) {
 	if rawToken == "" || len(rawToken) > 8192 {
 		return Identity{}, ErrUnauthenticated
@@ -48,7 +64,7 @@ func (v *Verifier) Verify(ctx context.Context, rawToken string) (Identity, error
 	var claims accessClaims
 	token, err := jwt.ParseWithClaims(rawToken, &claims, func(token *jwt.Token) (any, error) {
 		keyID, ok := token.Header["kid"].(string)
-		if !ok || keyID == "" || len(keyID) > 256 {
+		if !ok || keyID == "" {
 			return nil, ErrUnauthenticated
 		}
 		return v.publicKey(ctx, keyID)
@@ -57,6 +73,9 @@ func (v *Verifier) Verify(ctx context.Context, rawToken string) (Identity, error
 		jwt.WithAudience("authenticated"),
 		jwt.WithExpirationRequired(),
 		jwt.WithIssuedAt(),
+		// Supabase's clock can run a few seconds ahead of this host, which made a
+		// token used right after signup look issued in the future.
+		jwt.WithLeeway(clockSkewLeeway),
 		jwt.WithTimeFunc(v.now),
 	)
 	if err != nil {
@@ -65,8 +84,29 @@ func (v *Verifier) Verify(ctx context.Context, rawToken string) (Identity, error
 		}
 		return Identity{}, ErrUnauthenticated
 	}
-	if !token.Valid || claims.Role != "authenticated" || !userIDPattern.MatchString(claims.Subject) {
+	if !token.Valid || claims.Role != "authenticated" || !identifiers.ValidUUID(claims.Subject) {
 		return Identity{}, ErrUnauthenticated
 	}
-	return Identity{AuthUserID: strings.ToLower(claims.Subject)}, nil
+	return claims.identity(), nil
+}
+
+func (c accessClaims) identity() Identity {
+	identity := Identity{AuthUserID: strings.ToLower(c.Subject)}
+	identity.Email, _ = c.Email.(string)
+	if metadata, ok := c.UserMetadata.(map[string]any); ok {
+		identity.DisplayName, _ = metadata["display_name"].(string)
+	}
+	return identity
+}
+
+// ProfileName chooses the display name for a new profile: the user's chosen name,
+// else their email, else a generic label.
+func (i Identity) ProfileName() string {
+	if name := strings.TrimSpace(i.DisplayName); name != "" {
+		return name
+	}
+	if email := strings.TrimSpace(i.Email); email != "" {
+		return email
+	}
+	return "NurseFlow user"
 }

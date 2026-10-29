@@ -19,6 +19,7 @@ type PlaceholderInputProps = {
   value?: string;
   onChangeText?: (text: string) => void;
   keyboardType?: KeyboardTypeOptions;
+  maxLength?: number;
 };
 
 type PlaceholderButtonProps = {
@@ -50,6 +51,7 @@ export function PlaceholderInput({
   value,
   onChangeText,
   keyboardType,
+  maxLength,
 }: PlaceholderInputProps) {
   const [isFocused, setIsFocused] = useState(false);
   const hasError = Boolean(errorText);
@@ -63,6 +65,7 @@ export function PlaceholderInput({
           onChangeText={onChangeText}
           onFocus={() => setIsFocused(true)}
           keyboardType={keyboardType}
+          maxLength={maxLength}
           placeholder={placeholder}
           placeholderTextColor={colors.neutral.textTertiary}
           style={[

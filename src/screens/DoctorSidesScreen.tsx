@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { router } from "expo-router";
+import { useIsFocused } from "@react-navigation/native";
 import { StyleSheet, Text, View } from "react-native";
 
 import {
@@ -196,6 +197,7 @@ function getRoomIdsMissingDoctorSide(rooms: Room[], doctorSides: DoctorSide[]) {
 }
 
 export default function DoctorSidesScreen() {
+  const isFocused = useIsFocused();
   const { draftFloorTemplate, setDraftFloorTemplate } = useWorkflowDraft();
   const [sideNameErrors, setSideNameErrors] = useState(["", ""]);
   const [missingDoctorSideError, setMissingDoctorSideError] = useState("");
@@ -216,10 +218,10 @@ export default function DoctorSidesScreen() {
   ).length;
 
   useEffect(() => {
-    if (!draftFloorTemplate) {
+    if (isFocused && !draftFloorTemplate) {
       router.replace("/floor-details");
     }
-  }, [draftFloorTemplate]);
+  }, [draftFloorTemplate, isFocused]);
 
   useEffect(() => {
     if (!draftFloorTemplate || doctorSides.length === 2) {

@@ -1,0 +1,81 @@
+name: Deploy API
+
+on:
+  push:
+    branches:
+      - main
+      - codex/go-migration
+    paths:
+      - "backend/**"
+      - "deploy/*/api.env.yaml"
+      - ".github/workflows/deploy-api.yml"
+      - ".github/workflows/cloud-run-api.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Go checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Check out the tested commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up the project's Go version
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Check formatting
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "::error::Run gofmt on: $unformatted"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      # Live database tests skip here; go-development-database.yml runs them.
+      - name: Test
+        run: go test -race ./... -count=1
+
+  development:
+    name: Development
+    needs: test
+    if: github.repository == 'pratham124/nurse-flow'
+    uses: ./.github/workflows/cloud-run-api.yml
+    # Callers must grant id-token; the reusable workflow cannot raise it.
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      environment: gcp-development
+      service: nurseflow-api-dev
+      solver_service: nurseflow-solver-dev
+      env_file: deploy/development/api.env.yaml
+
+  # Production runs only from main, and only after development succeeded.
+  # It then waits for the gcp-production environment's required reviewer.
+  production:
+    name: Production
+    needs: development
+    if: github.repository == 'pratham124/nurse-flow' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/cloud-run-api.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      environment: gcp-production
+      service: nurseflow-api-prod
+      solver_service: nurseflow-solver-prod
+      env_file: deploy/production/api.env.yaml

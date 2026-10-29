@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/pratham124/nurse-flow/backend/internal/database"
+	"github.com/pratham124/nurse-flow/backend/internal/supabaseproject"
 )
 
 func main() {
@@ -16,11 +17,15 @@ func main() {
 }
 
 func run() error {
-	store, err := database.OpenDevelopment(context.Background())
+	projectRef, err := supabaseproject.FromEnvironment()
+	if err != nil {
+		return fmt.Errorf("configure Supabase project: %w", err)
+	}
+	store, err := database.Open(context.Background(), projectRef)
 	if err != nil {
 		return err
 	}
 	defer store.Close()
-	fmt.Println("Connected to development Postgres as nurseflow_go")
+	fmt.Printf("Connected to Supabase project %s Postgres as nurseflow_go\n", projectRef)
 	return nil
 }

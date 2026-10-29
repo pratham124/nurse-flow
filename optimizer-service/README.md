@@ -175,6 +175,42 @@ variable is absent, the service does not add browser CORS access. Keep
 `NURSEFLOW_SUPABASE_SECRET_KEY` only in the optimizer process environment; it
 must never use an `EXPO_PUBLIC_` name.
 
+## Solver-only endpoint for the Go API
+
+`POST /v1/solve` is the server-to-server entry point for the Go backend. Go
+loads the shift snapshot itself and sends it here; this service only solves.
+
+- Header: `Authorization: Bearer <NURSEFLOW_SOLVER_TOKEN>` (compared in
+  constant time). Missing or wrong token: `401 {"status":"unauthorized"}`.
+- Body (at most 1 MiB, exactly these two fields):
+  `{"runId": "<non-blank text>", "shiftSnapshot": { ... }}`. `runId` is only
+  used to correlate private timeout logs.
+- `200`: `{assignmentResult, flags, objectives, inputFingerprint, optimizerVersion}`.
+  `422 {"status":"invalid_input"}` (bad body or snapshot, `413` when too large),
+  `504 {"status":"timed_out"}`, `500 {"status":"failed"}`.
+- It runs the same normalize, solve, and output-validation code as the legacy
+  route, with the default 120-second solve budget. Neither the token nor the
+  snapshot is ever logged, and there is no CORS for this route.
+
+Which routes exist depends on configuration (checked at startup):
+
+| Configured | Routes enabled |
+| --- | --- |
+| `NURSEFLOW_SOLVER_TOKEN` (non-blank) | `/v1/solve` |
+| All three of `NURSEFLOW_SUPABASE_URL`, `NURSEFLOW_SUPABASE_PUBLISHABLE_KEY`, `NURSEFLOW_SUPABASE_SECRET_KEY` | `/v1/assignment-runs` |
+| Both | both |
+| Some but not all Supabase settings | startup fails |
+| Nothing | startup fails |
+
+A disabled route is simply not registered, so it answers `404`. The health
+endpoints are always available. Go's API uses port 8080 locally, so run the
+solver on 8090 with only the token set:
+
+```powershell
+$env:NURSEFLOW_SOLVER_TOKEN="local-dev-solver-token"
+optimizer-service/.venv/Scripts/python -m uvicorn nurseflow_optimizer.runtime:create_app_from_environment --factory --app-dir optimizer-service --host 127.0.0.1 --port 8090 --workers 1 --no-access-log
+```
+
 Build the portable production image from the repository root with:
 
 ```text

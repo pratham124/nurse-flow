@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { router } from "expo-router";
+import { useIsFocused } from "@react-navigation/native";
 import { StyleSheet, Text, View } from "react-native";
 
 import {
@@ -144,6 +145,8 @@ function isCompletedFloorTemplate(
 }
 
 export default function TemplateReviewScreen() {
+  const isFocused = useIsFocused();
+  const hasSavedTemplate = useRef(false);
   const { draftFloorTemplate, resetWorkflowDraft } = useWorkflowDraft();
   const saveFloorTemplate = useServerWorkspace(
     (state) => state.saveFloorTemplate,
@@ -166,10 +169,10 @@ export default function TemplateReviewScreen() {
       : "Create a floor template before saving.");
 
   useEffect(() => {
-    if (!draftFloorTemplate) {
+    if (isFocused && !draftFloorTemplate && !hasSavedTemplate.current) {
       router.replace("/floor-details");
     }
-  }, [draftFloorTemplate]);
+  }, [draftFloorTemplate, isFocused]);
 
   if (!draftFloorTemplate) {
     return null;
@@ -198,6 +201,9 @@ export default function TemplateReviewScreen() {
       setIsSavingTemplate(false);
     }
 
+    // Clearing the draft can render this screen once more before navigation
+    // finishes. Do not mistake that successful cleanup for a missing draft.
+    hasSavedTemplate.current = true;
     router.replace("/");
     resetWorkflowDraft();
   }

@@ -20,6 +20,7 @@ import { useActiveShiftDraft } from "../hooks/useActiveShiftDraft";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
 import { getShiftCensus, isOccupiedBedState } from "../utils/census";
+import { patientInitialsMaxLength } from "../utils/patientInitials";
 import type {
   Acuity,
   Bed,
@@ -401,10 +402,11 @@ function BedPatientForm({
 
       <PlaceholderInput
         label="Patient initials"
+        maxLength={patientInitialsMaxLength}
         onChangeText={(value) =>
           onUpdatePatientField(bedRow.bed.id, "initials", value)
         }
-        placeholder="J.S."
+        placeholder="JS"
         value={patient?.initials ?? ""}
       />
 

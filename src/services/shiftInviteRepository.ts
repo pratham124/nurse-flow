@@ -1,36 +1,17 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import * as Crypto from "expo-crypto";
+import { z } from "zod";
+
+import { goApiClient } from "./goApiClient";
+import { getGoAuthHeaders } from "./goApiAuth";
+import { readGoApiFailure, throwGoNetworkError } from "./goApiErrors";
+import { savedAccountIdSchema } from "./identifierSchemas";
 
 import type {
   ActiveShiftRecord,
   ShiftNurseAccess,
   ShiftNurseInviteRecord,
-  ShiftNurseInviteStatus,
   UserProfile,
 } from "../types/models";
-import { getEffectiveAssignmentResult } from "../utils/effectiveAssignment";
-import { getNurseAssignedPatientCount } from "../utils/nurseInviteEligibility";
-
-type ShiftNurseInviteRow = {
-  created_at: string;
-  created_by_profile_id: string;
-  expires_at: string;
-  id: string;
-  nurse_id: string;
-  revoked_at: string | null;
-  shift_id: string;
-  status: string;
-  token_hash: string;
-  used_at: string | null;
-  used_by_profile_id: string | null;
-};
-
-type CreateShiftNurseInviteRecordInput = {
-  activeShift: ActiveShiftRecord;
-  expiresAt: string;
-  nurseId: string;
-  tokenHash: string;
-};
 
 export type GeneratedShiftNurseInviteCode = {
   code: string;
@@ -39,7 +20,6 @@ export type GeneratedShiftNurseInviteCode = {
 
 type GenerateShiftNurseInviteCodeInput = {
   activeShift: ActiveShiftRecord;
-  getTokenHash: (code: string) => Promise<string>;
   nurseId: string;
 };
 
@@ -84,47 +64,88 @@ export type ShiftNurseInviteAcceptResult =
       status: "blocked";
     };
 
-type ShiftNurseAccessRow = {
-  created_at: string;
-  id: string;
-  nurse_email: string | null;
-  nurse_id: string;
-  nurse_name: string;
-  nurse_profile_id: string | null;
-  shift_id: string;
-  status: string;
-  updated_at: string;
-};
+const inviteRowSchema = z.object({
+  created_at: z.string(),
+  created_by_profile_id: z.string(),
+  expires_at: z.string(),
+  id: z.string(),
+  nurse_id: z.string(),
+  revoked_at: z.string().nullish(),
+  shift_id: z.string(),
+  status: z.enum(["active", "used", "revoked", "expired"]),
+  used_at: z.string().nullish(),
+  used_by_profile_id: z.string().nullish(),
+});
 
-type ValidateShiftNurseInviteRpcResult = {
-  accessId?: string;
-  access_id?: string;
-  expiresAt?: string;
-  expires_at?: string;
-  floorName?: string;
-  floor_name?: string;
-  inviteId?: string;
-  invite_id?: string;
-  nurseId?: string;
-  nurseName?: string;
-  nurse_id?: string;
-  nurse_name?: string;
-  reason?: string;
-  shiftId?: string;
-  shift_id?: string;
-  status?: string;
-};
+const accessRowSchema = z.object({
+  created_at: z.string(),
+  id: z.string(),
+  nurse_email: z.string().nullish(),
+  nurse_id: z.string(),
+  nurse_name: z.string(),
+  nurse_profile_id: z.string().nullish(),
+  shift_id: z.string(),
+  status: z.enum(["pending_link", "linked", "removed"]),
+  updated_at: z.string(),
+});
 
-const inviteColumns =
-  "id, shift_id, nurse_id, created_by_profile_id, token_hash, status, created_at, expires_at, used_at, used_by_profile_id, revoked_at";
-const accessColumns =
-  "id, shift_id, nurse_id, nurse_name, nurse_profile_id, nurse_email, status, created_at, updated_at";
-const uuidPattern =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const inviteCodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const inviteListSchema = z.object({
+  access: z.array(accessRowSchema),
+  invites: z.array(inviteRowSchema),
+});
+
+const generatedInviteSchema = z.object({
+  code: z.string().min(1),
+  invite: inviteRowSchema,
+});
+
+const blockReasonSchema = z.enum([
+  "invalid_format",
+  "not_found",
+  "expired",
+  "revoked",
+  "already_used",
+  "ended_shift",
+  "stale_nurse",
+  "participation_conflict",
+]);
+
+const validateResponseSchema = z.discriminatedUnion("status", [
+  z.object({
+    expires_at: z.string().min(1),
+    floor_name: z.string().min(1),
+    invite_id: z.string().min(1),
+    nurse_id: z.string().min(1),
+    nurse_name: z.string().min(1),
+    shift_id: z.string().min(1),
+    status: z.literal("valid"),
+  }),
+  z.object({ reason: blockReasonSchema, status: z.literal("blocked") }),
+]);
+
+const acceptResponseSchema = z.discriminatedUnion("status", [
+  z.object({
+    access_id: z.string().min(1),
+    floor_name: z.string().min(1),
+    nurse_id: z.string().min(1),
+    nurse_name: z.string().min(1),
+    shift_id: z.string().min(1),
+    status: z.literal("joined"),
+  }),
+  z.object({ reason: blockReasonSchema, status: z.literal("blocked") }),
+]);
+
+type InviteRow = z.infer<typeof inviteRowSchema>;
+type AccessRow = z.infer<typeof accessRowSchema>;
+
+type ShiftNurseInviteBlockedResult = Extract<
+  ShiftNurseInviteValidationResult,
+  { status: "blocked" }
+>;
+
+const invalidResponse = "The invite service returned an invalid response.";
 const inviteCodePattern = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
 const inviteCodeLength = 6;
-const inviteExpirationHours = 24;
 
 function assertChargeNurse(profile: Pick<UserProfile, "role">) {
   if (profile.role !== "charge_nurse") {
@@ -136,7 +157,7 @@ function assertOwnedActiveShift(
   activeShift: ActiveShiftRecord,
   profile: UserProfile,
 ) {
-  if (!uuidPattern.test(activeShift.id)) {
+  if (!savedAccountIdSchema.safeParse(activeShift.id).success) {
     throw new Error("Start a server-backed shift before creating nurse invites.");
   }
 
@@ -147,72 +168,6 @@ function assertOwnedActiveShift(
   if (activeShift.endedAt) {
     throw new Error("Nurse invites can only be created for an active shift.");
   }
-}
-
-function assertNurseBelongsToShift(
-  activeShift: ActiveShiftRecord,
-  nurseId: string,
-) {
-  const nurseExists = activeShift.shiftSnapshot.nurses.some(
-    (nurse) => nurse.id === nurseId,
-  );
-
-  if (!nurseExists) {
-    throw new Error(
-      "Choose a nurse from the active shift before creating an invite.",
-    );
-  }
-}
-
-function assertNurseHasAssignedPatients(
-  activeShift: ActiveShiftRecord,
-  nurseId: string,
-) {
-  const baselineAssignmentResult = activeShift.shiftSnapshot.assignmentResult;
-  const effectiveAssignmentResult = baselineAssignmentResult
-    ? getEffectiveAssignmentResult(
-        baselineAssignmentResult,
-        activeShift.activeAssignmentOverridesByBedId ?? {},
-      )
-    : undefined;
-
-  if (
-    getNurseAssignedPatientCount(
-      activeShift.shiftSnapshot,
-      effectiveAssignmentResult,
-      nurseId,
-    ) === 0
-  ) {
-    throw new Error(
-      "Assign at least one patient to this nurse before generating a code.",
-    );
-  }
-}
-
-function assertTokenHash(tokenHash: string) {
-  if (tokenHash.trim().length < 32) {
-    throw new Error("Invite token validation data is missing or too short.");
-  }
-}
-
-function assertFutureExpiration(expiresAt: string) {
-  const expiresAtMs = Date.parse(expiresAt);
-
-  if (Number.isNaN(expiresAtMs)) {
-    throw new Error("Invite expiration must be a valid date.");
-  }
-
-  if (expiresAtMs <= Date.now()) {
-    throw new Error("Invite expiration must be in the future.");
-  }
-}
-
-function createInviteCode() {
-  const bytes = Crypto.getRandomBytes(inviteCodeLength);
-
-  return Array.from(bytes)
-    .map((byte) => inviteCodeAlphabet[byte % inviteCodeAlphabet.length])
-    .join("");
 }
 
 export function getNormalizedNurseInviteCode(code: string) {
@@ -240,37 +195,55 @@ export function getNurseInviteCodeFormatMessage(code: string) {
   return "";
 }
 
-export async function getShiftNurseInviteCodeHash(code: string) {
-  return Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA256,
-    getNormalizedNurseInviteCode(code),
-  );
-}
+// Turns a failed Go request into an error the screen can show. The server's own
+// message is used when it sent one, so its wording is never contradicted.
+function inviteRequestError(error: unknown): never {
+  const failure = readGoApiFailure(error);
 
-function createDefaultExpiration() {
-  const expiresAt = new Date();
-
-  expiresAt.setHours(expiresAt.getHours() + inviteExpirationHours);
-
-  return expiresAt.toISOString();
-}
-
-function isShiftNurseInviteStatus(
-  status: string,
-): status is ShiftNurseInviteStatus {
-  return (
-    status === "active" ||
-    status === "used" ||
-    status === "revoked" ||
-    status === "expired"
-  );
-}
-
-function mapInviteRow(row: ShiftNurseInviteRow): ShiftNurseInviteRecord {
-  if (!isShiftNurseInviteStatus(row.status)) {
-    throw new Error("The nurse invite has an unsupported status.");
+  if (!failure) {
+    return throwGoNetworkError(error, "invite service");
   }
 
+  if (failure.status === 401) {
+    throw new Error("Your session expired. Sign in again to manage invites.");
+  }
+
+  if (failure.status === 403) {
+    throw new Error("This account cannot manage nurse invites.");
+  }
+
+  throw new Error(
+    failure.message || "Nurse invites are temporarily unavailable. Try again.",
+  );
+}
+
+// Joining nurses get their own wording: they are not managing invites. A
+// missing profile reads as "not found", as the old database functions did.
+function joinRequestError(error: unknown): ShiftNurseInviteBlockedResult {
+  const failure = readGoApiFailure(error);
+
+  if (failure?.status === 403 && failure.code === "profile_missing") {
+    return {
+      message: getValidationBlockMessage("not_found"),
+      reason: "not_found",
+      status: "blocked",
+    };
+  }
+
+  if (failure?.status === 401) {
+    throw new Error("Your session expired. Sign in again.");
+  }
+
+  if (failure) {
+    throw new Error(
+      failure.message || "Joining is temporarily unavailable. Try again.",
+    );
+  }
+
+  return throwGoNetworkError(error, "invite service");
+}
+
+function mapInviteRow(row: InviteRow): ShiftNurseInviteRecord {
   return {
     createdAt: row.created_at,
     createdByProfileId: row.created_by_profile_id,
@@ -280,21 +253,12 @@ function mapInviteRow(row: ShiftNurseInviteRow): ShiftNurseInviteRecord {
     revokedAt: row.revoked_at ?? undefined,
     shiftId: row.shift_id,
     status: row.status,
-    tokenHash: row.token_hash,
     usedAt: row.used_at ?? undefined,
     usedByProfileId: row.used_by_profile_id ?? undefined,
   };
 }
 
-function mapAccessRow(row: ShiftNurseAccessRow): ShiftNurseAccess {
-  if (
-    row.status !== "pending_link" &&
-    row.status !== "linked" &&
-    row.status !== "removed"
-  ) {
-    throw new Error("The nurse access record has an unsupported status.");
-  }
-
+function mapAccessRow(row: AccessRow): ShiftNurseAccess {
   return {
     createdAt: row.created_at,
     id: row.id,
@@ -342,197 +306,81 @@ function getValidationBlockMessage(
   return "That code is not valid. Check it and try again.";
 }
 
-function isValidationBlockReason(
-  reason: string,
-): reason is ShiftNurseInviteValidationBlockReason {
-  return (
-    reason === "invalid_format" ||
-    reason === "not_found" ||
-    reason === "expired" ||
-    reason === "revoked" ||
-    reason === "already_used" ||
-    reason === "ended_shift" ||
-    reason === "stale_nurse" ||
-    reason === "participation_conflict"
-  );
-}
-
-function getValidationResultRow(data: unknown) {
-  if (Array.isArray(data)) {
-    return data[0] as ValidateShiftNurseInviteRpcResult | undefined;
-  }
-
-  return data as ValidateShiftNurseInviteRpcResult | undefined;
-}
-
-function mapValidationResult(
-  data: unknown,
-): ShiftNurseInviteValidationResult {
-  const row = getValidationResultRow(data);
-
-  if (!row) {
-    return {
-      message: getValidationBlockMessage("not_found"),
-      reason: "not_found",
-      status: "blocked",
-    };
-  }
-
-  const rawReason = row.reason ?? row.status ?? "not_found";
-  const reason = isValidationBlockReason(rawReason) ? rawReason : "not_found";
-
-  if (row.status !== "valid") {
-    return {
-      message: getValidationBlockMessage(reason),
-      reason,
-      status: "blocked",
-    };
-  }
-
-  const expiresAt = row.expiresAt ?? row.expires_at ?? "";
-  const floorName = row.floorName ?? row.floor_name ?? "";
-  const inviteId = row.inviteId ?? row.invite_id ?? "";
-  const nurseId = row.nurseId ?? row.nurse_id ?? "";
-  const nurseName = row.nurseName ?? row.nurse_name ?? "";
-  const shiftId = row.shiftId ?? row.shift_id ?? "";
-
-  if (
-    !expiresAt ||
-    !floorName ||
-    !inviteId ||
-    !nurseId ||
-    !nurseName ||
-    !shiftId
-  ) {
-    throw new Error("Invite validation returned an incomplete confirmation.");
-  }
-
-  if (Date.parse(expiresAt) <= Date.now()) {
-    return {
-      message: getValidationBlockMessage("expired"),
-      reason: "expired",
-      status: "blocked",
-    };
-  }
-
+function blockedFormatResult(message: string) {
   return {
-    expiresAt,
-    floorName,
-    inviteId,
-    nurseId,
-    nurseName,
-    shiftId,
-    status: "valid",
+    message,
+    reason: "invalid_format" as const,
+    status: "blocked" as const,
   };
 }
 
-function mapAcceptResult(data: unknown): ShiftNurseInviteAcceptResult {
-  const row = getValidationResultRow(data);
+// One call returns both the invites and the linked-nurse access rows.
+export async function loadShiftNurseInvitesAndAccess(
+  supabase: SupabaseClient,
+  profile: UserProfile,
+  activeShift: ActiveShiftRecord,
+) {
+  assertChargeNurse(profile);
+  assertOwnedActiveShift(activeShift, profile);
 
-  if (!row) {
-    return {
-      message: getValidationBlockMessage("not_found"),
-      reason: "not_found",
-      status: "blocked",
-    };
-  }
+  const headers = await getGoAuthHeaders(supabase);
+  const response = await goApiClient
+    .get<unknown>(`/shifts/${activeShift.id}/invites`, { headers })
+    .catch(inviteRequestError);
+  const result = inviteListSchema.safeParse(response.data);
 
-  const rawReason = row.reason ?? row.status ?? "not_found";
-  const reason = isValidationBlockReason(rawReason) ? rawReason : "not_found";
-
-  if (row.status !== "joined") {
-    return {
-      message: getValidationBlockMessage(reason),
-      reason,
-      status: "blocked",
-    };
-  }
-
-  const accessId = row.accessId ?? row.access_id ?? "";
-  const floorName = row.floorName ?? row.floor_name ?? "";
-  const nurseId = row.nurseId ?? row.nurse_id ?? "";
-  const nurseName = row.nurseName ?? row.nurse_name ?? "";
-  const shiftId = row.shiftId ?? row.shift_id ?? "";
-
-  if (!accessId || !floorName || !nurseId || !nurseName || !shiftId) {
-    throw new Error("Invite join returned an incomplete access record.");
+  if (response.status !== 200 || !result.success) {
+    throw new Error(invalidResponse);
   }
 
   return {
-    accessId,
-    floorName,
-    nurseId,
-    nurseName,
-    shiftId,
-    status: "joined",
+    access: result.data.access.map(mapAccessRow),
+    invites: result.data.invites.map(mapInviteRow),
   };
 }
 
-export async function loadShiftNurseInvitesForActiveShift(
+async function postInvite(
+  path: "invites" | "invites/regenerate",
   supabase: SupabaseClient,
   profile: UserProfile,
-  activeShift: ActiveShiftRecord,
-) {
+  { activeShift, nurseId }: GenerateShiftNurseInviteCodeInput,
+): Promise<GeneratedShiftNurseInviteCode> {
   assertChargeNurse(profile);
   assertOwnedActiveShift(activeShift, profile);
 
-  const { data, error } = await supabase
-    .from("shift_nurse_invites")
-    .select(inviteColumns)
-    .eq("shift_id", activeShift.id)
-    .order("created_at", { ascending: false })
-    .overrideTypes<ShiftNurseInviteRow[]>();
+  const headers = await getGoAuthHeaders(supabase);
+  const response = await goApiClient
+    .post<unknown>(`/shifts/${activeShift.id}/${path}`, { nurse_id: nurseId }, { headers })
+    .catch(inviteRequestError);
+  const result = generatedInviteSchema.safeParse(response.data);
 
-  if (error) {
-    throw new Error(error.message);
+  if (response.status !== 201 || !result.success) {
+    throw new Error(invalidResponse);
   }
 
-  return data.map(mapInviteRow);
+  const invite = mapInviteRow(result.data.invite);
+
+  if (invite.shiftId !== activeShift.id || invite.nurseId !== nurseId) {
+    throw new Error(invalidResponse);
+  }
+
+  return { code: result.data.code, invite };
 }
 
-export async function loadShiftNurseAccessForActiveShift(
+export function generateShiftNurseInviteCode(
   supabase: SupabaseClient,
   profile: UserProfile,
-  activeShift: ActiveShiftRecord,
+  input: GenerateShiftNurseInviteCodeInput,
 ) {
-  assertChargeNurse(profile);
-  assertOwnedActiveShift(activeShift, profile);
-
-  const { data, error } = await supabase
-    .from("shift_nurse_access")
-    .select(accessColumns)
-    .eq("shift_id", activeShift.id)
-    .order("updated_at", { ascending: false })
-    .overrideTypes<ShiftNurseAccessRow[]>();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data.map(mapAccessRow);
+  return postInvite("invites", supabase, profile, input);
 }
 
-export async function expireActiveShiftNurseInvites(
+export function regenerateShiftNurseInviteCode(
   supabase: SupabaseClient,
   profile: UserProfile,
-  activeShift: ActiveShiftRecord,
+  input: GenerateShiftNurseInviteCodeInput,
 ) {
-  assertChargeNurse(profile);
-  assertOwnedActiveShift(activeShift, profile);
-
-  const now = new Date().toISOString();
-  const { error } = await supabase
-    .from("shift_nurse_invites")
-    .update({
-      status: "expired",
-      updated_at: now,
-    })
-    .eq("shift_id", activeShift.id)
-    .eq("status", "active");
-
-  if (error) {
-    throw new Error(error.message);
-  }
+  return postInvite("invites/regenerate", supabase, profile, input);
 }
 
 export async function validateShiftNurseInviteCode(
@@ -542,26 +390,54 @@ export async function validateShiftNurseInviteCode(
   const formatMessage = getNurseInviteCodeFormatMessage(code);
 
   if (formatMessage) {
+    return blockedFormatResult(formatMessage);
+  }
+
+  const headers = await getGoAuthHeaders(supabase);
+  const response = await goApiClient
+    .post<unknown>(
+      "/invites/validate",
+      { code: getNormalizedNurseInviteCode(code) },
+      { headers },
+    )
+    .catch(joinRequestError);
+
+  // A missing profile comes back as a ready-made blocked result.
+  if (!("data" in response)) {
+    return response;
+  }
+
+  const result = validateResponseSchema.safeParse(response.data);
+
+  if (response.status !== 200 || !result.success) {
+    throw new Error(invalidResponse);
+  }
+
+  if (result.data.status === "blocked") {
     return {
-      message: formatMessage,
-      reason: "invalid_format",
+      message: getValidationBlockMessage(result.data.reason),
+      reason: result.data.reason,
       status: "blocked",
     };
   }
 
-  const tokenHash = await getShiftNurseInviteCodeHash(code);
-  const { data, error } = await supabase.rpc(
-    "validate_shift_nurse_invite_code",
-    {
-      invite_token_hash: tokenHash,
-    },
-  );
-
-  if (error) {
-    throw new Error(error.message);
+  if (Date.parse(result.data.expires_at) <= Date.now()) {
+    return {
+      message: getValidationBlockMessage("expired"),
+      reason: "expired",
+      status: "blocked",
+    };
   }
 
-  return mapValidationResult(data);
+  return {
+    expiresAt: result.data.expires_at,
+    floorName: result.data.floor_name,
+    inviteId: result.data.invite_id,
+    nurseId: result.data.nurse_id,
+    nurseName: result.data.nurse_name,
+    shiftId: result.data.shift_id,
+    status: "valid",
+  };
 }
 
 export async function acceptShiftNurseInviteCode(
@@ -571,138 +447,43 @@ export async function acceptShiftNurseInviteCode(
   const formatMessage = getNurseInviteCodeFormatMessage(code);
 
   if (formatMessage) {
+    return blockedFormatResult(formatMessage);
+  }
+
+  const headers = await getGoAuthHeaders(supabase);
+  const response = await goApiClient
+    .post<unknown>(
+      "/invites/accept",
+      { code: getNormalizedNurseInviteCode(code) },
+      { headers },
+    )
+    .catch(joinRequestError);
+
+  // A missing profile comes back as a ready-made blocked result.
+  if (!("data" in response)) {
+    return response;
+  }
+
+  const result = acceptResponseSchema.safeParse(response.data);
+
+  if (response.status !== 200 || !result.success) {
+    throw new Error(invalidResponse);
+  }
+
+  if (result.data.status === "blocked") {
     return {
-      message: formatMessage,
-      reason: "invalid_format",
+      message: getValidationBlockMessage(result.data.reason),
+      reason: result.data.reason,
       status: "blocked",
     };
   }
 
-  const tokenHash = await getShiftNurseInviteCodeHash(code);
-  const { data, error } = await supabase.rpc("accept_shift_nurse_invite_code", {
-    invite_token_hash: tokenHash,
-  });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return mapAcceptResult(data);
-}
-
-export async function createShiftNurseInviteRecord(
-  supabase: SupabaseClient,
-  profile: UserProfile,
-  {
-    activeShift,
-    expiresAt,
-    nurseId,
-    tokenHash,
-  }: CreateShiftNurseInviteRecordInput,
-) {
-  assertChargeNurse(profile);
-  assertOwnedActiveShift(activeShift, profile);
-  assertNurseBelongsToShift(activeShift, nurseId);
-  assertNurseHasAssignedPatients(activeShift, nurseId);
-  assertTokenHash(tokenHash);
-  assertFutureExpiration(expiresAt);
-
-  const activeInvites = await loadShiftNurseInvitesForActiveShift(
-    supabase,
-    profile,
-    activeShift,
-  );
-  const existingActiveInvite = activeInvites.find(
-    (invite) => invite.nurseId === nurseId && invite.status === "active",
-  );
-
-  if (existingActiveInvite) {
-    throw new Error("This nurse already has an active invite for this shift.");
-  }
-
-  const { data, error } = await supabase
-    .from("shift_nurse_invites")
-    .insert({
-      created_by_profile_id: profile.id,
-      expires_at: expiresAt,
-      nurse_id: nurseId,
-      shift_id: activeShift.id,
-      status: "active",
-      token_hash: tokenHash.trim(),
-    })
-    .select(inviteColumns)
-    .single<ShiftNurseInviteRow>();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return mapInviteRow(data);
-}
-
-async function revokeActiveShiftNurseInviteRecord(
-  supabase: SupabaseClient,
-  profile: UserProfile,
-  activeShift: ActiveShiftRecord,
-  nurseId: string,
-) {
-  assertChargeNurse(profile);
-  assertOwnedActiveShift(activeShift, profile);
-  assertNurseBelongsToShift(activeShift, nurseId);
-
-  const now = new Date().toISOString();
-  const { error } = await supabase
-    .from("shift_nurse_invites")
-    .update({
-      revoked_at: now,
-      status: "revoked",
-    })
-    .eq("shift_id", activeShift.id)
-    .eq("nurse_id", nurseId)
-    .eq("status", "active");
-
-  if (error) {
-    throw new Error(error.message);
-  }
-}
-
-export async function generateShiftNurseInviteCode(
-  supabase: SupabaseClient,
-  profile: UserProfile,
-  {
-    activeShift,
-    getTokenHash,
-    nurseId,
-  }: GenerateShiftNurseInviteCodeInput,
-): Promise<GeneratedShiftNurseInviteCode> {
-  const code = createInviteCode();
-  const tokenHash = await getTokenHash(code);
-  const invite = await createShiftNurseInviteRecord(supabase, profile, {
-    activeShift,
-    expiresAt: createDefaultExpiration(),
-    nurseId,
-    tokenHash,
-  });
-
   return {
-    code,
-    invite,
+    accessId: result.data.access_id,
+    floorName: result.data.floor_name,
+    nurseId: result.data.nurse_id,
+    nurseName: result.data.nurse_name,
+    shiftId: result.data.shift_id,
+    status: "joined",
   };
-}
-
-export async function regenerateShiftNurseInviteCode(
-  supabase: SupabaseClient,
-  profile: UserProfile,
-  input: GenerateShiftNurseInviteCodeInput,
-): Promise<GeneratedShiftNurseInviteCode> {
-  assertNurseHasAssignedPatients(input.activeShift, input.nurseId);
-
-  await revokeActiveShiftNurseInviteRecord(
-    supabase,
-    profile,
-    input.activeShift,
-    input.nurseId,
-  );
-
-  return generateShiftNurseInviteCode(supabase, profile, input);
 }

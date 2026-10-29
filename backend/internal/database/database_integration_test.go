@@ -6,14 +6,30 @@ import (
 	"errors"
 	"net/url"
 	"os"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/pratham124/nurse-flow/backend/internal/supabaseproject"
 	"gorm.io/gorm"
 )
 
-// Opt in explicitly. A local URL is accepted only here, never in the development API config.
-func TestDatabaseOwnershipIntegration(t *testing.T) {
+var fixtureUUIDPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+
+// These tests enter below HTTP authentication, so validate their configured IDs here.
+func fixtureAuthID(t *testing.T, name string) string {
+	t.Helper()
+	id := os.Getenv(name)
+	if !fixtureUUIDPattern.MatchString(id) {
+		t.Fatalf("set %s to a fixture Auth UUID", name)
+	}
+	return id
+}
+
+// Opt in explicitly. A local URL is accepted only in tests, never in API config.
+func openIntegrationStore(t *testing.T) *Store {
+	t.Helper()
 	if os.Getenv("NURSEFLOW_DATABASE_TESTS") != "1" {
 		t.Skip("set NURSEFLOW_DATABASE_TESTS=1 and fixture Auth UUIDs to verify Postgres")
 	}
@@ -27,12 +43,18 @@ func TestDatabaseOwnershipIntegration(t *testing.T) {
 		}
 		store, err = open(ctx, localURL)
 	} else {
-		store, err = OpenDevelopment(ctx)
+		store, err = Open(ctx, supabaseproject.Development)
 	}
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { store.Close() })
+	return store
+}
+
+func TestDatabaseOwnershipIntegration(t *testing.T) {
+	store := openIntegrationStore(t)
+	ctx := context.Background()
 	// Force connection reuse to detect identity leakage across commit and rollback.
 	store.pool.SetMaxOpenConns(1)
 	store.pool.SetMaxIdleConns(1)
@@ -80,16 +102,13 @@ func TestDatabaseOwnershipIntegration(t *testing.T) {
 		wantRole      string
 		wantTemplates int
 	}{
-		{"Alpha", os.Getenv("NURSEFLOW_TEST_ALPHA_ID"), "charge_nurse", 1},
-		{"Beta", os.Getenv("NURSEFLOW_TEST_BETA_ID"), "charge_nurse", 0},
-		{"Regular", os.Getenv("NURSEFLOW_TEST_REGULAR_ID"), "regular_nurse", 0},
+		{"Alpha", fixtureAuthID(t, "NURSEFLOW_TEST_ALPHA_ID"), "charge_nurse", 1},
+		{"Beta", fixtureAuthID(t, "NURSEFLOW_TEST_BETA_ID"), "charge_nurse", 0},
+		{"Regular", fixtureAuthID(t, "NURSEFLOW_TEST_REGULAR_ID"), "regular_nurse", 0},
 		{"Unknown", "ffffffff-ffff-ffff-ffff-ffffffffffff", "", 0},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if !uuidPattern.MatchString(test.authID) {
-				t.Fatal("set fixture Auth UUIDs")
-			}
 			err := store.WithIdentity(ctx, test.authID, func(tx *gorm.DB) error {
 				var profiles []Profile
 				var templates []FloorTemplate
@@ -123,23 +142,37 @@ func TestDatabaseOwnershipIntegration(t *testing.T) {
 				t.Fatal(err)
 			}
 			assertAnonymous()
+			profile, err := store.ProfileByAuthUserID(ctx, test.authID)
+			if test.wantRole == "" {
+				if !errors.Is(err, ErrProfileNotFound) || profile.ID != "" {
+					t.Fatal("missing profile did not return ErrProfileNotFound")
+				}
+			} else if err != nil || profile.AuthUserID != test.authID || profile.Role != test.wantRole || profile.ID == "" || profile.ID == profile.AuthUserID {
+				t.Fatalf("profile resolution failed: %v", err)
+			}
+			assertAnonymous()
+			if test.wantRole != "" {
+				upperProfile, upperErr := store.ProfileByAuthUserID(ctx, strings.ToUpper(test.authID))
+				if upperErr != nil || upperProfile.ID != profile.ID {
+					t.Fatal("UUID normalization changed profile resolution")
+				}
+				assertAnonymous()
+			}
 		})
 	}
 
 	rollback := errors.New("intentional rollback")
-	err = store.WithIdentity(ctx, tests[0].authID, func(tx *gorm.DB) error { return rollback })
+	err := store.WithIdentity(ctx, tests[0].authID, func(tx *gorm.DB) error { return rollback })
 	if !errors.Is(err, rollback) {
 		t.Fatal("transaction did not return callback error")
 	}
 	assertAnonymous()
-	if err := store.WithIdentity(ctx, "not-a-uuid", func(tx *gorm.DB) error { t.Fatal("invalid identity reached query"); return nil }); err == nil {
-		t.Fatal("invalid identity accepted")
-	}
 
 	for _, statement := range []string{
 		"UPDATE public.profiles SET display_name = display_name WHERE false",
-		"DELETE FROM public.floor_templates WHERE false",
-		"SELECT * FROM public.active_shifts LIMIT 0",
+		"UPDATE public.floor_templates SET owner_profile_id = owner_profile_id WHERE false",
+		"UPDATE public.floor_templates SET id = id WHERE false",
+		"DELETE FROM public.active_shifts WHERE false",
 	} {
 		err := store.db.Exec(statement).Error
 		var postgresError *pgconn.PgError
@@ -147,4 +180,10 @@ func TestDatabaseOwnershipIntegration(t *testing.T) {
 			t.Fatalf("expected insufficient privilege for %q", statement)
 		}
 	}
+	cancelled, cancel := context.WithCancel(ctx)
+	cancel()
+	if _, err := store.ProfileByAuthUserID(cancelled, tests[0].authID); err == nil || errors.Is(err, ErrProfileNotFound) {
+		t.Fatal("cancelled lookup must fail as an operation error, not a missing profile")
+	}
+	assertAnonymous()
 }
