@@ -252,6 +252,19 @@ Facts found first:
 | `deploy/bootstrap-gcp.ps1` | Moved out of `deploy/development/`. `-Environment production` uses the `-prod` names, the `gcp-production` environment, `main` only, and the signed-in GitHub user as required reviewer. Development allows `main` and `codex/go-migration`. Google's condition is now `assertion.ref in [...]`. The GitHub environment settings go through a temporary JSON file, because Windows PowerShell prefixes piped input with a byte order mark that GitHub rejects. |
 | `package.json` | `npm run start:dev` starts Expo with `.env.dev` loaded through Node's `--env-file`. Expo does not override variables that are already set. The file is not named `.env.development`, because Expo loads that file on every `expo start`. |
 
+### Cutover progress
+
+- **2026-10-29, step 1:** The user restored the paused production project, which reports `ACTIVE_HEALTHY`.
+- **2026-10-29, step 2:** Read-only comparison. The baseline capture queries (`supabase/baseline/capture-*.sql`) were re-run against production and diffed with the 2026-09-12 capture: all 263 catalog rows and all 29 functions were identical. Production had no migration history table, no `nurseflow_go`, no `go_private`, and no `go_*` policies.
+- **2026-10-29, step 3:** The user ran `.scratch/apply-production-migrations.ps1`. Claude Code's auto mode blocks agent-run production changes, so the agent prepared the script and the user executed it. All 7 migrations applied in order, each was recorded with `migration repair`, and `migration list` shows all 7 local = remote.
+  - Production vs. the September baseline: +32 `go_*` policies, `nurseflow_go` column/table/schema grants, and `PUBLIC` execute removed from the 5 invite/request functions (their `anon`/`authenticated` grants are kept). Nothing else changed.
+  - Production vs. development: identical, apart from Supabase's dated Realtime partitions and the two `nurse_request_messages` check constraints that the September restore deparses with flatter AND grouping (same meaning; see `supabase/baseline/development-verification`).
+  - `nurseflow_go` exists with login disabled.
+- **2026-10-29, steps 4–5:** The user set the production `nurseflow_go` password, enabled login, and ran `deploy/bootstrap-gcp.ps1 -Environment production -ProjectId nurseflow-512906`.
+  - Verified: `gcp-production` allows only `main` and requires `pratham124`, and its three variables point at `nurseflow-512906`. Google's condition is `ref in ['refs/heads/main']` and `environment == 'gcp-production'`. Both secrets exist.
+  - Finding: the production pooler is on Supabase's **`aws-1-us-east-1`** cluster. `aws-0` answers `tenant/user … not found` for this project, while development is on `aws-0`. `deploy/production/api.env.yaml` was corrected before the merge.
+  - With the stored secret (never printed), `cmd/dbcheck` reported "Connected to Supabase project mkljczezkyqtuplzedpj Postgres as nurseflow_go".
+
 Development was re-bootstrapped on 2026-10-29 with the new script. Its GitHub environment now allows `main` and `codex/go-migration`, and Google's condition lists both refs.
 
 ### Rollback
