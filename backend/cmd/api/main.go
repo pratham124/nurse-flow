@@ -14,6 +14,7 @@ import (
 	"github.com/pratham124/nurse-flow/backend/internal/database"
 	"github.com/pratham124/nurse-flow/backend/internal/httpapi"
 	"github.com/pratham124/nurse-flow/backend/internal/solver"
+	"github.com/pratham124/nurse-flow/backend/internal/supabaseproject"
 )
 
 func main() {
@@ -26,12 +27,16 @@ func main() {
 func run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	store, err := database.OpenDevelopment(ctx)
+	projectRef, err := supabaseproject.FromEnvironment()
+	if err != nil {
+		return fmt.Errorf("configure Supabase project: %w", err)
+	}
+	store, err := database.Open(ctx, projectRef)
 	if err != nil {
 		return fmt.Errorf("configure database: %w", err)
 	}
 	defer store.Close()
-	verifier, err := auth.NewDevelopment(ctx)
+	verifier, err := auth.New(ctx, projectRef)
 	if err != nil {
 		return fmt.Errorf("configure authentication: %w", err)
 	}

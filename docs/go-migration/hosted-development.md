@@ -1,0 +1,166 @@
+# Hosted development, cutover preparation, and retirement (milestone 7)
+
+Milestone 7 covers tickets 20–23. The user authorized it on 2026-10-25 and settled
+the decisions below in a grilling session. Milestone 6 is closed by the same
+decision, with ticket 18 and notification navigation still deferred.
+
+Ticket 20 is implemented in code and waits for the user's one-time Google Cloud
+setup before its live checks. Parts of ticket 21 are prepared ahead of time: the
+production configuration, the legacy-caller inventory, and the rollback plan
+below, none of it applied. Tickets 22 (production cutover) and 23 (retirement)
+each need their own explicit approval and have not started.
+
+## Decisions
+
+| # | Area | Decision |
+| --- | --- | --- |
+| 1 | Scope | This session covers ticket 20 plus ticket 21's preparation. Ticket 21's live hosted matrix runs after provisioning. Tickets 22 and 23 are separate approvals. |
+| 2 | Host | Google Cloud Run in `us-east4` (northern Virginia, next to Supabase's AWS `us-east-1`). See [ADR 0006](../adr/0006-cloud-run-development-hosting-with-github-deploys.md). |
+| 3 | Isolation | A new GCP project for development only (for example `nurseflow-dev-<suffix>`). It holds no production optimizer, secrets, or IAM. |
+| 4 | Dev solver | A second Cloud Run service, `nurseflow-solver-dev`, runs the existing Python image with only `NURSEFLOW_SOLVER_TOKEN`, so only `/v1/solve` exists. It has no Supabase keys. |
+| 5 | Service auth | Keep the shared bearer token from milestone 6, stored in Secret Manager. Cloud Run IAM identity tokens are deferred (tradeoff log). |
+| 6 | Limits | Both services scale to zero. API: max 2 instances, concurrency 80, 1 vCPU / 256 MiB, 160 s request timeout, 5 database connections per instance (≤ 10 total). Solver: max 1 instance, concurrency 1, 1 vCPU / 2 GiB, 140 s timeout (the Phase 9 contract). |
+| 7 | Project selection | `NURSEFLOW_SUPABASE_PROJECT_REF` is required and must be exactly the development or production ref. The issuer, database host check, and pooler user come from it. One image moves between environments by configuration alone. |
+| 8 | Secrets and image | DB password and solver token live in Secret Manager. Each runtime service account can read only its own secrets. The public Supabase Root 2021 CA is baked into a distroless, non-root image; `NURSEFLOW_HTTP_ADDR=:8080`. |
+| 9 | Deploys | GitHub Actions, authenticated by Workload Identity Federation (no stored Google key). Steps: test, build the image tagged with the commit SHA, deploy a no-traffic candidate, smoke-check it, then move traffic. |
+| 10 | Expo | Expo web stays local (`localhost:8081`) and points `EXPO_PUBLIC_GO_API_URL` at the hosted URL. The Android emulator uses the HTTPS URL directly, without `adb reverse`. No web hosting is added. |
+| 11 | Account steps | The user installs gcloud, signs in, links billing, and types the database password. The agent prepares exact commands. |
+| 12 | Trigger | Deploys run on pushes to `codex/go-migration` that change `backend/**` (API) or `optimizer-service/**` (solver). Each workflow also triggers on changes to its own file, and the API workflow on `deploy/development/api.env.yaml`. There is no manual button, because it needs the workflow on the default branch. Redeploy with "Re-run jobs". Merging into `main` is a ticket 22 cutover step. |
+| 13 | GitHub trust | A `gcp-development` environment, limited to `codex/go-migration`, holds only non-secret IDs. Google trusts tokens only from repository ID `1225352400`, that branch, and that environment. The deployer account can push images and manage Cloud Run, but has no Secret Manager access itself. It can deploy code that runs as the runtime accounts, which do read secrets, so push access to the branch is effectively secret access. That is inherent to continuous deployment; branch access is the real boundary. |
+| 14 | Solver deploy | Same pattern, in its own workflow. |
+| 15 | Rollback | One documented `gcloud run services update-traffic` command. Each deploy summary prints it with the exact previous revision. |
+| 16 | Bootstrap | A checked-in, re-runnable gcloud script (`deploy/development/bootstrap-gcp.ps1`), not Terraform (tradeoff log). |
+| 17 | Store release | App Store / Play Store release is a proposed follow-on milestone after the cutover, not part of milestone 7. |
+
+## What was built (ticket 20)
+
+| File | Purpose |
+| --- | --- |
+| `backend/internal/supabaseproject/` | The two allowed project refs and `FromEnvironment()`. `database.Open`, `database.URL`, `auth.New`, and `auth.Issuer` take the ref. |
+| `backend/Dockerfile`, `backend/.dockerignore` | Two-stage build: Go 1.27.1 compiles a static binary, and `distroless/static-debian12:nonroot` runs it. |
+| `backend/certs/supabase-root-2021-ca.crt` | The public Supabase Root 2021 CA (SHA-256 `80:70:25:AD:…:CA:FA`, expires 2031-04-26), so Postgres TLS stays `verify-full`. It is the same certificate as the CI environment's `NURSEFLOW_DB_CA_CERT_PEM`. |
+| `deploy/development/api.env.yaml` | The API's non-secret settings. The workflow appends the solver URL. |
+| `deploy/development/bootstrap-gcp.ps1` | One-time GCP and GitHub setup. |
+| `.github/workflows/deploy-api-development.yml` | Go checks, then a deploy of `nurseflow-api-dev`. |
+| `.github/workflows/deploy-solver-development.yml` | Python checks, then a deploy of `nurseflow-solver-dev`. |
+
+The two workflows repeat the same deploy steps on purpose. Each file reads top to bottom without a shared composite action. Extract one if a third service appears.
+
+### How a deploy protects the running version
+
+1. `gcloud run deploy --no-traffic --tag candidate` creates a new revision with its own URL. Users stay on the old revision.
+2. The API connects to Postgres, checks the `nurseflow_go` role, and loads the Supabase signing keys **before** it listens. A revision with a wrong password or project ref never becomes ready, so the deploy command fails and nothing changes for users. This is the "deployment failure visibility" check.
+3. Smoke checks hit the candidate URL. The API must return `{"status":"ok"}` on `/health` and `401` on `/floor-templates` without a token. The solver must return `401` on an unauthenticated `POST /v1/solve`. Cloud Run reserves paths ending in `z`, so the solver's `/healthz` can't be used.
+4. Only then does `update-traffic --to-revisions <new>=100` switch users over.
+
+The first deploy of each service creates it, because Cloud Run cannot create a
+service with no traffic. There is no earlier revision to protect at that point.
+
+### Runtime notes
+
+- **Connection pools across instances:** each instance has its own pool of 5. At max 2 instances that is 10 session-pooler connections. Raising `--max-instances` multiplies this, so check the Supabase pooler limit first.
+- **Cold starts:** at zero instances, the first request waits for a container start, the database check, and the key download (a few seconds). The 150 s assignment-run budget is unaffected.
+- **Background work:** Cloud Run gives CPU only during requests by default. The signing-key refresh can lag while the instance is idle, but an unknown key ID still triggers a rate-limited refresh, so new keys are picked up.
+- **Secrets** use `:latest` and are read when an instance starts. After rotating the solver token, re-run both deploy workflows so no running instance keeps the old value.
+
+## User setup (one time)
+
+These steps need your Google account, billing, and the development database
+password, so you run them. Use `!` in Claude Code to run a command in this session.
+
+1. Install the [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) for Windows, then run `! gcloud auth login`.
+2. Find your billing account: `! gcloud billing accounts list`.
+3. Choose a globally unique project ID, then run:
+   `! powershell -File deploy/development/bootstrap-gcp.ps1 -ProjectId nurseflow-dev-<suffix> -BillingAccount <id>`.
+   It prompts (hidden) for the **development** `nurseflow_go` password, which is the one saved by `backend/scripts/development.ps1 Save`. It generates the solver token itself.
+4. Commit and push the branch. Both workflows trigger because their files are new. If the API job ran before the solver existed, it stops with "Run the solver deploy workflow first". Re-run it after the solver run finishes.
+5. Copy the API URL from the run summary into Expo's `.env` as `EXPO_PUBLIC_GO_API_URL`, then restart Expo.
+
+Expected cost at development traffic is close to zero: scale-to-zero Cloud Run
+within the free tier, plus a few cents of image storage. A billing budget alert is
+optional (`gcloud billing budgets create`).
+
+### Rollback
+
+Each deploy summary prints the exact command, for example:
+
+```text
+gcloud run services update-traffic nurseflow-api-dev --region us-east4 --project <project> --to-revisions <previous-revision>=100
+```
+
+A later push deploys a new revision and moves traffic forward again.
+
+## Verification
+
+### Done locally (2026-10-26)
+
+- `gofmt`, `go vet ./...`, `go build ./...`, and `go test -race ./... -count=1` pass. New tests cover both refs, cross-project direct-host rejection, unknown or missing refs, and the per-project issuer. Live database tests skip without credentials.
+- A static Linux build (`CGO_ENABLED=0 GOOS=linux`, the Dockerfile's compile step) produced an ELF binary. The full `docker build` was **not** run because the local Docker daemon was stopped. The first workflow run is the first image build.
+- The Python suite passes: 118 tests, run on local Python 3.14.4. CI uses the pinned 3.13.14.
+- Both workflows and `api.env.yaml` parse as YAML. actionlint was **not** run: fetching it was blocked in this session. Run `actionlint` before pushing if it is available.
+- The bootstrap script parses with no errors. Its helpers were exercised against a fake `gcloud`:
+  - argument quoting of the WIF condition (`&&`, single quotes) and the comma mapping
+  - failure detection
+  - secret bytes sent exactly: a value with spaces, `&|"`, and non-ASCII characters arrived byte-for-byte. This caught and fixed a UTF-8 byte-order mark that Windows PowerShell adds to process stdin.
+
+  The real gcloud/gh calls have not run.
+
+### Ticket 20 live checks (after setup), not yet run
+
+- [ ] Both workflow runs pass. The summary shows the revision, the image SHA tag, and the rollback command.
+- [ ] `GET <url>/health` returns 200. An unauthenticated `/floor-templates` returns 401.
+- [ ] Expo web (local) signs in as a development charge nurse and loads templates through the hosted URL. The browser network tab shows `run.app`.
+- [ ] Android emulator: same check, with no `adb reverse`.
+- [ ] Failure visibility: deploy a revision with a wrong `NURSEFLOW_DB_HOST` (or temporarily disable the secret version). The deploy fails, and the old revision keeps serving.
+- [ ] One rollback with the printed command, then roll forward.
+- [ ] Assignment run through the hosted API and solver.
+
+## Ticket 21 preparation (not applied)
+
+### Remaining direct Supabase use in Expo (2026-10-26 inventory)
+
+| Responsibility | Where | Classification |
+| --- | --- | --- |
+| Sign-up, sign-in, sign-out, session restore and refresh | `authRepository.ts`, `AuthSessionContext.tsx` | **Retained**: Supabase Auth by design. |
+| Access token for Go | `goApiAuth.ts`, `shiftRepository.ts`, `floorTemplateRepository.ts` (`auth.getSession`) | **Retained**: Auth. |
+| Realtime broadcast: `nurseflow:active-shift:*`, `nurseflow:nurse-access:*`, `nurseflow:request-thread:*` | `realtimeWorkspaceRepository.ts` | **Retained**: Supabase Realtime by design. It uses private broadcast channels, not `postgres_changes`. The database triggers that broadcast must survive ticket 23. |
+| `register_device_push_token`, `disable_current_device_push_token` RPCs | `devicePushTokenRepository.ts` | **Deferred**: ticket 18. Gated off by `EXPO_PUBLIC_NOTIFICATIONS_ENABLED`. |
+| `shift_nurse_access` select (notification-tap target) | `serverWorkspaceRepository.ts` `loadJoinedNurseNotificationTargetState` | **Deferred**: ticket 11's notification lookup. Gated off. |
+| Everything else (templates, shifts, invites, joining, moves, requests, threads, assignment runs) | Go through `goApiClient` | **Migrated**. No `functions.invoke`, storage, or direct optimizer calls remain. |
+
+On the server side, the legacy Python `/v1/assignment-runs` route
+(`http_api.py`, `service.py`, `runtime.py`, `supabase_clients.py`) calls the
+`prepare_optimizer_run`, `finalize_optimizer_run`, and `fail_optimizer_run`
+RPCs with the Supabase secret key. The production app on `main` still uses this
+route and the other legacy RPCs, so they remain until ticket 23.
+
+### Production change list (draft for ticket 22's approval)
+
+1. Apply the seven reviewed migrations in order to production `mkljczezkyqtuplzedpj`. Before that, re-run the read-only catalog comparison against production, because the development baseline came from it.
+   - `20261008060018_go_template_read_role`
+   - `20261018014344_go_template_writes`
+   - `20261018160805_go_shift_lifecycle`
+   - `20261020055621_go_shift_lifecycle_policy_initplans`
+   - `20261024120000_go_profiles_invites_access`
+   - `20261024180000_go_moves_requests_threads`
+   - `20261025120000_go_assignment_runs`
+
+   They are additive for existing clients. New roles, policies, and grants are added. The only revokes remove blanket `PUBLIC` execute from five invite and request RPCs while keeping their explicit client-role grants, and they lock down the new `go_private` helpers. This was verified on development; confirm again on production.
+2. Privately provision the production `nurseflow_go` password and enable login, as done for development in ordered task 6.
+3. Production hosting: a separate production GCP project, or the existing optimizer project. This is **to decide at ticket 22**. Same image and workflow shape, with `NURSEFLOW_SUPABASE_PROJECT_REF=mkljczezkyqtuplzedpj`, the production pooler host, a production solver token, and a `/v1/solve`-capable production solver revision. Reconsider `min-instances 1` for real users.
+4. Merge `codex/go-migration` into `main`. Point the production Expo build's `EXPO_PUBLIC_GO_API_URL` at the production API, and move the deploy trigger to `main`.
+5. Smoke checks: sign-in, template list, start shift, invite and join, a move, an assignment run, and joined-nurse live refresh, using a real production charge account approved by the user. No development fixtures are copied.
+
+### Rollback plan (draft)
+
+- **App:** the commit on `main` just before the merge is the rollback build. It uses only the legacy client paths, which stay in place until ticket 23.
+- **API:** Cloud Run traffic goes back to the previous revision, or to 0% if the app has rolled back.
+- **Database:** the migrations are additive, so the legacy paths keep working with them applied. Rollback does not reverse migrations unless a specific defect requires it.
+- **Triggers to roll back:** any smoke check fails; a charge or joined-nurse workflow error appears that development did not show; or authorization isolation is in doubt.
+
+## Ticket 23 notes
+
+Before removing an RPC, policy, or the legacy Python route, prove that no
+supported app version still calls it. Once store builds exist (proposed milestone
+8), old installed versions keep calling legacy paths for months. Retirement then
+waits for a minimum-supported-version decision, not just the rollback window.

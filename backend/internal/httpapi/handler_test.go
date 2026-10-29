@@ -18,6 +18,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/pratham124/nurse-flow/backend/internal/auth"
 	"github.com/pratham124/nurse-flow/backend/internal/database"
+	"github.com/pratham124/nurse-flow/backend/internal/supabaseproject"
 )
 
 func TestHealthEndpoint(t *testing.T) {
@@ -84,21 +85,21 @@ func testDiagnosticVerifierWithClaims(t *testing.T) (*auth.Verifier, func(string
 	}
 	previous := http.DefaultTransport
 	http.DefaultTransport = keyTransportFunc(func(r *http.Request) (*http.Response, error) {
-		if r.URL.String() != auth.DevelopmentIssuer+"/.well-known/jwks.json" {
+		if r.URL.String() != auth.Issuer(supabaseproject.Development)+"/.well-known/jwks.json" {
 			return nil, fmt.Errorf("unexpected key discovery URL")
 		}
 		return &http.Response{StatusCode: http.StatusOK, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(string(jwks)))}, nil
 	})
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(func() { cancel(); http.DefaultTransport = previous })
-	verifier, err := auth.NewDevelopment(ctx)
+	verifier, err := auth.New(ctx, supabaseproject.Development)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return verifier, func(subject string, expiry time.Time, extra jwt.MapClaims) string {
 		t.Helper()
 		claims := jwt.MapClaims{
-			"iss": auth.DevelopmentIssuer, "aud": "authenticated", "sub": subject,
+			"iss": auth.Issuer(supabaseproject.Development), "aud": "authenticated", "sub": subject,
 			"role": "authenticated", "exp": expiry.Unix(),
 		}
 		for name, value := range extra {

@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/pratham124/nurse-flow/backend/internal/supabaseproject"
 	"gorm.io/gorm"
 )
 
@@ -42,7 +43,7 @@ func openIntegrationStore(t *testing.T) *Store {
 		}
 		store, err = open(ctx, localURL)
 	} else {
-		store, err = OpenDevelopment(ctx)
+		store, err = Open(ctx, supabaseproject.Development)
 	}
 	if err != nil {
 		t.Fatal(err)

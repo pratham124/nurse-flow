@@ -1,0 +1,173 @@
+name: Deploy development API
+
+on:
+  push:
+    branches:
+      - codex/go-migration
+    paths:
+      - "backend/**"
+      - "deploy/development/api.env.yaml"
+      - ".github/workflows/deploy-api-development.yml"
+
+permissions:
+  contents: read
+
+# One deploy at a time, and never cancel a deploy halfway through.
+concurrency:
+  group: deploy-api-development
+  cancel-in-progress: false
+
+env:
+  REGION: us-east4
+  SERVICE: nurseflow-api-dev
+  SOLVER_SERVICE: nurseflow-solver-dev
+
+jobs:
+  test:
+    name: Go checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Check out the tested commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up the project's Go version
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Check formatting
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "::error::Run gofmt on: $unformatted"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      # Live database tests skip here; go-development-database.yml runs them.
+      - name: Test
+        run: go test -race ./... -count=1
+
+  deploy:
+    name: Deploy to Cloud Run (development)
+    needs: test
+    if: github.repository == 'pratham124/nurse-flow'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: gcp-development
+    permissions:
+      contents: read
+      # Lets GitHub issue the short-lived OIDC token that Workload Identity
+      # Federation exchanges for Google credentials. No Google key is stored.
+      id-token: write
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+    steps:
+      - name: Check out the tested commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      - name: Build and push the image
+        run: |
+          image="$REGION-docker.pkg.dev/$GCP_PROJECT_ID/nurseflow/api:$GITHUB_SHA"
+          gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+          docker build --tag "$image" backend
+          docker push "$image"
+          echo "IMAGE=$image" >> "$GITHUB_ENV"
+
+      - name: Deploy a candidate revision without traffic
+        run: |
+          gcloud config set run/region "$REGION"
+
+          solver_url="$(gcloud run services describe "$SOLVER_SERVICE" --format 'value(status.url)' 2>/dev/null || true)"
+          if [ -z "$solver_url" ]; then
+            echo "::error::$SOLVER_SERVICE is not deployed yet. Run the solver deploy workflow first."
+            exit 1
+          fi
+          cp deploy/development/api.env.yaml "$RUNNER_TEMP/api.env.yaml"
+          printf 'NURSEFLOW_SOLVER_URL: "%s"\n' "$solver_url" >> "$RUNNER_TEMP/api.env.yaml"
+
+          # Remember what is serving now, for the rollback command in the summary.
+          previous=""
+          traffic_flag="--no-traffic"
+          if gcloud run services describe "$SERVICE" >/dev/null 2>&1; then
+            previous="$(gcloud run services describe "$SERVICE" --format json | jq -r '[.status.traffic[] | select(.percent == 100) | .revisionName][0] // ""')"
+          else
+            # Cloud Run cannot create a brand-new service with no traffic.
+            traffic_flag=""
+          fi
+          echo "PREVIOUS_REVISION=$previous" >> "$GITHUB_ENV"
+          echo "SERVICE_EXISTED=$([ -n "$traffic_flag" ] && echo true || echo false)" >> "$GITHUB_ENV"
+
+          # The API checks Postgres and the Supabase signing keys before it
+          # listens, so a revision with bad settings never becomes ready and
+          # this command fails while the previous revision keeps serving.
+          gcloud run deploy "$SERVICE" \
+            --image "$IMAGE" \
+            --service-account "nurseflow-api-dev@$GCP_PROJECT_ID.iam.gserviceaccount.com" \
+            --env-vars-file "$RUNNER_TEMP/api.env.yaml" \
+            --set-secrets "NURSEFLOW_DB_PASSWORD=nurseflow-db-password:latest,NURSEFLOW_SOLVER_TOKEN=nurseflow-solver-token:latest" \
+            --port 8080 \
+            --cpu 1 \
+            --memory 256Mi \
+            --concurrency 80 \
+            --min-instances 0 \
+            --max-instances 2 \
+            --timeout 160 \
+            --allow-unauthenticated \
+            --tag candidate \
+            $traffic_flag \
+            --quiet
+
+          service="$(gcloud run services describe "$SERVICE" --format json)"
+          echo "REVISION=$(jq -r '.status.latestCreatedRevisionName' <<< "$service")" >> "$GITHUB_ENV"
+          echo "CANDIDATE_URL=$(jq -r '.status.traffic[] | select(.tag == "candidate") | .url' <<< "$service")" >> "$GITHUB_ENV"
+          echo "SERVICE_URL=$(jq -r '.status.url' <<< "$service")" >> "$GITHUB_ENV"
+
+      - name: Smoke-check the candidate
+        run: |
+          # The first request may wait for a cold start.
+          curl --silent --show-error --fail --max-time 30 --retry 3 --retry-delay 5 --retry-all-errors \
+            "$CANDIDATE_URL/health" | jq -e '.status == "ok"'
+          # A protected route must reject a request without a token.
+          status="$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 30 "$CANDIDATE_URL/floor-templates")"
+          if [ "$status" != "401" ]; then
+            echo "::error::Expected 401 from /floor-templates without a token, got $status."
+            exit 1
+          fi
+
+      - name: Move traffic to the candidate
+        run: |
+          gcloud run services update-traffic "$SERVICE" --region "$REGION" --to-revisions "$REVISION=100" --quiet
+          {
+            echo "### Development API deployed"
+            echo "- Revision: \`$REVISION\`"
+            echo "- Image: \`$IMAGE\`"
+            echo "- URL: $SERVICE_URL"
+            if [ -n "$PREVIOUS_REVISION" ]; then
+              echo "- Roll back with:"
+              echo "  \`gcloud run services update-traffic $SERVICE --region $REGION --project $GCP_PROJECT_ID --to-revisions $PREVIOUS_REVISION=100\`"
+            elif [ "$SERVICE_EXISTED" = "true" ]; then
+              echo "- Previous traffic was split across revisions; see \`gcloud run revisions list --service $SERVICE --region $REGION\` before rolling back."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

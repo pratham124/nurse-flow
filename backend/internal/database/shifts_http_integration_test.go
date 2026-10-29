@@ -24,6 +24,7 @@ import (
 	"github.com/pratham124/nurse-flow/backend/internal/auth"
 	"github.com/pratham124/nurse-flow/backend/internal/database"
 	"github.com/pratham124/nurse-flow/backend/internal/httpapi"
+	"github.com/pratham124/nurse-flow/backend/internal/supabaseproject"
 	"github.com/pratham124/nurse-flow/backend/internal/templates"
 )
 
@@ -81,18 +82,18 @@ func TestShiftLifecycleHTTPDemo(t *testing.T) {
 	jwks, _ := json.Marshal(map[string]any{"keys": []map[string]string{{"kid": "lifecycle-demo", "kty": "EC", "alg": "ES256", "use": "sig", "crv": "P-256", "x": base64.RawURLEncoding.EncodeToString(key.X.FillBytes(make([]byte, 32))), "y": base64.RawURLEncoding.EncodeToString(key.Y.FillBytes(make([]byte, 32)))}}})
 	previous := http.DefaultTransport
 	http.DefaultTransport = demoKeyTransport(func(r *http.Request) (*http.Response, error) {
-		if r.URL.String() != auth.DevelopmentIssuer+"/.well-known/jwks.json" {
+		if r.URL.String() != auth.Issuer(supabaseproject.Development)+"/.well-known/jwks.json" {
 			return nil, fmt.Errorf("unexpected discovery URL")
 		}
 		return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(string(jwks)))}, nil
 	})
 	defer func() { cancel(); http.DefaultTransport = previous }()
-	verifier, err := auth.NewDevelopment(ctx)
+	verifier, err := auth.New(ctx, supabaseproject.Development)
 	if err != nil {
 		t.Fatal(err)
 	}
 	sign := func(subject string) string {
-		token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{"iss": auth.DevelopmentIssuer, "aud": "authenticated", "sub": subject, "role": "authenticated", "exp": time.Now().Add(time.Hour).Unix()})
+		token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{"iss": auth.Issuer(supabaseproject.Development), "aud": "authenticated", "sub": subject, "role": "authenticated", "exp": time.Now().Add(time.Hour).Unix()})
 		token.Header["kid"] = "lifecycle-demo"
 		value, err := token.SignedString(key)
 		if err != nil {

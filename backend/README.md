@@ -32,6 +32,19 @@ Browser requests are allowed from `http://localhost:8081` and `http://127.0.0.1:
 
 The server allows five seconds to read request headers, ten seconds to read a request or write a response, and sixty seconds for an idle connection. These explicit limits keep connections from waiting indefinitely. The one exception is `POST /active-shifts/{id}/assignment-runs`, which extends its own write deadline to 140 seconds because a solve may take about two minutes.
 
+### Supabase project configuration
+
+`NURSEFLOW_SUPABASE_PROJECT_REF` is required. The API and `cmd/dbcheck` refuse to start unless it is exactly one of two allowed project refs, so the same container image can move from development to production by configuration alone:
+
+- `nmitctyxtjmlakcsmnuj`: development (the only value to use today; `scripts/development.ps1` sets it).
+- `mkljczezkyqtuplzedpj`: production. Unused until the approved cutover (ticket 22).
+
+The ref picks the token issuer (`https://<ref>.supabase.co/auth/v1`), the database direct host (`db.<ref>.supabase.co`), and the pooler user suffix (`nurseflow_go.<ref>`). A direct host belonging to the other project is rejected. Live integration tests use the development ref directly and do not read this variable.
+
+### Hosted development
+
+`Dockerfile` builds a static, non-root image with the public Supabase CA at `/etc/nurseflow/` and `NURSEFLOW_HTTP_ADDR=:8080`. GitHub Actions deploys it to Cloud Run from `codex/go-migration` (`.github/workflows/deploy-api-development.yml`). Setup, verification, and rollback are in [hosted development](../docs/go-migration/hosted-development.md).
+
 ### Optimizer (solver) configuration
 
 The API refuses to start unless both of these are set, so a missing token is found at startup rather than by the first optimizer run:
