@@ -11,6 +11,7 @@ import (
 
 type identityContextKey struct{}
 
+// IdentityFromContext retrieves the identity verified by RequireIdentity.
 func IdentityFromContext(ctx context.Context) (Identity, bool) {
 	identity, ok := ctx.Value(identityContextKey{}).(Identity)
 	return identity, ok

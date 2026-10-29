@@ -1,3 +1,4 @@
+// Package database maps existing tables and runs identity-scoped database operations.
 package database
 
 import (
@@ -13,11 +14,9 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	"github.com/pratham124/nurse-flow/backend/internal/supabaseproject"
 )
-
-const DevelopmentProject = "nmitctyxtjmlakcsmnuj"
-
-var uuidPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
 // Store owns one reusable connection pool. Close it when the process finishes.
 type Store struct {
@@ -25,8 +24,11 @@ type Store struct {
 	pool *sql.DB
 }
 
-// DevelopmentURL reads server-only settings and restricts the connection to development.
-func DevelopmentURL() (string, error) {
+// URL reads server-only settings and restricts the connection to one allowed Supabase project.
+func URL(projectRef string) (string, error) {
+	if !supabaseproject.Valid(projectRef) {
+		return "", errors.New("unknown Supabase project")
+	}
 	host := os.Getenv("NURSEFLOW_DB_HOST")
 	password := os.Getenv("NURSEFLOW_DB_PASSWORD")
 	if host == "" || password == "" {
@@ -34,11 +36,11 @@ func DevelopmentURL() (string, error) {
 	}
 
 	user := "nurseflow_go"
-	if host != "db."+DevelopmentProject+".supabase.co" {
+	if host != "db."+projectRef+".supabase.co" {
 		if !regexp.MustCompile(`^aws-[0-9]+-[a-z0-9-]+\.pooler\.supabase\.com$`).MatchString(host) {
-			return "", errors.New("database host must be the development direct host or a Supabase session pooler")
+			return "", errors.New("database host must be the project's direct host or a Supabase session pooler")
 		}
-		user += "." + DevelopmentProject
+		user += "." + projectRef
 	}
 
 	connection := &url.URL{
@@ -58,8 +60,9 @@ func DevelopmentURL() (string, error) {
 	return connection.String(), nil
 }
 
-func OpenDevelopment(ctx context.Context) (*Store, error) {
-	connectionURL, err := DevelopmentURL()
+// Open opens and verifies a connection restricted to the given Supabase project.
+func Open(ctx context.Context, projectRef string) (*Store, error) {
+	connectionURL, err := URL(projectRef)
 	if err != nil {
 		return nil, err
 	}
@@ -73,6 +76,10 @@ func open(ctx context.Context, connectionURL string) (*Store, error) {
 	}), &gorm.Config{
 		DisableAutomaticPing: true,
 		Logger:               logger.Default.LogMode(logger.Silent),
+		// Select the struct's own columns instead of *. The Go role is granted
+		// specific columns, and a struct that leaves a column out (InviteRow has
+		// no token_hash) then never reads it.
+		QueryFields: true,
 	})
 	if err != nil {
 		return nil, errors.New("could not initialize database connection")
@@ -94,11 +101,12 @@ func open(ctx context.Context, connectionURL string) (*Store, error) {
 	return store, nil
 }
 
+// Check verifies connectivity and requires the limited database role.
 func (s *Store) Check(ctx context.Context) error {
 	checkContext, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	if err := s.pool.PingContext(checkContext); err != nil {
-		return errors.New("database connection failed; check development settings and availability")
+		return errors.New("database connection failed; check database settings and availability")
 	}
 
 	var role struct {
@@ -106,6 +114,7 @@ func (s *Store) Check(ctx context.Context) error {
 		Superuser bool   `gorm:"column:superuser"`
 		BypassRLS bool   `gorm:"column:bypass_rls"`
 	}
+	// Raw: a catalog diagnostic, not an application table query.
 	if err := s.db.WithContext(checkContext).Raw(`
 		SELECT rolname AS name, rolsuper AS superuser, rolbypassrls AS bypass_rls
 		FROM pg_roles WHERE rolname = current_user
@@ -118,25 +127,67 @@ func (s *Store) Check(ctx context.Context) error {
 	return nil
 }
 
+// Close releases the store's database connection pool.
 func (s *Store) Close() error {
 	return s.pool.Close()
 }
 
-// WithIdentity must receive an Auth user ID from server-verified identity, never client input.
+// WithIdentity requires an Auth UUID already validated by the caller (the JWT
+// verifier for HTTP requests), never an unchecked client-supplied identity.
 // The setting is transaction-local so it cannot leak to another pooled request.
 func (s *Store) WithIdentity(ctx context.Context, authUserID string, query func(*gorm.DB) error) error {
-	if !uuidPattern.MatchString(authUserID) {
-		return errors.New("database identity must be an Auth user UUID")
-	}
+	return s.withIdentity(ctx, authUserID, identityOptions{readOnly: true}, query)
+}
+
+// WithWriteIdentity gives a write the same bounded, transaction-local identity.
+// It requires the same validated Auth UUID as WithIdentity.
+// Returning an error from write rolls back every statement in the callback.
+func (s *Store) WithWriteIdentity(ctx context.Context, authUserID string, write func(*gorm.DB) error) error {
+	return s.withIdentity(ctx, authUserID, identityOptions{}, write)
+}
+
+// WithInviteCodeRead is WithIdentity plus the hash of the invite code the caller
+// presented. The capability policies let that hash unlock only its own invite
+// rows (ADR 0003). The hash comes from invites.HashCode, never from the client.
+func (s *Store) WithInviteCodeRead(ctx context.Context, authUserID, tokenHash string, query func(*gorm.DB) error) error {
+	return s.withIdentity(ctx, authUserID, identityOptions{readOnly: true, inviteTokenHash: tokenHash}, query)
+}
+
+// WithInviteCodeWrite is WithWriteIdentity plus the presented invite code hash.
+func (s *Store) WithInviteCodeWrite(ctx context.Context, authUserID, tokenHash string, write func(*gorm.DB) error) error {
+	return s.withIdentity(ctx, authUserID, identityOptions{inviteTokenHash: tokenHash}, write)
+}
+
+// identityOptions describes one identity transaction.
+type identityOptions struct {
+	readOnly        bool
+	inviteTokenHash string // set only for invite-code requests
+}
+
+func (s *Store) withIdentity(ctx context.Context, authUserID string, options identityOptions, query func(*gorm.DB) error) error {
 	queryContext, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	return s.db.WithContext(queryContext).Transaction(func(tx *gorm.DB) error {
+		// Raw: set_config is a function call; the third argument makes it transaction-local.
 		if err := tx.Exec("SELECT set_config('nurseflow.auth_user_id', ?, true)", strings.ToLower(authUserID)).Error; err != nil {
 			return errors.New("could not set database request identity")
+		}
+		if options.inviteTokenHash != "" {
+			if err := tx.Exec("SELECT set_config('nurseflow.invite_token_hash', ?, true)", options.inviteTokenHash).Error; err != nil {
+				return errors.New("could not set database invite capability")
+			}
 		}
 		if err := tx.Exec("SELECT set_config('statement_timeout', '5000', true)").Error; err != nil {
 			return errors.New("could not set database query timeout")
 		}
 		return query(tx)
-	}, &sql.TxOptions{ReadOnly: true})
+	}, identityTransactionOptions(options.readOnly))
+}
+
+func identityTransactionOptions(readOnly bool) *sql.TxOptions {
+	options := &sql.TxOptions{ReadOnly: readOnly}
+	if readOnly {
+		options.Isolation = sql.LevelRepeatableRead
+	}
+	return options
 }

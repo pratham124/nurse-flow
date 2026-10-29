@@ -6,10 +6,15 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/pratham124/nurse-flow/backend/internal/assignmentruns"
 	"github.com/pratham124/nurse-flow/backend/internal/auth"
-	"github.com/pratham124/nurse-flow/backend/internal/httpresponse"
+	"github.com/pratham124/nurse-flow/backend/internal/database"
+	"github.com/pratham124/nurse-flow/backend/internal/httpapi"
+	"github.com/pratham124/nurse-flow/backend/internal/solver"
+	"github.com/pratham124/nurse-flow/backend/internal/supabaseproject"
 )
 
 func main() {
@@ -22,18 +27,38 @@ func main() {
 func run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	verifier, err := auth.NewDevelopment(ctx)
+	projectRef, err := supabaseproject.FromEnvironment()
+	if err != nil {
+		return fmt.Errorf("configure Supabase project: %w", err)
+	}
+	store, err := database.Open(ctx, projectRef)
+	if err != nil {
+		return fmt.Errorf("configure database: %w", err)
+	}
+	defer store.Close()
+	verifier, err := auth.New(ctx, projectRef)
 	if err != nil {
 		return fmt.Errorf("configure authentication: %w", err)
+	}
+	// Check the solver settings at startup, so a missing token is not found by the
+	// first charge nurse who runs the optimizer.
+	solverClient, err := solver.New(os.Getenv("NURSEFLOW_SOLVER_URL"), os.Getenv("NURSEFLOW_SOLVER_TOKEN"))
+	if err != nil {
+		return fmt.Errorf("configure solver (set NURSEFLOW_SOLVER_URL and NURSEFLOW_SOLVER_TOKEN): %w", err)
 	}
 	address := os.Getenv("NURSEFLOW_HTTP_ADDR")
 	if address == "" {
 		address = "127.0.0.1:8080"
 	}
+	webOrigins, configured := os.LookupEnv("NURSEFLOW_WEB_ORIGINS")
+	if !configured {
+		webOrigins = "http://localhost:8081,http://127.0.0.1:8081"
+	}
+	handler := httpapi.WithCORS(httpapi.NewHandler(verifier, store, store, store, store, store, store, store, store, assignmentruns.NewCoordinator(store, solverClient)), strings.Split(webOrigins, ","))
 
 	server := &http.Server{
 		Addr:              address,
-		Handler:           newHandler(verifier),
+		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      10 * time.Second,
@@ -45,30 +70,4 @@ func run() error {
 		return fmt.Errorf("start HTTP server: %w", err)
 	}
 	return nil
-}
-
-func newHandler(verifier *auth.Verifier) http.Handler {
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /health", healthHandler)
-	mux.Handle("GET /auth/check", verifier.RequireIdentity(http.HandlerFunc(authCheckHandler)))
-	return mux
-}
-
-// This diagnostic route proves authentication only; profile authorization is task 8.
-func authCheckHandler(w http.ResponseWriter, r *http.Request) {
-	identity, ok := auth.IdentityFromContext(r.Context())
-	if !ok {
-		httpresponse.WriteError(w, http.StatusInternalServerError, "internal_error", "The request could not be completed.")
-		return
-	}
-	httpresponse.WriteJSON(w, http.StatusOK, struct {
-		AuthUserID string `json:"auth_user_id"`
-	}{AuthUserID: identity.AuthUserID})
-}
-
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := fmt.Fprintln(w, `{"status":"ok"}`); err != nil {
-		log.Print("Could not write health response")
-	}
 }

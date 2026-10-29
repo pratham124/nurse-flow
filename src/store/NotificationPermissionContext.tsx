@@ -13,6 +13,7 @@ import {
   type NotificationPermissionsStatus,
 } from "expo-notifications";
 
+import { notificationsEnabled } from "../config/featureFlags";
 import type {
   DevicePushRegistrationState,
   NotificationPermissionStatus,
@@ -73,7 +74,8 @@ export function NotificationPermissionProvider({
   useEffect(() => {
     let shouldUpdateState = true;
 
-    if (!signedInProfileId) {
+    // Notifications are off: never read or request permission.
+    if (!notificationsEnabled || !signedInProfileId) {
       setPermissionStatus("unknown");
       return () => {
         shouldUpdateState = false;
@@ -104,6 +106,7 @@ export function NotificationPermissionProvider({
 
   const registerCurrentDevice = useCallback(async () => {
     if (
+      !notificationsEnabled ||
       !signedInProfileId ||
       (permissionStatus !== "granted" && permissionStatus !== "provisional")
     ) {

@@ -1,8 +1,6 @@
-import type { User } from "@supabase/supabase-js";
-
 import { loadOrCreateUserProfile } from "./profileRepository";
 import { getSupabaseClient } from "./supabaseClient";
-import type { UserProfile, UserRole } from "../types/models";
+import type { UserProfile } from "../types/models";
 
 type SignUpInput = {
   displayName: string;
@@ -19,8 +17,6 @@ type AuthResult = {
   profile: UserProfile;
 };
 
-const defaultSignupRole: UserRole = "charge_nurse";
-
 function getAuthClient() {
   const supabase = getSupabaseClient();
 
@@ -29,19 +25,6 @@ function getAuthClient() {
   }
 
   return supabase;
-}
-
-function getProfileInputFromUser(user: User, displayName?: string) {
-  const metadata = user.user_metadata;
-  const metadataDisplayName =
-    typeof metadata.display_name === "string" ? metadata.display_name : "";
-
-  return {
-    authUserId: user.id,
-    displayName:
-      displayName?.trim() || metadataDisplayName.trim() || user.email || "NurseFlow user",
-    role: defaultSignupRole,
-  };
 }
 
 export async function signUpWithEmail({
@@ -53,12 +36,9 @@ export async function signUpWithEmail({
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: {
-      data: {
-        display_name: displayName,
-        role: defaultSignupRole,
-      },
-    },
+    // The Go server reads display_name from the verified token; it also
+    // chooses the role, so the client sends none.
+    options: { data: { display_name: displayName } },
   });
 
   if (error) {
@@ -75,10 +55,7 @@ export async function signUpWithEmail({
     );
   }
 
-  const profile = await loadOrCreateUserProfile(
-    supabase,
-    getProfileInputFromUser(data.user, displayName),
-  );
+  const profile = await loadOrCreateUserProfile(data.session.access_token);
 
   return { profile };
 }
@@ -97,14 +74,11 @@ export async function loginWithEmail({
     throw new Error(error.message);
   }
 
-  if (!data.user) {
+  if (!data.user || !data.session) {
     throw new Error("Supabase did not return the signed-in user.");
   }
 
-  const profile = await loadOrCreateUserProfile(
-    supabase,
-    getProfileInputFromUser(data.user),
-  );
+  const profile = await loadOrCreateUserProfile(data.session.access_token);
 
   return { profile };
 }

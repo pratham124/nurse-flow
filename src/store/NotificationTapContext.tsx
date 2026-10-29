@@ -16,6 +16,7 @@ import {
   loadJoinedNurseNotificationTargetState,
   loadServerActiveShift,
 } from "../services/serverWorkspaceRepository";
+import { notificationsEnabled } from "../config/featureFlags";
 import { getSupabaseClient } from "../services/supabaseClient";
 import {
   parseNotificationTapPayload,
@@ -104,6 +105,11 @@ export function NotificationTapProvider({
   );
 
   useEffect(() => {
+    // Notifications are off: do not listen for taps.
+    if (!notificationsEnabled) {
+      return;
+    }
+
     let isMounted = true;
 
     try {

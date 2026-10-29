@@ -28,9 +28,9 @@ request:
 1. Read `docs/go-migration/plan.md` for the current task and progress.
 2. Inspect the branch, working tree, and files from the current task before
    editing.
-3. Resume the first incomplete ordered task. Do not repeat completed tasks or
-   jump ahead.
-4. Before implementing a new ordered task, load the `grill-with-docs` skill. Use
+3. Resume the first ready ticket in the approved milestone identified by the
+   plan; preserve completed work and the milestone boundary.
+4. Before implementing a new milestone, load the `grill-with-docs` skill. Use
    its `grilling` and `domain-modeling` workflow to settle decisions that are not
    already recorded and persist warranted terminology or architecture decisions.
    Do not reopen decisions the user already settled or create documentation for
@@ -38,8 +38,8 @@ request:
 5. After implementation, explain the change and verification results. Do not
    require quizzes, understanding checkpoints, or updates to the historical
    understanding checklist as a condition of completion.
-6. Continue one task at a time using the learning and completion rules in this
-   file.
+6. Follow the milestone execution and learning protocol in the migration plan;
+   it governs Go migration batching instead of the older one-feature rule.
 7. Load the locally installed Supabase skills before relevant Supabase or PostgreSQL work.
 
 ## Learning Rules
@@ -49,7 +49,7 @@ request:
 - Implement one feature at a time.
 - Do not jump ahead to future phases.
 - Keep code readable and beginner-friendly.
-- Avoid extra libraries unless clearly justified.
+- Prefer maintained, established libraries for standard functionality (such as UUID generation) when they reduce custom code and improve readability. Keep dependencies focused and explain why each is needed.
 - Prefer simple local-first solutions before adding infrastructure.
 - Never add code I cannot reasonably understand and explain.
 
@@ -57,6 +57,22 @@ request:
 
 - Use modern conventions (e.g., fetch latest docs via MCP server).
 - Prefer named `ComponentNameProps` types for React component props so component boundaries stay easy to read and explain. Reserve inline object prop types for tiny non-component callbacks or helpers.
+
+## Tradeoff Log
+
+Keep a running log of tradeoffs in `docs/tradeoffs.md` (create it if missing). Its purpose is interview prep: I use it to answer questions like "what tradeoffs did you make on this project?" When we choose one approach over a real alternative (a library, a data shape, a simplification, something deferred, a known limitation we accept), add an entry in the same turn:
+
+- **Date and topic**
+- **Problem:** what we needed to solve, and the constraints that mattered
+- **Chose:** what we did
+- **Over:** the alternative(s) we passed on
+- **Why:** the reasoning
+- **Cost:** what we gave up
+- **Would change if:** what would make a different choice better (scale, more users, a team, new requirements)
+
+Write each entry in plain, specific language I could say out loud in an interview, tied to this project's details, with no jargon I couldn't explain.
+
+Newest entries go at the top. Skip trivial choices: log a tradeoff only if a future reader might reasonably ask "why did we do it this way?" and the answer isn't obvious from the code. Naming, formatting, and picking between near-equivalent options don't qualify. Big architecture decisions still get an ADR in `docs/adr/`; link the ADR from the log entry.
 
 ## Development And Testing Skills
 

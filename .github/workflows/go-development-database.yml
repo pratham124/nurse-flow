@@ -1,0 +1,84 @@
+name: Go development database
+
+on:
+  push:
+    branches:
+      - codex/go-migration
+    paths:
+      - "backend/**"
+      - ".github/workflows/go-development-database.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: go-development-database-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  connectivity:
+    name: Development Postgres connectivity
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Resolve and connect to the development pooler
+        shell: python
+        run: |
+          import socket
+
+          host = "aws-0-us-east-1.pooler.supabase.com"
+          port = 5432
+          addresses = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+          print(f"DNS resolved {host} to {len(addresses)} address candidates.")
+          with socket.create_connection((host, port), timeout=5):
+              print(f"Direct TCP connection to {host}:{port} succeeded.")
+
+  read-only-isolation:
+    name: Read-only Supabase isolation
+    needs: connectivity
+    if: github.repository == 'pratham124/nurse-flow'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    environment: nurseflow-go-development
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Check out the tested commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up the project's Go version
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Prepare the trusted database CA certificate
+        env:
+          NURSEFLOW_DB_CA_CERT_PEM: ${{ vars.NURSEFLOW_DB_CA_CERT_PEM }}
+        run: |
+          if [ -z "$NURSEFLOW_DB_CA_CERT_PEM" ]; then
+            echo "::error::Configure NURSEFLOW_DB_CA_CERT_PEM in the development environment."
+            exit 1
+          fi
+          printf '%s\n' "$NURSEFLOW_DB_CA_CERT_PEM" > "$RUNNER_TEMP/nurseflow-db-ca.crt"
+          openssl x509 -in "$RUNNER_TEMP/nurseflow-db-ca.crt" -noout
+
+      - name: Verify live template read isolation
+        env:
+          NURSEFLOW_DB_HOST: aws-0-us-east-1.pooler.supabase.com
+          NURSEFLOW_DB_PASSWORD: ${{ secrets.NURSEFLOW_DB_PASSWORD }}
+          NURSEFLOW_DB_SSLROOTCERT: ${{ runner.temp }}/nurseflow-db-ca.crt
+          NURSEFLOW_DATABASE_TESTS: "1"
+          NURSEFLOW_TEST_DATABASE_URL: ""
+          NURSEFLOW_TEST_ALPHA_ID: 4ea34fc9-d17b-411e-83a0-8a82cf9b8977
+          NURSEFLOW_TEST_BETA_ID: 5e7093ff-d8ea-4734-ae77-73a3906f936e
+          NURSEFLOW_TEST_REGULAR_ID: 712ae250-d0c6-4af4-b19e-ee7844d0c295
+        run: |
+          if [ -z "$NURSEFLOW_DB_PASSWORD" ]; then
+            echo "::error::Configure the limited development database password in the development environment."
+            exit 1
+          fi
+          go test ./internal/database -run '^TestTemplateListIsolationIntegration$' -v -count=1

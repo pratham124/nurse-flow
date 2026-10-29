@@ -27,6 +27,7 @@ import { LoadingState } from "../components/LoadingState";
 import { NurseFlowLogo } from "../components/NurseFlowLogo";
 import { NotificationPermissionDialog } from "../components/NotificationPermissionCard";
 import { useAuthSession } from "../store/AuthSessionContext";
+import { notificationsEnabled } from "../config/featureFlags";
 import { useNotificationPermission } from "../store/NotificationPermissionContext";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { useWorkflowDraft } from "../store/WorkflowDraftContext";
@@ -43,7 +44,6 @@ import {
   isCompletedFloorTemplate,
   createShiftFromTemplate,
   copyFloorTemplate,
-  createPreviousShiftSnapshot,
 } from "../helpers/shiftHelpers";
 
 const COMPACT_TEMPLATE_CARD_MAX_WIDTH = 350;
@@ -214,7 +214,6 @@ export default function Index() {
     previousShiftSnapshots,
     realtimeConnectionState,
     retryLoadWorkspace,
-    savePreviousShiftSnapshot: saveServerPreviousShiftSnapshot,
     startActiveShift,
     workspaceState,
   } = useServerWorkspace(
@@ -228,7 +227,6 @@ export default function Index() {
       previousShiftSnapshots: state.previousShiftSnapshots,
       realtimeConnectionState: state.realtimeConnectionState,
       retryLoadWorkspace: state.retryLoadWorkspace,
-      savePreviousShiftSnapshot: state.savePreviousShiftSnapshot,
       startActiveShift: state.startActiveShift,
       workspaceState: state.workspaceState,
     })),
@@ -370,22 +368,6 @@ export default function Index() {
 
   async function handleConfirmEndActiveShift() {
     if (visibleActiveShift) {
-      const previousShiftSnapshot =
-        createPreviousShiftSnapshot(visibleActiveShift);
-
-      try {
-        await saveServerPreviousShiftSnapshot(previousShiftSnapshot);
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Carry-over could not be saved. Try again.";
-
-        setTemplateEditMessage(message);
-        setEndShiftConfirmationVisible(false);
-        return;
-      }
-
       try {
         await endActiveShift(visibleActiveShift);
       } catch (error) {
@@ -454,17 +436,19 @@ export default function Index() {
           {profile ? (
             <Text style={styles.accountName}>{profile.displayName}</Text>
           ) : null}
-          <Pressable
-            accessibilityLabel="Open notification status"
-            accessibilityRole="button"
-            onPress={() => setNotificationDialogVisible(true)}
-            style={({ pressed }) => [
-              styles.notificationButton,
-              pressed && styles.notificationButtonPressed,
-            ]}
-          >
-            <BellIcon color={colors.brand.burgundy} size={19} />
-          </Pressable>
+          {notificationsEnabled ? (
+            <Pressable
+              accessibilityLabel="Open notification status"
+              accessibilityRole="button"
+              onPress={() => setNotificationDialogVisible(true)}
+              style={({ pressed }) => [
+                styles.notificationButton,
+                pressed && styles.notificationButtonPressed,
+              ]}
+            >
+              <BellIcon color={colors.brand.burgundy} size={19} />
+            </Pressable>
+          ) : null}
           <Pressable
             accessibilityRole="button"
             onPress={handleSignOut}
@@ -651,13 +635,15 @@ export default function Index() {
         title="End active shift?"
         visible={endShiftConfirmationVisible}
       />
-      <NotificationPermissionDialog
-        onClose={() => setNotificationDialogVisible(false)}
-        onRetryRegistration={retryRegistration}
-        permissionStatus={permissionStatus}
-        registrationState={registrationState}
-        visible={notificationDialogVisible}
-      />
+      {notificationsEnabled ? (
+        <NotificationPermissionDialog
+          onClose={() => setNotificationDialogVisible(false)}
+          onRetryRegistration={retryRegistration}
+          permissionStatus={permissionStatus}
+          registrationState={registrationState}
+          visible={notificationDialogVisible}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

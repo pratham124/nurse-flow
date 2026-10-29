@@ -1,21 +1,23 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { z } from "zod";
 
-import type { UserProfile, UserRole } from "../types/models";
+import { goApiClient } from "./goApiClient";
+import { readGoApiFailure, throwGoNetworkError } from "./goApiErrors";
+import type { UserProfile } from "../types/models";
 
-type CreateUserProfileInput = {
-  authUserId: string;
-  displayName: string;
-  role: UserRole;
-};
+const profileRowSchema = z.object({
+  auth_user_id: z.string(),
+  created_at: z.string(),
+  display_name: z.string(),
+  id: z.string(),
+  role: z.string(),
+  updated_at: z.string(),
+});
 
-type ProfileRow = {
-  auth_user_id: string;
-  created_at: string;
-  display_name: string;
-  id: string;
-  role: string;
-  updated_at: string;
-};
+const profileResponseSchema = z.object({ profile: profileRowSchema });
+
+type ProfileRow = z.infer<typeof profileRowSchema>;
+
+const invalidResponse = "The profile service returned an invalid response.";
 
 function mapProfileRow(row: ProfileRow): UserProfile {
   if (row.role !== "charge_nurse") {
@@ -32,53 +34,55 @@ function mapProfileRow(row: ProfileRow): UserProfile {
   };
 }
 
-export async function loadUserProfile(
-  supabase: SupabaseClient,
-  authUserId: string,
-) {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id, auth_user_id, display_name, role, created_at, updated_at")
-    .eq("auth_user_id", authUserId)
-    .maybeSingle<ProfileRow>();
+function profileRequestError(error: unknown): never {
+  const failure = readGoApiFailure(error);
 
-  if (error) {
-    throw new Error(error.message);
+  if (!failure) {
+    return throwGoNetworkError(error, "profile service");
   }
 
-  return data ? mapProfileRow(data) : undefined;
+  if (failure.status === 401) {
+    throw new Error("Your session expired. Sign in again.");
+  }
+
+  throw new Error(
+    failure.message || "Your profile is temporarily unavailable. Try again.",
+  );
 }
 
-export async function createUserProfile(
-  supabase: SupabaseClient,
-  input: CreateUserProfileInput,
-) {
-  const { data, error } = await supabase
-    .from("profiles")
-    .insert({
-      auth_user_id: input.authUserId,
-      display_name: input.displayName,
-      role: input.role,
+function readProfile(status: number, data: unknown) {
+  const result = profileResponseSchema.safeParse(data);
+
+  if (status !== 200 || !result.success) {
+    throw new Error(invalidResponse);
+  }
+
+  return mapProfileRow(result.data.profile);
+}
+
+// Loads the signed-in user's application profile. Returns undefined when none exists yet.
+export async function loadUserProfile(accessToken: string) {
+  const response = await goApiClient
+    .get<unknown>("/profile", {
+      headers: { Authorization: `Bearer ${accessToken}` },
     })
-    .select("id, auth_user_id, display_name, role, created_at, updated_at")
-    .single<ProfileRow>();
+    .catch((error: unknown) =>
+      readGoApiFailure(error)?.code === "profile_missing"
+        ? undefined
+        : profileRequestError(error),
+    );
 
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return mapProfileRow(data);
+  return response ? readProfile(response.status, response.data) : undefined;
 }
 
-export async function loadOrCreateUserProfile(
-  supabase: SupabaseClient,
-  input: CreateUserProfileInput,
-) {
-  const existingProfile = await loadUserProfile(supabase, input.authUserId);
+// The server derives the display name and role from the verified token, so
+// the request carries no body.
+export async function loadOrCreateUserProfile(accessToken: string) {
+  const response = await goApiClient
+    .put<unknown>("/profile", undefined, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+    .catch(profileRequestError);
 
-  if (existingProfile) {
-    return existingProfile;
-  }
-
-  return createUserProfile(supabase, input);
+  return readProfile(response.status, response.data);
 }

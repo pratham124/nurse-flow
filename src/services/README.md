@@ -15,8 +15,10 @@ setup belongs in `realtimeWorkspaceRepository`, and shift invite record reads or
 writes belong in `shiftInviteRepository`.
 
 For the Phase 6 nurse invite flow, the screen should ask
-`shiftInviteRepository` to create, validate, accept, regenerate, revoke, or
-expire invite codes. Screens should not store raw invite codes anywhere durable.
+`shiftInviteRepository` to list invites and nurse access, generate or
+regenerate a code, and validate or accept a code. All of these call the Go API;
+the server creates, hashes, revokes, and expires codes, and never returns the
+hash. Screens should not store raw invite codes anywhere durable.
 
 For the Phase 6 live update flow, `ServerWorkspaceContext` starts a realtime
 listener only after the signed-in user has an active charge shift or linked
@@ -38,9 +40,12 @@ author and request access from the signed-in session; screens never choose an
 author identity or query another nurse's thread directly.
 
 Phase 9 uses `optimizerRepository` as the only mobile boundary for requesting
-an initial assignment or rerun. It sends the authenticated access token plus
-the shift ID, client mutation ID, current server revision, and optional prior
-baseline ID. It never sends a client-generated assignment result. After a
+an initial assignment or rerun. It calls the Go API
+(`POST /active-shifts/{shiftId}/assignment-runs`, which coordinates the
+optimizer) with the authenticated access token plus the client mutation ID,
+current server revision, and optional prior baseline ID. This one call waits
+up to 150 seconds; no response at all becomes an `unavailable` outcome so the
+screen can retry with the same mutation ID. It never sends a client-generated assignment result. After a
 saved or stale response, the server workspace store reloads the authoritative
 Supabase workspace before the screen continues.
 

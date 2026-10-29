@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { useIsFocused } from "@react-navigation/native";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -151,6 +152,7 @@ function createRoomBed(room: Room, bedNumber: number): Bed {
 }
 
 export default function RoomsAndBedsScreen() {
+  const isFocused = useIsFocused();
   const { draftFloorTemplate, setDraftFloorTemplate } = useWorkflowDraft();
   const [roomName, setRoomName] = useState("");
   const [roomNameError, setRoomNameError] = useState("");
@@ -159,10 +161,10 @@ export default function RoomsAndBedsScreen() {
   const rooms = draftFloorTemplate?.rooms ?? [];
 
   useEffect(() => {
-    if (!draftFloorTemplate) {
+    if (isFocused && !draftFloorTemplate) {
       router.replace("/floor-details");
     }
-  }, [draftFloorTemplate]);
+  }, [draftFloorTemplate, isFocused]);
 
   if (!draftFloorTemplate) {
     return null;
