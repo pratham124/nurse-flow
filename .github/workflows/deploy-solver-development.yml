@@ -1,0 +1,151 @@
+name: Deploy development solver
+
+on:
+  push:
+    branches:
+      - codex/go-migration
+    paths:
+      - "optimizer-service/**"
+      - ".github/workflows/deploy-solver-development.yml"
+
+permissions:
+  contents: read
+
+# One deploy at a time, and never cancel a deploy halfway through.
+concurrency:
+  group: deploy-solver-development
+  cancel-in-progress: false
+
+env:
+  REGION: us-east4
+  SERVICE: nurseflow-solver-dev
+
+jobs:
+  test:
+    name: Python checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out the tested commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up the service's Python version
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13.14"
+
+      - name: Install pinned dependencies
+        run: python -m pip install --no-cache-dir -r optimizer-service/requirements.lock
+
+      - name: Test
+        run: python -m unittest discover -s optimizer-service/tests -p "test_*.py"
+
+  deploy:
+    name: Deploy to Cloud Run (development)
+    needs: test
+    if: github.repository == 'pratham124/nurse-flow'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: gcp-development
+    permissions:
+      contents: read
+      # Lets GitHub issue the short-lived OIDC token that Workload Identity
+      # Federation exchanges for Google credentials. No Google key is stored.
+      id-token: write
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+    steps:
+      - name: Check out the tested commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      - name: Build and push the image
+        run: |
+          image="$REGION-docker.pkg.dev/$GCP_PROJECT_ID/nurseflow/solver:$GITHUB_SHA"
+          gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+          docker build --file optimizer-service/Dockerfile --tag "$image" optimizer-service
+          docker push "$image"
+          echo "IMAGE=$image" >> "$GITHUB_ENV"
+
+      - name: Deploy a candidate revision without traffic
+        run: |
+          gcloud config set run/region "$REGION"
+
+          previous=""
+          traffic_flag="--no-traffic"
+          if gcloud run services describe "$SERVICE" >/dev/null 2>&1; then
+            previous="$(gcloud run services describe "$SERVICE" --format json | jq -r '[.status.traffic[] | select(.percent == 100) | .revisionName][0] // ""')"
+          else
+            # Cloud Run cannot create a brand-new service with no traffic.
+            traffic_flag=""
+          fi
+          echo "PREVIOUS_REVISION=$previous" >> "$GITHUB_ENV"
+          echo "SERVICE_EXISTED=$([ -n "$traffic_flag" ] && echo true || echo false)" >> "$GITHUB_ENV"
+
+          # Only the solver token is configured, so only /v1/solve is enabled
+          # (the legacy /v1/assignment-runs route needs Supabase keys).
+          # One solve per instance and a 140 s host limit match the optimizer
+          # contract in docs/phase-9/python-service-boundary.md.
+          gcloud run deploy "$SERVICE" \
+            --image "$IMAGE" \
+            --service-account "nurseflow-solver-dev@$GCP_PROJECT_ID.iam.gserviceaccount.com" \
+            --set-secrets "NURSEFLOW_SOLVER_TOKEN=nurseflow-solver-token:latest" \
+            --port 8080 \
+            --cpu 1 \
+            --memory 2Gi \
+            --concurrency 1 \
+            --min-instances 0 \
+            --max-instances 1 \
+            --timeout 140 \
+            --allow-unauthenticated \
+            --tag candidate \
+            $traffic_flag \
+            --quiet
+
+          service="$(gcloud run services describe "$SERVICE" --format json)"
+          echo "REVISION=$(jq -r '.status.latestCreatedRevisionName' <<< "$service")" >> "$GITHUB_ENV"
+          echo "CANDIDATE_URL=$(jq -r '.status.traffic[] | select(.tag == "candidate") | .url' <<< "$service")" >> "$GITHUB_ENV"
+          echo "SERVICE_URL=$(jq -r '.status.url' <<< "$service")" >> "$GITHUB_ENV"
+
+      - name: Smoke-check the candidate
+        run: |
+          # Cloud Run reserves URL paths ending in "z", so /healthz cannot be
+          # used here. An unauthenticated solve must be rejected with 401,
+          # which proves the app (not Google's front end) is answering.
+          status="$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 60 \
+            --retry 3 --retry-delay 5 --retry-all-errors \
+            --request POST --header 'Content-Type: application/json' --data '{}' \
+            "$CANDIDATE_URL/v1/solve")"
+          if [ "$status" != "401" ]; then
+            echo "::error::Expected 401 from /v1/solve without a token, got $status."
+            exit 1
+          fi
+
+      - name: Move traffic to the candidate
+        run: |
+          gcloud run services update-traffic "$SERVICE" --region "$REGION" --to-revisions "$REVISION=100" --quiet
+          {
+            echo "### Development solver deployed"
+            echo "- Revision: \`$REVISION\`"
+            echo "- Image: \`$IMAGE\`"
+            echo "- URL: $SERVICE_URL"
+            if [ -n "$PREVIOUS_REVISION" ]; then
+              echo "- Roll back with:"
+              echo "  \`gcloud run services update-traffic $SERVICE --region $REGION --project $GCP_PROJECT_ID --to-revisions $PREVIOUS_REVISION=100\`"
+            elif [ "$SERVICE_EXISTED" = "true" ]; then
+              echo "- Previous traffic was split across revisions; see \`gcloud run revisions list --service $SERVICE --region $REGION\` before rolling back."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

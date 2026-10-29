@@ -1,6 +1,6 @@
 # Go Backend Migration Plan
 
-Status: milestones 1–5 are done (milestones 4 and 5 on 2026-10-24). Milestone 3 (tickets 03–07) was closed at the user's request on 2026-10-19 after local and live development checks passed, with the remaining manual checks and fixture cleanup deferred. See `shift-lifecycle.md` for the exact verification limits. The existing architecture and milestone execution protocol remain approved. Milestone 5 was authorized and completed on 2026-10-24. Milestone 6 was authorized on 2026-10-25 and is implemented and verified, except the deferred notification work (verified on web and Android); it awaits the user's closeout. Milestone 7 is not authorized.
+Status: milestones 1–5 are done (milestones 4 and 5 on 2026-10-24). Milestone 3 (tickets 03–07) was closed at the user's request on 2026-10-19 after local and live development checks passed, with the remaining manual checks and fixture cleanup deferred. See `shift-lifecycle.md` for the exact verification limits. The existing architecture and milestone execution protocol remain approved. Milestone 5 was authorized and completed on 2026-10-24. Milestone 6 was authorized on 2026-10-25 and is implemented and verified, except the deferred notification work (verified on web and Android); the user closed it on 2026-10-25 by authorizing milestone 7. Milestone 7 is in progress: ticket 20 is implemented and awaits the user's Google Cloud setup and live checks, ticket 21 is partly prepared, and tickets 22–23 need separate approvals. See `hosted-development.md`.
 
 ## Purpose and scope
 
@@ -122,8 +122,9 @@ The user approved this breakdown on 2026-10-17. Full ticket deliverables, blocki
 | 3 | Charge workspace reads and shift lifecycle, including carry-over | 03–07 | Done; verification limits and deferred manual checks in shift-lifecycle.md |
 | 4 | Application profiles, nurse invites, joining, and scoped nurse reads | 08–11 | Done; verification and limits in profiles-invites-access.md |
 | 5 | Manual moves, issue/swap requests, and request threads | 12–15 | Done; verification and limits in moves-requests-threads.md |
-| 6 | Go/Python optimizer coordination, device registration, and live collaboration parity | 16–19 | 16–17 verified; 18 deferred (notifications off); 19 verified on web and Android; see assignment-runs.md |
-| 7 | Hosted development, full parity, explicit cutover, and legacy retirement | 20–23 | Planned |
+| 6 | Go/Python optimizer coordination, device registration, and live collaboration parity | 16–19 | Closed 2026-10-25; 18 deferred (notifications off); 19 verified on web and Android; see assignment-runs.md |
+| 7 | Hosted development, full parity, explicit cutover, and legacy retirement | 20–23 | In progress: 20 implemented, awaiting setup and live checks; 21 partly prepared; 22–23 need separate approval; see hosted-development.md |
+| 8 (proposed) | App Store / Play Store release | — | Not started or authorized; follows the cutover (22) |
 
 Work one authorized milestone at a time, completing its routine tickets as a batch. Technical blockers differ from this execution order: unblocked tickets can be verified using retained existing paths and fixtures. Planning approval publishes the tickets; it does not start implementation in this session.
 
@@ -339,3 +340,11 @@ Production enablement follows hosted development verification and explicit appro
 - [x] Follow-up: Python 3.13.14 container tests passed. Live solver timeout, invalid output, and Go's 125 s deadline were exercised with a stub solver against real Go, development data, and Expo. Ticket 19's web checks passed: unsaved input, offline cached view, reconnect, sign-out, access removal, and End Shift. They found a pre-existing gap: there is no automatic refetch after a reconnect.
 - [x] Fixed the reconnect refetch at the user's request (a refetch once on recovery; 160 Expo tests). Updated the local emulator to 37.2.12 and verified Android live: joined-nurse join, live refresh, the reconnect fix on device, and a charge assignment run through Go and Python.
 - [ ] Ticket 18 and notification navigation stay deferred; iOS and physical devices were not tested. Changes are uncommitted for the user's review.
+
+### 2026-10-26 - Milestone 7 kickoff and ticket 20 implementation
+
+- [x] The user authorized milestone 7, which closes milestone 6 with ticket 18 still deferred. A grilling session settled the decisions in [hosted development](hosted-development.md): Cloud Run in `us-east4` in a new development-only GCP project, a hosted solver-only Python service, the shared bearer token kept, scale to zero with small caps, a required `NURSEFLOW_SUPABASE_PROJECT_REF` allowlist, Secret Manager, GitHub Actions deploys through Workload Identity Federation from the migration branch (merging into `main` belongs to the cutover), a re-runnable gcloud bootstrap script, and a proposed store-release milestone 8. ADR 0006 and tradeoff entries were added.
+- [x] Implemented ticket 20's code: the project-ref selection (tests for both refs and rejection cases), the Go Dockerfile with the public Supabase CA, the API/solver deploy workflows (test, SHA-tagged image, no-traffic candidate, smoke check, traffic switch, rollback command in the summary), and the bootstrap script.
+- [x] Local checks: Go format, vet, build, race tests, and a static Linux build pass. 118 Python tests pass. The workflows parse. The bootstrap helpers were tested against a fake gcloud, which found and fixed a byte-order mark added to secrets. Not run: `docker build` (daemon stopped), actionlint (fetch blocked), and any real gcloud/gh call.
+- [x] Ticket 21 preparation: the remaining-legacy-caller inventory, the production change list, and the rollback plan are drafted in hosted-development.md and not applied.
+- [ ] User: GCP setup, push, and ticket 20 live checks, then ticket 21's hosted matrix. Tickets 22–23 need separate approvals. Changes are uncommitted for the user's review.

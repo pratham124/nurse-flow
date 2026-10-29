@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/pratham124/nurse-flow/backend/internal/supabaseproject"
 )
 
 const fixtureUserID = "4ea34fc9-d17b-411e-83a0-8a82cf9b8977"
@@ -47,7 +48,7 @@ func testPrivateKey(t *testing.T) *ecdsa.PrivateKey {
 func fixtureClaims() accessClaims {
 	return accessClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer: DevelopmentIssuer, Subject: fixtureUserID,
+			Issuer: Issuer(supabaseproject.Development), Subject: fixtureUserID,
 			Audience:  jwt.ClaimStrings{"authenticated"},
 			ExpiresAt: jwt.NewNumericDate(fixtureTime.Add(time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(fixtureTime.Add(-time.Minute)),
@@ -175,7 +176,7 @@ func testVerifierWithSetup(t *testing.T, key *ecdsa.PrivateKey, setup func(*keyS
 	if len(refreshPauses) > 0 {
 		refreshPause = refreshPauses[0]
 	}
-	verifier, err := newVerifier(ctx, server.URL, refreshInterval, refreshPause)
+	verifier, err := newVerifier(ctx, Issuer(supabaseproject.Development), server.URL, refreshInterval, refreshPause)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -347,7 +348,7 @@ func TestRefreshStopsWithContext(t *testing.T) {
 	defer server.Close()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	if _, err := newVerifier(ctx, server.URL, 20*time.Millisecond, 30*time.Second); err != nil {
+	if _, err := newVerifier(ctx, Issuer(supabaseproject.Development), server.URL, 20*time.Millisecond, 30*time.Second); err != nil {
 		t.Fatal(err)
 	}
 	deadline := time.Now().Add(3 * time.Second)
@@ -427,7 +428,7 @@ func TestRedirectIsNotFollowed(t *testing.T) {
 	defer redirect.Close()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	verifier, err := newVerifier(ctx, redirect.URL, time.Hour, 30*time.Second)
+	verifier, err := newVerifier(ctx, Issuer(supabaseproject.Development), redirect.URL, time.Hour, 30*time.Second)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -470,12 +471,24 @@ func TestDevelopmentPublicKeys(t *testing.T) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	verifier, err := NewDevelopment(ctx)
+	verifier, err := New(ctx, supabaseproject.Development)
 	if err != nil {
 		t.Fatal(err)
 	}
 	keys, err := verifier.keys.KeyReadAll(ctx)
 	if err != nil || len(keys) == 0 {
 		t.Fatalf("development public-key discovery failed: %v", err)
+	}
+}
+
+func TestIssuer(t *testing.T) {
+	tests := map[string]string{
+		supabaseproject.Development: "https://nmitctyxtjmlakcsmnuj.supabase.co/auth/v1",
+		supabaseproject.Production:  "https://mkljczezkyqtuplzedpj.supabase.co/auth/v1",
+	}
+	for ref, want := range tests {
+		if got := Issuer(ref); got != want {
+			t.Fatalf("Issuer(%q) = %q, want %q", ref, got, want)
+		}
 	}
 }

@@ -12,8 +12,10 @@ import (
 	"github.com/pratham124/nurse-flow/backend/internal/identifiers"
 )
 
-// DevelopmentIssuer is the trusted token issuer for the isolated development project.
-const DevelopmentIssuer = "https://nmitctyxtjmlakcsmnuj.supabase.co/auth/v1"
+// Issuer is the trusted token issuer for one Supabase project.
+func Issuer(projectRef string) string {
+	return "https://" + projectRef + ".supabase.co/auth/v1"
+}
 
 var (
 	// ErrUnauthenticated indicates a missing or invalid access token.
@@ -48,9 +50,10 @@ type Verifier struct {
 	keys   jwkset.Storage
 }
 
-// NewDevelopment starts a verifier restricted to the development project's issuer.
-func NewDevelopment(ctx context.Context) (*Verifier, error) {
-	return newVerifier(ctx, DevelopmentIssuer+"/.well-known/jwks.json", 5*time.Minute, 30*time.Second)
+// New starts a verifier restricted to one Supabase project's issuer.
+func New(ctx context.Context, projectRef string) (*Verifier, error) {
+	issuer := Issuer(projectRef)
+	return newVerifier(ctx, issuer, issuer+"/.well-known/jwks.json", 5*time.Minute, 30*time.Second)
 }
 
 // Verify checks the token signature and required claims before returning its identity.

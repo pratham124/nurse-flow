@@ -13,7 +13,7 @@ import (
 	"golang.org/x/time/rate"
 )
 
-func newVerifier(ctx context.Context, endpoint string, refreshInterval, refreshPause time.Duration) (*Verifier, error) {
+func newVerifier(ctx context.Context, issuer, endpoint string, refreshInterval, refreshPause time.Duration) (*Verifier, error) {
 	store := &signingKeyStore{Storage: jwkset.NewMemoryStorage()}
 	remote, err := jwkset.NewStorageFromHTTP(endpoint, jwkset.HTTPClientStorageOptions{
 		Ctx: ctx,
@@ -51,7 +51,7 @@ func newVerifier(ctx context.Context, endpoint string, refreshInterval, refreshP
 	if err != nil {
 		return nil, ErrUnavailable
 	}
-	return &Verifier{issuer: DevelopmentIssuer, now: time.Now, keys: keys}, nil
+	return &Verifier{issuer: issuer, now: time.Now, keys: keys}, nil
 }
 
 func (v *Verifier) publicKey(ctx context.Context, keyID string) (*ecdsa.PublicKey, error) {

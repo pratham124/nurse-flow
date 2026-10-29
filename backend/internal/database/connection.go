@@ -14,10 +14,9 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-)
 
-// DevelopmentProject identifies the isolated Supabase project used by this backend.
-const DevelopmentProject = "nmitctyxtjmlakcsmnuj"
+	"github.com/pratham124/nurse-flow/backend/internal/supabaseproject"
+)
 
 // Store owns one reusable connection pool. Close it when the process finishes.
 type Store struct {
@@ -25,8 +24,11 @@ type Store struct {
 	pool *sql.DB
 }
 
-// DevelopmentURL reads server-only settings and restricts the connection to development.
-func DevelopmentURL() (string, error) {
+// URL reads server-only settings and restricts the connection to one allowed Supabase project.
+func URL(projectRef string) (string, error) {
+	if !supabaseproject.Valid(projectRef) {
+		return "", errors.New("unknown Supabase project")
+	}
 	host := os.Getenv("NURSEFLOW_DB_HOST")
 	password := os.Getenv("NURSEFLOW_DB_PASSWORD")
 	if host == "" || password == "" {
@@ -34,11 +36,11 @@ func DevelopmentURL() (string, error) {
 	}
 
 	user := "nurseflow_go"
-	if host != "db."+DevelopmentProject+".supabase.co" {
+	if host != "db."+projectRef+".supabase.co" {
 		if !regexp.MustCompile(`^aws-[0-9]+-[a-z0-9-]+\.pooler\.supabase\.com$`).MatchString(host) {
-			return "", errors.New("database host must be the development direct host or a Supabase session pooler")
+			return "", errors.New("database host must be the project's direct host or a Supabase session pooler")
 		}
-		user += "." + DevelopmentProject
+		user += "." + projectRef
 	}
 
 	connection := &url.URL{
@@ -58,9 +60,9 @@ func DevelopmentURL() (string, error) {
 	return connection.String(), nil
 }
 
-// OpenDevelopment opens and verifies a connection using development-only settings.
-func OpenDevelopment(ctx context.Context) (*Store, error) {
-	connectionURL, err := DevelopmentURL()
+// Open opens and verifies a connection restricted to the given Supabase project.
+func Open(ctx context.Context, projectRef string) (*Store, error) {
+	connectionURL, err := URL(projectRef)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +106,7 @@ func (s *Store) Check(ctx context.Context) error {
 	checkContext, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	if err := s.pool.PingContext(checkContext); err != nil {
-		return errors.New("database connection failed; check development settings and availability")
+		return errors.New("database connection failed; check database settings and availability")
 	}
 
 	var role struct {

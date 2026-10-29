@@ -45,6 +45,7 @@ if ($Action -eq 'Save') {
 
 # Change only this process's environment, then restore it even if the command fails.
 $environment = @{
+    NURSEFLOW_SUPABASE_PROJECT_REF = 'nmitctyxtjmlakcsmnuj'
     NURSEFLOW_DB_HOST = $settings.HostName
     NURSEFLOW_DB_PASSWORD = $settings.Credential.GetNetworkCredential().Password
     NURSEFLOW_DB_SSLROOTCERT = $settings.CertificatePath
