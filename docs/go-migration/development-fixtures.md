@@ -65,3 +65,10 @@ displayed or stored, so it cannot be signed into again. It has no templates.
 The existing Charge M5 browser session ran one assignment run through the hosted
 API and solver, which replaced that shift's staged assignment with a solver
 result. No cleanup was performed.
+
+Ticket 21's hosted matrix then used the same two sessions, and no cleanup was performed:
+
+- Charge M5 (web) ended the M5 shift and started new ones from carry-over, ran several assignment runs, and generated invites. The "M7 Hosted Floor" template was created and deleted.
+- Charge M7 Android joined as nurse "Ben" three times, sent the issue "Draft hosted check" and the swap "Swap test hosted", and posted one thread message.
+- `charge.m7w.2f7bfe06@example.com` (Charge M7 Web) was created in a separate browser context for the isolation checks and then signed out. Its generated password was never displayed or stored.
+- Charge M5 is left with an active "M5 Floor" shift.
