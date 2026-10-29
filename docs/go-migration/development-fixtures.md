@@ -56,3 +56,12 @@ assigned shift with manual moves, requests and thread messages) and
 `charge.m5n.mvnedr67@example.com` (Nurse M5, joined as "Ben"). They cannot be signed
 into again. The shift's assignment was staged with `.scratch/m5-stage-assignment.sql`
 because the optimizer is not configured in development. No cleanup was performed.
+
+## 2026-10-29 milestone 7 hosted checks
+
+`charge.m7a.ibwyquox@example.com` (Charge M7 Android) was created through Android
+development signup against the hosted API. Its generated password was never
+displayed or stored, so it cannot be signed into again. It has no templates.
+The existing Charge M5 browser session ran one assignment run through the hosted
+API and solver, which replaced that shift's staged assignment with a solver
+result. No cleanup was performed.

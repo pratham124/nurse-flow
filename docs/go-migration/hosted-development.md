@@ -105,15 +105,20 @@ A later push deploys a new revision and moves traffic forward again.
 
   The real gcloud/gh calls have not run.
 
-### Ticket 20 live checks (after setup), not yet run
+### Ticket 20 live checks (2026-10-29)
 
-- [ ] Both workflow runs pass. The summary shows the revision, the image SHA tag, and the rollback command.
-- [ ] `GET <url>/health` returns 200. An unauthenticated `/floor-templates` returns 401.
-- [ ] Expo web (local) signs in as a development charge nurse and loads templates through the hosted URL. The browser network tab shows `run.app`.
-- [ ] Android emulator: same check, with no `adb reverse`.
-- [ ] Failure visibility: deploy a revision with a wrong `NURSEFLOW_DB_HOST` (or temporarily disable the secret version). The deploy fails, and the old revision keeps serving.
-- [ ] One rollback with the printed command, then roll forward.
-- [ ] Assignment run through the hosted API and solver.
+Setup ran against GCP project `nurseflow-dev-2610`. Commit `3ebae95` was the first deploy. The API URL is `https://nurseflow-api-dev-e5rif6atnq-uk.a.run.app`.
+
+- [x] Both workflow runs pass. The first API run stopped with "Run the solver deploy workflow first", as expected, because the two services were deployed by the same push. A re-run after the solver finished passed. The second deploy's summary showed the revision, the image SHA tag, and the rollback command. The first deploy has no rollback line because there was no earlier revision.
+- [x] `GET <url>/health` returns `{"status":"ok"}`. An unauthenticated `/floor-templates` returns 401.
+- [x] Expo web (local, `localhost:8081`) loaded the signed-in development account's profile, templates, active shift, and joined workspace from `run.app`. Every request returned 200, which also proves CORS for the localhost origin.
+- [x] Android emulator (Pixel 7 Pro, API 33): signup of a new synthetic account and its Go-backed home screen worked. Only Metro's port (8081) was reversed. The API requests reached Cloud Run over the internet.
+- [x] Failure visibility: a revision deployed the way the workflow does it (`--tag candidate --no-traffic`) with `NURSEFLOW_DB_HOST=wrong-host.invalid` failed to deploy. The log showed `configure database: database host must be the project's direct host or a Supabase session pooler`. Users and the candidate URL stayed on the healthy revision.
+  - Finding: the same bad revision deployed **without** `--tag` was reported as "deployed", because Cloud Run retires an untagged no-traffic revision on a scale-to-zero service without ever starting it. The workflow always tags the candidate, so it is not affected. Any manual no-traffic deploy must also add a tag, or it proves nothing.
+- [x] Rollback with the printed command, from `00005-bev` to `00001-joc`, took a few seconds and `/health` stayed ok. Rolled forward again the same way.
+- [x] Assignment run through the hosted API and solver: `POST /active-shifts/{id}/assignment-runs` returned `saved` with a new result ID. The solver's request log shows `POST /v1/solve` returning 200 at the same moment. The run was sent from the signed-in development session using the app's own request shape. The shift was the milestone 5 fixture's 2-bed floor, so the solve took 0.2 s.
+
+Seen during the checks, not caused by hosting: Supabase Realtime once returned `MissingPartition` for the charge active-shift listener, then connected ("Live") on the next load.
 
 ## Ticket 21 preparation (not applied)
 
