@@ -359,4 +359,12 @@ Production enablement follows hosted development verification and explicit appro
 
 - [x] The user approved starting ticket 22. A grilling session settled 15 decisions, recorded in [hosted development](hosted-development.md#ticket-22-production-cutover) and ADR 0007. Production goes in its own GCP project `nurseflow-512906`, deploys from `main` after development and only with the user's approval, allows no browser origins, and starts at zero instances.
 - [x] Prep: reusable Cloud Run deploy workflows with test → development → production jobs; `deploy/production/api.env.yaml`; the bootstrap script moved to `deploy/` with `-Environment production`; `npm run start:dev`. Development was re-bootstrapped so `main` may deploy it.
-- [ ] Cutover steps 1–9 (restore the paused production Supabase project first). Nothing has been applied to production yet.
+- [x] Cutover steps 1–9 done (2026-10-29 to 2026-10-30):
+  - production restored, compared read-only, and migrated (the user ran the apply script);
+  - password and bootstrap verified, with the production pooler corrected to `aws-1`;
+  - PR #2 merged and both production deploys approved;
+  - the main folder points at production;
+  - the production smoke checks passed on two Android emulators.
+  
+  Details are in [hosted development](hosted-development.md#cutover-progress).
+- [ ] Ticket 23 (retire legacy paths) needs its own approval, after about a week of stable production use. Milestone 8 (store release) is proposed.
