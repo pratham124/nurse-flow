@@ -35,7 +35,7 @@ their real unit's layout with made-up patients) is fine.
 | # | Area | Decision |
 | --- | --- | --- |
 | 1 | Audience | Closed testing only: TestFlight, external testers through a public link. Not a public App Store listing. |
-| 2 | Patient data | Dummy data only. All current patient fields stay (initials, age, sex, diagnosis, acuity) for realism. Every place users see it, the app and the policies say real patient information is not allowed. Considered and rejected: bed number and acuity only (see the tradeoff log). |
+| 2 | Patient data | Dummy data only. All current patient fields stay (initials, age, sex, diagnosis, acuity) for realism. Every place users see it, the app and the policies say real patient information is not allowed. Considered and rejected: bed number and acuity only. |
 | 3 | Identity | Display name **NurseFlow**. iOS bundle ID and Android package **`com.pfrog123.nurseflow`**, replacing `com.pfrog123.firstapp`. Deep-link scheme `nurseflow`. These cannot change after the first upload. |
 | 4 | Store accounts | Apple Developer Program only (individual, US$99/year). No Google Play account. |
 | 5 | Platforms | iOS only, tested on the user's iPhone through TestFlight. Android testers are optional later through an EAS internal-distribution install link. |
