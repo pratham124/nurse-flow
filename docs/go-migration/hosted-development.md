@@ -18,7 +18,7 @@ each need their own explicit approval and have not started.
 | 2 | Host | Google Cloud Run in `us-east4` (northern Virginia, next to Supabase's AWS `us-east-1`). See [ADR 0006](../adr/0006-cloud-run-development-hosting-with-github-deploys.md). |
 | 3 | Isolation | A new GCP project for development only (for example `nurseflow-dev-<suffix>`). It holds no production optimizer, secrets, or IAM. |
 | 4 | Dev solver | A second Cloud Run service, `nurseflow-solver-dev`, runs the existing Python image with only `NURSEFLOW_SOLVER_TOKEN`, so only `/v1/solve` exists. It has no Supabase keys. |
-| 5 | Service auth | Keep the shared bearer token from milestone 6, stored in Secret Manager. Cloud Run IAM identity tokens are deferred (tradeoff log). |
+| 5 | Service auth | Keep the shared bearer token from milestone 6, stored in Secret Manager. Cloud Run IAM identity tokens are deferred. |
 | 6 | Limits | Both services scale to zero. API: max 2 instances, concurrency 80, 1 vCPU / 256 MiB, 160 s request timeout, 5 database connections per instance (≤ 10 total). Solver: max 1 instance, concurrency 1, 1 vCPU / 2 GiB, 140 s timeout (the Phase 9 contract). |
 | 7 | Project selection | `NURSEFLOW_SUPABASE_PROJECT_REF` is required and must be exactly the development or production ref. The issuer, database host check, and pooler user come from it. One image moves between environments by configuration alone. |
 | 8 | Secrets and image | DB password and solver token live in Secret Manager. Each runtime service account can read only its own secrets. The public Supabase Root 2021 CA is baked into a distroless, non-root image; `NURSEFLOW_HTTP_ADDR=:8080`. |
@@ -29,7 +29,7 @@ each need their own explicit approval and have not started.
 | 13 | GitHub trust | A `gcp-development` environment, limited to `codex/go-migration`, holds only non-secret IDs. Google trusts tokens only from repository ID `1225352400`, that branch, and that environment. The deployer account can push images and manage Cloud Run, but has no Secret Manager access itself. It can deploy code that runs as the runtime accounts, which do read secrets, so push access to the branch is effectively secret access. That is inherent to continuous deployment; branch access is the real boundary. |
 | 14 | Solver deploy | Same pattern, in its own workflow. |
 | 15 | Rollback | One documented `gcloud run services update-traffic` command. Each deploy summary prints it with the exact previous revision. |
-| 16 | Bootstrap | A checked-in, re-runnable gcloud script (`deploy/bootstrap-gcp.ps1`), not Terraform (tradeoff log). |
+| 16 | Bootstrap | A checked-in, re-runnable gcloud script (`deploy/bootstrap-gcp.ps1`), not Terraform. |
 | 17 | Store release | App Store / Play Store release is a proposed follow-on milestone after the cutover, not part of milestone 7. |
 
 ## What was built (ticket 20)

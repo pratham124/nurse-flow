@@ -60,7 +60,7 @@ request:
 
 ## Tradeoff Log
 
-Keep a running log of tradeoffs in `docs/tradeoffs.md` (create it if missing). Its purpose is interview prep: I use it to answer questions like "what tradeoffs did you make on this project?" When we choose one approach over a real alternative (a library, a data shape, a simplification, something deferred, a known limitation we accept), add an entry in the same turn:
+Keep a running log of tradeoffs in `docs/tradeoffs.md` (create it if missing). The file is gitignored and stays local: never commit it, and don't reference it from committed docs. Its purpose is interview prep: I use it to answer questions like "what tradeoffs did you make on this project?" When we choose one approach over a real alternative (a library, a data shape, a simplification, something deferred, a known limitation we accept), add an entry in the same turn:
 
 - **Date and topic**
 - **Problem:** what we needed to solve, and the constraints that mattered
