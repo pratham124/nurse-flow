@@ -6,6 +6,24 @@ Entries before 2026-10-24 were backfilled from the ADRs, phase docs, and the Go 
 
 ---
 
+## 2026-10-30: Release as a TestFlight demo with dummy data, not for real clinical use
+
+- **Problem:** I wanted people, including a nurse friend, to use NurseFlow. But the app stores patient information, and real hospital use involves Alberta's Health Information Act.
+- **Chose:** An iOS TestFlight demo for dummy data only. Testers get a public link, there's no App Store listing, and the app and policies say real patient information isn't allowed.
+- **Over:** (1) Letting a nurse use it on real shifts without employer approval. (2) A real clinical pilot with a hospital's approval.
+- **Why:** Patient information belongs to the nurse's employer, and staff generally can't put it into unapproved apps. Even acuity is health information, because the hospital can match bed, date and acuity to a person. The solver needs acuity, so no amount of data trimming makes real use approval-free. A pilot needs a privacy impact assessment, Canadian hosting and data agreements, which is far beyond a portfolio project.
+- **Cost:** No real clinical feedback. Testers model shifts with made-up patients, and the 90-day TestFlight build expiry means re-uploading regularly.
+- **Would change if:** A unit manager wanted to pilot it. Then I'd do the privacy review, move hosting to Canada, and sign data agreements.
+
+## 2026-10-30: Keep all patient fields in the demo instead of trimming to bed and acuity
+
+- **Problem:** Diagnosis, age, sex and initials make the demo realistic, but having those fields invites someone to type in real patient details.
+- **Chose:** Keep all fields and rely on clear "dummy data only" notices, the privacy policy and the terms.
+- **Over:** Bed number and acuity only, the smallest set the solver needs (I chose this at first, then reversed it once the release became demo-only), or dropping just diagnosis.
+- **Why:** With dummy data no real health information exists, so the fields aren't a legal problem, and realism makes the demo and tester feedback better.
+- **Cost:** The boxes can still be misused by habit, and the notices only discourage that. Diagnosis is the field that would cause real harm if someone ignored the rules, and the solver doesn't use it.
+- **Would change if:** NurseFlow ever moved toward real use. Then the fields would go down to bed and acuity, starting with diagnosis.
+
 ## 2026-10-29: Production deploys wait for my approval, after development succeeds
 
 - **Problem:** Production needed the same Cloud Run deploys as development. A bad change shouldn't reach production just because it was merged, but the process also shouldn't depend on my laptop.

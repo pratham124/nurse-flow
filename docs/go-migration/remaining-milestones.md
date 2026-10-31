@@ -22,7 +22,7 @@ This document is the approved index; each tracker ticket remains a separate file
 - **Milestone 5: Manual moves, requests, and threads** — tickets 12–15. Review topics: Idempotency, state transitions, lock ordering, side effects.
 - **Milestone 6: Optimizer and live integration** — tickets 16–19. Review topics: Go/Python boundaries, deadlines/cancellation, run coordination, events.
 - **Milestone 7: Hosted verification, cutover, and retirement** — tickets 20–23. Review topics: Configuration, secrets, deployment health, rollout/rollback, cleanup.
-- **Milestone 8 (proposed, not authorized): App Store / Play Store release.** Follows the cutover (22); scope and tickets come from its own grilling round.
+- **Milestone 8 (being planned, not authorized): iOS TestFlight demo release, dummy data only.** Follows the cutover (22) and ticket 23. Decisions so far are in [milestone 8 planning](../release/milestone-8-testflight-demo.md); the open questions there come before any tickets.
 
 Milestone order is the intended execution order. Blocking edges represent genuine technical gates, not a forced chain.
 Unblocked tickets can use existing migrated or retained paths and development fixtures.
