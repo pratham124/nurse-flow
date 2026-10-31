@@ -107,7 +107,7 @@ A later push deploys a new revision and moves traffic forward again.
 
 ### Ticket 20 live checks (2026-10-29)
 
-Setup ran against GCP project `nurseflow-dev-2610`. Commit `3ebae95` was the first deploy. The API URL is `https://nurseflow-api-dev-e5rif6atnq-uk.a.run.app`.
+Setup ran against GCP project `nurseflow-dev-2610`. Commit `9ae5fc9` was the first deploy. The API URL is `https://nurseflow-api-dev-e5rif6atnq-uk.a.run.app`.
 
 - [x] Both workflow runs pass. The first API run stopped with "Run the solver deploy workflow first", as expected, because the two services were deployed by the same push. A re-run after the solver finished passed. The second deploy's summary showed the revision, the image SHA tag, and the rollback command. The first deploy has no rollback line because there was no earlier revision.
 - [x] `GET <url>/health` returns `{"status":"ok"}`. An unauthenticated `/floor-templates` returns 401.
@@ -264,14 +264,14 @@ Facts found first:
   - Verified: `gcp-production` allows only `main` and requires `pratham124`, and its three variables point at `nurseflow-512906`. Google's condition is `ref in ['refs/heads/main']` and `environment == 'gcp-production'`. Both secrets exist.
   - Finding: the production pooler is on Supabase's **`aws-1-us-east-1`** cluster. `aws-0` answers `tenant/user … not found` for this project, while development is on `aws-0`. `deploy/production/api.env.yaml` was corrected before the merge.
   - With the stored secret (never printed), `cmd/dbcheck` reported "Connected to Supabase project mkljczezkyqtuplzedpj Postgres as nurseflow_go".
-- **2026-10-29, step 6:** [PR #2](https://github.com/pratham124/nurse-flow/pull/2) opened, and the user merged it (`37199f8`). Both workflows on `main` ran tests and the development deploys, then waited at `gcp-production`.
+- **2026-10-29, step 6:** [PR #2](https://github.com/pratham124/nurse-flow/pull/2) opened, and the user merged it (`553a2da`). Both workflows on `main` ran tests and the development deploys, then waited at `gcp-production`.
 - **2026-10-30, step 7:** The user approved the solver, then the API. Both production deploys passed. The API is `https://nurseflow-api-prod-vfz2gnvpna-uk.a.run.app` (revision `nurseflow-api-prod-00001-fih`). Direct checks:
   - `/health` returns ok;
   - unauthenticated `/floor-templates` returns 401;
   - a request with `Origin: http://localhost:8081` returns 403 `origin_forbidden`;
   - an unauthenticated solver `POST /v1/solve` returns 401;
   - the revision's settings are the production ref, the `aws-1` host, empty origins, and the production solver URL.
-- **2026-10-30, step 8:** The main folder `first-app` was fast-forwarded to `37199f8` and `npm ci` was run. Its `.env` gained the production `EXPO_PUBLIC_GO_API_URL`, and a new gitignored `.env.dev` holds the development values for `npm run start:dev`.
+- **2026-10-30, step 8:** The main folder `first-app` was fast-forwarded to `553a2da` and `npm ci` was run. Its `.env` gained the production `EXPO_PUBLIC_GO_API_URL`, and a new gitignored `.env.dev` holds the development values for `npm run start:dev`.
 - **2026-10-30, step 9: production smoke checks, all passed.** Expo ran from the main folder against production. The charge was on the Pixel 7 Pro API 33 emulator and the nurse on the Pixel 5 API 34 emulator, with only Metro's port reversed.
   - Two reusable test accounts were created through the app: Smoke Charge (`nurseflow.smoke.charge.4djao8@example.com`) and Smoke Nurse (`nurseflow.smoke.nurse.7epi3n@example.com`). Their generated passwords are saved with Export-Clixml (DPAPI, the user's Windows account only) at `%LOCALAPPDATA%\NurseFlow\prod-smoke-accounts.xml` and were never displayed.
   - An earlier Smoke Charge signup succeeded, but its password was lost when the automation script crashed. That account was signed out before it had any data. Delete it from Supabase Auth: it is the `nurseflow.smoke.charge.*@example.com` user that is not `4djao8`.

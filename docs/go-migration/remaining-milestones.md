@@ -1,6 +1,6 @@
 # Remaining Go migration milestones
 
-Status: approved by the user on 2026-10-17. Milestones 2 and 3 (tickets 01–07) are done. The user closed milestone 3 on 2026-10-19 with the remaining manual checks and fixture cleanup deferred as recorded in shift-lifecycle.md. Milestone 4 (tickets 08–11) was completed on 2026-10-24 (see profiles-invites-access.md); Milestone 5 (tickets 12–15) was completed on 2026-10-24 (see moves-requests-threads.md); Milestone 6 (tickets 16–19) was implemented on 2026-10-25 (see assignment-runs.md): 16–17 verified, 18 deferred, 19 verified on web and Android; the user closed it on 2026-10-25. Milestone 7 was authorized on 2026-10-25 (see hosted-development.md): tickets 20 and 21 were done on 2026-10-29 against the hosted development stack, and 22–23 need separate approvals. A store-release milestone 8 is proposed, not authorized. Notifications are disabled by user decision on 2026-10-24: ticket 11's notification-target lookup, ticket 18, and ticket 19's notification navigation are deferred until the user re-enables them.
+Status: approved by the user on 2026-10-17. Milestones 2 and 3 (tickets 01–07) are done. The user closed milestone 3 on 2026-10-19 with the remaining manual checks and fixture cleanup deferred as recorded in shift-lifecycle.md. Milestone 4 (tickets 08–11) was completed on 2026-10-24 (see profiles-invites-access.md); Milestone 5 (tickets 12–15) was completed on 2026-10-24 (see moves-requests-threads.md); Milestone 6 (tickets 16–19) was implemented on 2026-10-25 (see assignment-runs.md): 16–17 verified, 18 deferred, 19 verified on web and Android; the user closed it on 2026-10-25. Milestone 7 was authorized on 2026-10-25 (see hosted-development.md): tickets 20 and 21 were done on 2026-10-29 against the hosted development stack, and 22–23 need separate approvals. Milestone 8, an iOS TestFlight demo with dummy data, was approved on 2026-10-30 and has not started. Notifications are disabled by user decision on 2026-10-24: ticket 11's notification-target lookup, ticket 18, and ticket 19's notification navigation are deferred until the user re-enables them.
 Prepared 2026-10-17 from existing code, the migration plan, database baseline, and ownership ADR.
 
 ## Session handoff
@@ -22,7 +22,7 @@ This document is the approved index; each tracker ticket remains a separate file
 - **Milestone 5: Manual moves, requests, and threads** — tickets 12–15. Review topics: Idempotency, state transitions, lock ordering, side effects.
 - **Milestone 6: Optimizer and live integration** — tickets 16–19. Review topics: Go/Python boundaries, deadlines/cancellation, run coordination, events.
 - **Milestone 7: Hosted verification, cutover, and retirement** — tickets 20–23. Review topics: Configuration, secrets, deployment health, rollout/rollback, cleanup.
-- **Milestone 8 (being planned, not authorized): iOS TestFlight demo release, dummy data only.** Follows the cutover (22) and ticket 23. Decisions so far are in [milestone 8 planning](../release/milestone-8-testflight-demo.md); the open questions there come before any tickets.
+- **Milestone 8 (approved 2026-10-30, not started): iOS TestFlight demo release, dummy data only (tickets 24–28).** Follows the cutover (22). Tickets 24 and 26 can start before ticket 23; the rest follow it. Decisions are in [milestone 8 planning](../release/milestone-8-testflight-demo.md). Each ticket starts only after the user's go-ahead.
 
 Milestone order is the intended execution order. Blocking edges represent genuine technical gates, not a forced chain.
 Unblocked tickets can use existing migrated or retained paths and development fixtures.
@@ -120,7 +120,27 @@ Unblocked tickets can use existing migrated or retained paths and development fi
 23. **Retire obsolete client and database workflow paths (Milestone 7)**
    - **Blocked by:** 22: Enable the Go migration in the existing environment.
    - **What it delivers:** After the approved cutover and rollback window, unused direct client access and obsolete RPC implementations are removed while required infrastructure continues working.
-   - **Note:** Once store builds exist (proposed milestone 8), installed old versions keep calling legacy paths. Retirement then also waits for a minimum-supported-version decision.
+   - **Note:** Ticket 23 lands before milestone 8's first TestFlight build, so no installed build ever depends on the legacy paths.
+
+24. **App identity and build setup (Milestone 8)**
+   - **Blocked by:** None.
+   - **What it delivers:** The app is named and configured as NurseFlow for iPhone, and an EAS production build can be started by hand.
+
+25. **Account deletion (Milestone 8)**
+   - **Blocked by:** 23: Retire obsolete client and database workflow paths.
+   - **What it delivers:** A signed-in user can permanently delete their account and everything they own from inside the app.
+
+26. **Policies and notices (Milestone 8)**
+   - **Blocked by:** None, though the policy text needs the user's contact email to be finished.
+   - **What it delivers:** Testers can read the privacy policy and terms, agree at sign-up, and are told throughout that only dummy data is allowed.
+
+27. **First build on the user's iPhone (Milestone 8)**
+   - **Blocked by:** 23: Retire obsolete client and database workflow paths; 24: App identity and build setup; 25: Account deletion; 26: Policies and notices.
+   - **What it delivers:** An internal TestFlight build passes the full charge nurse and regular nurse flows on the user's iPhone against production.
+
+28. **External TestFlight (Milestone 8)**
+   - **Blocked by:** 27: First build on the user's iPhone.
+   - **What it delivers:** Chosen testers can install NurseFlow through a limited public link after Beta App Review.
 
 
 ## Common acceptance rules
