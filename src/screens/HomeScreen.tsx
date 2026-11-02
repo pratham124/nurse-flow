@@ -25,6 +25,7 @@ import {
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import { NurseFlowLogo } from "../components/NurseFlowLogo";
+import { PolicyLinksRow } from "../components/PolicyLinks";
 import { NotificationPermissionDialog } from "../components/NotificationPermissionCard";
 import { useAuthSession } from "../store/AuthSessionContext";
 import { notificationsEnabled } from "../config/featureFlags";
@@ -582,6 +583,8 @@ export default function Index() {
             </Text>
           </View>
         )}
+
+        <PolicyLinksRow />
       </ScrollView>
 
       <View style={styles.actionBar}>

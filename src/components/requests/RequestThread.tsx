@@ -174,6 +174,10 @@ function RequestMessageComposer({
         value={draft}
       />
 
+      <Text style={styles.composerHint}>
+        Don&apos;t include patient details
+      </Text>
+
       {!isConnected ? (
         <Text style={styles.connectionNote}>
           Messages cannot be sent while disconnected. Drafts are not queued.
@@ -368,6 +372,11 @@ const styles = StyleSheet.create({
   disabledComposerInput: {
     backgroundColor: colors.neutral.backgroundSecondary,
     color: colors.neutral.textSecondary,
+  },
+  composerHint: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    lineHeight: 18,
   },
   connectionNote: {
     color: colors.status.amber800,

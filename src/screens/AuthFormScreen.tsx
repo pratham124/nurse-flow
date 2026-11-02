@@ -12,8 +12,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { DummyDataNotice } from "../components/DummyDataNotice";
 import { LoadingState } from "../components/LoadingState";
 import { NurseFlowLogo } from "../components/NurseFlowLogo";
+import { ConsentLine } from "../components/PolicyLinks";
 import { loginWithEmail, signUpWithEmail } from "../services/authRepository";
 import { useAuthSession } from "../store/AuthSessionContext";
 import {
@@ -176,14 +178,14 @@ export default function AuthFormScreen({ mode }: AuthFormScreenProps) {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.keyboardView}
       >
-        <View style={styles.logoHeader}>
-          <NurseFlowLogo accessibilityLabel="Nurse Flow" variant="wordmark" />
-        </View>
         <ScrollView
           contentContainerStyle={styles.contentContainer}
           keyboardShouldPersistTaps="handled"
           style={styles.formScrollView}
         >
+          <View style={styles.logoHeader}>
+            <NurseFlowLogo accessibilityLabel="Nurse Flow" variant="wordmark" />
+          </View>
           <View style={styles.header}>
             <Text style={styles.title}>
               {isSignup ? "Create account" : "Welcome back"}
@@ -220,6 +222,8 @@ export default function AuthFormScreen({ mode }: AuthFormScreenProps) {
               />
             </View>
 
+            {isSignup ? <DummyDataNotice /> : null}
+
             {errorMessage ? (
               <Text accessibilityRole="alert" style={styles.errorText}>
                 {errorMessage}
@@ -248,6 +252,8 @@ export default function AuthFormScreen({ mode }: AuthFormScreenProps) {
                 </Text>
               )}
             </Pressable>
+
+            {isSignup ? <ConsentLine /> : null}
 
             <Pressable
               accessibilityRole="button"
@@ -289,12 +295,7 @@ const styles = StyleSheet.create({
   },
   logoHeader: {
     alignItems: "center",
-    left: 0,
-    paddingTop: spacing.xxl,
-    position: "absolute",
-    right: 0,
-    top: 0,
-    zIndex: 1,
+    marginBottom: spacing.xl,
   },
   formScrollView: {
     flex: 1,

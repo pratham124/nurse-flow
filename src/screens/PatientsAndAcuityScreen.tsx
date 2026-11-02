@@ -15,6 +15,7 @@ import {
   WorkflowListScreen,
   WorkflowSection,
 } from "../components/workflow";
+import { DummyDataNotice } from "../components/DummyDataNotice";
 import { AssignedShiftEditGuard } from "../components/assignment/AssignedShiftEditGuard";
 import { useActiveShiftDraft } from "../hooks/useActiveShiftDraft";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
@@ -243,6 +244,8 @@ function PatientsListHeader({
 }: PatientsListHeaderProps) {
   return (
     <View style={styles.headerContent}>
+      <DummyDataNotice />
+
       <WorkflowSection title="Census">
         <SummaryTileGrid>
           <SummaryTile value={occupiedBedCount.toString()} label="Occupied" />

@@ -124,6 +124,7 @@ function AddNurseForm({
     <WorkflowSection title="Add nurse">
       <PlaceholderInput
         errorText={nameError}
+        helperText="First names only"
         label="Nurse name"
         onChangeText={onNameChange}
         placeholder="Taylor"
