@@ -42,14 +42,14 @@ their real unit's layout with made-up patients) is fine.
 | 7 | Notifications | Ship with notifications off. Ticket 18 stays a follow-up after the first release. |
 | 8 | Order | Ticket 23 (retiring the legacy database paths, around 2026-11-06) happens before the first build is submitted, so no TestFlight build ever depends on the legacy paths. After the first build, Go API changes must keep working for builds testers already have installed. |
 | 9 | Data location | Stays in the US (Supabase `us-east-1`, Cloud Run `us-east4`), which is fine for dummy data. |
-| 10 | Contact | A separate contact email, which the user is creating, for privacy and support requests. |
+| 10 | Contact | `pratham.sitoula03@gmail.com` for privacy and support requests. It appears on the public policy pages and in App Store Connect. |
 | 11 | Hints | The message box says "Don't include patient details". The nurse name field says "First names only". |
 | 12 | End-of-shift deletion | Skipped, since the data is dummy. |
 | 13 | Sign-up email | Email confirmation stays off for the demo, which avoids setting up an email provider. People can sign up with an address they don't own. Confirm the production setting during the build. |
 | 14 | Builds | EAS cloud builds started by hand and uploaded with EAS Submit. Production's public settings are EAS environment variables, with notifications off. |
 | 15 | Over-the-air updates | No EAS Update. Every fix is a new TestFlight build. It can be added in any later build. |
 | 16 | Capacity and cost | Production keeps `min-instances 0` and the existing instance caps, and gains a Google Cloud budget alert. The public link is shared only with chosen people and has a tester limit. |
-| 17 | Icon and splash | Made from `assets/images/nurseflow-mark.png`, replacing the template's, including `assets/expo.icon` on iOS. |
+| 17 | Icon and splash | Made from `assets/images/nurseflow-mark.png`, replacing the template's, including `assets/expo.icon` on iOS. That file is only 107×117 and no original exists, so this is a stopgap. Before external testers (ticket 28), the nurse is redrawn at full size with a different hat symbol, because the red cross emblem is legally protected. |
 | 18 | Apple reviewer login | A dedicated production charge account with a dummy template and shift, created after ticket 23. Its password goes in the same encrypted local store as the smoke accounts. |
 | 19 | Policy pages | Privacy policy and terms are hosted on GitHub Pages from this public repo. |
 | 20 | Expo patches | Expo SDK 55 patch updates are applied and retested before the first build. |
