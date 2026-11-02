@@ -262,6 +262,7 @@ function RequestTextArea({
         textAlignVertical="top"
         value={value}
       />
+      <Text style={styles.fieldHint}>Don&apos;t include patient details</Text>
     </View>
   );
 }
@@ -855,6 +856,11 @@ const styles = StyleSheet.create({
     color: colors.neutral.textPrimary,
     fontSize: textSize.sm,
     fontWeight: fontWeight.semibold,
+  },
+  fieldHint: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    lineHeight: 18,
   },
   requestField: {
     gap: spacing.sm,
