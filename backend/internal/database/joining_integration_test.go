@@ -19,11 +19,6 @@ func TestInviteJoiningIntegration(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		// The retained SQL function is the behavior authority for every outcome.
-		want := f.rpcAs(t, who.AuthUserID, "SELECT status || '/' || coalesce(reason, '') FROM public.validate_shift_nurse_invite_code($1)", invites.HashCode(code))
-		if got := result.Status + "/" + result.Reason; got != want {
-			t.Fatalf("Go validate = %s, SQL function = %s", got, want)
-		}
 		return result
 	}
 	accept := func(who Profile, code string) InviteJoin {

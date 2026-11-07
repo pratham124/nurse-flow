@@ -55,8 +55,8 @@ if ($Environment -eq 'production') {
     $GitHubEnvironment = 'gcp-production'
     $ServiceSuffix = 'prod'
 } else {
-    # Development keeps the migration branch until it is retired (ticket 23).
-    $GitHubBranches = @('main', 'codex/go-migration')
+    # Like production, development trusts only main (the migration branch was retired in ticket 23).
+    $GitHubBranches = @('main')
     $GitHubEnvironment = 'gcp-development'
     $ServiceSuffix = 'dev'
 }

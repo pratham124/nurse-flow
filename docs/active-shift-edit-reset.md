@@ -17,8 +17,10 @@ installation and two-session manual validation remain.
 
 ## Server Installation
 
-Run `supabase/active_shift_edit_reset.sql` in the Supabase SQL editor after the
-existing active-shift, invite, nurse-access, and manual-override setup.
+Historical: `supabase/active_shift_edit_reset.sql` was run in the Supabase SQL
+editor after the existing active-shift, invite, nurse-access, and manual-override
+setup. The Go API replaced it (ticket 06), and Go migration ticket 23 dropped the
+function and deleted the file.
 
 ## Manual Validation
 

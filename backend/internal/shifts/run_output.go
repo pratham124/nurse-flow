@@ -69,11 +69,11 @@ func ResultID(assignmentResult json.RawMessage) string {
 	return strings.Trim(result.ID, " ")
 }
 
-// OutputValidationError ports the SQL function optimizer_output_validation_error.
-// It returns "" for valid output, or the same error code the SQL returns, checking
+// OutputValidationError ports the retired SQL function optimizer_output_validation_error.
+// It returns "" for valid output, or the same error code the SQL returned, checking
 // in the same order.
 //
-// The SQL reads loosely typed JSON, and a missing key makes many of its tests
+// The SQL read loosely typed JSON, and a missing key made many of its tests
 // "unknown" (NULL), so bad output can slip through. This port decodes the snapshot
 // and the solver output into typed structs and is intentionally stricter there:
 //   - a missing generatedTeams, roomCoverage, or bedAssignments array is

@@ -19,70 +19,43 @@ The app supports:
 
 ## Architecture
 
-### Current architecture
-
-The Expo app uses Supabase Auth for login and accesses application data through
-Supabase's Data API. On the Go migration branch, floor-template list reads use
-the local Go API; other reads and writes keep their existing paths. Postgres
-holds the data, RLS policies, PL/pgSQL workflow
-functions, and triggers. A separate Python optimizer runs on Google Cloud Run.
-
-```mermaid
-flowchart TD
-    App["Expo app · React Native / TypeScript"]
-    Auth["Supabase Auth"]
-    API["Supabase Data API"]
-    GoRead["Local Go API · Template list"]
-    DB["Supabase Postgres · Tables / JSONB snapshots<br/>RLS / RPC functions / triggers"]
-    subgraph CloudRun["Google Cloud Run"]
-        Optimizer["Python optimizer · FastAPI / OR-Tools"]
-    end
-    Realtime["Supabase Realtime"]
-
-    App <-->|"Sign-in and token refresh"| Auth
-    App <-->|"Table queries and RPC calls"| API
-    App <-->|"Template list with access token"| GoRead
-    GoRead <-->|"GORM · Authorized owner read"| DB
-    API <--> DB
-    App <-->|"Authenticated assignment requests"| Optimizer
-    Optimizer <-->|"Prepare and finalize RPCs"| API
-    DB -->|"Change events and broadcasts"| Realtime
-    Realtime -->|"Updates prompt data reloads"| App
-```
-
-### Planned Go architecture
-
-The planned Go API uses `net/http` for HTTP handling, service functions for
-authorization and business logic, and GORM for Postgres access. Supabase Auth,
-Realtime, and the Python optimizer remain separate services. The local template-list endpoint is implemented; the broader workflow migration remains planned.
+The Expo app signs in with Supabase Auth and sends every workflow read and write
+to the Go API with the user's access token. Go checks the token, the user's role,
+and resource access, then works on Postgres as a limited database role whose own
+RLS policies scope every query to that user. For assignment runs, Go calls a
+solver-only Python service. Supabase Realtime broadcasts, sent by database
+triggers, tell the app when to reload.
 
 ```mermaid
 flowchart TD
     App["Expo app · React Native / TypeScript"]
     Auth["Supabase Auth"]
-    subgraph GoAPI["Planned Go API"]
-        HTTP["net/http · Verify access token"]
-        Service["Service functions · Authorization and business rules"]
-        ORM["GORM · Queries and explicit transactions"]
-        HTTP --> Service --> ORM
-    end
-    DB["Supabase Postgres · Existing schema and JSONB snapshots<br/>Constraints / indexes / retained policies and triggers"]
-    Realtime["Supabase Realtime"]
     subgraph CloudRun["Google Cloud Run"]
-        Optimizer["Python optimizer · FastAPI / OR-Tools"]
+        subgraph GoAPI["Go API"]
+            HTTP["net/http · Verify access token"]
+            Service["Service functions · Authorization and business rules"]
+            ORM["GORM · Queries and explicit transactions"]
+            HTTP --> Service --> ORM
+        end
+        Solver["Python solver · FastAPI / OR-Tools · /v1/solve"]
     end
-    API["Supabase Data API · Existing optimizer RPCs"]
+    DB["Supabase Postgres · Tables / JSONB snapshots<br/>RLS / broadcast and notification triggers"]
+    Realtime["Supabase Realtime · Private broadcast channels"]
 
     App <-->|"Sign-in and token refresh"| Auth
-    App <-->|"HTTPS JSON requests with access token"| HTTP
-    ORM <-->|"Dedicated database role"| DB
-    App <-->|"Existing assignment path"| Optimizer
-    Optimizer <--> API
-    API <--> DB
-    DB -->|"Change events and broadcasts"| Realtime
+    App <-->|"HTTPS JSON with access token"| HTTP
+    ORM <-->|"nurseflow_go role · RLS"| DB
+    Service <-->|"Snapshot in, assignment out · shared token"| Solver
+    DB -->|"Broadcasts from triggers"| Realtime
     Realtime -->|"Updates prompt data reloads"| App
 ```
 
+The app has no direct table or RPC access for workflows. The only database paths
+it still uses are Auth, Realtime broadcast authorization, and two deferred
+notification paths that are off behind a feature flag. See
+[ADR 0008](docs/adr/0008-clients-reach-data-only-through-go.md) for what was
+retired and what was kept, and [hosted development](docs/go-migration/hosted-development.md)
+for deployment and rollback.
 ## Setup
 
 ### Requirements
@@ -113,7 +86,7 @@ belong only on the backend. The app reaches the assignment optimizer through
 the Go API (`EXPO_PUBLIC_GO_API_URL`), so it needs no optimizer URL of its own.
 Restart Expo after changing these values.
 
-For the migration branch, start the local Go API using the [backend instructions](backend/README.md).
+To run the Go API locally instead of a hosted one, follow the [backend instructions](backend/README.md).
 See [Expo-to-Go setup](docs/go-migration/expo-template-read.md) for web origins and physical-device addresses.
 
 For backend setup, see the [Supabase setup guide](docs/phase-5/supabase-auth-setup.md)

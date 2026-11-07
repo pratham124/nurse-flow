@@ -324,3 +324,85 @@ can therefore run after about a week of stable production use (ticket 22,
 decision 14). Once store builds exist, old installed versions keep calling
 whatever API they shipped with for months. From then on, Go API changes must keep
 working for installed versions until a minimum supported version is decided.
+
+## Ticket 23: retirement
+
+The user approved ticket 23 on 2026-11-06, after the production smoke checks of
+2026-11-03 and 2026-11-05 (both emulators, full checklist). Work is on
+`chore/retire-legacy-paths` from `main`, merged through a pull request. The
+architecture decision is [ADR 0008](../adr/0008-clients-reach-data-only-through-go.md).
+
+### Evidence (read-only, 2026-11-07)
+
+- **Catalogs:** development and production have different system identifiers
+  and returned identical triggers, policies, function grants, table ACLs, and
+  publication membership. All 29 live public function definitions hashed
+  identical to `supabase/baseline/functions.json`.
+- **Calls:** production's `pg_stat_statements`, reset 2026-10-29 06:14 UTC (the
+  migration session), shows no `anon` or `authenticated` call to any public RPC or
+  table. The only hits on legacy functions are `postgres` statements from the
+  cutover migration itself.
+- **Other callers:** neither project has Edge Functions, `pg_cron`, `pg_net`, or
+  database webhooks. Production GCP has no Cloud Scheduler. Both hosted solvers get
+  only `NURSEFLOW_SOLVER_TOKEN`, so `/v1/assignment-runs` was never registered in
+  any hosted environment.
+- **Code:** the app calls no workflow RPC or table. Go runtime code calls none of
+  the 16 RPCs; only its local parity tests did. Python called the 3 optimizer
+  RPCs from the legacy route only. No constraint, default, or policy references a
+  dropped function, and only `finalize_optimizer_run` called
+  `optimizer_output_validation_error`.
+
+### Decisions
+
+| # | Area | Decision |
+| --- | --- | --- |
+| 1 | RPCs | Drop the 16 legacy RPCs in one migration, not revoke-then-drop. |
+| 2 | Client access | Revoke all `anon`/`authenticated` table and sequence privileges and drop 19 client policies. Keep `authenticated` `SELECT` on `shift_nurse_access` and `profiles` with their two owner policies, for the deferred notification lookup. |
+| 3 | Row-change Realtime | Remove `active_shifts` and `nurse_request_messages` from `supabase_realtime`. Broadcast does not use it. |
+| 4 | Deferred notifications | Device-token RPCs, `devicePushTokenRepository.ts`, the notification-target read, the `enqueue_*` triggers, and the feature flag stay until ticket 18. |
+| 5 | Python | Delete `/v1/assignment-runs`, `auth.py`, `supabase_clients.py`, the Supabase settings and CORS, their tests, and the JWT dependencies. `/v1/solve`, `/healthz`, `/readyz` stay. |
+| 6 | Go tests | Delete the parity checks against the old RPCs; keep every Go behavior test. |
+| 7 | Dead code | Delete three unused Expo helpers and the legacy SQL scenario files. Historical phase docs and `supabase/baseline/` stay. |
+| 8 | Dev database CI | Point `go-development-database.yml` and `nurseflow-go-development` at `main`. |
+| 9 | App version | No bump and no forced-update check now. The first store build is the minimum supported version; decided at milestone 8. |
+| 10 | Order | Repo changes and local checks; development migration and verification; allow `main` in `nurseflow-go-development` (additive, before the merge, because the merge triggers the dev-database check); PR merge; production deploys; production migration; production smoke checks; then remove the `codex/go-migration` branch policies and the dev WIF ref. |
+| 11 | Rollback | `supabase/rollback/20261107051656_restore_legacy_client_paths.sql`, outside `migrations/`, tested on development. Production use is a fix-forward copy into `migrations/` under a new timestamp. |
+| 12 | Who applies | The agent applies development. The user applies production. |
+| 13 | Smoke | The Nov 3 checklist plus negative checks: a dropped RPC returns 404 and a direct table read is refused. |
+| 14 | GitHub and GCP | Direct `gh api` and `gcloud` commands, plus matching edits to `bootstrap-gcp.ps1`. |
+| 15 | Records | This section, ADR 0008, the READMEs, and `plan.md`. |
+| 16 | Default privileges | Follow-up, not in this migration. Supabase's default privileges in `public` still grant `anon` and `authenticated` full rights on new tables, sequences, and functions, so ADR 0008's rule covers existing objects only. A later migration should revoke those defaults; Go migrations already grant to `nurseflow_go` explicitly. |
+
+### Intentionally retained
+
+| Component | Why it stays |
+| --- | --- |
+| Supabase Auth | Sign-in and refresh by design; Go verifies its tokens. |
+| `broadcast_nurseflow_*` triggers | Send the Realtime broadcasts that prompt reloads. |
+| `can_receive_nurseflow_broadcast`, `get_nurse_request_thread_actor`, `realtime.messages` policy | Authorize private broadcast channels; the first calls the second. |
+| `complete_swap_request_from_override` trigger | Go's move flow relies on it to complete accepted swaps (milestone 5). |
+| `enqueue_*` functions and triggers | Write `notification_events`; delivery is deferred (ticket 18). |
+| `register_device_push_token`, `disable_current_device_push_token` | Deferred device registration (ticket 18), gated off. |
+| `authenticated` `SELECT` on `shift_nurse_access` and `profiles`, two owner policies | Deferred notification-target read, gated off. Ticket 18 should move it to Go and remove them. |
+| RLS on all 11 tables, `nurseflow_go` grants, `go_*` policies | Go's database access (ADR 0001). |
+| Python solver `/v1/solve` | Assignment solving (ADR 0005). |
+| All tables and data | Nothing is deleted. |
+
+### Development (2026-11-07)
+
+- Applied `20261107051656_retire_legacy_client_paths` to `nmitctyxtjmlakcsmnuj`. Its preflight and postflight assertions passed.
+- Catalog diff, before and after: exactly the 16 functions, 19 policies, the client table and sequence privileges (`authenticated` keeps `SELECT` on `profiles` and `shift_nurse_access`), and the two publication tables. Nothing else changed.
+- Rollback test: applying the rollback restored a catalog **identical** to the pre-migration capture, including function definition hashes and ACLs. Re-applying the migration produced a catalog identical to the first application. Then `migration repair` recorded it, and `migration list` shows 8 of 8 local = remote.
+- Advisors: development now has 41 findings; production, still in the old state, has 83. Every difference is a removal, and nothing is new: 23 `*_security_definer_function_executable` warnings for dropped RPCs, plus the `auth_rls_initplan` and `multiple_permissive_policies` warnings that belonged to dropped client policies, and one `unused_index`.
+- `supabase/baseline/verify-legacy-retirement.sql` (read-only) reports no legacy RPCs, 13 retained functions, 7 triggers, RLS on 11 of 11 tables, the two kept client policies, 37 `go_*` policies, and an empty row-change publication.
+- Live Go checks against the retired catalog: `development.ps1 Check` connected as `nurseflow_go`, and `TestTemplateListIsolationIntegration` and `TestShiftWorkspaceIsolationIntegration` passed.
+- App walkthrough against hosted development (`npm run start:dev`, hosted dev API and solver), with fresh synthetic accounts `nurseflow.dev.t23.charge@example.com` and `nurseflow.dev.t23.nurse@example.com`:
+  - **Charge on Expo web (Playwright):** signup and profile, template "T23 Floor" (301 East, 302 West), start, two nurses and two patients, and Run assignment. The board showed Ana → 301 and Raj → 302 with Live. Every request went to the Go API (200/201), and none went to Supabase's Data API.
+  - **Joined nurse on Android (Pixel 7 Pro API 33):** signup, joined with the generated code, and saw only Room 302, Bed 1, with Live. Submitted the issue "T23 dev issue". The charge's reply showed on Android, and the nurse's reply appeared **live** on the charge's open thread without a reload. End Shift switched Android to "Shift ended".
+  - The first charge Realtime connection returned `MissingPartition` once and was Live shortly after, the same as in tickets 20–22.
+- Negative checks with the charge's token against development's REST API:
+  - The dropped RPCs, called with their real parameters, return `PGRST202` (function not found).
+  - Direct `floor_templates` and `active_shifts` reads return `42501` (permission denied).
+  - `anon` is denied on `profiles`.
+  - The kept reads return only the caller's own profile and access rows.
+  - The kept `register_device_push_token` is still callable, and its ownership check rejected the probe.

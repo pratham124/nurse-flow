@@ -35,8 +35,8 @@ type runInsert struct {
 // TableName maps runInsert to the existing optimizer_runs table.
 func (runInsert) TableName() string { return "public.optimizer_runs" }
 
-// PrepareAssignmentRun decides what to do with a run request, mirroring
-// prepare_optimizer_run. It returns ErrShiftNotFound for a missing or foreign
+// PrepareAssignmentRun decides what to do with a run request, ported from
+// the retired prepare_optimizer_run RPC. It returns ErrShiftNotFound for a missing or foreign
 // shift. The run row is locked before the shift row everywhere (here and in
 // finalize), so a retry and a finalizer cannot deadlock.
 func (s *Store) PrepareAssignmentRun(ctx context.Context, caller RunCaller, shiftID string, request RunRequest) (PreparedRun, error) {

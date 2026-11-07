@@ -83,20 +83,6 @@ test("join-code eligibility follows the effective assignment after a move", () =
   );
 });
 
-test("the edit reset SQL clears every stale access boundary in one function", () => {
-  const resetSql = readFileSync(
-    new URL("../supabase/active_shift_edit_reset.sql", import.meta.url),
-    "utf8",
-  );
-
-  assert.match(resetSql, /shift_snapshot\s*-\s*'assignmentResult'/);
-  assert.match(resetSql, /update public\.manual_assignment_overrides/);
-  assert.match(resetSql, /update public\.shift_nurse_invites/);
-  assert.match(resetSql, /update public\.shift_nurse_access/);
-  assert.match(resetSql, /status = 'removed'/);
-  assert.match(resetSql, /update public\.active_shifts/);
-});
-
 test("assigned-shift edit dialogs mount only on focused editable screens", () => {
   const guardSource = readFileSync(
     new URL(

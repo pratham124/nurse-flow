@@ -13,7 +13,7 @@ const (
 	maxMutationIDCharacters = 120
 )
 
-// The error text is shown to the user, so it matches the original SQL function.
+// The error text is shown to the user, so it matches the retired SQL function.
 var (
 	// ErrMessageBlank indicates a message with no text after trimming.
 	ErrMessageBlank = errors.New("Write a message before sending.")

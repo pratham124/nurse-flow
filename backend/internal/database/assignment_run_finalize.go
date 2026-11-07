@@ -24,7 +24,7 @@ func lockRunByID(tx *gorm.DB, profileID, runID string) (*OptimizerRun, error) {
 	return &rows[0], nil
 }
 
-// FinalizeAssignmentRun saves a solved run, mirroring finalize_optimizer_run. It
+// FinalizeAssignmentRun saves a solved run, ported from the retired finalize_optimizer_run RPC. It
 // runs under the caller's identity: the run is locked first, then its shift. The
 // only active_shifts write is the single snapshot update, so the retained
 // Realtime and notification triggers see exactly one committed change.
@@ -169,7 +169,7 @@ func (a savedAssignment) save(rerun bool) (RunResponse, error) {
 }
 
 // FailAssignmentRun records a failure on the caller's run while it is still
-// running, mirroring fail_optimizer_run. A run that already ended is left alone.
+// running, ported from the retired fail_optimizer_run RPC. A run that already ended is left alone.
 func (s *Store) FailAssignmentRun(ctx context.Context, caller RunCaller, runID, errorCode string) error {
 	code := strings.TrimSpace(errorCode)
 	if code == "" {

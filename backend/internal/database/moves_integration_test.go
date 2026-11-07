@@ -1,12 +1,9 @@
 package database
 
 import (
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"reflect"
-	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -366,54 +363,23 @@ func TestMoveAssignmentIntegration(t *testing.T) {
 		}
 	})
 
-	t.Run("matches the original SQL function", func(t *testing.T) {
+	t.Run("records acknowledgements and emits realtime changes", func(t *testing.T) {
 		acks := `[{"warningType":"over_max_load","message":"x"}]`
-		goWorld := newWorld(t, f, `[`+acceptedSwap+`]`)
-		sqlWorld := newWorld(t, f, `[`+acceptedSwap+`]`)
-		for _, w := range []world{goWorld, sqlWorld} {
-			f.exec(t, `UPDATE public.active_shifts SET shift_snapshot = jsonb_set(shift_snapshot, '{nurses,1,maxPatientLoad}', '1') WHERE id = $1`, w.shift)
-		}
-		goBefore := f.sideEffects(t, goWorld.shift)
-		sqlBefore := f.sideEffects(t, sqlWorld.shift)
-		if _, err := goWorld.move("b1", "n1", "n2", "m1", acks, str("sw1")); err != nil {
+		w := newWorld(t, f, `[`+acceptedSwap+`]`)
+		f.exec(t, `UPDATE public.active_shifts SET shift_snapshot = jsonb_set(shift_snapshot, '{nurses,1,maxPatientLoad}', '1') WHERE id = $1`, w.shift)
+		before := f.sideEffects(t, w.shift)
+		if _, err := w.move("b1", "n1", "n2", "m1", acks, str("sw1")); err != nil {
 			t.Fatal(err)
 		}
-		result := f.rpcCommit(t, sqlWorld.charge.AuthUserID,
-			"SELECT public.confirm_manual_assignment_override($1::uuid, 'res1', 'b1', 'n1', 'n2', $2::jsonb, 'sw1', 'm1')::text", sqlWorld.shift, acks)
-		if goEffects, sqlEffects := f.sideEffects(t, goWorld.shift).minus(goBefore), f.sideEffects(t, sqlWorld.shift).minus(sqlBefore); goEffects != sqlEffects || goEffects.realtime == 0 {
-			t.Fatalf("side effects differ: go=%+v sql=%+v", goEffects, sqlEffects)
+		if effects := f.sideEffects(t, w.shift).minus(before); effects.realtime == 0 {
+			t.Fatalf("a saved move must emit a realtime change: %+v", effects)
 		}
-		var sqlSaved struct {
-			Status   string
-			Override struct {
-				WarningAcknowledgements []map[string]any
-				BedID, ToNurseID        string
-			}
-		}
-		if err := json.Unmarshal([]byte(result), &sqlSaved); err != nil || sqlSaved.Status != "saved" {
-			t.Fatalf("%s %v", result, err)
-		}
-		goRequest, sqlRequest := goWorld.requestByID(t, "sw1"), sqlWorld.requestByID(t, "sw1")
-		if !reflect.DeepEqual(keysOf(goRequest), keysOf(sqlRequest)) {
-			t.Fatalf("request keys differ: %v vs %v", keysOf(goRequest), keysOf(sqlRequest))
-		}
-		var goAcks []map[string]any
-		_ = json.Unmarshal([]byte(f.text(t, "SELECT warning_acknowledgements::text FROM public.manual_assignment_overrides WHERE shift_id = $1", goWorld.shift)), &goAcks)
-		if len(goAcks) != 1 || len(sqlSaved.Override.WarningAcknowledgements) != 1 ||
-			goAcks[0]["message"] != sqlSaved.Override.WarningAcknowledgements[0]["message"] ||
-			!reflect.DeepEqual(keysOf(goAcks[0]), keysOf(sqlSaved.Override.WarningAcknowledgements[0])) {
-			t.Fatalf("go=%v sql=%v", goAcks, sqlSaved.Override.WarningAcknowledgements)
+		var savedAcks []map[string]any
+		_ = json.Unmarshal([]byte(f.text(t, "SELECT warning_acknowledgements::text FROM public.manual_assignment_overrides WHERE shift_id = $1", w.shift)), &savedAcks)
+		if len(savedAcks) != 1 || savedAcks[0]["message"] != "x" || savedAcks[0]["warningType"] != "over_max_load" {
+			t.Fatalf("acknowledgements = %v", savedAcks)
 		}
 	})
-}
-
-func keysOf(object map[string]any) []string {
-	keys := make([]string, 0, len(object))
-	for key := range object {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	return keys
 }
 
 // effects counts the realtime broadcasts and queued notifications for one shift.
@@ -429,26 +395,4 @@ func (f *accessFixture) sideEffects(t *testing.T, shiftID string) effects {
 		realtime:      f.count(t, "SELECT count(*) FROM realtime.messages WHERE topic LIKE '%' || $1 || '%'", shiftID),
 		notifications: f.count(t, "SELECT count(*) FROM public.notification_events WHERE shift_id = $1", shiftID),
 	}
-}
-
-// rpcCommit runs a retained SQL function as the user and commits, so its effects
-// can be compared with Go's. It is used only for comparison.
-func (f *accessFixture) rpcCommit(t *testing.T, authUserID, query string, args ...any) string {
-	t.Helper()
-	tx, err := f.admin.Begin()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer tx.Rollback()
-	if _, err := tx.Exec("SELECT set_config('request.jwt.claim.sub', $1, true)", authUserID); err != nil {
-		t.Fatal(err)
-	}
-	var value sql.NullString
-	if err := tx.QueryRow(query, args...).Scan(&value); err != nil {
-		t.Fatal(err)
-	}
-	if err := tx.Commit(); err != nil {
-		t.Fatal(err)
-	}
-	return value.String
 }

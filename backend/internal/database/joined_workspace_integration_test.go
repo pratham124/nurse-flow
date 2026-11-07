@@ -2,7 +2,6 @@ package database
 
 import (
 	"encoding/json"
-	"reflect"
 	"testing"
 
 	"github.com/pratham124/nurse-flow/backend/internal/invites"
@@ -50,7 +49,6 @@ func TestJoinedWorkspaceIntegration(t *testing.T) {
 		if got == nil {
 			t.Fatal("no workspace")
 		}
-		assertMatchesSQLView(t, f, ninaProfile, got)
 		if got.ShiftID != shift || got.FloorName != "Test Floor" || got.NurseName != "Nina" ||
 			got.Access.NurseID != "n1" || got.Access.Status != "linked" || got.Access.NurseProfileID == nil || *got.Access.NurseProfileID != ninaProfile.ID {
 			t.Fatalf("workspace = %+v", got)
@@ -105,14 +103,12 @@ func TestJoinedWorkspaceIntegration(t *testing.T) {
 		if ids := bedIDs(got); len(ids) != 1 || ids[0] != "b1" {
 			t.Fatalf("beds after losing b3 = %v", ids)
 		}
-		assertMatchesSQLView(t, f, ninaProfile, got)
 		// Reassigned away from every bed: still a workspace, with no beds.
 		secondOverride := f.stageOverride(t, shift, f.alpha.ID, "b1", "n1", "n2")
 		got = workspace(ninaProfile)
 		if got == nil || len(bedIDs(got)) != 0 {
 			t.Fatalf("workspace after losing all beds = %+v", got)
 		}
-		assertMatchesSQLView(t, f, ninaProfile, got)
 		// The flag clears when the completed override is active again.
 		f.exec(t, "UPDATE public.active_shifts SET shift_snapshot = replace(shift_snapshot::text, '00000000-0000-4000-8000-0000000000aa', $2)::jsonb WHERE id = $1", shift, overrideID)
 		got = workspace(ninaProfile)
@@ -185,34 +181,4 @@ func TestJoinedWorkspaceIntegration(t *testing.T) {
 			t.Fatalf("joiner sees %d shifts (err %v)", visibleShifts, err)
 		}
 	})
-}
-
-// assertMatchesSQLView compares Go's projection with the retained SQL function,
-// ignoring only timestamp formatting.
-func assertMatchesSQLView(t *testing.T, f *accessFixture, who Profile, got *JoinedAssignment) {
-	t.Helper()
-	sqlJSON := f.rpcAs(t, who.AuthUserID, "SELECT public.get_joined_nurse_assignment_view()::text")
-	normalize := func(raw []byte) map[string]any {
-		var view map[string]any
-		if err := json.Unmarshal(raw, &view); err != nil {
-			t.Fatal(err)
-		}
-		// Deliberate difference: for a nurse with no beds the SQL function returns
-		// null, which the app rejects as invalid. Go returns an empty list.
-		if view["assignedBeds"] == nil {
-			view["assignedBeds"] = []any{}
-		}
-		if access, ok := view["access"].(map[string]any); ok {
-			delete(access, "createdAt")
-			delete(access, "updatedAt")
-		}
-		return view
-	}
-	goJSON, err := json.Marshal(got)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want, have := normalize([]byte(sqlJSON)), normalize(goJSON); !reflect.DeepEqual(want, have) {
-		t.Fatalf("Go view differs from the SQL function\n sql: %v\n go:  %v", want, have)
-	}
 }

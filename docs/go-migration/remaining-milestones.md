@@ -117,7 +117,7 @@ Unblocked tickets can use existing migrated or retained paths and development fi
    - **Blocked by:** 21: Verify all migrated workflows on hosted development.
    - **What it delivers:** After explicit approval of the concrete cutover, the existing app uses the validated Go workflows against its existing environment.
 
-23. **Retire obsolete client and database workflow paths (Milestone 7)**
+23. **[In progress 2026-11-07: development retired and verified; production pending] Retire obsolete client and database workflow paths (Milestone 7)**
    - **Blocked by:** 22: Enable the Go migration in the existing environment.
    - **What it delivers:** After the approved cutover and rollback window, unused direct client access and obsolete RPC implementations are removed while required infrastructure continues working.
    - **Note:** Ticket 23 lands before milestone 8's first TestFlight build, so no installed build ever depends on the legacy paths.

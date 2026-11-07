@@ -1,6 +1,6 @@
 # Go Backend Migration Plan
 
-Status: milestones 1–5 are done (milestones 4 and 5 on 2026-10-24). Milestone 3 (tickets 03–07) was closed at the user's request on 2026-10-19 after local and live development checks passed, with the remaining manual checks and fixture cleanup deferred. See `shift-lifecycle.md` for the exact verification limits. The existing architecture and milestone execution protocol remain approved. Milestone 5 was authorized and completed on 2026-10-24. Milestone 6 was authorized on 2026-10-25 and is implemented and verified, except the deferred notification work (verified on web and Android); the user closed it on 2026-10-25 by authorizing milestone 7. Milestone 7 is in progress: tickets 20 and 21 were done on 2026-10-29 against the hosted development stack (`nurseflow-dev-2610`), and tickets 22–23 need separate approvals. See `hosted-development.md`.
+Status: milestones 1–5 are done (milestones 4 and 5 on 2026-10-24). Milestone 3 (tickets 03–07) was closed at the user's request on 2026-10-19 after local and live development checks passed, with the remaining manual checks and fixture cleanup deferred. See `shift-lifecycle.md` for the exact verification limits. The existing architecture and milestone execution protocol remain approved. Milestone 5 was authorized and completed on 2026-10-24. Milestone 6 was authorized on 2026-10-25 and is implemented and verified, except the deferred notification work (verified on web and Android); the user closed it on 2026-10-25 by authorizing milestone 7. Milestone 7 is in progress: tickets 20 and 21 were done on 2026-10-29 against the hosted development stack (`nurseflow-dev-2610`), ticket 22 (production cutover) was done on 2026-10-30, and ticket 23 (retirement) is applied on development with production pending. See `hosted-development.md`.
 
 ## Purpose and scope
 
@@ -123,7 +123,7 @@ The user approved this breakdown on 2026-10-17. Full ticket deliverables, blocki
 | 4 | Application profiles, nurse invites, joining, and scoped nurse reads | 08–11 | Done; verification and limits in profiles-invites-access.md |
 | 5 | Manual moves, issue/swap requests, and request threads | 12–15 | Done; verification and limits in moves-requests-threads.md |
 | 6 | Go/Python optimizer coordination, device registration, and live collaboration parity | 16–19 | Closed 2026-10-25; 18 deferred (notifications off); 19 verified on web and Android; see assignment-runs.md |
-| 7 | Hosted development, full parity, explicit cutover, and legacy retirement | 20–23 | In progress: 20 implemented, awaiting setup and live checks; 21 partly prepared; 22–23 need separate approval; see hosted-development.md |
+| 7 | Hosted development, full parity, explicit cutover, and legacy retirement | 20–23 | In progress: 20–22 done; 23 verified on development, production pending; see hosted-development.md |
 | 8 (proposed) | App Store / Play Store release | — | Not started or authorized; follows the cutover (22) |
 
 Work one authorized milestone at a time, completing its routine tickets as a batch. Technical blockers differ from this execution order: unblocked tickets can be verified using retained existing paths and fixtures. Planning approval publishes the tickets; it does not start implementation in this session.
@@ -367,4 +367,12 @@ Production enablement follows hosted development verification and explicit appro
   - the production smoke checks passed on two Android emulators.
   
   Details are in [hosted development](hosted-development.md#cutover-progress).
-- [ ] Ticket 23 (retire legacy paths) needs its own approval, after about a week of stable production use. Milestone 8 (store release) is proposed.
+- [x] Ticket 23 (retire legacy paths) approved on 2026-11-06, after the 2026-11-03 and 2026-11-05 production smoke checks.
+
+### 2026-11-07 - Ticket 23: legacy paths retired on development
+
+- [x] Read-only inventory of every legacy path and its callers. A two-round grilling session settled 15 decisions, recorded in [hosted development](hosted-development.md#ticket-23-retirement) with ADR 0008.
+- [x] Migration `20261107051656_retire_legacy_client_paths` drops 16 RPCs and 19 client policies, revokes client table access (except the deferred notification read), and empties the row-change publication. Applied and registered on development. The rollback script restored an identical catalog, and the re-apply matched. Advisors show only removals.
+- [x] The Python solver is solver-only in code. Go parity tests, dead Expo helpers, legacy SQL files, and `codex/go-migration` references were removed.
+- [ ] Follow-up (decision 16): revoke the client roles' default privileges in `public`, so new objects are not client-accessible by default.
+- [ ] Production: PR merge, deploys, the user-applied migration, smoke checks with negative checks, then the GitHub and GCP branch cleanup. Milestone 7 closes when these pass. Milestone 8 (store release) is proposed.

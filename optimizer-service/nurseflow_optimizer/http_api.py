@@ -8,16 +8,8 @@ from fastapi import FastAPI, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 
-from .service import (
-    OptimizerServiceDependencies,
-    SolverConfig,
-    is_valid_solver_token,
-    run_optimizer_request,
-    run_solver_request,
-)
+from .service import SolverConfig, is_valid_solver_token, run_solver_request
 
-MAX_REQUEST_BYTES = 16_384
-# A shift snapshot is much larger than the legacy action request.
 MAX_SOLVE_REQUEST_BYTES = 1_048_576
 
 
@@ -49,18 +41,8 @@ async def _read_json_object(
     return request_body
 
 
-def create_app(
-    dependencies: OptimizerServiceDependencies | None = None,
-    solver_config: SolverConfig | None = None,
-) -> FastAPI:
-    """Create the HTTP surface around injected, testable service boundaries.
-
-    Each route group is registered only when its configuration is supplied, so
-    a disabled route answers 404 instead of failing at request time.
-    """
-
-    if dependencies is None and solver_config is None:
-        raise ValueError("At least one route group must be configured.")
+def create_app(solver_config: SolverConfig) -> FastAPI:
+    """Create the HTTP surface: health probes plus the Go-facing solve route."""
 
     app = FastAPI(
         title="NurseFlow Optimizer",
@@ -75,39 +57,13 @@ def create_app(
 
     @app.get("/readyz")
     def readiness() -> dict[str, str]:
-        # Reaching this route means configuration parsed and the application,
-        # OR-Tools module, and injected boundaries loaded successfully.
+        # Reaching this route means configuration parsed and the application
+        # and OR-Tools module loaded successfully.
         return {"status": "ready"}
 
-    if dependencies is not None:
-        _register_assignment_runs(app, dependencies)
-    if solver_config is not None:
-        _register_solve(app, solver_config)
+    _register_solve(app, solver_config)
 
     return app
-
-
-def _register_assignment_runs(
-    app: FastAPI,
-    dependencies: OptimizerServiceDependencies,
-) -> None:
-    """Legacy mobile-app route: Supabase JWT, prepare, solve, finalize."""
-
-    @app.post("/v1/assignment-runs")
-    async def create_assignment_run(request: Request) -> JSONResponse:
-        request_body = await _read_json_object(request, MAX_REQUEST_BYTES)
-        if isinstance(request_body, JSONResponse):
-            return request_body
-
-        # The CP-SAT call is synchronous and CPU-heavy. Running it in FastAPI's
-        # worker thread keeps the event loop responsive for health probes.
-        outcome = await run_in_threadpool(
-            run_optimizer_request,
-            request.headers.get("authorization"),
-            request_body,
-            dependencies,
-        )
-        return JSONResponse(status_code=outcome.http_status, content=outcome.body)
 
 
 def _register_solve(app: FastAPI, config: SolverConfig) -> None:

@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - codex/go-migration
     paths:
       - "optimizer-service/**"
       - ".github/workflows/deploy-solver.yml"

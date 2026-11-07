@@ -1,8 +1,9 @@
 # NurseFlow Optimizer Service
 
-This directory is the separately deployable Python boundary for the Phase 9
-assignment optimizer. Expo does not import it. The phone calls one authenticated
-action endpoint and then reloads the committed board from Supabase.
+This directory is the separately deployable Python boundary for the NurseFlow
+assignment optimizer. It is a solver-only service: the Go API loads the shift
+snapshot, sends it to `POST /v1/solve`, and saves the result itself. This
+service never talks to Supabase, and neither the phone nor Expo imports it.
 
 Task 1.2 adds only the pre-solve boundary:
 
@@ -46,28 +47,10 @@ Task 1.6 adds the established output boundary:
 - independent ID, relationship, eligibility, capacity, coverage, decision,
   objective-summary, and flag validation before returning output.
 
-Tasks 2.1-2.4 add the safe server workflow:
-
-- `POST /v1/assignment-runs` accepts only the shift ID, mutation ID, revision,
-  and expected baseline ID;
-- the service verifies the Supabase JWT before the authorized prepare RPC can
-  release the current shift snapshot;
-- retries reuse one coordinated run, with a 150-second recovery lease for a
-  request interrupted after preparation;
-- protected finalization rechecks current state and atomically saves the new
-  baseline, flags, run outcome, and rerun override supersession;
-- only a successful `active_shifts` update reaches the existing realtime,
-  notification, and nurse-scoped read paths.
-
-Tasks 3.3-3.4 complete the mobile cutover:
-
-- initial runs and reruns call the same endpoint, with reruns supplying the
-  current committed baseline ID;
-- the phone keeps the prior board and active overrides until finalization
-  succeeds;
-- the client-authored Phase 8 rerun RPC is revoked from mobile roles;
-- the retired TypeScript assignment generator is no longer part of the mobile
-  runtime.
+The former Supabase-coordinated route (`POST /v1/assignment-runs`, which
+verified a Supabase JWT and called prepare/finalize RPCs) was removed together
+with its database functions (ticket 23). Every assignment run now goes through
+the Go API.
 
 Task 4.1 freezes two measured service envelopes with at most 12 nurses: up to
 25 rooms with at most 50 occupied beds, or up to 20 rooms with at most 80
@@ -144,36 +127,13 @@ Run the focused tests from the repository root:
 optimizer-service/.venv/Scripts/python -m unittest discover -s optimizer-service/tests -p "test_*.py"
 ```
 
-For local HTTP development, set the private values documented in
-`docs/phase-9/supabase-optimizer-coordination-setup.md`, then run:
-
-```text
-optimizer-service/.venv/Scripts/python -m uvicorn nurseflow_optimizer.runtime:create_app_from_environment --factory --app-dir optimizer-service --host 127.0.0.1 --port 8080 --workers 1 --no-access-log
-```
-
-To call the local service from Expo Web, opt in to the exact browser origin in
-the optimizer terminal before starting Uvicorn:
+For local HTTP development, set the shared solver token and run the service
+(Go's API uses port 8080 locally, so the solver uses 8090):
 
 ```powershell
-$env:NURSEFLOW_LOCAL_WEB_ORIGIN="http://localhost:8081"
+$env:NURSEFLOW_SOLVER_TOKEN="local-dev-solver-token"
+optimizer-service/.venv/Scripts/python -m uvicorn nurseflow_optimizer.runtime:create_app_from_environment --factory --app-dir optimizer-service --host 127.0.0.1 --port 8090 --workers 1 --no-access-log
 ```
-
-Set the app's public service URL in the repository-root `.env`, then restart
-Expo on that same browser port:
-
-```text
-EXPO_PUBLIC_OPTIMIZER_SERVICE_URL=http://127.0.0.1:8080
-```
-
-```powershell
-npm run web -- --port 8081
-```
-
-The origin must match the browser address exactly. For example, an Expo page
-opened at `http://127.0.0.1:8081` requires that value instead. If the local-web
-variable is absent, the service does not add browser CORS access. Keep
-`NURSEFLOW_SUPABASE_SECRET_KEY` only in the optimizer process environment; it
-must never use an `EXPO_PUBLIC_` name.
 
 ## Solver-only endpoint for the Go API
 
@@ -188,28 +148,14 @@ loads the shift snapshot itself and sends it here; this service only solves.
 - `200`: `{assignmentResult, flags, objectives, inputFingerprint, optimizerVersion}`.
   `422 {"status":"invalid_input"}` (bad body or snapshot, `413` when too large),
   `504 {"status":"timed_out"}`, `500 {"status":"failed"}`.
-- It runs the same normalize, solve, and output-validation code as the legacy
-  route, with the default 120-second solve budget. Neither the token nor the
-  snapshot is ever logged, and there is no CORS for this route.
+- It normalizes, solves, and validates the output with the default 120-second
+  solve budget. Neither the token nor the snapshot is ever logged, and there is
+  no CORS: the caller is the Go API, not a browser.
 
-Which routes exist depends on configuration (checked at startup):
-
-| Configured | Routes enabled |
-| --- | --- |
-| `NURSEFLOW_SOLVER_TOKEN` (non-blank) | `/v1/solve` |
-| All three of `NURSEFLOW_SUPABASE_URL`, `NURSEFLOW_SUPABASE_PUBLISHABLE_KEY`, `NURSEFLOW_SUPABASE_SECRET_KEY` | `/v1/assignment-runs` |
-| Both | both |
-| Some but not all Supabase settings | startup fails |
-| Nothing | startup fails |
-
-A disabled route is simply not registered, so it answers `404`. The health
-endpoints are always available. Go's API uses port 8080 locally, so run the
-solver on 8090 with only the token set:
-
-```powershell
-$env:NURSEFLOW_SOLVER_TOKEN="local-dev-solver-token"
-optimizer-service/.venv/Scripts/python -m uvicorn nurseflow_optimizer.runtime:create_app_from_environment --factory --app-dir optimizer-service --host 127.0.0.1 --port 8090 --workers 1 --no-access-log
-```
+`NURSEFLOW_SOLVER_TOKEN` is the only required setting. If it is missing or
+blank the service fails at startup with a clear error instead of running with no
+usable route. `/healthz` and `/readyz` need no token. Any other path, including
+the retired `/v1/assignment-runs`, answers `404`.
 
 Build the portable production image from the repository root with:
 
@@ -218,5 +164,6 @@ docker build -f optimizer-service/Dockerfile -t nurseflow-optimizer optimizer-se
 ```
 
 The production runtime is pinned to Python 3.13.14, OR-Tools 9.15.6755, and the
-exact transitive HTTP/auth packages in `requirements.lock`. Deployment and the
-maximum-floor benchmark remain separate later Phase 9 work.
+exact transitive packages in `requirements.lock` (FastAPI, Uvicorn, and
+OR-Tools with its dependencies; `httpx` is there only for FastAPI's test
+client).

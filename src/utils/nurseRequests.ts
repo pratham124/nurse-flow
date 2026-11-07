@@ -1,4 +1,4 @@
-import type { NurseRequest, NurseRequestStatus, Shift } from "../types/models";
+import type { NurseRequest, Shift } from "../types/models";
 
 const nurseRequestIdPrefix = "nurse-request";
 
@@ -28,48 +28,6 @@ export function getShiftNurseRequests(activeShift?: Shift): NurseRequest[] {
       id: nextId,
     };
   });
-}
-
-export function createNurseRequestId(activeShift?: Shift): string {
-  const requests = getShiftNurseRequests(activeShift);
-  const usedIds = new Set(requests.map((request) => request.id));
-  let nextNumber = requests.length + 1;
-  let nextId = `${nurseRequestIdPrefix}-${nextNumber}`;
-
-  while (usedIds.has(nextId)) {
-    nextNumber += 1;
-    nextId = `${nurseRequestIdPrefix}-${nextNumber}`;
-  }
-
-  return nextId;
-}
-
-export function resolvePendingSwapRequest(
-  activeShift: Shift,
-  requestId: string,
-  nextStatus: Extract<NurseRequestStatus, "accepted" | "declined">,
-): Shift {
-  return {
-    ...activeShift,
-    nurseRequests: getShiftNurseRequests(activeShift).map((request) => {
-      const canResolve =
-        request.id === requestId &&
-        request.type === "swap" &&
-        request.status === "pending";
-
-      if (!canResolve) {
-        return request;
-      }
-
-      return {
-        ...request,
-        resolvedAt: new Date().toISOString(),
-        resolutionNote:
-          nextStatus === "accepted" ? "Accepted by charge" : "Declined by charge",
-        status: nextStatus,
-      };
-    }),
-  };
 }
 
 export function getNurseRequestsForNurse(

@@ -267,7 +267,7 @@ func (s *Store) ReopenShift(ctx context.Context, authID, profileID, id, expected
 			result = ReopenResult{Status: "stale", Message: "The assignment changed. Review the current board before editing."}
 			return nil
 		}
-		// Match the existing RPC's no-baseline no-op, including its lack of effects.
+		// Match the retired RPC's no-baseline no-op, including its lack of effects.
 		result = ReopenResult{Status: "saved", ShiftSnapshot: row.ShiftSnapshot, ActiveAssignmentOverridesByBedID: map[string]ManualOverride{}}
 		if baseline == "" {
 			return nil
