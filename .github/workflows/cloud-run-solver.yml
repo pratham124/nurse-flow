@@ -74,8 +74,7 @@ jobs:
           echo "PREVIOUS_REVISION=$previous" >> "$GITHUB_ENV"
           echo "SERVICE_EXISTED=$([ -n "$traffic_flag" ] && echo true || echo false)" >> "$GITHUB_ENV"
 
-          # Only the solver token is configured, so only /v1/solve is enabled
-          # (the legacy /v1/assignment-runs route needs Supabase keys).
+          # The service is solver-only: the token enables /v1/solve.
           # One solve per instance and a 140 s host limit match the optimizer
           # contract in docs/phase-9/python-service-boundary.md.
           gcloud run deploy "$SERVICE" \

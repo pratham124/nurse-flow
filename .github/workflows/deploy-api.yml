@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - codex/go-migration
     paths:
       - "backend/**"
       - "deploy/*/api.env.yaml"

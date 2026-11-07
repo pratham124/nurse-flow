@@ -79,8 +79,8 @@ func TestDatabaseOwnershipIntegration(t *testing.T) {
 		ClientExecute bool
 	}
 	if err := store.db.Raw(`SELECT
-		has_function_privilege(current_user, 'public.accept_shift_nurse_invite_code(text)', 'EXECUTE') AS go_execute,
-		has_function_privilege('authenticated', 'public.accept_shift_nurse_invite_code(text)', 'EXECUTE') AS client_execute
+		has_function_privilege(current_user, 'public.register_device_push_token(uuid, uuid, text, text, text)', 'EXECUTE') AS go_execute,
+		has_function_privilege('authenticated', 'public.register_device_push_token(uuid, uuid, text, text, text)', 'EXECUTE') AS client_execute
 	`).Scan(&permissions).Error; err != nil {
 		t.Fatal(err)
 	}

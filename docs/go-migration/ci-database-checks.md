@@ -1,6 +1,6 @@
 # Development database checks in GitHub Actions
 
-The `Go development database` workflow runs on GitHub-hosted Ubuntu 24.04 when a push to `codex/go-migration` changes `backend/**` or the workflow itself. It does not depend on the laptop or the Codex Cloud runtime's outbound PostgreSQL support.
+The `Go development database` workflow runs on GitHub-hosted Ubuntu 24.04 when a push to `main` changes `backend/**` or the workflow itself. It does not depend on the laptop or the Codex Cloud runtime's outbound PostgreSQL support.
 
 ## What it runs
 
@@ -15,7 +15,7 @@ The workflow token has only `contents: read`; checkout does not retain its Git c
 
 ## GitHub configuration
 
-Environment: `nurseflow-go-development`, restricted to the exact branch `codex/go-migration` (branch, not tag).
+Environment: `nurseflow-go-development`, restricted to the exact branch `main` (branch, not tag). Until ticket 23 it allowed only `codex/go-migration`.
 
 | Configuration | Kind | Purpose |
 | --- | --- | --- |

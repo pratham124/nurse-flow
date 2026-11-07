@@ -3,7 +3,7 @@ name: Go development database
 on:
   push:
     branches:
-      - codex/go-migration
+      - main
     paths:
       - "backend/**"
       - ".github/workflows/go-development-database.yml"

@@ -3,7 +3,6 @@ package database
 import (
 	"encoding/json"
 	"errors"
-	"reflect"
 	"sync"
 	"testing"
 )
@@ -107,22 +106,18 @@ func TestIssueRequestIntegration(t *testing.T) {
 		}
 	})
 
-	t.Run("matches the original SQL function", func(t *testing.T) {
-		goWorld, sqlWorld := newWorld(t, f, "[]"), newWorld(t, f, "[]")
-		goNurse, sqlNurse := goWorld.joinNurse(t, "n1"), sqlWorld.joinNurse(t, "n1")
-		goBefore, sqlBefore := f.sideEffects(t, goWorld.shift), f.sideEffects(t, sqlWorld.shift)
-		raw, err := goWorld.submitIssue(goNurse, "Need help")
-		if err != nil {
+	t.Run("emits a realtime change", func(t *testing.T) {
+		w := newWorld(t, f, "[]")
+		nurse := w.joinNurse(t, "n1")
+		before := f.sideEffects(t, w.shift)
+		if _, err := w.submitIssue(nurse, "Need help"); err != nil {
 			t.Fatal(err)
 		}
-		f.rpcCommit(t, sqlNurse.AuthUserID, "SELECT public.submit_joined_nurse_issue_request('Need help')::text")
-		if g, s := f.sideEffects(t, goWorld.shift).minus(goBefore), f.sideEffects(t, sqlWorld.shift).minus(sqlBefore); g != s || g.realtime == 0 {
-			t.Fatalf("go=%+v sql=%+v", g, s)
+		if effects := f.sideEffects(t, w.shift).minus(before); effects.realtime == 0 {
+			t.Fatalf("a submitted issue must emit a realtime change: %+v", effects)
 		}
-		var sqlRequests []map[string]any
-		_ = json.Unmarshal(sqlWorld.snapshot(t)["nurseRequests"], &sqlRequests)
-		if len(sqlRequests) != 1 || !reflect.DeepEqual(keysOf(decodeObject(t, raw)), keysOf(sqlRequests[0])) {
-			t.Fatalf("go=%v sql=%v", keysOf(decodeObject(t, raw)), sqlRequests)
+		if len(w.snapshotRequests(t)) != 1 {
+			t.Fatal("expected exactly one stored request")
 		}
 	})
 }
@@ -200,18 +195,14 @@ func TestIssueStatusIntegration(t *testing.T) {
 		}
 	})
 
-	t.Run("matches the original SQL function", func(t *testing.T) {
-		goWorld, sqlWorld := newWorld(t, f, `[`+issue+`]`), newWorld(t, f, `[`+issue+`]`)
-		goBefore, sqlBefore := f.sideEffects(t, goWorld.shift), f.sideEffects(t, sqlWorld.shift)
-		if _, err := update(goWorld, goWorld.charge, goWorld.shift, "i1", "resolved"); err != nil {
+	t.Run("emits a realtime change", func(t *testing.T) {
+		w := newWorld(t, f, `[`+issue+`]`)
+		before := f.sideEffects(t, w.shift)
+		if _, err := update(w, w.charge, w.shift, "i1", "resolved"); err != nil {
 			t.Fatal(err)
 		}
-		f.rpcCommit(t, sqlWorld.charge.AuthUserID, "SELECT public.update_shift_nurse_issue_status('i1', 'resolved')::text")
-		if g, s := f.sideEffects(t, goWorld.shift).minus(goBefore), f.sideEffects(t, sqlWorld.shift).minus(sqlBefore); g != s || g.realtime == 0 {
-			t.Fatalf("go=%+v sql=%+v", g, s)
-		}
-		if !reflect.DeepEqual(keysOf(goWorld.requestByID(t, "i1")), keysOf(sqlWorld.requestByID(t, "i1"))) {
-			t.Fatal("stored request keys differ")
+		if effects := f.sideEffects(t, w.shift).minus(before); effects.realtime == 0 {
+			t.Fatalf("an issue status change must emit a realtime change: %+v", effects)
 		}
 	})
 }
@@ -306,32 +297,23 @@ func TestSwapRequestIntegration(t *testing.T) {
 		}
 	})
 
-	t.Run("matches the original SQL function", func(t *testing.T) {
-		goWorld, sqlWorld := newWorld(t, f, "[]"), newWorld(t, f, "[]")
-		goNurse, sqlNurse := goWorld.joinNurse(t, "n1"), sqlWorld.joinNurse(t, "n1")
-		goBefore, sqlBefore := f.sideEffects(t, goWorld.shift), f.sideEffects(t, sqlWorld.shift)
-		raw, err := goWorld.submitSwap(goNurse, "b1", "Swap me")
+	t.Run("submitting and resolving each emit a realtime change", func(t *testing.T) {
+		w := newWorld(t, f, "[]")
+		nurse := w.joinNurse(t, "n1")
+		before := f.sideEffects(t, w.shift)
+		raw, err := w.submitSwap(nurse, "b1", "Swap me")
 		if err != nil {
 			t.Fatal(err)
 		}
-		f.rpcCommit(t, sqlNurse.AuthUserID, "SELECT public.submit_joined_nurse_swap_request('b1', 'Swap me')::text")
-		goRequest := decodeObject(t, raw)
-		sqlID := sqlWorld.snapshotRequests(t)[0]["id"].(string)
-		goEffects, sqlEffects := f.sideEffects(t, goWorld.shift).minus(goBefore), f.sideEffects(t, sqlWorld.shift).minus(sqlBefore)
-		if goEffects != sqlEffects || goEffects.realtime == 0 || !reflect.DeepEqual(keysOf(goRequest), keysOf(sqlWorld.requestByID(t, sqlID))) {
-			t.Fatalf("go=%+v sql=%+v", goEffects, sqlEffects)
+		if effects := f.sideEffects(t, w.shift).minus(before); effects.realtime == 0 {
+			t.Fatalf("a submitted swap must emit a realtime change: %+v", effects)
 		}
-		// Resolve through both paths and compare the stored result and effects.
-		goBefore, sqlBefore = f.sideEffects(t, goWorld.shift), f.sideEffects(t, sqlWorld.shift)
-		if _, err := f.store.ResolveSwapRequest(contextForTest(), goWorld.charge.AuthUserID, goWorld.charge.ID, goWorld.shift, goRequest["id"].(string), "accepted"); err != nil {
+		before = f.sideEffects(t, w.shift)
+		if _, err := f.store.ResolveSwapRequest(contextForTest(), w.charge.AuthUserID, w.charge.ID, w.shift, decodeObject(t, raw)["id"].(string), "accepted"); err != nil {
 			t.Fatal(err)
 		}
-		f.rpcCommit(t, sqlWorld.charge.AuthUserID, "SELECT public.resolve_shift_nurse_swap_request($1, 'accepted')::text", sqlID)
-		if g, s := f.sideEffects(t, goWorld.shift).minus(goBefore), f.sideEffects(t, sqlWorld.shift).minus(sqlBefore); g != s {
-			t.Fatalf("resolve effects differ: go=%+v sql=%+v", g, s)
-		}
-		if !reflect.DeepEqual(keysOf(goWorld.requestByID(t, goRequest["id"].(string))), keysOf(sqlWorld.requestByID(t, sqlID))) {
-			t.Fatal("resolved request keys differ")
+		if effects := f.sideEffects(t, w.shift).minus(before); effects.realtime == 0 {
+			t.Fatalf("resolving a swap must emit a realtime change: %+v", effects)
 		}
 	})
 }

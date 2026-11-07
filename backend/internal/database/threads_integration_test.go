@@ -251,8 +251,9 @@ func TestThreadInsertTriggersStillFire(t *testing.T) {
 	}
 }
 
-func TestThreadListMatchesRetainedSQLFunction(t *testing.T) {
+func TestThreadListIntegration(t *testing.T) {
 	f := newThreadFixture(t)
+	wantBodies := []string{"one", "two", "three"}
 	for _, step := range []struct {
 		as   Profile
 		body string
@@ -271,22 +272,16 @@ func TestThreadListMatchesRetainedSQLFunction(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		sqlJSON := f.rpcAs(t, reader.AuthUserID, "SELECT public.list_nurse_request_messages($1::uuid, 'q1')::text", f.shiftID)
-		var want, got []map[string]any
-		if err := json.Unmarshal([]byte(sqlJSON), &want); err != nil {
-			t.Fatal(err)
-		}
+		var got []map[string]any
 		if err := json.Unmarshal(goJSON, &got); err != nil {
 			t.Fatal(err)
 		}
-		if len(want) != 3 || len(got) != 3 {
-			t.Fatalf("lengths: sql=%d go=%d", len(want), len(got))
+		if len(got) != len(wantBodies) {
+			t.Fatalf("reader %s saw %d messages, want %d", reader.ID, len(got), len(wantBodies))
 		}
-		for i := range want {
-			for _, key := range []string{"id", "shiftId", "requestId", "authorProfileId", "body", "clientMutationId"} {
-				if want[i][key] != got[i][key] {
-					t.Fatalf("message %d %s: sql=%v go=%v", i, key, want[i][key], got[i][key])
-				}
+		for i, body := range wantBodies {
+			if got[i]["body"] != body || got[i]["shiftId"] != f.shiftID || got[i]["requestId"] != "q1" {
+				t.Fatalf("message %d = %v, want body %q in order", i, got[i], body)
 			}
 		}
 	}

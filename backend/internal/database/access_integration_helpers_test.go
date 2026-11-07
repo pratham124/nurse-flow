@@ -152,23 +152,3 @@ func (f *accessFixture) issue(t *testing.T, owner Profile, shiftID, nurseID stri
 }
 
 func contextForTest() context.Context { return context.Background() }
-
-// rpcAs runs a query as the retained client-facing database functions would see
-// the user (auth.uid() reads this setting). It is used only to compare Go's
-// results with the original SQL behavior.
-func (f *accessFixture) rpcAs(t *testing.T, authUserID, query string, args ...any) string {
-	t.Helper()
-	tx, err := f.admin.Begin()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer tx.Rollback()
-	if _, err := tx.Exec("SELECT set_config('request.jwt.claim.sub', $1, true)", authUserID); err != nil {
-		t.Fatal(err)
-	}
-	var value sql.NullString
-	if err := tx.QueryRow(query, args...).Scan(&value); err != nil {
-		t.Fatal(err)
-	}
-	return value.String
-}

@@ -1,5 +1,5 @@
 import { createLocalId } from "./localId";
-import type { FloorTemplate, PreviousShiftSnapshot, Shift } from "../types/models";
+import type { FloorTemplate, Shift } from "../types/models";
 
 export function isCompletedFloorTemplate(floorTemplate: FloorTemplate): boolean {
   const doctorSideIds = floorTemplate.doctorSides.map(
@@ -64,39 +64,5 @@ export function copyFloorTemplate(floorTemplate: FloorTemplate): FloorTemplate {
     })),
     rooms: floorTemplate.rooms.map((room) => ({ ...room })),
     beds: floorTemplate.beds.map((bed) => ({ ...bed })),
-  };
-}
-
-export function createPreviousShiftSnapshot(activeShift: Shift): PreviousShiftSnapshot {
-  return {
-    id: createLocalId("previous-shift"),
-    floorTemplateId: activeShift.floorTemplateId,
-    completedAt: new Date().toISOString(),
-    nurseSuggestions: activeShift.nurses.map((nurse) => ({
-      id: createLocalId("nurse-suggestion"),
-      previousNurseId: nurse.id,
-      name: nurse.name,
-      licenseType: nurse.licenseType,
-      experienceLevel: nurse.experienceLevel,
-    })),
-    patientSuggestions: activeShift.bedStates.flatMap((bedState) => {
-      if (!bedState.patient?.initials.trim()) {
-        return [];
-      }
-
-      const previousBed = activeShift.beds.find(
-        (bed) => bed.id === bedState.bedId,
-      );
-
-      return [
-        {
-          id: createLocalId("patient-suggestion"),
-          previousBedId: bedState.bedId,
-          previousBedLabel: previousBed?.label ?? "Unknown bed",
-          patient: { ...bedState.patient },
-          acuity: bedState.acuity,
-        },
-      ];
-    }),
   };
 }

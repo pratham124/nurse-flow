@@ -14,10 +14,7 @@ from nurseflow_optimizer.optimizer import (
     OptimizerSolveError,
     OptimizerTimedOutError,
 )
-from nurseflow_optimizer.service import (
-    OptimizerServiceDependencies,
-    SolverConfig,
-)
+from nurseflow_optimizer.service import SolverConfig
 
 SOLVER_TOKEN = "test-solver-token"
 AUTH = {"Authorization": f"Bearer {SOLVER_TOKEN}"}
@@ -34,7 +31,7 @@ class SolveEndpointTests(unittest.TestCase):
         cls.snapshot = build_shift_snapshot(fixture)
         cls.client = TestClient(
             create_app(
-                solver_config=SolverConfig(
+                SolverConfig(
                     solver_token=SOLVER_TOKEN,
                     optimizer_version="test-version",
                 )
@@ -199,38 +196,9 @@ class SolveEndpointTests(unittest.TestCase):
 
     # Surface
 
-    def test_solver_only_app_has_no_legacy_route(self) -> None:
-        self.assertEqual(
-            self.client.post("/v1/assignment-runs", json={}).status_code, 404
-        )
+    def test_health_probes_answer(self) -> None:
         self.assertEqual(self.client.get("/healthz").json(), {"status": "healthy"})
-
-
-class RouteSelectionTests(unittest.TestCase):
-    def test_legacy_only_app_has_no_solve_route(self) -> None:
-        from test_http_api import (
-            RejectingVerifier,
-            UnusedFinalizeClient,
-            UnusedPrepareClient,
-        )
-
-        client = TestClient(
-            create_app(
-                OptimizerServiceDependencies(
-                    token_verifier=RejectingVerifier(),
-                    prepare_client=UnusedPrepareClient(),
-                    finalize_client=UnusedFinalizeClient(),
-                    service_token="private",
-                    optimizer_version="test",
-                )
-            )
-        )
-        self.assertEqual(client.post("/v1/solve", json={}).status_code, 404)
-        self.assertEqual(client.post("/v1/assignment-runs", json={}).status_code, 401)
-
-    def test_app_needs_at_least_one_route_group(self) -> None:
-        with self.assertRaises(ValueError):
-            create_app()
+        self.assertEqual(self.client.get("/readyz").json(), {"status": "ready"})
 
 
 if __name__ == "__main__":

@@ -50,10 +50,12 @@ saved or stale response, the server workspace store reloads the authoritative
 Supabase workspace before the screen continues.
 
 The former `serverWorkspaceRepository.rerunActiveShiftAssignment` boundary is
-retired. Mobile code must not call `rerun_active_shift_assignment` or send a
-complete next-shift snapshot for assignment generation. The Phase 9 SQL also
-revokes that legacy RPC from mobile roles so the Python optimizer remains the
-only assignment-generation write path.
+retired, and the legacy `rerun_active_shift_assignment` RPC and the Phase 9 SQL
+coordination path (`prepare_optimizer_run`, `finalize_optimizer_run`, and
+related functions) have been removed from the database (ticket 23). Assignment
+runs go only through the Go API, which calls the solver-only Python service.
+Mobile code must not send a complete next-shift snapshot for assignment
+generation.
 
 Do not add offline queues, deep links, drag-and-drop overrides, board sharing,
 tablet layout, AI, or other future task infrastructure here until the matching

@@ -161,47 +161,11 @@ func TestAssignmentRunFirstRunIntegration(t *testing.T) {
 		t.Fatalf("outcome summary %s: %v", row.summary, err)
 	}
 
-	// The retained Realtime and notification triggers must see the same effects as
-	// the original SQL functions: one committed active_shifts change.
-	goEffects := f.sideEffects(t, w.shift).minus(before)
-	sqlWorld := newWorld(t, f, "[]")
-	sqlWorld.firstRun(t)
-	sqlRevision := sqlWorld.revision(t)
-	sqlBefore := f.sideEffects(t, sqlWorld.shift)
-	prepared := f.rpcCommit(t, sqlWorld.charge.AuthUserID, "SELECT public.prepare_optimizer_run($1::uuid, 'sql1', $2::timestamptz, NULL)::text", sqlWorld.shift, sqlRevision)
-	var sqlPrepared struct{ RunID string }
-	_ = json.Unmarshal([]byte(prepared), &sqlPrepared)
-	if sqlPrepared.RunID == "" {
-		t.Fatalf("the SQL prepare did not return a run: %s", prepared)
+	// The retained Realtime and notification triggers must still fire for the
+	// committed active_shifts change.
+	if got := f.sideEffects(t, w.shift).minus(before); got.realtime == 0 {
+		t.Fatalf("saving a run must emit a realtime change: %+v", got)
 	}
-	sqlOutput := outputFor("res2")
-	f.serviceCommit(t, "SELECT public.finalize_optimizer_run($1::uuid, 'fp', 'v1', $2::jsonb, $3::jsonb, $4::jsonb)::text",
-		sqlPrepared.RunID, string(sqlOutput.AssignmentResult), string(sqlOutput.Flags), string(sqlOutput.Objectives))
-	sqlEffects := f.sideEffects(t, sqlWorld.shift).minus(sqlBefore)
-	if goEffects != sqlEffects || goEffects.realtime == 0 {
-		t.Fatalf("side effects differ: go=%+v sql=%+v", goEffects, sqlEffects)
-	}
-}
-
-// serviceCommit runs a retained function as the optimizer service and commits.
-func (f *accessFixture) serviceCommit(t *testing.T, query string, args ...any) string {
-	t.Helper()
-	tx, err := f.admin.Begin()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer tx.Rollback()
-	if _, err := tx.Exec("SELECT set_config('request.jwt.claim.role', 'service_role', true)"); err != nil {
-		t.Fatal(err)
-	}
-	var value sql.NullString
-	if err := tx.QueryRow(query, args...).Scan(&value); err != nil {
-		t.Fatal(err)
-	}
-	if err := tx.Commit(); err != nil {
-		t.Fatal(err)
-	}
-	return value.String
 }
 
 func TestAssignmentRunRerunIntegration(t *testing.T) {

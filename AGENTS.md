@@ -18,9 +18,9 @@ Help me build this project while learning. Do not over-automate or generate the 
 
 ## Active Go Migration Handoff
 
-On the `codex/go-migration` branch, `docs/go-migration/plan.md` defines the
-active migration phase. For Go migration work, it supersedes the older Phase 1
-scope below.
+`docs/go-migration/plan.md` defines the active migration milestone. For Go
+migration work, it supersedes the older Phase 1 scope below. Work on a topic
+branch from `main` and merge through a pull request the user reviews.
 
 When the user says **"Continue the Go migration"** or an equivalent short
 request:

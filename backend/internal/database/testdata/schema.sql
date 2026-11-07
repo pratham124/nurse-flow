@@ -13,15 +13,12 @@ CREATE TABLE public.active_shifts (id uuid PRIMARY KEY);
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.floor_templates ENABLE ROW LEVEL SECURITY;
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
--- Stand-ins for the five existing privileged functions; no workflow logic is copied.
+-- Stand-in for a retained client-facing function; no workflow logic is copied.
+-- Clients may execute it, while the Go database role must not be able to.
 CREATE ROLE anon NOLOGIN;
 CREATE ROLE authenticated NOLOGIN;
 CREATE ROLE service_role NOLOGIN;
-CREATE FUNCTION public.accept_shift_nurse_invite_code(text) RETURNS text LANGUAGE sql SECURITY DEFINER AS 'SELECT $1';
-CREATE FUNCTION public.validate_shift_nurse_invite_code(text) RETURNS text LANGUAGE sql SECURITY DEFINER AS 'SELECT $1';
-CREATE FUNCTION public.resolve_shift_nurse_swap_request(text, text) RETURNS text LANGUAGE sql SECURITY DEFINER AS 'SELECT $1';
-CREATE FUNCTION public.submit_joined_nurse_issue_request(text) RETURNS text LANGUAGE sql SECURITY DEFINER AS 'SELECT $1';
-CREATE FUNCTION public.submit_joined_nurse_swap_request(text, text) RETURNS text LANGUAGE sql SECURITY DEFINER AS 'SELECT $1';
+CREATE FUNCTION public.register_device_push_token(uuid, uuid, text, text, text) RETURNS text LANGUAGE sql SECURITY DEFINER AS 'SELECT $3';
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO anon, authenticated, service_role;
 INSERT INTO public.profiles (id, auth_user_id, display_name, role) VALUES
   ('10000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'Charge Alpha', 'charge_nurse'),

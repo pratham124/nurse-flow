@@ -43,7 +43,7 @@ The ref picks the token issuer (`https://<ref>.supabase.co/auth/v1`), the databa
 
 ### Hosted development
 
-`Dockerfile` builds a static, non-root image with the public Supabase CA at `/etc/nurseflow/` and `NURSEFLOW_HTTP_ADDR=:8080`. GitHub Actions deploys it to Cloud Run from `codex/go-migration` (`.github/workflows/deploy-api.yml`). Setup, verification, and rollback are in [hosted development](../docs/go-migration/hosted-development.md).
+`Dockerfile` builds a static, non-root image with the public Supabase CA at `/etc/nurseflow/` and `NURSEFLOW_HTTP_ADDR=:8080`. GitHub Actions deploys it to Cloud Run on every push to `main` (`.github/workflows/deploy-api.yml`): the development service deploys automatically, and production deploys after an approval. Setup, verification, and rollback are in [hosted development](../docs/go-migration/hosted-development.md).
 
 ### Optimizer (solver) configuration
 
@@ -153,6 +153,6 @@ Reference: [Microsoft's Windows credential encryption documentation](https://lea
 
 ## GitHub Actions database checks
 
-Backend changes pushed to `codex/go-migration` run the existing read-only template isolation test on a GitHub-hosted runner. The workflow first checks direct development database connectivity, then uses verified TLS and the limited development credential from the branch-restricted `nurseflow-go-development` GitHub environment. This works independently of the laptop and does not depend on Codex Cloud's direct database networking.
+Backend changes pushed to `main` run the existing read-only template isolation test on a GitHub-hosted runner. The workflow first checks direct development database connectivity, then uses verified TLS and the limited development credential from the branch-restricted `nurseflow-go-development` GitHub environment. This works independently of the laptop and does not depend on Codex Cloud's direct database networking.
 
 See [CI setup and verification](../docs/go-migration/ci-database-checks.md) for configuration names, scope, and how to view or rerun the test. No schema or fixture changes are made by this workflow.
