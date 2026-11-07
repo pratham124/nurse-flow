@@ -371,7 +371,7 @@ architecture decision is [ADR 0008](../adr/0008-clients-reach-data-only-through-
 | 13 | Smoke | The Nov 3 checklist plus negative checks: a dropped RPC returns 404 and a direct table read is refused. |
 | 14 | GitHub and GCP | Direct `gh api` and `gcloud` commands, plus matching edits to `bootstrap-gcp.ps1`. |
 | 15 | Records | This section, ADR 0008, the READMEs, and `plan.md`. |
-| 16 | Default privileges | Follow-up, not in this migration. Supabase's default privileges in `public` still grant `anon` and `authenticated` full rights on new tables, sequences, and functions, so ADR 0008's rule covers existing objects only. A later migration should revoke those defaults; Go migrations already grant to `nurseflow_go` explicitly. |
+| 16 | Default privileges | Left as they are (user decision, 2026-11-07). Supabase's default privileges in `public` still grant `anon` and `authenticated` full rights on new tables and sequences, and Postgres gives `PUBLIC` execute on new functions, so ADR 0008's rule covers existing objects only. Every new table therefore needs RLS enabled, and every new function needs `REVOKE EXECUTE ... FROM PUBLIC, anon, authenticated` (as `go_private` already does), in the same migration. A rolled-back development probe showed that tables and sequences can be closed per schema, but function execute needs a global `ALTER DEFAULT PRIVILEGES FOR ROLE postgres REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC`. `postgres` cannot change the `supabase_admin` defaults. |
 
 ### Intentionally retained
 
@@ -431,5 +431,5 @@ architecture decision is [ADR 0008](../adr/0008-clients-reach-data-only-through-
   - Not exercised in production: manual moves, swaps, reconnect, access removal, and run concurrency. They use the same tables and policies as the development walkthrough.
 - The user removed the `codex/go-migration` branch policies from `gcp-development` and `nurseflow-go-development`, and changed development's Workload Identity condition to `ref in ['refs/heads/main']`. Read back: all three GitHub environments allow only `main`, and both providers trust only `refs/heads/main` (`ACTIVE`). The migration worktree was already removed (decision 12 of ticket 22).
 
-Ticket 23 is done. Remaining follow-ups: the default privileges (decision 16), and the device-token RPCs plus the notification-target read, which ticket 18 should move to Go.
+Ticket 23 is done. The device-token RPCs and the notification-target read stay with deferred ticket 18. Default privileges are intentionally unchanged (decision 16).
 

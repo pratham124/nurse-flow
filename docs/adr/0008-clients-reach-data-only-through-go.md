@@ -23,8 +23,10 @@ The app's remaining direct Supabase use is deliberate:
   them to Go and then remove these grants.
 
 This covers the objects that exist now. Supabase's default privileges in
-`public` still grant the client roles rights on new tables and functions, so a
-follow-up migration should revoke them (decision 16 in hosted-development.md).
+`public` still grant the client roles rights on new tables and functions, and we
+chose to leave them (decision 16 in hosted-development.md). Each migration that
+adds a table must enable RLS, and each new function must revoke execute from
+`PUBLIC`, `anon`, and `authenticated`, in the same migration.
 
 The database keeps every table, all data, RLS on all 11 public tables, the
 swap-completion and notification triggers, and every `nurseflow_go` grant and
