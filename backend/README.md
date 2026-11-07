@@ -116,6 +116,8 @@ Public-key discovery, caching, and background refresh use `jwkset`. Startup atte
 
 ## Floor templates
 
+`DELETE /profile` needs only a verified token (no profile), takes no body, and permanently deletes the caller's login and everything they own through `go_private.delete_current_account()`. Success returns 204 with no body; an unknown account returns 404 `account_not_found`; database failures return 503 `database_unavailable`.
+
 `GET /floor-templates` uses the same token and charge-nurse checks, then reads only the authorized profile's templates in `updated_at DESC` order. It returns `{ "templates": [...] }` with the six existing snake_case database fields. `template_snapshot` remains raw JSON; the frontend's existing mapper validates and adapts it in `src/services/floorTemplateRepository.ts`.
 
 An empty list returns HTTP 200 with `{ "templates": [] }`. Template query failures return a controlled HTTP 503 `database_unavailable` error, without partial results. Query parameters and headers cannot select a different owner. Expo uses Go for template lists, saves, deletes, the charge shift lifecycle, profiles, invites and joining, the joined-nurse view, manual moves, nurse requests, and request threads. The optimizer and device notifications retain their existing paths.

@@ -86,3 +86,17 @@ export async function loadOrCreateUserProfile(accessToken: string) {
 
   return readProfile(response.status, response.data);
 }
+
+// Permanently deletes the signed-in user's login and everything they own.
+// The server answers 204 with no body, so there is nothing to parse.
+export async function deleteAccount(accessToken: string) {
+  const response = await goApiClient
+    .delete("/profile", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+    .catch(profileRequestError);
+
+  if (response.status !== 204) {
+    throw new Error(invalidResponse);
+  }
+}

@@ -52,6 +52,19 @@ func (s *Store) EnsureProfile(ctx context.Context, authUserID, displayName strin
 	return profile, nil
 }
 
+// DeleteCurrentAccount permanently deletes the caller's login and everything
+// they own. It reports false when no such login exists. No id is passed to the
+// database function on purpose: go_private.delete_current_account() can only
+// delete the identity of its own transaction, which WithWriteIdentity sets from
+// the verified token, so this call can never remove anyone else.
+func (s *Store) DeleteCurrentAccount(ctx context.Context, authUserID string) (bool, error) {
+	var deleted bool
+	err := s.WithWriteIdentity(ctx, strings.ToLower(authUserID), func(tx *gorm.DB) error {
+		return tx.Raw("SELECT go_private.delete_current_account()").Row().Scan(&deleted)
+	})
+	return deleted, err
+}
+
 // profileInsert lists exactly the profile columns Go may insert. A separate type
 // keeps GORM from adding id, created_at, and updated_at, which take their
 // database defaults; created_at and updated_at are not granted.

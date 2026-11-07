@@ -11,13 +11,16 @@ import (
 	"github.com/pratham124/nurse-flow/backend/internal/httpresponse"
 )
 
-// ProfileStore creates the caller's application profile on first sign-in.
-// Loading a profile uses the auth.ProfileReader that NewHandler already receives.
+// ProfileStore creates the caller's application profile on first sign-in and
+// deletes the caller's account. Loading a profile uses the auth.ProfileReader
+// that NewHandler already receives.
 type ProfileStore interface {
 	EnsureProfile(ctx context.Context, authUserID, displayName string) (database.Profile, error)
+	DeleteCurrentAccount(ctx context.Context, authUserID string) (bool, error)
 }
 
-// registerProfileRoutes needs only a verified identity: a first sign-in has no profile yet.
+// registerProfileRoutes needs only a verified identity: a first sign-in has no
+// profile yet, and someone whose profile creation failed can still delete their login.
 func registerProfileRoutes(mux *http.ServeMux, verifier *auth.Verifier, profiles auth.ProfileReader, store ProfileStore) {
 	mux.Handle("GET /profile", verifier.RequireIdentity(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		identity, ok := auth.IdentityFromContext(r.Context())
@@ -46,6 +49,23 @@ func registerProfileRoutes(mux *http.ServeMux, verifier *auth.Verifier, profiles
 			return
 		}
 		writeProfile(w, profile)
+	})))
+	mux.Handle("DELETE /profile", verifier.RequireIdentity(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		identity, ok := auth.IdentityFromContext(r.Context())
+		if !ok || !requireNoBody(w, r) {
+			return
+		}
+		deleted, err := store.DeleteCurrentAccount(r.Context(), identity.AuthUserID)
+		if err != nil {
+			httpresponse.WriteError(w, http.StatusServiceUnavailable, "database_unavailable", "Account deletion is temporarily unavailable. Try again.")
+			return
+		}
+		if !deleted {
+			httpresponse.WriteError(w, http.StatusNotFound, "account_not_found", "This account no longer exists.")
+			return
+		}
+		w.Header().Set("Cache-Control", "no-store")
+		w.WriteHeader(http.StatusNoContent)
 	})))
 }
 
