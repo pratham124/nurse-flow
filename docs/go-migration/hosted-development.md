@@ -371,7 +371,7 @@ architecture decision is [ADR 0008](../adr/0008-clients-reach-data-only-through-
 | 13 | Smoke | The Nov 3 checklist plus negative checks: a dropped RPC returns 404 and a direct table read is refused. |
 | 14 | GitHub and GCP | Direct `gh api` and `gcloud` commands, plus matching edits to `bootstrap-gcp.ps1`. |
 | 15 | Records | This section, ADR 0008, the READMEs, and `plan.md`. |
-| 16 | Default privileges | Follow-up, not in this migration. Supabase's default privileges in `public` still grant `anon` and `authenticated` full rights on new tables, sequences, and functions, so ADR 0008's rule covers existing objects only. A later migration should revoke those defaults; Go migrations already grant to `nurseflow_go` explicitly. |
+| 16 | Default privileges | Left as they are (user decision, 2026-11-07). Supabase's default privileges in `public` still grant `anon` and `authenticated` full rights on new tables and sequences, and Postgres gives `PUBLIC` execute on new functions, so ADR 0008's rule covers existing objects only. Every new table therefore needs RLS enabled, and every new function needs `REVOKE EXECUTE ... FROM PUBLIC, anon, authenticated` (as `go_private` already does), in the same migration. A rolled-back development probe showed that tables and sequences can be closed per schema, but function execute needs a global `ALTER DEFAULT PRIVILEGES FOR ROLE postgres REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC`. `postgres` cannot change the `supabase_admin` defaults. |
 
 ### Intentionally retained
 
@@ -406,3 +406,30 @@ architecture decision is [ADR 0008](../adr/0008-clients-reach-data-only-through-
   - `anon` is denied on `profiles`.
   - The kept reads return only the caller's own profile and access rows.
   - The kept `register_device_push_token` is still callable, and its ownership check rejected the probe.
+
+### Production (2026-11-07)
+
+- [PR #9](https://github.com/pratham124/nurse-flow/pull/9) was merged as `eaf7473`. The development deploys and the dev-database check, now on `main`, passed. The user approved both production deploys: API `nurseflow-api-prod-00003-rex` (`/health` ok; no token returns 401) and solver `nurseflow-solver-prod-00003-men`.
+- The user ran `.scratch/apply-production-ticket23.ps1` against `mkljczezkyqtuplzedpj`. The before and after `verify-legacy-retirement.sql` output matched development:
+  - legacy RPCs went from 16 to 0, and client policies from 21 to 2;
+  - client grants are now `authenticated` `SELECT` on `profiles` and `shift_nurse_access` only;
+  - the row-change publication is empty;
+  - 37 `go_*` policies, 7 triggers, and RLS on 11 of 11 tables;
+  - row counts are unchanged (28 · 7 · 7 · 13 · 6 · 10 · 7);
+  - `migration list` shows 8 of 8 local = remote.
+- Production smoke checks, all passed. Smoke Charge (`k7m2qx`) ran on the Pixel 7 Pro API 33 emulator and Smoke Nurse (`7epi3n`) on the Pixel 5 API 34, with Expo on the production `.env`.
+  - Both stored passwords signed in.
+  - The charge created "Smoke Floor D" (501 East, 502 West) through Go, started a shift with Ana and Raj (RN, Mid), set two patients' acuity, and ran assignment. The new solver answered `POST /v1/solve` 200 in 2.3 s (cold). The board showed Ana → 501 and Raj → 502 (Team A / Team B), with Live.
+  - The charge generated an invite for Raj, and the nurse joined. The nurse saw only Room 502, Bed 1 (West), with Live.
+  - The nurse's issue "Prod T23 issue" appeared live on the charge's Requests list. The charge's reply reached the nurse's open thread in about 2 s without a reload. End Shift switched the nurse to "Shift ended" in about 2 s.
+  - Isolation through the Go API: the nurse lists 0 templates, `DELETE` of the charge's template returns 404, and after End Shift both accounts have no active shift or assignment.
+  - Negative checks with the Smoke Charge token against the REST API:
+    - three dropped RPCs return `PGRST202`;
+    - direct `floor_templates` and `active_shifts` reads, and a `floor_templates` insert, return `42501`;
+    - `anon` gets `42501` on `profiles`;
+    - the kept reads return only the caller's own profile and an empty `shift_nurse_access`.
+  - Not exercised in production: manual moves, swaps, reconnect, access removal, and run concurrency. They use the same tables and policies as the development walkthrough.
+- The user removed the `codex/go-migration` branch policies from `gcp-development` and `nurseflow-go-development`, and changed development's Workload Identity condition to `ref in ['refs/heads/main']`. Read back: all three GitHub environments allow only `main`, and both providers trust only `refs/heads/main` (`ACTIVE`). The migration worktree was already removed (decision 12 of ticket 22).
+
+Ticket 23 is done. The device-token RPCs and the notification-target read stay with deferred ticket 18. Default privileges are intentionally unchanged (decision 16).
+
