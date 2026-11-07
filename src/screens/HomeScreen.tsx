@@ -584,7 +584,9 @@ export default function Index() {
           </View>
         )}
 
-        <PolicyLinksRow />
+        <PolicyLinksRow
+          onDeleteAccountPress={() => router.push("/delete-account")}
+        />
       </ScrollView>
 
       <View style={styles.actionBar}>

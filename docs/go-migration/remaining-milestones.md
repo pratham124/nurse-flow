@@ -126,7 +126,7 @@ Unblocked tickets can use existing migrated or retained paths and development fi
    - **Blocked by:** None.
    - **What it delivers:** The app is named and configured as NurseFlow for iPhone, and an EAS production build can be started by hand.
 
-25. **Account deletion (Milestone 8)**
+25. **[In progress 2026-11-07: verified on development; production pending] Account deletion (Milestone 8)**
    - **Blocked by:** 23: Retire obsolete client and database workflow paths.
    - **What it delivers:** A signed-in user can permanently delete their account and everything they own from inside the app.
 

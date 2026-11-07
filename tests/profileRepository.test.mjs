@@ -4,6 +4,7 @@ import test, { afterEach, mock } from "node:test";
 
 import { goApiClient } from "../src/services/goApiClient.ts";
 import {
+  deleteAccount,
   loadOrCreateUserProfile,
   loadUserProfile,
 } from "../src/services/profileRepository.ts";
@@ -87,4 +88,24 @@ test("PUT /profile rejects unsupported roles and surfaces errors", async () => {
   mock.restoreAll();
   failWith("put", 503, { error: { code: "database_unavailable", message: "Database is unavailable." } });
   await assert.rejects(loadOrCreateUserProfile("t"), /Database is unavailable/);
+});
+
+test("DELETE /profile sends the bearer token and accepts 204", async () => {
+  mock.method(goApiClient, "delete", async (url, config) => {
+    assert.equal(url, "/profile");
+    assert.deepEqual(config.headers, { Authorization: "Bearer token-3" });
+    return { status: 204, data: "" };
+  });
+  assert.equal(await deleteAccount("token-3"), undefined);
+});
+
+test("DELETE /profile surfaces server errors and unexpected statuses", async () => {
+  failWith("delete", 503, { error: { code: "database_unavailable", message: "Account deletion is temporarily unavailable." } });
+  await assert.rejects(deleteAccount("t"), /temporarily unavailable/);
+  mock.restoreAll();
+  failWith("delete", 401, { error: { code: "unauthorized", message: "bad token" } });
+  await assert.rejects(deleteAccount("t"), /session expired/);
+  mock.restoreAll();
+  mock.method(goApiClient, "delete", async () => ({ status: 200, data: {} }));
+  await assert.rejects(deleteAccount("t"), /invalid response/);
 });

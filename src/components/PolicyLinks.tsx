@@ -37,8 +37,13 @@ export function ConsentLine() {
   );
 }
 
-// Two standalone links for the signed-in home screen.
-export function PolicyLinksRow() {
+type PolicyLinksRowProps = {
+  onDeleteAccountPress?: () => void;
+};
+
+// Standalone links for the signed-in home screen. Account deletion is not a
+// policy page, so the screen passes its own handler for that link.
+export function PolicyLinksRow({ onDeleteAccountPress }: PolicyLinksRowProps) {
   return (
     <View style={styles.row}>
       <Pressable
@@ -55,6 +60,16 @@ export function PolicyLinksRow() {
       >
         <Text style={styles.linkText}>Terms of Use</Text>
       </Pressable>
+      {onDeleteAccountPress ? (
+        <Pressable
+          accessibilityLabel="Delete account"
+          accessibilityRole="link"
+          onPress={onDeleteAccountPress}
+          style={styles.rowLink}
+        >
+          <Text style={styles.linkText}>Delete account</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -75,6 +90,7 @@ const styles = StyleSheet.create({
   row: {
     alignItems: "center",
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.xl,
     justifyContent: "center",
     paddingTop: spacing.lg,

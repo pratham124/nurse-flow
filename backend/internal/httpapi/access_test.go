@@ -18,6 +18,7 @@ import (
 // accessStoreStub records the calls a handler makes and returns canned results.
 type accessStoreStub struct {
 	err        error
+	deleted    bool
 	ensureName string
 	calls      []string
 	tokenHash  string
@@ -32,6 +33,10 @@ func (s *accessStoreStub) EnsureProfile(_ context.Context, authUserID, displayNa
 	s.calls = append(s.calls, "ensure")
 	s.ensureName = displayName
 	return database.Profile{ID: "10000000-0000-0000-0000-000000000009", AuthUserID: authUserID, DisplayName: displayName, Role: "charge_nurse"}, s.err
+}
+func (s *accessStoreStub) DeleteCurrentAccount(context.Context, string) (bool, error) {
+	s.calls = append(s.calls, "delete-account")
+	return s.deleted, s.err
 }
 func (s *accessStoreStub) ListInvites(context.Context, string, string, string) (database.InviteList, error) {
 	s.calls = append(s.calls, "list")
@@ -303,5 +308,46 @@ func TestJoinedWorkspaceRoute(t *testing.T) {
 	}
 	if response := get(&accessStoreStub{err: errors.New("private")}); response.Code != 503 || strings.Contains(response.Body.String(), "private") {
 		t.Fatalf("status=%d body=%s", response.Code, response.Body.String())
+	}
+}
+
+func TestDeleteProfileRoute(t *testing.T) {
+	verifier, sign := testDiagnosticVerifierWithClaims(t)
+	for _, tt := range []struct {
+		name, auth, body string
+		store            accessStoreStub
+		want             int
+		code             string
+		wantCalls        int
+	}{
+		{"deleted", "ok", "", accessStoreStub{deleted: true}, 204, "", 1},
+		{"unknown account", "ok", "", accessStoreStub{}, 404, "account_not_found", 1},
+		{"no token", "", "", accessStoreStub{deleted: true}, 401, "", 0},
+		{"database down", "ok", "", accessStoreStub{err: errors.New("private password SQL")}, 503, "database_unavailable", 1},
+		{"rejects a body", "ok", "x", accessStoreStub{deleted: true}, 400, "invalid_profile", 0},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			store := tt.store
+			request := httptest.NewRequest(http.MethodDelete, "/profile", strings.NewReader(tt.body))
+			if tt.auth != "" {
+				request.Header.Set("Authorization", "Bearer "+sign(accessAuthUserID, time.Now().Add(time.Hour), nil))
+			}
+			response := httptest.NewRecorder()
+			// The profile reader reports no profile: deletion must not need one.
+			lookup := profileLookup{err: database.ErrProfileNotFound}
+			NewHandler(verifier, lookup, nil, nil, &store, &store, &store, nil, nil, nil).ServeHTTP(response, request)
+			if response.Code != tt.want || len(store.calls) != tt.wantCalls {
+				t.Fatalf("status=%d calls=%v body=%s", response.Code, store.calls, response.Body.String())
+			}
+			if tt.code != "" && !strings.Contains(response.Body.String(), `"code":"`+tt.code+`"`) {
+				t.Fatal(response.Body.String())
+			}
+			if strings.Contains(response.Body.String(), "private") {
+				t.Fatal("internal details leaked")
+			}
+			if tt.want == 204 && response.Body.Len() != 0 {
+				t.Fatal("204 must have no body")
+			}
+		})
 	}
 }

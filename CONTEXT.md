@@ -18,6 +18,10 @@ _Avoid_: Regular nurse, staff nurse
 The record connecting one nurse slot on a shift to the application profile allowed to view that slot; it is pending, linked, or removed.
 _Avoid_: Membership, seat
 
+**Account deletion**:
+Permanently removing a person's Supabase Auth user and, through it, their application profile and everything that profile owns: templates, shifts, snapshots, invites, assignment runs, manual moves, and messages they wrote. Their nurse access on other charges' shifts is marked removed and unlinked, not deleted.
+_Avoid_: Deactivation, closing an account (nothing is kept to reopen)
+
 **Invite code**:
 A single-use, 6-character credential for one nurse slot on one shift; only its hash is stored.
 _Avoid_: Join token, invite link (the link only carries the code)
