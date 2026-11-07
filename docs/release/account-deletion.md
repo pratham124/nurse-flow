@@ -77,6 +77,34 @@ open details in a grilling session. The architecture decision is
 - Local checks: Go vet, race tests (all packages), and gofmt; TypeScript and lint;
   every `tsx --test` script, including the new `test:go-profile` (8 tests).
 
+## Production (2026-11-07)
+
+- The user applied `20261107212029_account_deletion` to `mkljczezkyqtuplzedpj`
+  with `.scratch/apply-production-ticket25.ps1`, before the merge.
+  `verify-account-deletion.sql` changed from 3 `RESTRICT` keys to 0; the three
+  keys are now `c`, the function exists, and only `nurseflow_go` can execute it.
+  The profile count stayed at 10, and `migration list` shows 9 of 9 local = remote.
+- [PR #11](https://github.com/pratham124/nurse-flow/pull/11) was merged as `ab3ac5f`.
+  The development deploy, the dev-database check, and "Publish policy pages"
+  passed, and the user approved the production API deploy. Revision
+  `nurseflow-api-prod-00005-mah` serves 100% of traffic, `/health` is ok, and
+  `DELETE /profile` without a token returns 401. The live privacy policy shows
+  "Effective date: November 7, 2026".
+- Throwaway account check: a random `nurseflow.t25.throwaway.*@example.com` account
+  (its password was never shown or stored) signed up, created its profile, a
+  template, and an active shift through the production API.
+  - `DELETE /profile` returned 204.
+  - Its Auth user, profile, session, template, and shift were removed.
+  - Totals went from 11 to 10 Auth users and profiles, 30 to 29 shifts, and 9 to
+    8 templates.
+  - The old token got 403 `profile_missing`, and a second delete returned 404
+    `account_not_found`.
+  - All smoke accounts were unchanged.
+- The in-app screen was exercised on development (web and Android), not in
+  production. The first iPhone build (ticket 27) covers it there.
+
+Ticket 25 is done.
+
 ### Known limits
 
 - A person whose profile was never created sees the session-recovery screen,
