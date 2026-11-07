@@ -140,7 +140,7 @@ Unblocked tickets can use existing migrated or retained paths and development fi
 
 28. **External TestFlight (Milestone 8)**
    - **Blocked by:** 27: First build on the user's iPhone.
-   - **What it delivers:** Chosen testers can install NurseFlow through a limited public link after Beta App Review.
+   - **What it delivers:** Invited nurses (by email, at most about 20) can install NurseFlow through TestFlight after Beta App Review.
 
 
 ## Common acceptance rules

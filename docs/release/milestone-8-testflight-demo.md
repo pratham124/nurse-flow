@@ -6,7 +6,8 @@ has not started, and each ticket starts only after the user's go-ahead.
 ## What this release is
 
 NurseFlow ships as an **iOS TestFlight demo for dummy data only**. Invited
-testers install it through a TestFlight public link, and it is never listed in
+testers (at most about 20 nurses at one hospital) install it through TestFlight
+email invitations, and it is never listed in
 App Store search. TestFlight builds expire after 90 days, so the demo stays
 available by uploading a new build at least that often. There is no public App
 Store listing, and the app must not be used with real patients.
@@ -33,7 +34,7 @@ their real unit's layout with made-up patients) is fine.
 
 | # | Area | Decision |
 | --- | --- | --- |
-| 1 | Audience | Closed testing only: TestFlight, external testers through a public link. Not a public App Store listing. |
+| 1 | Audience | Closed testing only: TestFlight external testers added by email, at most about 20 nurses at one hospital. No public link and no App Store listing. Changed on 2026-11-07 from a public link, because every tester is known in advance and an email invitation can't be forwarded to someone else. |
 | 2 | Patient data | Dummy data only. All current patient fields stay (initials, age, sex, diagnosis, acuity) for realism. Every place users see it, the app and the policies say real patient information is not allowed. Considered and rejected: bed number and acuity only. |
 | 3 | Identity | Display name **NurseFlow**. iOS bundle ID and Android package **`com.pfrog123.nurseflow`**, replacing `com.pfrog123.firstapp`. Deep-link scheme `nurseflow`. These cannot change after the first upload. |
 | 4 | Store accounts | Apple Developer Program only (individual, US$99/year). No Google Play account. |
@@ -48,7 +49,7 @@ their real unit's layout with made-up patients) is fine.
 | 13 | Sign-up email | Email confirmation stays off for the demo, which avoids setting up an email provider. People can sign up with an address they don't own. Confirm the production setting during the build. |
 | 14 | Builds | EAS cloud builds started by hand and uploaded with EAS Submit. Production's public settings are EAS environment variables, with notifications off. |
 | 15 | Over-the-air updates | No EAS Update. Every fix is a new TestFlight build. It can be added in any later build. |
-| 16 | Capacity and cost | Production keeps `min-instances 0` and the existing instance caps, and gains a Google Cloud budget alert. The public link is shared only with chosen people and has a tester limit. |
+| 16 | Capacity and cost | Production keeps `min-instances 0` and the existing instance caps, and gains a Google Cloud budget alert. Only invited email addresses can install the app. |
 | 17 | Icon and splash | Made from `assets/images/nurseflow-mark.png`, replacing the template's, including `assets/expo.icon` on iOS. That file is only 107×117 and no original exists, so this is a stopgap. Before external testers (ticket 28), the nurse is redrawn at full size with a different hat symbol, because the red cross emblem is legally protected. |
 | 18 | Apple reviewer login | A dedicated production charge account with a dummy template and shift, created after ticket 23. Its password goes in the same encrypted local store as the smoke accounts. |
 | 19 | Policy pages | Privacy policy and terms are hosted on GitHub Pages from this public repo. |
