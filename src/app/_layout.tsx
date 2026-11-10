@@ -24,7 +24,7 @@ export default function RootLayout() {
                       contentStyle: {
                         backgroundColor: colors.neutral.backgroundPrimary,
                       },
-                      gestureEnabled: true,
+                      gestureEnabled: false,
                       headerShown: false,
                     }}
                   />
