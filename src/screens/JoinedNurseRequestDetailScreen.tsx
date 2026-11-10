@@ -1,8 +1,6 @@
 import { useShallow } from "zustand/react/shallow";
 import { router, useLocalSearchParams } from "expo-router";
 import {
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -151,10 +149,7 @@ export default function JoinedNurseRequestDetailScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={styles.keyboardAvoidingView}
-      >
+      <View style={styles.body}>
         <View style={styles.header}>
           <Text style={styles.title}>{getRequestTitle(request)}</Text>
           <Pressable
@@ -170,6 +165,8 @@ export default function JoinedNurseRequestDetailScreen() {
         </View>
 
         <ScrollView
+          // iOS: make room for the keyboard and scroll the focused reply box into view.
+          automaticallyAdjustKeyboardInsets
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
@@ -280,7 +277,7 @@ export default function JoinedNurseRequestDetailScreen() {
             </View>
           </ResponsiveContent>
         </ScrollView>
-      </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -290,7 +287,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral.backgroundPrimary,
     flex: 1,
   },
-  keyboardAvoidingView: {
+  body: {
     flex: 1,
   },
   header: {

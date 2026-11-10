@@ -90,6 +90,8 @@ export function WorkflowScreen({
         <View style={styles.managedContent}>{children}</View>
       ) : (
         <ScrollView
+          // iOS: make room for the keyboard and scroll the focused field into view.
+          automaticallyAdjustKeyboardInsets
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
