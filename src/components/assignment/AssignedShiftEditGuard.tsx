@@ -9,10 +9,13 @@ import { ConfirmationDialog } from "../workflow/ConfirmationDialog";
 
 type AssignedShiftEditGuardProps = {
   activeShift?: Shift;
+  // Lets a screen hide the guard while it is saving an assignment itself.
+  hidden?: boolean;
 };
 
 export function AssignedShiftEditGuard({
   activeShift,
+  hidden = false,
 }: AssignedShiftEditGuardProps) {
   const {
     resetActiveShiftForEditing,
@@ -55,7 +58,7 @@ export function AssignedShiftEditGuard({
     router.replace("/floor-board");
   }
 
-  if (!isFocused || !assignmentResultId) {
+  if (hidden || !isFocused || !assignmentResultId) {
     return null;
   }
 

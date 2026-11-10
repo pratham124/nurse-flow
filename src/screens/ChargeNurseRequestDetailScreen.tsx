@@ -2,8 +2,6 @@ import { useShallow } from "zustand/react/shallow";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -158,10 +156,7 @@ export default function ChargeNurseRequestDetailScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      style={styles.keyboardAvoidingView}
-    >
+    <>
       <WorkflowScreen
         activeStep="Board"
         actionErrorText={serverSaveError}
@@ -405,14 +400,11 @@ export default function ChargeNurseRequestDetailScreen() {
           visible={isMoveDialogOpen && showSwapCompletionAction}
         />
       ) : null}
-    </KeyboardAvoidingView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  keyboardAvoidingView: {
-    flex: 1,
-  },
   content: {
     gap: spacing.cardGap,
   },
