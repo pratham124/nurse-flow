@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- NurseFlow mark. Source for the app icon, splash, and in-app logo.
+       Regenerate PNGs with scripts/render-brand-assets.py. -->
+  <defs>
+    <clipPath id="badge"><circle cx="512" cy="540" r="330"/></clipPath>
+  </defs>
+  <g transform="translate(0 -36)">
+  <circle cx="512" cy="540" r="330" fill="#C01F4E"/>
+  <g clip-path="url(#badge)">
+    <!-- hair, behind the face and down to the shoulders -->
+    <path d="M300 560 C300 400 400 330 512 330 C624 330 724 400 724 560 C724 660 770 760 760 900 L264 900 C254 760 300 660 300 560 Z" fill="#141012"/>
+    <!-- shoulders / scrubs -->
+    <path d="M282 900 C282 770 360 712 456 704 L568 704 C664 712 742 770 742 900 Z" fill="#FFFFFF" stroke="#C01F4E" stroke-width="16" stroke-linejoin="round"/>
+    <path d="M452 706 L512 800 L572 706 Z" fill="#C01F4E"/>
+  </g>
+  <!-- neck -->
+  <rect x="478" y="650" width="68" height="60" rx="20" fill="#FFFFFF"/>
+  <!-- face -->
+  <ellipse cx="512" cy="566" rx="144" ry="134" fill="#FFFFFF"/>
+  <!-- bangs -->
+  <path d="M366 560 C362 470 420 418 512 416 C604 418 662 470 658 560 C630 500 580 470 512 468 C444 470 394 500 366 560 Z" fill="#141012"/>
+  <!-- eyes, cheeks, smile -->
+  <ellipse cx="462" cy="570" rx="17" ry="23" fill="#141012"/>
+  <ellipse cx="562" cy="570" rx="17" ry="23" fill="#141012"/>
+  <circle cx="424" cy="618" r="23" fill="#C01F4E" opacity="0.85"/>
+  <circle cx="600" cy="618" r="23" fill="#C01F4E" opacity="0.85"/>
+  <path d="M478 622 Q512 668 546 622 Z" fill="#141012" stroke="#141012" stroke-width="8" stroke-linejoin="round"/>
+  <!-- stethoscope -->
+  <path d="M446 712 C424 760 420 800 440 826" fill="none" stroke="#C01F4E" stroke-width="14" stroke-linecap="round"/>
+  <path d="M578 712 C600 760 604 790 596 818" fill="none" stroke="#C01F4E" stroke-width="14" stroke-linecap="round"/>
+  <circle cx="440" cy="846" r="22" fill="#FFFFFF" stroke="#C01F4E" stroke-width="12"/>
+  <ellipse cx="598" cy="856" rx="36" ry="46" fill="#FFFFFF" stroke="#C01F4E" stroke-width="14"/>
+  <!-- cap with a heart (no cross: the red cross emblem is protected) -->
+  <path d="M344 330 Q512 236 680 330 L650 440 Q512 404 374 440 Z" fill="#FFFFFF" stroke="#C01F4E" stroke-width="16" stroke-linejoin="round"/>
+  <path d="M512 404 C470 376 462 344 482 330 C496 320 508 326 512 338 C516 326 528 320 542 330 C562 344 554 376 512 404 Z" fill="#C01F4E"/>
+  </g>
+</svg>
