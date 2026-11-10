@@ -1,6 +1,6 @@
 import { useShallow } from "zustand/react/shallow";
-import { useEffect, useRef, useState } from "react";
-import { router } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
 import {
@@ -199,6 +199,9 @@ export default function AssignmentReviewScreen() {
   );
   const [serverSaveError, setServerSaveError] = useState("");
   const [isOptimizerRunning, setIsOptimizerRunning] = useState(false);
+  // True from a successful run until this screen is focused again, so the
+  // edit guard does not flash while the app moves to the floor board.
+  const [isLeavingAfterRun, setIsLeavingAfterRun] = useState(false);
   const [showRerunConfirmation, setShowRerunConfirmation] = useState(false);
   const optimizerRequestInFlightRef = useRef(false);
   const retryMutationIdRef = useRef<string | undefined>(undefined);
@@ -220,6 +223,12 @@ export default function AssignmentReviewScreen() {
         realtimeConnectionState === "reconnecting"
       ? "The server connection is being restored. Wait before running assignment."
       : "A server connection is required to run assignment.";
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsLeavingAfterRun(false);
+    }, []),
+  );
 
   useEffect(() => {
     if (!activeShift) {
@@ -257,6 +266,7 @@ export default function AssignmentReviewScreen() {
 
       if (result.status === "saved") {
         retryMutationIdRef.current = undefined;
+        setIsLeavingAfterRun(true);
         router.push("/floor-board");
         return;
       }
@@ -351,7 +361,10 @@ export default function AssignmentReviewScreen() {
           totalBedCount={totalBedCount}
         />
       </WorkflowScreen>
-      <AssignedShiftEditGuard activeShift={activeShift} />
+      <AssignedShiftEditGuard
+        activeShift={activeShift}
+        hidden={isOptimizerRunning || isLeavingAfterRun}
+      />
       <ConfirmationDialog
         confirmLabel="Rerun and clear moves"
         confirmTone="danger"
