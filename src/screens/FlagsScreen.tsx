@@ -101,9 +101,9 @@ function FlagsListHeader({
   selectedRequestStatusFilter,
   warningCount,
 }: FlagsListHeaderProps) {
-  const pendingCount = requests.filter((r) => r.requestStatus === "pending").length;
-  const acceptedCount = requests.filter((r) => r.requestStatus === "accepted").length;
-  const declinedCount = requests.filter((r) => r.requestStatus === "declined").length;
+  const pendingCount = requests.filter((r) => r.statusGroup === "pending").length;
+  const acceptedCount = requests.filter((r) => r.statusGroup === "accepted").length;
+  const declinedCount = requests.filter((r) => r.statusGroup === "declined").length;
   const totalFlags = criticalCount + warningCount + infoCount;
 
   return (
@@ -305,7 +305,7 @@ function filterNurseRequestRows(
         (selectedRequestFilter === "Issues" ? "issue" : "swap");
     const matchesStatus =
       selectedRequestStatusFilter === "All" ||
-      request.requestStatus === selectedRequestStatusFilter.toLowerCase();
+      request.statusGroup === selectedRequestStatusFilter.toLowerCase();
 
     return matchesType && matchesStatus;
   });

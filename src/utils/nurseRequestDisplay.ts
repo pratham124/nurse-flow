@@ -20,6 +20,9 @@ export type NurseRequestDisplay = {
   lifecycleState: NurseRequestLifecycleState;
   message: string;
   requestStatus: NurseRequest["status"];
+  // Status used by the Flags filters. A resolved issue keeps the stored
+  // status "pending", so it gets its own group and stops counting as pending.
+  statusGroup: NurseRequest["status"] | "resolved";
   requestType: NurseRequest["type"];
   requesterName: string;
   resolvedAtText?: string;
@@ -85,6 +88,10 @@ function getNurseRequestDisplay(
     ),
     message: request.message,
     requestStatus: request.status,
+    statusGroup:
+      request.type === "issue" && getIssueReviewStatus(request) === "resolved"
+        ? "resolved"
+        : request.status,
     requestType: request.type,
     requesterName: request.requestingNurseName,
     resolvedAtText: request.resolvedAt
@@ -102,14 +109,17 @@ function getNurseRequestDisplay(
   };
 }
 
+// Intl.DateTimeFormat rather than toLocaleString: on iOS, toLocaleString
+// ignored these options and showed seconds.
+const requestTimestampFormatter = new Intl.DateTimeFormat(undefined, {
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  month: "short",
+});
+
 function formatRequestTimestamp(timestamp: string) {
-  return new Date(timestamp).toLocaleString(undefined, {
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    month: "numeric",
-    year: "numeric",
-  });
+  return requestTimestampFormatter.format(new Date(timestamp));
 }
 
 function getRequestBedContext(activeShift: Shift, request: NurseRequest) {
