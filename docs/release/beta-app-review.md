@@ -89,3 +89,11 @@ access, or user-generated content shared publicly. Medical/treatment
 information: "Infrequent/Mild" (the app shows dummy diagnoses for staffing, not
 medical advice). The expected rating is 4+ (or 12+ if Apple rates the medical
 item higher).
+
+## Submission log
+
+- 2026-11-10: Test Information (en-CA, the app's primary locale) and Beta App
+  Review details filled in through the App Store Connect API; the reviewer
+  password went from the encrypted local store straight to Apple. The user
+  checked the new icon on build 1.0.0 (14), and it was submitted for Beta App
+  Review (state `WAITING_FOR_REVIEW`).
