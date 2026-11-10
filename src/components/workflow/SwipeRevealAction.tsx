@@ -1,19 +1,15 @@
-import { ReactNode, useRef, useState } from "react";
-import {
-  Animated,
-  PanResponder,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ReactNode, useRef } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { Pressable } from "react-native-gesture-handler";
+import ReanimatedSwipeable, {
+  type SwipeableMethods,
+} from "react-native-gesture-handler/ReanimatedSwipeable";
 
-import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { colors, radius, textSize, fontWeight, shadows } from "../../theme/tokens";
 
 const defaultActionWidth = 96;
 
-type SwipeRevealActionProps = {
+export type SwipeRevealActionProps = {
   actionLabel: string;
   accessibilityLabel: string;
   children: ReactNode;
@@ -25,6 +21,10 @@ type SwipeRevealActionProps = {
   enableAccessibilityReveal?: boolean;
 };
 
+// Uses React Native Gesture Handler instead of PanResponder because its swipe
+// is a native gesture: it cooperates with the iOS ScrollView and the back
+// swipe instead of fighting them for the touch. Reanimated animations follow
+// the system Reduce Motion setting on their own.
 export function SwipeRevealAction({
   actionLabel,
   accessibilityLabel,
@@ -36,81 +36,19 @@ export function SwipeRevealAction({
   actionTone = "danger",
   enableAccessibilityReveal = false,
 }: SwipeRevealActionProps) {
-  const isReducedMotionEnabled = useReducedMotion();
-  const rowTranslateX = useRef(new Animated.Value(0)).current;
-  const [isActionRevealed, setIsActionRevealed] = useState(false);
-  const revealDirection = actionSide === "left" ? 1 : -1;
-  const revealedTranslateX = actionWidth * revealDirection;
-
-  function animateRow(toValue: number) {
-    if (isReducedMotionEnabled) {
-      rowTranslateX.setValue(toValue);
-      setIsActionRevealed(toValue !== 0);
-      return;
-    }
-
-    Animated.spring(rowTranslateX, {
-      bounciness: 0,
-      speed: 18,
-      toValue,
-      useNativeDriver: true,
-    }).start(() => {
-      setIsActionRevealed(toValue !== 0);
-    });
-  }
+  const swipeableRef = useRef<SwipeableMethods | null>(null);
 
   function handleActionPress() {
-    animateRow(0);
+    swipeableRef.current?.close();
     onActionPress();
   }
 
-  const panResponder = PanResponder.create({
-    onMoveShouldSetPanResponder: (_, gestureState) => {
-      const isHorizontalSwipe =
-        Math.abs(gestureState.dx) > 8 &&
-        Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
-      const isRevealSwipe =
-        actionSide === "left" ? gestureState.dx > 0 : gestureState.dx < 0;
-
-      return isHorizontalSwipe && (isRevealSwipe || isActionRevealed);
-    },
-    onPanResponderMove: (_, gestureState) => {
-      const startingPoint = isActionRevealed ? revealedTranslateX : 0;
-      const rawTranslateX = startingPoint + gestureState.dx;
-      const nextTranslateX =
-        actionSide === "left"
-          ? Math.max(0, Math.min(actionWidth, rawTranslateX))
-          : Math.max(-actionWidth, Math.min(0, rawTranslateX));
-
-      rowTranslateX.setValue(nextTranslateX);
-    },
-    onPanResponderRelease: (_, gestureState) => {
-      const startingPoint = isActionRevealed ? revealedTranslateX : 0;
-      const endingPoint = startingPoint + gestureState.dx;
-      const shouldRevealAction =
-        actionSide === "left"
-          ? endingPoint > actionWidth / 2
-          : endingPoint < -actionWidth / 2;
-
-      animateRow(shouldRevealAction ? revealedTranslateX : 0);
-    },
-    onPanResponderTerminate: () => {
-      animateRow(isActionRevealed ? revealedTranslateX : 0);
-    },
-  });
-
-  return (
-    <View style={styles.container}>
-      <View
-        style={[
-          styles.actionPane,
-          actionSide === "left" ? styles.leftActionPane : styles.rightActionPane,
-        ]}
-      >
+  function renderAction() {
+    return (
+      <View style={styles.actionPane}>
         <Pressable
           accessibilityLabel={accessibilityLabel}
           accessibilityRole="button"
-          disabled={!isActionRevealed}
           onPress={handleActionPress}
           style={({ pressed }) => [
             styles.actionButton,
@@ -122,7 +60,7 @@ export function SwipeRevealAction({
                 ? styles.brandActionButtonPressed
                 : actionTone === "delete"
                   ? styles.deleteActionButtonPressed
-                : styles.actionButtonPressed
+                  : styles.actionButtonPressed
               : null,
           ]}
         >
@@ -133,37 +71,52 @@ export function SwipeRevealAction({
           )}
         </Pressable>
       </View>
+    );
+  }
 
-      <Animated.View
-        {...panResponder.panHandlers}
-        accessibilityActions={
-          enableAccessibilityReveal
-            ? [{ label: `Reveal ${actionLabel}`, name: "revealAction" }]
-            : undefined
-        }
-        accessibilityHint={
-          enableAccessibilityReveal
-            ? `Use the Reveal ${actionLabel} action to show the button.`
-            : undefined
-        }
-        accessibilityLabel={
-          enableAccessibilityReveal ? accessibilityLabel : undefined
-        }
-        accessible={enableAccessibilityReveal}
-        onAccessibilityAction={(event) => {
-          if (event.nativeEvent.actionName === "revealAction") {
-            animateRow(revealedTranslateX);
-          }
-        }}
-        style={[
-          styles.content,
-          {
-            transform: [{ translateX: rowTranslateX }],
-          },
-        ]}
+  const isLeft = actionSide === "left";
+
+  return (
+    <View style={styles.container}>
+      <ReanimatedSwipeable
+        ref={swipeableRef}
+        friction={1}
+        leftThreshold={isLeft ? actionWidth / 2 : undefined}
+        overshootLeft={false}
+        overshootRight={false}
+        renderLeftActions={isLeft ? renderAction : undefined}
+        renderRightActions={isLeft ? undefined : renderAction}
+        rightThreshold={isLeft ? undefined : actionWidth / 2}
       >
-        {children}
-      </Animated.View>
+        <View
+          accessibilityActions={
+            enableAccessibilityReveal
+              ? [{ label: `Reveal ${actionLabel}`, name: "revealAction" }]
+              : undefined
+          }
+          accessibilityHint={
+            enableAccessibilityReveal
+              ? `Use the Reveal ${actionLabel} action to show the button.`
+              : undefined
+          }
+          accessibilityLabel={
+            enableAccessibilityReveal ? accessibilityLabel : undefined
+          }
+          accessible={enableAccessibilityReveal}
+          onAccessibilityAction={(event) => {
+            if (event.nativeEvent.actionName === "revealAction") {
+              if (isLeft) {
+                swipeableRef.current?.openLeft();
+              } else {
+                swipeableRef.current?.openRight();
+              }
+            }
+          }}
+          style={styles.content}
+        >
+          {children}
+        </View>
+      </ReanimatedSwipeable>
     </View>
   );
 }
@@ -178,19 +131,12 @@ const styles = StyleSheet.create({
     ...shadows.sm,
   },
   actionPane: {
-    ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.status.red50,
-  },
-  leftActionPane: {
-    alignItems: "flex-start",
-  },
-  rightActionPane: {
-    alignItems: "flex-end",
   },
   actionButton: {
     alignItems: "center",
     backgroundColor: colors.status.red700,
-    height: "100%",
+    flex: 1,
     justifyContent: "center",
   },
   actionButtonPressed: {
