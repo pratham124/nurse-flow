@@ -5,7 +5,7 @@ import ReanimatedSwipeable, {
   type SwipeableMethods,
 } from "react-native-gesture-handler/ReanimatedSwipeable";
 
-import { colors, radius, textSize, fontWeight, shadows } from "../../theme/tokens";
+import { colors, radius, spacing, textSize, fontWeight, shadows } from "../../theme/tokens";
 
 const defaultActionWidth = 96;
 
@@ -16,6 +16,8 @@ export type SwipeRevealActionProps = {
   onActionPress: () => void;
   actionWidth?: number;
   actionIcon?: ReactNode;
+  // Shows the text label under the icon instead of the icon alone.
+  showLabelWithIcon?: boolean;
   actionSide?: "left" | "right";
   actionTone?: "brand" | "danger" | "delete";
   enableAccessibilityReveal?: boolean;
@@ -32,6 +34,7 @@ export function SwipeRevealAction({
   onActionPress,
   actionWidth = defaultActionWidth,
   actionIcon,
+  showLabelWithIcon = false,
   actionSide = "right",
   actionTone = "danger",
   enableAccessibilityReveal = false,
@@ -64,11 +67,10 @@ export function SwipeRevealAction({
               : null,
           ]}
         >
-          {actionIcon ? (
-            actionIcon
-          ) : (
+          {actionIcon}
+          {!actionIcon || showLabelWithIcon ? (
             <Text style={styles.actionButtonText}>{actionLabel}</Text>
-          )}
+          ) : null}
         </Pressable>
       </View>
     );
@@ -137,6 +139,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.status.red700,
     flex: 1,
+    gap: spacing.xs,
     justifyContent: "center",
   },
   actionButtonPressed: {

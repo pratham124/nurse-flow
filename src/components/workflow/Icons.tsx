@@ -94,6 +94,57 @@ export function HospitalIcon({
   );
 }
 
+// Two stacked arrows, the top one pointing right and the bottom one pointing
+// left. Reads as "move between".
+export function MoveIcon({ color = colors.neutral.textPrimary, size = 18 }: IconProps) {
+  const barWidth = size * 0.7;
+  const barLeft = (size - barWidth) / 2;
+  const headSize = size * 0.3;
+  const topRowY = size * 0.3;
+  const bottomRowY = size * 0.7;
+
+  return (
+    <View style={{ height: size, width: size }}>
+      <View
+        style={[
+          styles.moveBar,
+          { backgroundColor: color, left: barLeft, top: topRowY - 0.9, width: barWidth },
+        ]}
+      />
+      <View
+        style={[
+          styles.moveHeadRight,
+          {
+            borderColor: color,
+            height: headSize,
+            left: barLeft + barWidth - headSize * 0.85,
+            top: topRowY - headSize / 2,
+            width: headSize,
+          },
+        ]}
+      />
+      <View
+        style={[
+          styles.moveBar,
+          { backgroundColor: color, left: barLeft, top: bottomRowY - 0.9, width: barWidth },
+        ]}
+      />
+      <View
+        style={[
+          styles.moveHeadLeft,
+          {
+            borderColor: color,
+            height: headSize,
+            left: barLeft - headSize * 0.15,
+            top: bottomRowY - headSize / 2,
+            width: headSize,
+          },
+        ]}
+      />
+    </View>
+  );
+}
+
 export function ChevronRightIcon({
   color = colors.neutral.textSecondary,
   size = 14,
@@ -230,6 +281,23 @@ export function BellIcon({
 }
 
 const styles = StyleSheet.create({
+  moveBar: {
+    borderRadius: 1,
+    height: 1.8,
+    position: "absolute",
+  },
+  moveHeadRight: {
+    borderRightWidth: 1.8,
+    borderTopWidth: 1.8,
+    position: "absolute",
+    transform: [{ rotate: "45deg" }],
+  },
+  moveHeadLeft: {
+    borderBottomWidth: 1.8,
+    borderLeftWidth: 1.8,
+    position: "absolute",
+    transform: [{ rotate: "45deg" }],
+  },
   icon: {
     alignItems: "center",
     justifyContent: "center",
