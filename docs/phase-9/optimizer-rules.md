@@ -31,7 +31,7 @@ One optimizer run supports:
 | Input | Supported value |
 | --- | --- |
 | Doctor sides | Exactly 2 |
-| Rooms | 1 to 25 |
+| Rooms | 1 to 40 |
 | Total beds | 1 to 80 |
 | Participating occupied beds | 0 to 80 |
 | Large-floor shape | More than 50 participating beds supports at most 20 rooms |
@@ -45,6 +45,21 @@ These are service contract ceilings, not suggested hospital floor sizes. Task
 Python runtime; the remaining deployed cold-start gate is recorded in
 `task-4-validation-pass.md`. A request above a ceiling is `invalid_input`; the
 service must not start a larger best-effort solve or silently truncate data.
+
+The room ceiling was raised from 25 to 40 on 2026-11-11, after a tester's
+30-room floor was rejected. Local evidence (one CP-SAT worker, synthetic data,
+grid solves four at a time): the 40-room/50-bed/12-nurse benchmark proves every
+stage in 10.9 seconds (10.3 understaffed), and a 30-room/38-patient/8-nurse
+floor in about 1 second. A grid of 108 tight floors (20, 30, and 40 rooms; 50
+occupied beds; 7 to 12 nurses; maximum load from one below to one above
+`ceil(50 / nurses)`; mixed and red-heavy acuity) reached `OPTIMAL` in 52 cases
+before the balance count model (19 of 36 at 20 rooms, which the old ceiling
+already allowed) and in 97 after it (34 of 36 at 20 rooms), with identical
+decisions wherever both finished. The 11 shapes that still exceed 120 seconds
+have 7, 8, 10, or 11 nurses, and every one is red-heavy, understaffed, or
+both; the service reports them as `timed_out` and saves nothing. Two of them
+(7 nurses at maximum 7, 20 and 30 rooms) finished on the full model in 96 and
+26 seconds but time out on counts.
 
 ## Participating Beds
 
@@ -288,11 +303,39 @@ The stages are:
    lowest team count. The experience-distribution gap is the sum of the
    experienced, mid, and new-grad gaps. This treats the three categories
    equally instead of inventing conversions between them.
+
+   These five gaps are proved in a balance count model instead of the full
+   assignment model. It rebuilds stages 1 through 5 with the same frozen
+   values, but replaces individual bed owners with each nurse's
+   green/yellow/red bed counts per team and each room's unassigned beds per
+   acuity. Within a team any nurse may own any of the team's beds, so every
+   count solution can be turned back into real bed owners: the model is an
+   exact rewrite, not a bound, and each proven minimum is frozen in the full
+   model directly. This removes the equivalent bed swaps that kept the full
+   model from proving some gaps; a 20-room, 50-bed, nine-nurse floor that could
+   not prove its census gap in 400 seconds now proves it in about 3 seconds.
+
+   Two further aids apply only while these five values are proved. First,
+   nurses with the same license, experience, and maximum, and rooms on the
+   same side with the same acuity mix, are interchangeable here, so the count
+   model lists them in a fixed order; this is switched off before stage 7,
+   which depends on nurse and room order. Second, whole-nurse team sizes can
+   force a minimum gap (ten nurses each carrying exactly acuity 9 form teams
+   of 3, 3, and 4, so the acuity gap is at least 9). The count model states
+   that minimum: a larger team carries at least the assigned total minus what
+   every other nurse could carry, and a smaller team at most what its own
+   nurses could carry. Both follow from frozen values, so neither removes an
+   optimal answer.
 7. **Canonical room teams:** after all clinical and balance optima are fixed,
    choose the exact room proof by occupied-bed count. At 50 or fewer beds, run
    one fixed search over every occupied room's team rank in canonical room
    order and freeze the complete tuple. Above 50 beds, prove five-room
    mixed-radix chunks in canonical order and freeze each decoded room rank.
+   With the balance count model, the room tuple is instead proved on counts in
+   five-room mixed-radix chunks: room teams are the same variables in both
+   models, so the lowest tuple among optimal count solutions is the canonical
+   tuple. It is frozen in the full model, and the count solution becomes the
+   full model's starting point for stages 8 and 9.
 8. **Canonical bed owners:** use participating beds in canonical bed order,
    with canonical nurse ranks first and the internal unassigned rank last. A
    fully assigned floor above 50 occupied beds uses exact six-bed mixed-radix

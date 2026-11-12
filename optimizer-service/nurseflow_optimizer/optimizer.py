@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
 import ortools
@@ -19,6 +19,7 @@ from .models import NormalizedOccupiedBed, NormalizedOptimizerInput
 from .search_hint import add_deterministic_start_hint
 from .team_coverage_model import (
     TeamCoverageDecision,
+    TeamCoverageModel,
     build_team_coverage_model,
     read_team_coverage_decision,
 )
@@ -619,6 +620,549 @@ def _build_structural_red_rank_lower_bound_model(
     return model, structural_lower_bound
 
 
+@dataclass(frozen=True)
+class BalanceCountModel:
+    """Exact count rewrite used to prove team balance and canonical room teams."""
+
+    model: cp_model.CpModel
+    structure: TeamCoverageModel
+    # (team index, nurse ordinal, acuity) -> how many such beds the nurse owns.
+    allocations: dict[tuple[int, int, str], cp_model.IntVar]
+    # (room ordinal, team index, acuity) -> how many such beds in the room are
+    # assigned. Only the covering team can have a nonzero count.
+    room_assigned: dict[tuple[int, int, str], cp_model.LinearExprT]
+    objectives: dict[str, cp_model.LinearExprT]
+    # On while proving balance values; must be turned off before canonical
+    # stages, which depend on nurse and room order.
+    look_alike_order_switch: cp_model.IntVar | None
+
+
+def _build_balance_count_model(
+    input_model: NormalizedOptimizerInput,
+    *,
+    fixed_unassigned_count: int,
+    fixed_maximum_acuity_load: int,
+    fixed_maximum_patient_count: int,
+    fixed_red_owner_rank_sum: int,
+    fixed_guidance_total_excess: int,
+    fixed_guidance_nurse_count: int,
+) -> BalanceCountModel:
+    """Rebuild priorities 1-6 with bed counts and expose priorities 7-11.
+
+    Within one team, any nurse may own any bed in the team's rooms, so only
+    how many green, yellow, and red beds each nurse owns matters to the
+    clinical and balance objectives. Choosing counts instead of individual
+    beds removes the many equivalent bed swaps that kept the full model from
+    proving some balance stages in time. Every count solution can be turned
+    back into real bed owners, so each proven minimum here is exactly the full
+    model's minimum. Unassigned beds are counted per room and acuity, which is
+    all that the objectives can see of them.
+    """
+
+    structure = build_team_coverage_model(input_model)
+    model = structure.model
+    acuity_names = ("green", "yellow", "red")
+    beds_by_room_id: dict[str, list[NormalizedOccupiedBed]] = {}
+    for bed in input_model.occupied_beds:
+        beds_by_room_id.setdefault(bed.room_id, []).append(bed)
+    occupied_rooms = [room for room in input_model.rooms if room.id in beds_by_room_id]
+
+    allocations: dict[tuple[int, int, str], cp_model.IntVar] = {}
+    nurse_patient_terms: dict[int, list[cp_model.LinearExprT]] = {
+        nurse.ordinal: [] for nurse in input_model.nurses
+    }
+    nurse_acuity_terms: dict[int, list[cp_model.LinearExprT]] = {
+        nurse.ordinal: [] for nurse in input_model.nurses
+    }
+    team_acuity_loads: list[cp_model.LinearExprT] = []
+    team_patient_counts: list[cp_model.LinearExprT] = []
+    red_rank_terms: list[cp_model.LinearExprT] = []
+
+    # Priority 1: a room's beds of one acuity are either assigned to the team
+    # covering the room or left unassigned.
+    room_assigned: dict[tuple[int, int, str], cp_model.LinearExprT] = {}
+    unassigned_terms: list[cp_model.LinearExprT] = []
+    red_unassigned_terms: list[cp_model.LinearExprT] = []
+    for room in occupied_rooms:
+        for acuity in acuity_names:
+            bed_count = sum(bed.acuity == acuity for bed in beds_by_room_id[room.id])
+            if bed_count == 0:
+                continue
+            assigned_here: list[cp_model.LinearExprT] = []
+            for team_index in range(input_model.team_count):
+                room_is_on_team = structure.room_team[(room.ordinal, team_index)]
+                if fixed_unassigned_count == 0:
+                    # Every bed is assigned: tie the count straight to the
+                    # room's team, which the solver reasons about far better.
+                    assigned: cp_model.LinearExprT = bed_count * room_is_on_team
+                else:
+                    assigned = model.new_int_var(
+                        0,
+                        bed_count,
+                        f"count_room_{room.ordinal}_team_{team_index}_{acuity}_assigned",
+                    )
+                    model.add(assigned <= bed_count * room_is_on_team)
+                room_assigned[(room.ordinal, team_index, acuity)] = assigned
+                assigned_here.append(assigned)
+            model.add(sum(assigned_here) <= bed_count)
+            unassigned_here = bed_count - sum(assigned_here)
+            unassigned_terms.append(unassigned_here)
+            if acuity == "red":
+                red_unassigned_terms.append(unassigned_here)
+    model.add(sum(unassigned_terms) == fixed_unassigned_count)
+
+    for team_index in range(input_model.team_count):
+        team_bed_counts = {
+            acuity: sum(
+                room_assigned.get((room.ordinal, team_index, acuity), 0)
+                for room in occupied_rooms
+            )
+            for acuity in acuity_names
+        }
+        team_allocations: dict[str, list[cp_model.IntVar]] = {
+            acuity: [] for acuity in acuity_names
+        }
+        for nurse in input_model.nurses:
+            nurse_is_on_team = structure.nurse_team[(nurse.ordinal, team_index)]
+            nurse_allocations: dict[str, cp_model.IntVar] = {}
+            for acuity in acuity_names:
+                if acuity == "red" and nurse.license_type != "RN":
+                    continue
+                allocation = model.new_int_var(
+                    0,
+                    nurse.max_patient_load,
+                    f"count_team_{team_index}_nurse_{nurse.ordinal}_{acuity}",
+                )
+                allocations[(team_index, nurse.ordinal, acuity)] = allocation
+                nurse_allocations[acuity] = allocation
+                team_allocations[acuity].append(allocation)
+            patients = sum(nurse_allocations.values())
+            acuity_load = sum(
+                ACUITY_WEIGHT_BY_NAME[acuity] * allocation
+                for acuity, allocation in nurse_allocations.items()
+            )
+            # A nurse owns beds only on their own team, within the frozen
+            # priority 2 and 3 maximums and their own hard maximum.
+            model.add(
+                patients
+                <= min(nurse.max_patient_load, fixed_maximum_patient_count)
+                * nurse_is_on_team
+            )
+            model.add(acuity_load <= fixed_maximum_acuity_load * nurse_is_on_team)
+            nurse_patient_terms[nurse.ordinal].append(patients)
+            nurse_acuity_terms[nurse.ordinal].append(acuity_load)
+            if "red" in nurse_allocations:
+                red_rank_terms.append(
+                    RED_OWNER_RANK[nurse.experience_level] * nurse_allocations["red"]
+                )
+        # The team's nurses own exactly the team's assigned beds.
+        for acuity in acuity_names:
+            model.add(sum(team_allocations[acuity]) == team_bed_counts[acuity])
+        team_acuity_loads.append(
+            sum(
+                ACUITY_WEIGHT_BY_NAME[acuity] * team_bed_counts[acuity]
+                for acuity in acuity_names
+            )
+        )
+        team_patient_counts.append(sum(team_bed_counts.values()))
+
+    # Priority 4: the red-owner experience total, where an unassigned red bed
+    # ranks 3 exactly as in the full model.
+    model.add(
+        sum(red_rank_terms) + 3 * sum(red_unassigned_terms)
+        == fixed_red_owner_rank_sum
+    )
+
+    # Priorities 5-6: the same admitting-side guidance rule as the full model.
+    admitting_rooms = [
+        room
+        for room in occupied_rooms
+        if room.doctor_side_id == input_model.admitting_doctor_side_id
+    ]
+    team_covers_admitting: list[cp_model.IntVar] = []
+    for team_index in range(input_model.team_count):
+        covers_admitting = model.new_bool_var(
+            f"count_team_{team_index}_covers_admitting"
+        )
+        admitting_choices = [
+            structure.room_team[(room.ordinal, team_index)]
+            for room in admitting_rooms
+        ]
+        if admitting_choices:
+            model.add_max_equality(covers_admitting, admitting_choices)
+        else:
+            model.add(covers_admitting == 0)
+        team_covers_admitting.append(covers_admitting)
+
+    guidance_excess_terms: list[cp_model.IntVar] = []
+    above_guidance_terms: list[cp_model.IntVar] = []
+    limit_difference = (
+        input_model.admitting_load_limit.maximum
+        - input_model.non_admitting_load_limit.maximum
+    )
+    for nurse in input_model.nurses:
+        on_admitting_matches: list[cp_model.IntVar] = []
+        for team_index in range(input_model.team_count):
+            match = model.new_bool_var(
+                f"count_nurse_{nurse.ordinal}_team_{team_index}_on_admitting"
+            )
+            model.add_multiplication_equality(
+                match,
+                [
+                    structure.nurse_team[(nurse.ordinal, team_index)],
+                    team_covers_admitting[team_index],
+                ],
+            )
+            on_admitting_matches.append(match)
+        applicable_maximum = (
+            input_model.non_admitting_load_limit.maximum
+            + sum(on_admitting_matches) * limit_difference
+        )
+        guidance_excess = model.new_int_var(
+            0, nurse.max_patient_load, f"count_nurse_{nurse.ordinal}_guidance_excess"
+        )
+        model.add_max_equality(
+            guidance_excess,
+            [sum(nurse_patient_terms[nurse.ordinal]) - applicable_maximum, 0],
+        )
+        is_above_guidance = model.new_bool_var(
+            f"count_nurse_{nurse.ordinal}_above_guidance"
+        )
+        model.add(guidance_excess >= 1).only_enforce_if(is_above_guidance)
+        model.add(guidance_excess == 0).only_enforce_if(is_above_guidance.negated())
+        guidance_excess_terms.append(guidance_excess)
+        above_guidance_terms.append(is_above_guidance)
+    model.add(sum(guidance_excess_terms) == fixed_guidance_total_excess)
+    model.add(sum(above_guidance_terms) == fixed_guidance_nurse_count)
+
+    # Priorities 7-11 use the same team totals and gap bounds as the full model.
+    team_rn_counts: list[cp_model.LinearExprT] = []
+    team_capacities: list[cp_model.LinearExprT] = []
+    team_experience_counts: dict[str, list[cp_model.LinearExprT]] = {
+        "experienced": [],
+        "mid": [],
+        "new_grad": [],
+    }
+    for team_index in range(input_model.team_count):
+        on_team = {
+            nurse.ordinal: structure.nurse_team[(nurse.ordinal, team_index)]
+            for nurse in input_model.nurses
+        }
+        team_rn_counts.append(
+            sum(
+                on_team[nurse.ordinal]
+                for nurse in input_model.nurses
+                if nurse.license_type == "RN"
+            )
+        )
+        team_capacities.append(
+            sum(
+                on_team[nurse.ordinal] * nurse.max_patient_load
+                for nurse in input_model.nurses
+            )
+        )
+        for experience_level, values in team_experience_counts.items():
+            values.append(
+                sum(
+                    on_team[nurse.ordinal]
+                    for nurse in input_model.nurses
+                    if nurse.experience_level == experience_level
+                )
+            )
+
+    total_acuity = sum(bed.acuity_weight for bed in input_model.occupied_beds)
+    total_capacity = sum(nurse.max_patient_load for nurse in input_model.nurses)
+    nurse_count = len(input_model.nurses)
+    experience_distribution_gap = model.new_int_var(
+        0, nurse_count * 3, "count_team_experience_distribution_gap"
+    )
+    model.add(
+        experience_distribution_gap
+        == sum(
+            _new_gap(model, values, nurse_count, f"count_team_experience_{level}")
+            for level, values in team_experience_counts.items()
+        )
+    )
+    objectives: dict[str, cp_model.LinearExprT] = {
+        "team_weighted_acuity_gap": _new_gap(
+            model, team_acuity_loads, total_acuity, "count_team_acuity"
+        ),
+        "team_patient_count_gap": _new_gap(
+            model,
+            team_patient_counts,
+            len(input_model.occupied_beds),
+            "count_team_patients",
+        ),
+        "team_rn_count_gap": _new_gap(
+            model, team_rn_counts, nurse_count, "count_team_rn"
+        ),
+        "team_experience_distribution_gap": experience_distribution_gap,
+        "team_capacity_gap": _new_gap(
+            model, team_capacities, total_capacity, "count_team_capacity"
+        ),
+    }
+    look_alike_order_switch = _add_look_alike_order(
+        model,
+        input_model,
+        structure,
+        {ordinal: sum(terms) for ordinal, terms in nurse_patient_terms.items()},
+        {ordinal: sum(terms) for ordinal, terms in nurse_acuity_terms.items()},
+        beds_by_room_id,
+    )
+    _add_team_size_gap_floors(
+        model,
+        input_model,
+        objectives,
+        fixed_unassigned_count=fixed_unassigned_count,
+        fixed_maximum_acuity_load=fixed_maximum_acuity_load,
+        fixed_maximum_patient_count=fixed_maximum_patient_count,
+    )
+    return BalanceCountModel(
+        model=model,
+        structure=structure,
+        allocations=allocations,
+        room_assigned=room_assigned,
+        objectives=objectives,
+        look_alike_order_switch=look_alike_order_switch,
+    )
+
+
+def _add_look_alike_order(
+    model: cp_model.CpModel,
+    input_model: NormalizedOptimizerInput,
+    structure: TeamCoverageModel,
+    nurse_patients: dict[int, cp_model.LinearExprT],
+    nurse_acuity: dict[int, cp_model.LinearExprT],
+    beds_by_room_id: dict[str, list[NormalizedOccupiedBed]],
+) -> cp_model.IntVar | None:
+    """List look-alike nurses and rooms in a fixed order; return the switch."""
+
+    nurse_groups: dict[tuple[str, str, int], list[int]] = {}
+    for nurse in input_model.nurses:
+        key = (nurse.license_type, nurse.experience_level, nurse.max_patient_load)
+        nurse_groups.setdefault(key, []).append(nurse.ordinal)
+    room_groups: dict[tuple[int, tuple[str, ...]], list[int]] = {}
+    for room in input_model.rooms:
+        if room.id in beds_by_room_id:
+            key = (
+                room.side_ordinal,
+                tuple(sorted(bed.acuity for bed in beds_by_room_id[room.id])),
+            )
+            room_groups.setdefault(key, []).append(room.ordinal)
+    nurse_runs = [group for group in nurse_groups.values() if len(group) > 1]
+    room_runs = [group for group in room_groups.values() if len(group) > 1]
+    if input_model.team_count < 2 or not (nurse_runs or room_runs):
+        return None
+
+    largest_load = max(nurse.max_patient_load for nurse in input_model.nurses)
+    acuity_weight = largest_load + 1
+    team_weight = (3 * largest_load + 1) * acuity_weight
+
+    def nurse_key(ordinal: int) -> cp_model.LinearExprT:
+        team_index = sum(
+            team_index * structure.nurse_team[(ordinal, team_index)]
+            for team_index in range(input_model.team_count)
+        )
+        return (
+            team_weight * team_index
+            + acuity_weight * nurse_acuity[ordinal]
+            + nurse_patients[ordinal]
+        )
+
+    def room_key(ordinal: int) -> cp_model.LinearExprT:
+        return sum(
+            team_index * structure.room_team[(ordinal, team_index)]
+            for team_index in range(input_model.team_count)
+        )
+
+    switch = model.new_bool_var("look_alike_order_enabled")
+    for group in nurse_runs:
+        for earlier, later in zip(group, group[1:]):
+            model.add(nurse_key(earlier) <= nurse_key(later)).only_enforce_if(switch)
+    for group in room_runs:
+        for earlier, later in zip(group, group[1:]):
+            model.add(room_key(earlier) <= room_key(later)).only_enforce_if(switch)
+    _set_bool_domain(model, switch, True)
+    return switch
+
+
+def _set_bool_domain(
+    model: cp_model.CpModel, variable: cp_model.IntVar, value: bool
+) -> None:
+    """Fix a yes/no variable, replacing any earlier fixed value and hint."""
+
+    fixed = int(value)
+    domain = model.proto.variables[variable.index].domain
+    domain[0] = fixed
+    domain[1] = fixed
+    hint = model.proto.solution_hint
+    for position, variable_index in enumerate(hint.vars):
+        if variable_index == variable.index:
+            hint.values[position] = fixed
+
+
+def _add_team_size_gap_floors(
+    model: cp_model.CpModel,
+    input_model: NormalizedOptimizerInput,
+    objectives: dict[str, cp_model.LinearExprT],
+    *,
+    fixed_unassigned_count: int,
+    fixed_maximum_acuity_load: int,
+    fixed_maximum_patient_count: int,
+) -> None:
+    """State gap minimums that whole-nurse team sizes force on a tight floor.
+
+    Example: ten nurses form teams of 3, 3, and 4. If every nurse must carry
+    exactly acuity 9, the teams carry 27, 27, and 36, so the acuity gap is at
+    least 9. The solver cannot see this from fractional team sizes and keeps
+    searching for gap 0. For a team of the larger size and a different team of
+    the smaller size, the larger one carries at least the floor total minus
+    what every other nurse could carry, and the smaller one carries at most
+    what its own nurses could carry. Their difference is a true minimum for
+    the gap, so stating it cannot remove any optimal answer.
+    """
+
+    team_count = input_model.team_count
+    nurse_count = len(input_model.nurses)
+    if team_count < 2:
+        return
+    smaller_size = nurse_count // team_count
+    larger_size = -(-nurse_count // team_count)
+
+    patient_caps = sorted(
+        (
+            min(nurse.max_patient_load, fixed_maximum_patient_count)
+            for nurse in input_model.nurses
+        ),
+        reverse=True,
+    )
+    acuity_caps = sorted(
+        (
+            min(fixed_maximum_acuity_load, 3 * patient_cap)
+            for patient_cap in patient_caps
+        ),
+        reverse=True,
+    )
+
+    def most_carried(caps: list[int], nurse_total: int) -> int:
+        return sum(caps[:nurse_total])
+
+    assigned_patients = len(input_model.occupied_beds) - fixed_unassigned_count
+    # The least acuity the assigned beds can carry: leave the heaviest beds out.
+    heaviest_first = sorted(
+        (bed.acuity_weight for bed in input_model.occupied_beds), reverse=True
+    )
+    least_assigned_acuity = sum(heaviest_first[fixed_unassigned_count:])
+
+    for name, floor_total, caps in (
+        ("team_patient_count_gap", assigned_patients, patient_caps),
+        ("team_weighted_acuity_gap", least_assigned_acuity, acuity_caps),
+    ):
+        gap_floor = (
+            floor_total
+            - most_carried(caps, nurse_count - larger_size)
+            - most_carried(caps, smaller_size)
+        )
+        if gap_floor > 0:
+            model.add(objectives[name] >= gap_floor)
+
+
+def _hint_from_balance_counts(
+    model: cp_model.CpModel,
+    assignment: AssignmentModel,
+    balance_counts: BalanceCountModel,
+    balance_solver: cp_model.CpSolver,
+) -> None:
+    """Turn the count model's last solution into a full-model starting point.
+
+    Teams and rooms copy across directly. Each team's beds of one acuity are
+    handed to that team's nurses in ordinal order until every nurse holds
+    exactly their counted number, which places each bed exactly once.
+    """
+
+    structure = assignment.structure
+    input_model = structure.input
+    remaining = {
+        key: balance_solver.value(allocation)
+        for key, allocation in balance_counts.allocations.items()
+    }
+    team_by_room_ordinal = {
+        room_ordinal: team_index
+        for (room_ordinal, team_index), choice in balance_counts.structure.room_team.items()
+        if balance_solver.value(choice) == 1
+    }
+    assigned_left = {
+        (room_ordinal, acuity): balance_solver.value(assigned)
+        for (room_ordinal, team_index, acuity), assigned in balance_counts.room_assigned.items()
+        if team_by_room_ordinal[room_ordinal] == team_index
+    }
+    owner_by_bed_ordinal: dict[int, int | None] = {}
+    for bed in input_model.occupied_beds:
+        room_key = (bed.room_ordinal, bed.acuity)
+        if assigned_left[room_key] == 0:
+            owner_by_bed_ordinal[bed.ordinal] = None
+            continue
+        assigned_left[room_key] -= 1
+        team_index = team_by_room_ordinal[bed.room_ordinal]
+        for nurse in input_model.nurses:
+            key = (team_index, nurse.ordinal, bed.acuity)
+            if remaining.get(key, 0) > 0:
+                remaining[key] -= 1
+                owner_by_bed_ordinal[bed.ordinal] = nurse.ordinal
+                break
+        else:
+            raise RuntimeError(f"balance counts left bed {bed.id} without an owner")
+
+    model.clear_hints()
+    for key, choice in structure.nurse_team.items():
+        model.add_hint(
+            choice, balance_solver.value(balance_counts.structure.nurse_team[key])
+        )
+    for key, choice in structure.room_team.items():
+        model.add_hint(
+            choice, balance_solver.value(balance_counts.structure.room_team[key])
+        )
+    for (bed_ordinal, nurse_ordinal), choice in assignment.bed_nurse.items():
+        model.add_hint(choice, int(owner_by_bed_ordinal[bed_ordinal] == nurse_ordinal))
+    for bed_ordinal, unassigned_choice in assignment.bed_unassigned.items():
+        model.add_hint(unassigned_choice, int(owner_by_bed_ordinal[bed_ordinal] is None))
+
+def _solve_count_room_ranks(
+    input_model: NormalizedOptimizerInput,
+    balance_counts: BalanceCountModel,
+    minimize_and_fix: Callable[[str, cp_model.LinearExprT | int], int],
+    balance_solver: cp_model.CpSolver,
+    chunk_size: int,
+) -> None:
+    """Prove the canonical room-team tuple on the count model, in room order."""
+
+    occupied_room_ids = {bed.room_id for bed in input_model.occupied_beds}
+    room_ranks = [
+        (
+            room.id,
+            sum(
+                team_index
+                * balance_counts.structure.room_team[(room.ordinal, team_index)]
+                for team_index in range(input_model.team_count)
+            ),
+        )
+        for room in input_model.rooms
+        if room.id in occupied_room_ids
+    ]
+    radix = max(2, input_model.team_count)
+    for chunk_start in range(0, len(room_ranks), chunk_size):
+        chunk = room_ranks[chunk_start : chunk_start + chunk_size]
+        if len(chunk) == 1:
+            minimize_and_fix(f"canonical_room_team:{chunk[0][0]}", chunk[0][1])
+            continue
+        minimize_and_fix(
+            f"canonical_room_team_chunk:{chunk[0][0]}..{chunk[-1][0]}",
+            _mixed_radix_expression([rank for _, rank in chunk], radix),
+        )
+        for _, rank in chunk:
+            balance_counts.model.add(rank == balance_solver.value(rank))
+
+
 def solve_optimizer(
     input_model: NormalizedOptimizerInput,
     *,
@@ -635,6 +1179,8 @@ def solve_optimizer(
     use_fixed_gap_bounds: bool = False,
     use_structural_red_rank_bound: bool | None = None,
     use_mixed_radix_bed_owner_search: bool | None = None,
+    use_balance_count_model: bool = True,
+    use_count_room_search: bool = True,
 ) -> OptimizerSolution:
     """Solve every frozen objective exactly and return canonical decisions."""
 
@@ -674,8 +1220,19 @@ def solve_optimizer(
     started_at = time.monotonic()
     stage_trace: list[ObjectiveStage] = []
 
-    def minimize_and_fix(name: str, expression: cp_model.LinearExprT | int) -> int:
-        """Prove one objective's minimum, then freeze it for later stages."""
+    def minimize_and_fix(
+        name: str,
+        expression: cp_model.LinearExprT | int,
+        *,
+        stage_model: cp_model.CpModel = model,
+        stage_solver: cp_model.CpSolver = solver,
+    ) -> int:
+        """Prove one objective's minimum, then freeze it for later stages.
+
+        Stages normally run on the full model. The team-balance stages can run
+        on the smaller balance count model instead; see
+        `_build_balance_count_model`.
+        """
 
         # All stages share one wall-clock budget. A later stage receives only
         # the time not already spent proving earlier, higher-priority results.
@@ -696,14 +1253,14 @@ def solve_optimizer(
                 best_objective_bound=None,
             )
             raise OptimizerTimedOutError(name, cp_model.UNKNOWN, diagnostics)
-        solver.parameters.max_time_in_seconds = remaining
+        stage_solver.parameters.max_time_in_seconds = remaining
 
         # CP-SAT optimizes one expression at a time. The previous stage has
         # already become a hard equality, so replacing the objective is safe.
-        model.clear_objective()
-        model.minimize(expression)
+        stage_model.clear_objective()
+        stage_model.minimize(expression)
         stage_started_at = time.monotonic()
-        status = solver.solve(model)
+        status = stage_solver.solve(stage_model)
         stage_duration_ms = (time.monotonic() - stage_started_at) * 1000
         if status != cp_model.OPTIMAL:
             diagnostics = SolveFailureDiagnostics(
@@ -713,13 +1270,15 @@ def solve_optimizer(
                 failed_stage_duration_ms=stage_duration_ms,
                 total_elapsed_ms=(time.monotonic() - started_at) * 1000,
                 completed_stages=tuple(stage_trace),
-                solver_wall_time_ms=solver.wall_time * 1000,
-                num_branches=solver.num_branches,
-                num_conflicts=solver.num_conflicts,
+                solver_wall_time_ms=stage_solver.wall_time * 1000,
+                num_branches=stage_solver.num_branches,
+                num_conflicts=stage_solver.num_conflicts,
                 objective_value=(
-                    solver.objective_value if status == cp_model.FEASIBLE else None
+                    stage_solver.objective_value
+                    if status == cp_model.FEASIBLE
+                    else None
                 ),
-                best_objective_bound=solver.best_objective_bound,
+                best_objective_bound=stage_solver.best_objective_bound,
             )
             error_type = (
                 OptimizerTimedOutError
@@ -727,11 +1286,11 @@ def solve_optimizer(
                 else OptimizerSolveError
             )
             raise error_type(name, status, diagnostics)
-        value = int(round(solver.objective_value))
+        value = int(round(stage_solver.objective_value))
 
         # This equality creates strict priority: no later preference may make
         # an earlier result worse, even if doing so improves several later ones.
-        model.add(expression == value)
+        stage_model.add(expression == value)
         stage_trace.append(
             ObjectiveStage(
                 name=name,
@@ -743,7 +1302,7 @@ def solve_optimizer(
             # The just-proven solution satisfies the new objective equality.
             # Reusing every variable value gives the next stage a valid
             # incumbent that also preserves every earlier lexicographic result.
-            _replace_hint_with_solution(model, solver)
+            _replace_hint_with_solution(stage_model, stage_solver)
         return value
 
     # ------------------------------------------------------------------
@@ -1228,11 +1787,46 @@ def solve_optimizer(
     )
 
     # Priorities 7-11: balance team acuity, census, RN count, experience mix,
-    # and total capacity in that order.
-    objective_values["team_weighted_acuity_gap"] = minimize_and_fix(
+    # and total capacity in that order. These are proven on the smaller
+    # balance count model and copied into the full model.
+    balance_counts: BalanceCountModel | None = None
+    balance_solver: cp_model.CpSolver | None = None
+    if use_balance_count_model:
+        balance_counts = _build_balance_count_model(
+            input_model,
+            fixed_unassigned_count=objective_values["unassigned_count"],
+            fixed_maximum_acuity_load=objective_values["max_nurse_acuity_load"],
+            fixed_maximum_patient_count=objective_values["max_nurse_patient_count"],
+            fixed_red_owner_rank_sum=objective_values["red_bed_owner_rank_sum"],
+            fixed_guidance_total_excess=objective_values[
+                "side_guidance_total_excess"
+            ],
+            fixed_guidance_nurse_count=objective_values["side_guidance_nurse_count"],
+        )
+        balance_solver = _configure_solver(search_worker_count)
+
+    def minimize_balance_and_fix(
+        name: str, expression: cp_model.LinearExprT | int
+    ) -> int:
+        """Prove one balance objective, using the count model when enabled."""
+
+        if balance_counts is None or balance_solver is None:
+            return minimize_and_fix(name, expression)
+        value = minimize_and_fix(
+            name,
+            balance_counts.objectives[name],
+            stage_model=balance_counts.model,
+            stage_solver=balance_solver,
+        )
+        # The count model is an exact rewrite, so its proven minimum is also
+        # the full model's minimum and can be frozen there directly.
+        model.add(expression == value)
+        return value
+
+    objective_values["team_weighted_acuity_gap"] = minimize_balance_and_fix(
         "team_weighted_acuity_gap", team_acuity_gap
     )
-    objective_values["team_patient_count_gap"] = minimize_and_fix(
+    objective_values["team_patient_count_gap"] = minimize_balance_and_fix(
         "team_patient_count_gap", team_patient_gap
     )
     if use_fixed_gap_bounds:
@@ -1246,7 +1840,7 @@ def solve_optimizer(
             fixed_gap=objective_values["team_patient_count_gap"],
             name="team_patient_count",
         )
-    objective_values["team_rn_count_gap"] = minimize_and_fix(
+    objective_values["team_rn_count_gap"] = minimize_balance_and_fix(
         "team_rn_count_gap", team_rn_gap
     )
     if use_fixed_gap_bounds:
@@ -1259,10 +1853,10 @@ def solve_optimizer(
             fixed_gap=objective_values["team_rn_count_gap"],
             name="team_rn_count",
         )
-    objective_values["team_experience_distribution_gap"] = minimize_and_fix(
+    objective_values["team_experience_distribution_gap"] = minimize_balance_and_fix(
         "team_experience_distribution_gap", experience_distribution_gap
     )
-    objective_values["team_capacity_gap"] = minimize_and_fix(
+    objective_values["team_capacity_gap"] = minimize_balance_and_fix(
         "team_capacity_gap", team_capacity_gap
     )
     if use_fixed_gap_bounds:
@@ -1273,6 +1867,45 @@ def solve_optimizer(
             fixed_gap=objective_values["team_capacity_gap"],
             name="team_capacity",
         )
+    if balance_counts is not None and balance_counts.look_alike_order_switch is not None:
+        # Canonical stages depend on nurse and room order, so drop the
+        # look-alike ordering before choosing the lowest-index rooms.
+        _set_bool_domain(
+            balance_counts.model, balance_counts.look_alike_order_switch, False
+        )
+    rooms_fixed_by_counts = False
+    if (
+        balance_counts is not None
+        and balance_solver is not None
+        and use_count_room_search
+    ):
+        # Tie-breaker 1 on counts: room teams are the same variables in both
+        # models, so the lowest room-team tuple among all optimal count
+        # solutions is the full model's canonical room tuple. Proving it on
+        # counts avoids searching individual bed owners for every room choice.
+        _solve_count_room_ranks(
+            input_model,
+            balance_counts,
+            lambda name, expression: minimize_and_fix(
+                name,
+                expression,
+                stage_model=balance_counts.model,
+                stage_solver=balance_solver,
+            ),
+            balance_solver,
+            canonical_room_chunk_size,
+        )
+        for key, choice in structure.room_team.items():
+            model.add(choice == balance_solver.value(balance_counts.structure.room_team[key]))
+        rooms_fixed_by_counts = True
+    if (
+        balance_counts is not None
+        and balance_solver is not None
+        and use_rolling_stage_hints
+    ):
+        # The full model skipped the balance solves, so give the canonical
+        # stages a start that satisfies every frozen objective.
+        _hint_from_balance_counts(model, assignment, balance_counts, balance_solver)
 
     # ------------------------------------------------------------------
     # Canonical tie-breaker group 9: clinical objectives can still leave several
@@ -1385,7 +2018,9 @@ def solve_optimizer(
         # already frozen, its first feasible leaf is the same lexicographically
         # smallest canonical assignment that the staged solves prove.
         room_rank_variables: list[cp_model.IntVar] = []
-        if mixed_radix_room_search_enabled:
+        if rooms_fixed_by_counts:
+            pass
+        elif mixed_radix_room_search_enabled:
             solve_mixed_radix_room_ranks()
         else:
             for room_id, room_rank in room_rank_decisions:
@@ -1545,7 +2180,8 @@ def solve_optimizer(
                 freeze_result=False,
             )
     else:
-        solve_mixed_radix_room_ranks()
+        if not rooms_fixed_by_counts:
+            solve_mixed_radix_room_ranks()
 
         for bed_id, bed_owner_rank in bed_owner_rank_decisions:
             minimize_and_fix(f"canonical_bed_owner:{bed_id}", bed_owner_rank)

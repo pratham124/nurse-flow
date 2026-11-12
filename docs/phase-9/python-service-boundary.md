@@ -332,11 +332,12 @@ Task 0.2 originally proposed 200 rooms, 400 total and participating occupied
 beds, 40 nurses, and 10 generated teams. Task 4.1 proved that shape could not
 finish the exact objective sequence, even after a deterministic feasible-start
 hint advanced it past the first objective. The service now supports two
-measured envelopes with 12 nurses and 3 generated teams: 25 rooms with at most
-50 participating beds, or 20 rooms with at most 80 participating beds. Total
-physical beds may not exceed 80. Normalization rejects a shape with more than
-50 participating beds and more than 20 rooms instead of claiming an unmeasured
-25-room/80-bed cross-product.
+measured envelopes with 12 nurses and 3 generated teams: 40 rooms with at most
+50 participating beds (raised from 25 rooms on 2026-11-11; see the envelope
+evidence in `optimizer-rules.md`), or 20 rooms with at most 80 participating
+beds. Total physical beds may not exceed 80. Normalization rejects a shape with
+more than 50 participating beds and more than 20 rooms instead of claiming an
+unmeasured larger-room/80-bed cross-product.
 
 The fully assignable 20/80 fixture uses nurse maximum seven so all 80 beds can
 actually receive owners. Its exact path proves the red-owner preference with a
@@ -350,6 +351,7 @@ The checked-in synthetic maximum fixtures must include:
 
 - exactly two doctor sides;
 - the established 25-room/50-occupied-bed shape;
+- the 40-room/50-occupied-bed room-ceiling shape;
 - the required 20-room/80-occupied-bed shape;
 - 12 nurses producing 3 teams;
 - RN and LPN eligibility pressure;

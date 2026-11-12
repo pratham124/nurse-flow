@@ -16,6 +16,7 @@ from nurseflow_optimizer import (  # noqa: E402
 )
 from fixture_helpers import build_shift_snapshot, load_fixture_catalog  # noqa: E402
 from scenario_helpers import (  # noqa: E402
+    build_maximum_room_shift_snapshot,
     build_maximum_shift_snapshot,
     build_required_large_shift_snapshot,
     build_synthetic_shift_snapshot,
@@ -129,11 +130,14 @@ class NormalizationTests(unittest.TestCase):
 
     def test_inputs_above_the_measured_ceiling_are_rejected_early(self) -> None:
         maximum_25_room_snapshot = build_maximum_shift_snapshot(understaffed=False)
+        maximum_40_room_snapshot = build_maximum_room_shift_snapshot(
+            understaffed=False
+        )
         maximum_20_room_snapshot = build_required_large_shift_snapshot(
             understaffed=False
         )
 
-        too_many_rooms = copy.deepcopy(maximum_25_room_snapshot)
+        too_many_rooms = copy.deepcopy(maximum_40_room_snapshot)
         too_many_rooms["rooms"].append(
             {
                 "id": "room-over-limit",
@@ -170,6 +174,14 @@ class NormalizationTests(unittest.TestCase):
                     expected_code,
                     {issue.code for issue in raised.exception.issues},
                 )
+
+    def test_maximum_40_room_50_bed_shape_normalizes(self) -> None:
+        result = normalize_shift_snapshot(
+            build_maximum_room_shift_snapshot(understaffed=False)
+        )
+
+        self.assertEqual(len(result.model.rooms), 40)
+        self.assertEqual(len(result.model.occupied_beds), 50)
 
     def test_required_20_room_80_bed_shape_normalizes(self) -> None:
         result = normalize_shift_snapshot(
