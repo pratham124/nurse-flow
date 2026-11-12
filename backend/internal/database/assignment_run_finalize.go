@@ -188,6 +188,23 @@ func (s *Store) FailAssignmentRun(ctx context.Context, caller RunCaller, runID, 
 	})
 }
 
+// FailAssignmentRunInvalidInput records an invalid_input failure together with the
+// solver's safe reasons, so a replayed request can return them again. Like
+// FailAssignmentRun, a run that already ended is left alone.
+func (s *Store) FailAssignmentRunInvalidInput(ctx context.Context, caller RunCaller, runID string, reasons []solver.InputReason) error {
+	return s.WithWriteIdentity(ctx, caller.AuthUserID, func(tx *gorm.DB) error {
+		run, err := lockRunByID(tx, caller.ProfileID, runID)
+		if err != nil || run == nil || run.Status != storedRunning {
+			return err
+		}
+		now, err := databaseNow(tx)
+		if err != nil {
+			return err
+		}
+		return closeRunWithSummary(tx, run, now, storedFailed, invalidInputSummary(reasons), nil)
+	})
+}
+
 // ReleaseAssignmentRun marks the caller's run as "the solver was never reached" so
 // the same mutation can be retried at once instead of waiting for the lease. The
 // run stays running (the table only allows a finished run to have a completion

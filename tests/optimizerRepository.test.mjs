@@ -222,3 +222,43 @@ test("rejects a blank rerun baseline instead of weakening it to an initial run",
     OptimizerRepositoryError,
   );
 });
+
+test("invalid input keeps valid reasons and drops malformed ones", () => {
+  const result = parseAssignmentOptimizerResponse(422, {
+    reasons: [
+      { code: "unsupported_room_count", limit: 40 },
+      { code: "missing_acuity" },
+      { code: "bad_limit", limit: -1 },
+      { code: "fractional_limit", limit: 1.5 },
+      { limit: 3 },
+      "text",
+    ],
+    runId: "r",
+    status: "invalid_input",
+  });
+
+  assert.deepEqual(result, {
+    reasons: [{ code: "unsupported_room_count", limit: 40 }, { code: "missing_acuity" }],
+    runId: "r",
+    status: "invalid_input",
+  });
+});
+
+test("invalid input without a usable reasons list has no reasons key", () => {
+  for (const reasons of [undefined, [], "nope", { code: "x" }, [{ nope: true }]]) {
+    assert.deepEqual(
+      parseAssignmentOptimizerResponse(422, { reasons, runId: "r", status: "invalid_input" }),
+      { runId: "r", status: "invalid_input" },
+    );
+  }
+});
+
+test("reasons are ignored for statuses other than invalid input", () => {
+  assert.deepEqual(
+    parseAssignmentOptimizerResponse(500, {
+      reasons: [{ code: "missing_acuity" }],
+      status: "failed",
+    }),
+    { status: "failed" },
+  );
+});

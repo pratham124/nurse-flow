@@ -10,6 +10,7 @@ import (
 
 	"github.com/pratham124/nurse-flow/backend/internal/assignmentruns"
 	"github.com/pratham124/nurse-flow/backend/internal/database"
+	"github.com/pratham124/nurse-flow/backend/internal/solver"
 )
 
 // runnerStub records what reached the coordinator and answers with a fixed outcome.
@@ -48,6 +49,20 @@ func postRun(t *testing.T, runner *runnerStub, profile database.Profile, path, b
 	w := httptest.NewRecorder()
 	NewHandler(verifier, testProfileReader{profile: profile}, nil, nil, nil, nil, nil, nil, nil, runner).ServeHTTP(w, r)
 	return w
+}
+
+func TestAssignmentRunRouteReturnsInvalidInputReasons(t *testing.T) {
+	profile := database.Profile{ID: "10000000-0000-0000-0000-000000000001", AuthUserID: "20000000-0000-0000-0000-000000000001", Role: "charge_nurse"}
+	limit := 40
+	runner := &runnerStub{outcome: database.RunResponse{
+		Status: database.RunStatusInvalidInput, RunID: "run-1",
+		Reasons: []solver.InputReason{{Code: "unsupported_room_count", Limit: &limit}},
+	}}
+	w := postRun(t, runner, profile, runPath, validRunBody, nil)
+	want := `{"status":"invalid_input","runId":"run-1","reasons":[{"code":"unsupported_room_count","limit":40}]}`
+	if w.Code != 422 || strings.TrimSpace(w.Body.String()) != want {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
 }
 
 func TestAssignmentRunRouteMapsOutcomes(t *testing.T) {

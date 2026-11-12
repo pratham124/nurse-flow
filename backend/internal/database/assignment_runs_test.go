@@ -7,8 +7,18 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"reflect"
 	"testing"
+
+	"github.com/pratham124/nurse-flow/backend/internal/solver"
 )
+
+// sameResponse compares two responses; RunResponse holds a slice, so == is not allowed.
+func sameResponse(a, b RunResponse) bool {
+	return reflect.DeepEqual(a, b)
+}
+
+var fortyRooms = 40
 
 func TestIsUnavailable(t *testing.T) {
 	tests := []struct {
@@ -46,10 +56,12 @@ func TestRecordedResponse(t *testing.T) {
 		{"failed other code", OptimizerRun{ID: "r", Status: storedFailed, OutcomeSummary: json.RawMessage(`{"errorCode":"finalization_failed"}`)}, RunResponse{Status: RunStatusFailed, RunID: "r"}},
 		{"failed without summary", OptimizerRun{ID: "r", Status: storedFailed}, RunResponse{Status: RunStatusFailed, RunID: "r"}},
 		{"running", OptimizerRun{ID: "r", Status: storedRunning}, RunResponse{Status: RunStatusRunning, RunID: "r"}},
+		{"invalid input reads its reasons back", OptimizerRun{ID: "r", Status: storedFailed, OutcomeSummary: json.RawMessage(invalidInputSummary([]solver.InputReason{{Code: "unsupported_room_count", Limit: &fortyRooms}, {Code: "missing_acuity"}}))}, RunResponse{Status: RunStatusInvalidInput, RunID: "r", Reasons: []solver.InputReason{{Code: "unsupported_room_count", Limit: &fortyRooms}, {Code: "missing_acuity"}}}},
+		{"invalid input without reasons", OptimizerRun{ID: "r", Status: storedFailed, OutcomeSummary: json.RawMessage(`{"errorCode":"invalid_input"}`)}, RunResponse{Status: RunStatusInvalidInput, RunID: "r"}},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if got := recordedResponse(&test.run); got != test.want {
+			if got := recordedResponse(&test.run); !sameResponse(got, test.want) {
 				t.Fatalf("got %+v, want %+v", got, test.want)
 			}
 		})

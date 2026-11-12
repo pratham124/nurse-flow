@@ -35,11 +35,21 @@ MAX_LARGE_FLOOR_ROOMS = 20
 
 
 def _issue(
-    issues: list[InputValidationIssue], code: str, path: str, message: str
+    issues: list[InputValidationIssue],
+    code: str,
+    path: str,
+    message: str,
+    *,
+    limit: int | None = None,
 ) -> None:
-    """Add one validation issue without stopping the remaining checks."""
+    """Add one validation issue without stopping the remaining checks.
 
-    issues.append(InputValidationIssue(code=code, path=path, message=message))
+    `limit` is the maximum the input broke, when one number explains the problem.
+    """
+
+    issues.append(
+        InputValidationIssue(code=code, path=path, message=message, limit=limit)
+    )
 
 
 def _read_records(
@@ -191,6 +201,7 @@ def normalize_shift_snapshot(snapshot: Mapping[str, Any]) -> NormalizationResult
             "unsupported_room_count",
             "rooms",
             f"must contain 1 to {MAX_ROOMS} rooms",
+            limit=MAX_ROOMS,
         )
     if not 1 <= len(beds) <= MAX_BEDS:
         _issue(
@@ -198,6 +209,7 @@ def normalize_shift_snapshot(snapshot: Mapping[str, Any]) -> NormalizationResult
             "unsupported_bed_count",
             "beds",
             f"must contain 1 to {MAX_BEDS} beds",
+            limit=MAX_BEDS,
         )
     if not 1 <= len(nurses) <= MAX_NURSES:
         _issue(
@@ -205,6 +217,7 @@ def normalize_shift_snapshot(snapshot: Mapping[str, Any]) -> NormalizationResult
             "unsupported_nurse_count",
             "nurses",
             f"must contain 1 to {MAX_NURSES} nurses",
+            limit=MAX_NURSES,
         )
 
     # Phase 3: validate IDs before checking cross-record relationships.
@@ -387,6 +400,7 @@ def normalize_shift_snapshot(snapshot: Mapping[str, Any]) -> NormalizationResult
                 "invalid_max_load",
                 f"nurses[{index}].maxPatientLoad",
                 f"cannot exceed the side-based maximum of {side_based_maximum}",
+                limit=side_based_maximum,
             )
 
     if len(occupied_state_by_bed_id) > MAX_BEDS:
@@ -395,6 +409,7 @@ def normalize_shift_snapshot(snapshot: Mapping[str, Any]) -> NormalizationResult
             "unsupported_occupied_bed_count",
             "bedStates",
             f"cannot contain more than {MAX_BEDS} occupied beds",
+            limit=MAX_BEDS,
         )
     if (
         len(occupied_state_by_bed_id) > LARGE_FLOOR_OCCUPIED_BED_THRESHOLD
@@ -408,6 +423,7 @@ def normalize_shift_snapshot(snapshot: Mapping[str, Any]) -> NormalizationResult
                 f"more than {LARGE_FLOOR_OCCUPIED_BED_THRESHOLD} occupied beds "
                 f"supports at most {MAX_LARGE_FLOOR_ROOMS} rooms"
             ),
+            limit=MAX_LARGE_FLOOR_ROOMS,
         )
 
     # Do not construct solver data from partially valid input. All casts below

@@ -166,7 +166,11 @@ loads the shift snapshot itself and sends it here; this service only solves.
   `{"runId": "<non-blank text>", "shiftSnapshot": { ... }}`. `runId` is only
   used to correlate private timeout logs.
 - `200`: `{assignmentResult, flags, objectives, inputFingerprint, optimizerVersion}`.
-  `422 {"status":"invalid_input"}` (bad body or snapshot, `413` when too large),
+  `422 {"status":"invalid_input"}` (bad body or snapshot, `413` when too large).
+  When the snapshot itself is rejected, the body also carries optional safe
+  `reasons`: `{"status":"invalid_input","reasons":[{"code":"unsupported_room_count","limit":40}]}`.
+  Reasons are distinct codes (at most 10) with an optional numeric `limit`, never
+  messages, paths, IDs, or patient data. A bad body or a `413` has no `reasons`.
   `504 {"status":"timed_out"}`, `500 {"status":"failed"}`.
 - It normalizes, solves, and validates the output with the default 120-second
   solve budget. Neither the token nor the snapshot is ever logged, and there is
