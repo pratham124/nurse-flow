@@ -52,9 +52,12 @@ verified a Supabase JWT and called prepare/finalize RPCs) was removed together
 with its database functions (ticket 23). Every assignment run now goes through
 the Go API.
 
-Task 4.1 freezes two measured service envelopes with at most 12 nurses: up to
-25 rooms with at most 50 occupied beds, or up to 20 rooms with at most 80
-occupied beds. Total physical beds may not exceed 80. Other larger shapes are
+The service supports two measured envelopes with at most 12 nurses: up to 40
+rooms with at most 50 occupied beds, or up to 20 rooms with at most 80 occupied
+beds. Task 4.1 measured 25 rooms; the room ceiling was raised to 40 on
+2026-11-11 after the 40-room/50-bed/12-nurse benchmark solved in 10.9 seconds
+(10.3 seconds understaffed) and a 30-room floor shaped like a tester's in about
+1 second. Total physical beds may not exceed 80. Other larger shapes are
 rejected during normalization. The earlier provisional 200-room, 400-bed,
 40-nurse shape could not prove every exact objective and is not a supported
 production claim.
@@ -92,6 +95,23 @@ safe lower bound without choosing 80 individual bed owners. The full model then
 checks that bound with the real bed variables before freezing it. This bridge
 preserves the exact objective while avoiding the original red-rank proof that
 exhausted 120 seconds on the 20-room/80-bed case.
+
+The five team-balance objectives and the canonical room teams are proved in a
+balance count model. It rebuilds the earlier frozen stages with each nurse's
+green/yellow/red bed counts per team, and each room's unassigned beds per
+acuity, instead of individual bed owners. Within a team any nurse may own any
+of the team's beds, so this is an exact rewrite rather than a bound: its proven
+values and lowest-index room teams are frozen in the full model directly, and
+the counts become the full model's starting point for bed owners and team
+membership. While proving balance values only, it also lists look-alike nurses
+and rooms in a fixed order and states the gap minimums that whole-nurse team
+sizes force. A 20-room, 50-bed floor with nine nurses at a maximum of six could
+not prove its team census gap in 400 seconds on bed variables; on counts the
+whole solve finishes in about 3 seconds (2 to 3 seconds at 20, 30, and 40
+rooms). A test compares both paths on every
+fixture, and `--balance-count-model` / `--count-room-search` switch them off in
+the benchmark. Grid results and the shapes that still time out are recorded in
+`docs/phase-9/optimizer-rules.md`.
 
 After the clinical and balance objectives are proved and frozen, the production
 solver chooses exact canonical tie-break strategies from occupied-bed count. At

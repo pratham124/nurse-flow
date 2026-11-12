@@ -154,6 +154,8 @@ def run_variant(
     use_fixed_gap_bounds: bool,
     use_structural_red_rank_bound: bool | None,
     use_mixed_radix_bed_owner_search: bool | None,
+    use_balance_count_model: bool,
+    use_count_room_search: bool,
 ) -> dict:
     if room_count is None or bed_count is None or nurse_count is None:
         snapshot = build_maximum_shift_snapshot(understaffed=understaffed)
@@ -209,6 +211,8 @@ def run_variant(
                 use_fixed_gap_bounds=use_fixed_gap_bounds,
                 use_structural_red_rank_bound=use_structural_red_rank_bound,
                 use_mixed_radix_bed_owner_search=use_mixed_radix_bed_owner_search,
+                use_balance_count_model=use_balance_count_model,
+                use_count_room_search=use_count_room_search,
             )
             output = build_assignment_output(normalization.model, solution)
         except OptimizerSolveError as error:
@@ -298,6 +302,8 @@ def run_variant(
             if use_mixed_radix_bed_owner_search is None
             else "enabled" if use_mixed_radix_bed_owner_search else "disabled"
         ),
+        "balanceCountModel": use_balance_count_model,
+        "countRoomSearch": use_balance_count_model and use_count_room_search,
         "counts": {
             "doctorSides": len(benchmark_model.doctor_sides),
             "rooms": len(benchmark_model.rooms),
@@ -422,6 +428,18 @@ def main() -> None:
         help="A/B switch for exact presolved bed-owner chunks.",
     )
     parser.add_argument(
+        "--balance-count-model",
+        choices=("enabled", "disabled"),
+        default="enabled",
+        help="A/B switch for proving team-balance stages on bed counts.",
+    )
+    parser.add_argument(
+        "--count-room-search",
+        choices=("enabled", "disabled"),
+        default="enabled",
+        help="A/B switch for choosing canonical room teams on bed counts.",
+    )
+    parser.add_argument(
         "--variant",
         choices=("full", "understaffed", "both"),
         default="both",
@@ -502,6 +520,8 @@ def main() -> None:
                 use_mixed_radix_bed_owner_search=(
                     mixed_radix_bed_owner_search_override
                 ),
+                use_balance_count_model=args.balance_count_model == "enabled",
+                use_count_room_search=args.count_room_search == "enabled",
             )
         )
     if args.variant in {"understaffed", "both"}:
@@ -537,6 +557,8 @@ def main() -> None:
                 use_mixed_radix_bed_owner_search=(
                     mixed_radix_bed_owner_search_override
                 ),
+                use_balance_count_model=args.balance_count_model == "enabled",
+                use_count_room_search=args.count_room_search == "enabled",
             )
         )
 

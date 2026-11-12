@@ -26,7 +26,7 @@ from .models import (
 ACUITY_WEIGHTS: dict[str, int] = {"green": 1, "yellow": 2, "red": 3}
 EXPERIENCE_LEVELS = {"new_grad", "mid", "experienced"}
 LICENSE_TYPES = {"RN", "LPN"}
-MAX_ROOMS = 25
+MAX_ROOMS = 40
 MAX_BEDS = 80
 MAX_NURSES = 12
 MAX_PATIENT_LOAD = 12

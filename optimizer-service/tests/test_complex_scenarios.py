@@ -15,8 +15,10 @@ from nurseflow_optimizer.optimizer import solve_optimizer  # noqa: E402
 from nurseflow_optimizer.output import build_assignment_output  # noqa: E402
 from scenario_helpers import (  # noqa: E402
     build_complex_shift_snapshot,
+    build_maximum_room_shift_snapshot,
     build_maximum_shift_snapshot,
     build_required_large_shift_snapshot,
+    build_tight_balance_shift_snapshot,
     perturb_incidental_snapshot_order,
 )
 
@@ -151,6 +153,42 @@ class ComplexScenarioTests(unittest.TestCase):
                 self.assertEqual(len(model.occupied_beds), 50)
                 self.assertEqual(len(model.nurses), 12)
                 self.assertEqual(model.team_count, 3)
+
+    def test_maximum_40_room_floor_solves_exactly(self) -> None:
+        for understaffed in (False, True):
+            with self.subTest(understaffed=understaffed):
+                snapshot = build_maximum_room_shift_snapshot(understaffed=understaffed)
+                normalization, solution, output = self.solve_and_build(snapshot)
+
+                self.assert_output_properties(normalization, solution, output)
+                self.assertEqual(len(output.assignment_result.room_coverage), 40)
+                if not understaffed:
+                    self.assertEqual(solution.objectives.unassigned_count, 0)
+
+    def test_tight_balance_floor_proves_census_gap_on_counts(self) -> None:
+        snapshot = build_tight_balance_shift_snapshot()
+        normalization, solution, output = self.solve_and_build(snapshot)
+
+        self.assert_output_properties(normalization, solution, output)
+        self.assertEqual(solution.objectives.unassigned_count, 0)
+        self.assertEqual(solution.objectives.team_weighted_acuity_gap, 0)
+        # Gap 1 is infeasible: every nurse is held at exactly acuity 10.
+        self.assertEqual(solution.objectives.team_patient_count_gap, 2)
+
+    def test_balance_count_model_matches_full_model_decisions(self) -> None:
+        snapshots = [
+            build_shift_snapshot(fixture)
+            for fixture in load_fixture_catalog()["fixtures"]
+        ]
+        snapshots.append(build_complex_shift_snapshot())
+
+        for snapshot in snapshots:
+            with self.subTest(shift=snapshot["id"]):
+                model = normalize_shift_snapshot(snapshot).model
+                on_counts = solve_optimizer(model, use_balance_count_model=True)
+                on_beds = solve_optimizer(model, use_balance_count_model=False)
+                self.assertEqual(on_counts.objectives, on_beds.objectives)
+                self.assertEqual(decision_dict(on_counts), decision_dict(on_beds))
 
     def test_required_20_room_80_bed_floor_solves_exactly(self) -> None:
         snapshot = build_required_large_shift_snapshot(understaffed=False)

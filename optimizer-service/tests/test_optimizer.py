@@ -540,9 +540,12 @@ class OptimizerTests(unittest.TestCase):
             return_value=FakeSolver(),
         ):
             with self.assertRaises(OptimizerTimedOutError) as caught:
+                # The fake solver reads every variable as 0, which is not a real
+                # count solution, so keep all eleven stages on the full model.
                 solve_optimizer(
                     normalized,
                     split_fixed_canonical_search=True,
+                    use_balance_count_model=False,
                 )
 
         self.assertEqual(caught.exception.stage, "canonical_fixed_room_search")

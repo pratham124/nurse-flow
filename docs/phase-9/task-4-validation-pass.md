@@ -374,7 +374,7 @@ The measured supported envelopes are now:
 | Input shape | Supported maximum |
 | --- | ---: |
 | Doctor sides | 2 exactly |
-| Standard floor | 25 rooms and at most 50 occupied beds |
+| Standard floor | 40 rooms and at most 50 occupied beds (25 when measured here; raised on 2026-11-11, see `optimizer-rules.md`) |
 | Large floor | 20 rooms and at most 80 occupied beds |
 | Total physical beds | 80 |
 | Nurses | 12 |

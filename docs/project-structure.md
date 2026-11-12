@@ -108,8 +108,9 @@ Use this map when deciding where new code belongs:
   feasible-start guidance only; exact constraints, objective order, and
   independent output validation still decide whether a result may be saved.
 - `optimizer-service/scripts/benchmark_maximum_floor.py` owns synthetic ceiling
-  measurement. The supported optimizer ceiling is 25 rooms, 50 beds, and 12
-  nurses; larger server snapshots fail normalization before model construction.
+  measurement. The supported optimizer ceiling is 40 rooms with at most 50
+  occupied beds (or 20 rooms with up to 80) and 12 nurses; larger server
+  snapshots fail normalization before model construction.
 - `src/services/optimizerRepository.ts` is the only mobile request boundary for
   both initial assignment and reruns.
 - `src/store/serverWorkspaceStore.ts` refreshes the authoritative Supabase

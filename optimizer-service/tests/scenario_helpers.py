@@ -115,6 +115,38 @@ def build_maximum_shift_snapshot(*, understaffed: bool) -> dict[str, object]:
     )
 
 
+def build_maximum_room_shift_snapshot(*, understaffed: bool) -> dict[str, object]:
+    """Build the measured 40-room, 50-bed, 12-nurse room-count ceiling."""
+
+    # 10 two-bed rooms + 30 one-bed rooms = 50 beds, every room occupied.
+    room_bed_counts = [2] * 10 + [1] * 30
+    return build_synthetic_shift_snapshot(
+        scenario_id=(
+            "maximum-rooms-understaffed" if understaffed else "maximum-rooms-full"
+        ),
+        room_bed_counts=room_bed_counts,
+        nurse_count=12,
+        max_patient_load=4 if understaffed else 5,
+        understaffed=understaffed,
+    )
+
+
+def build_tight_balance_shift_snapshot() -> dict[str, object]:
+    """Build a 20-room floor whose team census gap is hard to prove on beds.
+
+    Nine nurses at a hard maximum of six must each carry exactly acuity 10.
+    Proving that no team split beats a census gap of 2 took more than 400
+    seconds on individual beds before the balance count model.
+    """
+
+    return build_synthetic_shift_snapshot(
+        scenario_id="tight-balance",
+        room_bed_counts=[3] * 10 + [2] * 10,
+        nurse_count=9,
+        max_patient_load=6,
+    )
+
+
 def build_required_large_shift_snapshot(*, understaffed: bool) -> dict[str, object]:
     """Build the measured 20-room, 80-bed, 12-nurse large-floor ceiling."""
 
