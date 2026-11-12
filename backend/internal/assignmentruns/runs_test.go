@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"reflect"
 	"testing"
 	"time"
 
@@ -23,6 +24,7 @@ type fakeStore struct {
 	releaseErr  error
 
 	failures     []string
+	failReasons  []solver.InputReason
 	finalizeCtx  context.Context
 	failCtxErr   error
 	finalizeRuns int
@@ -43,6 +45,13 @@ func (s *fakeStore) FinalizeAssignmentRun(ctx context.Context, _ database.RunCal
 func (s *fakeStore) FailAssignmentRun(ctx context.Context, _ database.RunCaller, _ string, code string) error {
 	s.failCtxErr = ctx.Err()
 	s.failures = append(s.failures, code)
+	return s.failErr
+}
+
+func (s *fakeStore) FailAssignmentRunInvalidInput(ctx context.Context, _ database.RunCaller, _ string, reasons []solver.InputReason) error {
+	s.failCtxErr = ctx.Err()
+	s.failures = append(s.failures, database.RunErrorInvalidInput)
+	s.failReasons = reasons
 	return s.failErr
 }
 
@@ -82,6 +91,11 @@ func newCoordinator(store *fakeStore, s *fakeSolver) *Coordinator {
 	return coordinator
 }
 
+// sameResponse compares two responses; RunResponse holds a slice, so == is not allowed.
+func sameResponse(a, b database.RunResponse) bool {
+	return reflect.DeepEqual(a, b)
+}
+
 func run(c *Coordinator, ctx context.Context) database.RunResponse {
 	return c.Run(ctx, database.RunCaller{AuthUserID: "auth", ProfileID: "profile"}, "shift", database.RunRequest{ClientMutationID: "m"})
 }
@@ -90,7 +104,7 @@ func TestRunSavesASolvedRun(t *testing.T) {
 	store := &fakeStore{prepared: solvable(), finalized: database.RunResponse{Status: database.RunStatusSaved, RunID: "run-1", ResultID: "res-1"}}
 	s := &fakeSolver{result: solver.Result{Kind: solver.KindSolved}}
 	got := run(newCoordinator(store, s), context.Background())
-	if got != (database.RunResponse{Status: database.RunStatusSaved, RunID: "run-1", ResultID: "res-1"}) {
+	if !sameResponse(got, database.RunResponse{Status: database.RunStatusSaved, RunID: "run-1", ResultID: "res-1"}) {
 		t.Fatalf("unexpected outcome %+v", got)
 	}
 	if s.runID != "run-1" || len(store.failures) != 0 {
@@ -119,7 +133,7 @@ func TestRunReturnsPrepareOutcomesWithoutSolving(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			s := &fakeSolver{}
 			got := run(newCoordinator(&fakeStore{prepared: test.prepared, prepareErr: test.err}, s), context.Background())
-			if got != test.want || s.calls != 0 {
+			if !sameResponse(got, test.want) || s.calls != 0 {
 				t.Fatalf("got %+v (solver calls %d), want %+v", got, s.calls, test.want)
 			}
 		})
@@ -142,7 +156,7 @@ func TestRunRecordsSolverFailures(t *testing.T) {
 		t.Run(string(test.kind), func(t *testing.T) {
 			store := &fakeStore{prepared: solvable()}
 			got := run(newCoordinator(store, &fakeSolver{result: solver.Result{Kind: test.kind}}), context.Background())
-			if got != test.want || len(store.failures) != 1 || store.failures[0] != test.code || store.finalizeRuns != 0 {
+			if !sameResponse(got, test.want) || len(store.failures) != 1 || store.failures[0] != test.code || store.finalizeRuns != 0 {
 				t.Fatalf("got %+v, failures %v", got, store.failures)
 			}
 		})
@@ -160,7 +174,7 @@ func TestRunLeavesTheRunRunningWhenTheSolverIsUnavailable(t *testing.T) {
 func TestRunReleasesTheRunWhenTheSolverIsUnreachable(t *testing.T) {
 	store := &fakeStore{prepared: solvable()}
 	got := run(newCoordinator(store, &fakeSolver{result: solver.Result{Kind: solver.KindUnreachable}}), context.Background())
-	if got != (database.RunResponse{Status: database.RunStatusUnavailable, RunID: "run-1"}) {
+	if !sameResponse(got, database.RunResponse{Status: database.RunStatusUnavailable, RunID: "run-1"}) {
 		t.Fatalf("got %+v", got)
 	}
 	if len(store.releases) != 1 || store.releases[0] != "run-1" || len(store.failures) != 0 || store.finalizeRuns != 0 {
@@ -171,7 +185,7 @@ func TestRunReleasesTheRunWhenTheSolverIsUnreachable(t *testing.T) {
 func TestRunReleaseErrorDoesNotReplaceTheOutcome(t *testing.T) {
 	store := &fakeStore{prepared: solvable(), releaseErr: errors.New("db down")}
 	got := run(newCoordinator(store, &fakeSolver{result: solver.Result{Kind: solver.KindUnreachable}}), context.Background())
-	if got != (database.RunResponse{Status: database.RunStatusUnavailable, RunID: "run-1"}) {
+	if !sameResponse(got, database.RunResponse{Status: database.RunStatusUnavailable, RunID: "run-1"}) {
 		t.Fatalf("got %+v", got)
 	}
 }
@@ -183,6 +197,21 @@ func TestRunReleasesOnALiveContextAfterTheDeadline(t *testing.T) {
 	run(newCoordinator(store, &fakeSolver{result: solver.Result{Kind: solver.KindUnreachable}}), ctx)
 	if len(store.releases) != 1 || store.releaseCtx != nil {
 		t.Fatalf("releases %v, context error %v", store.releases, store.releaseCtx)
+	}
+}
+
+func TestRunRecordsAndReturnsInvalidInputReasons(t *testing.T) {
+	limit := 40
+	reasons := []solver.InputReason{{Code: "unsupported_room_count", Limit: &limit}}
+	store := &fakeStore{prepared: solvable()}
+	got := run(newCoordinator(store, &fakeSolver{result: solver.Result{Kind: solver.KindInvalidInput, Reasons: reasons}}), context.Background())
+	want := database.RunResponse{Status: database.RunStatusInvalidInput, RunID: "run-1", Reasons: reasons}
+	if !sameResponse(got, want) || !reflect.DeepEqual(store.failReasons, reasons) {
+		t.Fatalf("got %+v, recorded reasons %+v", got, store.failReasons)
+	}
+	encoded, _ := json.Marshal(got)
+	if string(encoded) != `{"status":"invalid_input","runId":"run-1","reasons":[{"code":"unsupported_room_count","limit":40}]}` {
+		t.Fatalf("unexpected body %s", encoded)
 	}
 }
 
@@ -221,7 +250,7 @@ func TestRunFinalizeOutcomes(t *testing.T) {
 		} {
 			store := &fakeStore{prepared: solvable(), finalizeErr: finalizeErr}
 			got := run(newCoordinator(store, solved), context.Background())
-			if got != (database.RunResponse{Status: database.RunStatusUnavailable, RunID: "run-1"}) || len(store.failures) != 0 {
+			if !sameResponse(got, database.RunResponse{Status: database.RunStatusUnavailable, RunID: "run-1"}) || len(store.failures) != 0 {
 				t.Fatalf("%s: got %+v, failures %v", name, got, store.failures)
 			}
 		}
@@ -229,7 +258,7 @@ func TestRunFinalizeOutcomes(t *testing.T) {
 	t.Run("other database error fails the run", func(t *testing.T) {
 		store := &fakeStore{prepared: solvable(), finalizeErr: errors.New("constraint violation")}
 		got := run(newCoordinator(store, solved), context.Background())
-		if got != (database.RunResponse{Status: database.RunStatusFailed, RunID: "run-1"}) {
+		if !sameResponse(got, database.RunResponse{Status: database.RunStatusFailed, RunID: "run-1"}) {
 			t.Fatalf("got %+v", got)
 		}
 		if len(store.failures) != 1 || store.failures[0] != "finalization_failed" {

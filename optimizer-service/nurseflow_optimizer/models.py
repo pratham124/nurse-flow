@@ -147,6 +147,9 @@ class InputValidationIssue:
     code: str
     path: str
     message: str
+    # The single maximum that applies, when there is one. It is a plain number
+    # so it is safe to send back to the app.
+    limit: int | None = None
 
 
 class OptimizerInputValidationError(ValueError):

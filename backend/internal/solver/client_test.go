@@ -78,6 +78,58 @@ func TestSolveMapsSolverAnswers(t *testing.T) {
 	}
 }
 
+func solveInvalid(t *testing.T, body string) Result {
+	t.Helper()
+	client := clientFor(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(422)
+		_, _ = w.Write([]byte(body))
+	})
+	return client.Solve(context.Background(), "run", json.RawMessage(`{}`))
+}
+
+func TestSolveInvalidInputKeepsSafeReasons(t *testing.T) {
+	result := solveInvalid(t, `{"status":"invalid_input","reasons":[{"code":"unsupported_room_count","limit":40},{"code":"missing_acuity"}]}`)
+	if result.Kind != KindInvalidInput || len(result.Reasons) != 2 {
+		t.Fatalf("got %+v", result)
+	}
+	if result.Reasons[0].Code != "unsupported_room_count" || result.Reasons[0].Limit == nil || *result.Reasons[0].Limit != 40 {
+		t.Fatalf("first reason %+v", result.Reasons[0])
+	}
+	if result.Reasons[1].Code != "missing_acuity" || result.Reasons[1].Limit != nil {
+		t.Fatalf("second reason %+v", result.Reasons[1])
+	}
+}
+
+func TestSolveInvalidInputDropsBadReasons(t *testing.T) {
+	body := `{"status":"invalid_input","reasons":[` +
+		`{"code":"Has Spaces and patient name"},{"code":"ok_code","limit":-1},{"code":"fine","limit":1.5},` +
+		`{"code":"x"},"text",{"limit":3},{"code":"kept","limit":0}]}`
+	result := solveInvalid(t, body)
+	if result.Kind != KindInvalidInput || len(result.Reasons) != 2 || result.Reasons[0].Code != "x" || result.Reasons[1].Code != "kept" {
+		t.Fatalf("got %+v", result)
+	}
+}
+
+func TestSolveInvalidInputCapsReasons(t *testing.T) {
+	entries := make([]string, 15)
+	for i := range entries {
+		entries[i] = `{"code":"reason_` + strings.Repeat("a", i) + `"}`
+	}
+	result := solveInvalid(t, `{"reasons":[`+strings.Join(entries, ",")+`]}`)
+	if len(result.Reasons) != 10 {
+		t.Fatalf("got %d reasons", len(result.Reasons))
+	}
+}
+
+func TestSolveInvalidInputWithoutUsableReasonsIsStillInvalidInput(t *testing.T) {
+	for _, body := range []string{``, `not json`, `{"status":"invalid_input"}`, `{"reasons":"nope"}`, `{"reasons":{"code":"x"}}`} {
+		result := solveInvalid(t, body)
+		if result.Kind != KindInvalidInput || len(result.Reasons) != 0 {
+			t.Fatalf("body %q: got %+v", body, result)
+		}
+	}
+}
+
 func TestSolveUnreachableSolver(t *testing.T) {
 	server := httptest.NewServer(http.NotFoundHandler())
 	address := server.URL

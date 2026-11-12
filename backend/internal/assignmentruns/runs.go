@@ -31,6 +31,8 @@ type Store interface {
 	PrepareAssignmentRun(ctx context.Context, caller database.RunCaller, shiftID string, request database.RunRequest) (database.PreparedRun, error)
 	FinalizeAssignmentRun(ctx context.Context, caller database.RunCaller, runID string, output solver.Output) (database.RunResponse, error)
 	FailAssignmentRun(ctx context.Context, caller database.RunCaller, runID, errorCode string) error
+	// FailAssignmentRunInvalidInput records invalid_input along with the solver's safe reasons.
+	FailAssignmentRunInvalidInput(ctx context.Context, caller database.RunCaller, runID string, reasons []solver.InputReason) error
 	// ReleaseAssignmentRun marks a run whose solver was never reached as free to retry now.
 	ReleaseAssignmentRun(ctx context.Context, caller database.RunCaller, runID string) error
 }
@@ -88,7 +90,7 @@ func (c *Coordinator) solveAndRecord(ctx context.Context, caller database.RunCal
 		}
 		return c.finalize(ctx, caller, job.RunID, result.Output)
 	case solver.KindInvalidInput:
-		return c.fail(ctx, caller, job.RunID, database.RunErrorInvalidInput, database.RunStatusInvalidInput)
+		return c.failInvalidInput(ctx, caller, job.RunID, result.Reasons)
 	case solver.KindTimedOut:
 		return c.fail(ctx, caller, job.RunID, database.RunErrorTimedOut, database.RunStatusTimedOut)
 	case solver.KindFailed:
@@ -133,6 +135,20 @@ func (c *Coordinator) fail(ctx context.Context, caller database.RunCaller, runID
 		c.logf("assignment run %s: could not record %s", runID, errorCode)
 	}
 	return reply(status, runID)
+}
+
+// failInvalidInput records an invalid_input failure with the solver's reasons and
+// returns them to the app. Like fail, recording gets its own short deadline and a
+// recording error never replaces the response.
+func (c *Coordinator) failInvalidInput(ctx context.Context, caller database.RunCaller, runID string, reasons []solver.InputReason) database.RunResponse {
+	recordContext, cancel := context.WithTimeout(context.WithoutCancel(ctx), recordTimeout)
+	defer cancel()
+	if err := c.Store.FailAssignmentRunInvalidInput(recordContext, caller, runID, reasons); err != nil {
+		c.logf("assignment run %s: could not record %s", runID, database.RunErrorInvalidInput)
+	}
+	response := reply(database.RunStatusInvalidInput, runID)
+	response.Reasons = reasons
+	return response
 }
 
 // release hands back a run whose solver was never reached. A recording error is

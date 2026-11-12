@@ -85,6 +85,8 @@ type RunResponse struct {
 	Status   RunStatus `json:"status"`
 	RunID    string    `json:"runId,omitempty"`
 	ResultID string    `json:"resultId,omitempty"`
+	// Reasons explains an invalid_input answer with safe codes and limits only.
+	Reasons []solver.InputReason `json:"reasons,omitempty"`
 }
 
 // RunSolveJob is a run that is ready to be solved.
@@ -162,12 +164,14 @@ func recordedResponse(run *OptimizerRun) RunResponse {
 // failedResponse picks the app status that matches the error code the run recorded.
 func failedResponse(run *OptimizerRun) RunResponse {
 	var summary struct {
-		ErrorCode string `json:"errorCode"`
+		ErrorCode string               `json:"errorCode"`
+		Reasons   []solver.InputReason `json:"reasons"`
 	}
 	_ = json.Unmarshal(run.OutcomeSummary, &summary)
 	switch summary.ErrorCode {
 	case RunErrorInvalidInput:
-		return RunResponse{Status: RunStatusInvalidInput, RunID: run.ID}
+		// Reasons were stored with the failure, so a replay answers the same way.
+		return RunResponse{Status: RunStatusInvalidInput, RunID: run.ID, Reasons: summary.Reasons}
 	case RunErrorTimedOut:
 		return RunResponse{Status: RunStatusTimedOut, RunID: run.ID}
 	}
@@ -203,6 +207,16 @@ func errorSummary(code string) string {
 	return string(encoded)
 }
 
+// invalidInputSummary is errorSummary for invalid_input, plus the safe reasons the
+// solver gave (omitted when there are none).
+func invalidInputSummary(reasons []solver.InputReason) string {
+	encoded, _ := json.Marshal(struct {
+		ErrorCode string               `json:"errorCode"`
+		Reasons   []solver.InputReason `json:"reasons,omitempty"`
+	}{ErrorCode: RunErrorInvalidInput, Reasons: reasons})
+	return string(encoded)
+}
+
 // finishRun ends a running run: it sets completed_at and duration_ms from the
 // database time and applies the other columns in updates.
 func finishRun(tx *gorm.DB, run *OptimizerRun, now time.Time, updates map[string]any) error {
@@ -218,7 +232,13 @@ func finishRun(tx *gorm.DB, run *OptimizerRun, now time.Time, updates map[string
 // closeRun ends a run as stale or failed with an error code. When the solver's
 // output is known, its fingerprint and version are recorded too.
 func closeRun(tx *gorm.DB, run *OptimizerRun, now time.Time, status storedStatus, code string, output *solver.Output) error {
-	updates := map[string]any{"status": string(status), "outcome_summary": errorSummary(code)}
+	return closeRunWithSummary(tx, run, now, status, errorSummary(code), output)
+}
+
+// closeRunWithSummary is closeRun with the outcome summary already built, so a
+// failure can store more than its error code.
+func closeRunWithSummary(tx *gorm.DB, run *OptimizerRun, now time.Time, status storedStatus, summary string, output *solver.Output) error {
+	updates := map[string]any{"status": string(status), "outcome_summary": summary}
 	if output != nil {
 		updates["input_fingerprint"] = output.InputFingerprint
 		updates["optimizer_version"] = output.OptimizerVersion

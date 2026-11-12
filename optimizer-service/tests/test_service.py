@@ -5,7 +5,10 @@ from unittest.mock import patch
 
 from ortools.sat.python import cp_model
 
+import copy
+
 from fixture_helpers import build_shift_snapshot, load_fixture_catalog
+from scenario_helpers import build_maximum_room_shift_snapshot
 from nurseflow_optimizer.optimizer import (
     DEFAULT_SOLVE_BUDGET_SECONDS,
     ObjectiveStage,
@@ -83,8 +86,61 @@ class SolverServiceTests(unittest.TestCase):
         )
 
         self.assertEqual(outcome.http_status, 422)
-        self.assertEqual(outcome.body, {"status": "invalid_input"})
+        self.assertEqual(outcome.body["status"], "invalid_input")
         self.assertNotIn("diagnosis", str(outcome.body).lower())
+        self.assertNotIn("patient", str(outcome.body).lower())
+
+    def test_too_many_rooms_returns_the_room_reason_with_its_limit(self) -> None:
+        snapshot = build_maximum_room_shift_snapshot(understaffed=False)
+        snapshot["rooms"].append(
+            {
+                "id": "room-over-limit",
+                "doctorSideId": "side-a",
+                "label": "Over limit",
+                "bedCount": 0,
+            }
+        )
+
+        outcome = run_solver_request({"runId": "run-rooms", "shiftSnapshot": snapshot}, CONFIG)
+
+        self.assertEqual(outcome.http_status, 422)
+        self.assertEqual(
+            outcome.body,
+            {
+                "status": "invalid_input",
+                "reasons": [{"code": "unsupported_room_count", "limit": 40}],
+            },
+        )
+
+    def test_reason_without_a_limit_leaves_the_limit_out(self) -> None:
+        snapshot = copy.deepcopy(self.snapshot)
+        snapshot["bedStates"][0].pop("acuity")
+
+        outcome = run_solver_request({"runId": "run-acuity", "shiftSnapshot": snapshot}, CONFIG)
+
+        self.assertEqual(outcome.http_status, 422)
+        self.assertEqual(
+            outcome.body,
+            {"status": "invalid_input", "reasons": [{"code": "missing_acuity"}]},
+        )
+
+    def test_repeated_issue_codes_become_one_reason(self) -> None:
+        snapshot = copy.deepcopy(self.snapshot)
+        for bed_state in snapshot["bedStates"]:
+            bed_state.pop("acuity")
+        snapshot["bedStates"].append(copy.deepcopy(snapshot["bedStates"][0]))
+
+        outcome = run_solver_request({"runId": "run-dupes", "shiftSnapshot": snapshot}, CONFIG)
+
+        codes = [reason["code"] for reason in outcome.body["reasons"]]
+        self.assertEqual(len(codes), len(set(codes)))
+        self.assertIn("missing_acuity", codes)
+
+    def test_bad_envelope_has_no_reasons(self) -> None:
+        outcome = run_solver_request({"runId": "run-envelope"}, CONFIG)
+
+        self.assertEqual(outcome.http_status, 422)
+        self.assertEqual(outcome.body, {"status": "invalid_input"})
 
 
 if __name__ == "__main__":

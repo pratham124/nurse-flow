@@ -435,7 +435,8 @@ Allowed operational fields include:
 
 - server run ID or a non-sensitive correlation ID;
 - optimizer and dependency versions;
-- coarse outcome and HTTP status;
+- coarse outcome and HTTP status (an `invalid_input` outcome may add safe
+  `reasons`: short codes with an optional numeric limit, no patient data);
 - total and per-stage durations;
 - room/bed/nurse/team counts;
 - memory and cold/warm-start measurements.
@@ -451,7 +452,7 @@ dumps, or complete exception objects containing headers.
 | Missing, invalid, or expired token | `401` | No run and no solve. |
 | Valid user without shift authority | `403` | No released snapshot and no solve. |
 | Stale revision/baseline or mutation conflict | Typed `409` outcome | No baseline or override change. |
-| Invalid or unsupported normalized input | Typed `422` outcome | Run records the safe failure only. |
+| Invalid or unsupported normalized input | Typed `422` outcome, with optional safe `reasons` (codes and limits only) | Run records the safe failure and reasons only. |
 | Shared solve deadline reached | Typed timeout before host cutoff | No assignment result is saved. |
 | Supabase or service temporarily unavailable | Retryable `503` with same mutation ID | Existing baseline and overrides remain. |
 | Unexpected solver/service failure | Generic `500`; detailed server-only diagnostic | No partial result is saved. |

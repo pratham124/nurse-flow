@@ -11,11 +11,20 @@ const optimizerStatusSchema = z.enum([
 const responseEnvelopeSchema = z.looseObject({ status: z.unknown().optional() });
 const optionalResponseTextSchema = z.string().trim().min(1).optional();
 
+// One safe explanation for an invalid_input answer: a short code and, when it
+// applies, the limit that was broken. The server sends nothing else.
+const inputReasonSchema = z.object({
+  code: z.string().min(1),
+  limit: z.number().int().nonnegative().optional(),
+});
+
 export type AssignmentOptimizerStatus = z.infer<typeof optimizerStatusSchema>;
+export type AssignmentInputReason = z.infer<typeof inputReasonSchema>;
 
 export type AssignmentOptimizerResult =
   | { resultId: string; runId: string; status: "saved" }
   | {
+      reasons?: AssignmentInputReason[];
       runId?: string;
       status: Exclude<AssignmentOptimizerStatus, "saved">;
     };
@@ -51,6 +60,19 @@ function getOptionalText(value: unknown) {
   }
 
   return result.data;
+}
+
+// Reads the optional reasons list. It is lenient on purpose: entries that do not
+// match are dropped, so a malformed list can never hide the invalid_input status.
+function getInputReasons(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((entry) => {
+    const reason = inputReasonSchema.safeParse(entry);
+    return reason.success ? [reason.data] : [];
+  });
 }
 
 function hasExpectedHttpStatus(
@@ -149,7 +171,11 @@ export function parseAssignmentOptimizerResponse(
     );
   }
 
+  const reasons =
+    status.data === "invalid_input" ? getInputReasons(body.reasons) : [];
+
   return {
+    ...(reasons.length > 0 ? { reasons } : {}),
     ...(runId ? { runId } : {}),
     status: status.data,
   };

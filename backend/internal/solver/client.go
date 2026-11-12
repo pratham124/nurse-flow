@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -23,7 +24,13 @@ const (
 	// maxResponseBytes bounds what Go reads back from the solver.
 	maxResponseBytes = 4 << 20
 	solvePath        = "/v1/solve"
+	// maxReasons keeps a rejected run's stored summary small.
+	maxReasons = 10
 )
+
+// reasonCodePattern accepts only short snake_case codes, so free text can never
+// slip through as a "code".
+var reasonCodePattern = regexp.MustCompile(`^[a-z][a-z_]{0,63}$`)
 
 // Kind says how a solve call ended.
 type Kind string
@@ -61,10 +68,20 @@ type Output struct {
 	OptimizerVersion string          `json:"optimizerVersion"`
 }
 
-// Result is the typed outcome of one call. Output is set only for KindSolved.
+// InputReason is one safe explanation for an invalid_input answer: a short code
+// and, when one number explains it, the limit that was broken. It never holds
+// messages, IDs, names, or patient data.
+type InputReason struct {
+	Code  string `json:"code"`
+	Limit *int   `json:"limit,omitempty"`
+}
+
+// Result is the typed outcome of one call. Output is set only for KindSolved,
+// and Reasons only for KindInvalidInput (it can still be empty there).
 type Result struct {
-	Kind   Kind
-	Output Output
+	Kind    Kind
+	Output  Output
+	Reasons []InputReason
 }
 
 // Client calls one solver service.
@@ -157,7 +174,7 @@ func (c *Client) interpret(ctx context.Context, response *http.Response) Result 
 	case http.StatusOK:
 		return decodeOutput(content)
 	case http.StatusUnprocessableEntity:
-		return Result{Kind: KindInvalidInput}
+		return Result{Kind: KindInvalidInput, Reasons: decodeReasons(content)}
 	case http.StatusInternalServerError:
 		return Result{Kind: KindFailed}
 	case http.StatusUnauthorized:
@@ -196,4 +213,34 @@ func decodeOutput(content []byte) Result {
 		return Result{Kind: KindUnreadable}
 	}
 	return Result{Kind: KindSolved, Output: output}
+}
+
+// decodeReasons reads the optional "reasons" list from a 422 body. It is lenient
+// on purpose: a missing body, a wrong shape, or a bad entry only means fewer
+// reasons, never a different run outcome.
+func decodeReasons(content []byte) []InputReason {
+	var body struct {
+		Reasons []json.RawMessage `json:"reasons"`
+	}
+	if json.Unmarshal(content, &body) != nil {
+		return nil
+	}
+	var reasons []InputReason
+	for _, raw := range body.Reasons {
+		var reason InputReason
+		if json.Unmarshal(raw, &reason) != nil {
+			continue
+		}
+		if !reasonCodePattern.MatchString(reason.Code) {
+			continue
+		}
+		if reason.Limit != nil && *reason.Limit < 0 {
+			continue
+		}
+		reasons = append(reasons, reason)
+		if len(reasons) == maxReasons {
+			break
+		}
+	}
+	return reasons
 }

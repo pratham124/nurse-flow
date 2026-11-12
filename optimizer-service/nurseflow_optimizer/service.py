@@ -13,7 +13,11 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Mapping
 
-from .models import NormalizationResult, OptimizerInputValidationError
+from .models import (
+    InputValidationIssue,
+    NormalizationResult,
+    OptimizerInputValidationError,
+)
 from .normalization import normalize_shift_snapshot
 from .optimizer import (
     DEFAULT_SOLVE_BUDGET_SECONDS,
@@ -35,7 +39,11 @@ class SolverConfig:
 
 @dataclass(frozen=True)
 class OptimizerServiceOutcome:
-    """Typed public response that contains no solver or patient internals."""
+    """Typed public response that contains no solver or patient internals.
+
+    An `invalid_input` body may also carry `reasons`: short codes with an
+    optional numeric limit, never messages, paths, IDs, or patient data.
+    """
 
     status: str
     http_status: int
@@ -51,6 +59,44 @@ def _outcome(
         http_status=http_status,
         body={"status": status},
     )
+
+
+# Keeps the response small even if a snapshot breaks many rules at once.
+MAX_REASONS = 10
+
+
+def _build_reasons(issues: tuple[InputValidationIssue, ...]) -> list[dict[str, Any]]:
+    """Turn validation issues into distinct, safe `{code, limit?}` reasons.
+
+    Only the code and the limit are copied. The issue path and message can name
+    fields or records, so they stay out of the response.
+    """
+
+    reasons: list[dict[str, Any]] = []
+    seen_codes: set[str] = set()
+    for issue in issues:
+        if issue.code in seen_codes:
+            continue
+        seen_codes.add(issue.code)
+        reason: dict[str, Any] = {"code": issue.code}
+        if issue.limit is not None:
+            reason["limit"] = issue.limit
+        reasons.append(reason)
+        if len(reasons) == MAX_REASONS:
+            break
+    return reasons
+
+
+def _invalid_input_outcome(
+    error: OptimizerInputValidationError,
+) -> OptimizerServiceOutcome:
+    """Build the 422 response, adding `reasons` only when there are some."""
+
+    body: dict[str, Any] = {"status": "invalid_input"}
+    reasons = _build_reasons(error.issues)
+    if reasons:
+        body["reasons"] = reasons
+    return OptimizerServiceOutcome(status="invalid_input", http_status=422, body=body)
 
 
 def _log_timeout_safely(run_id: str, error: OptimizerTimedOutError) -> None:
@@ -143,8 +189,8 @@ def run_solver_request(
 
     try:
         solved = solve_snapshot(snapshot, DEFAULT_SOLVE_BUDGET_SECONDS)
-    except OptimizerInputValidationError:
-        return _outcome("invalid_input", 422)
+    except OptimizerInputValidationError as error:
+        return _invalid_input_outcome(error)
     except OptimizerTimedOutError as error:
         _log_timeout_safely(run_id, error)
         return _outcome("timed_out", 504)

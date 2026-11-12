@@ -14,7 +14,10 @@ import {
 import { AssignedShiftEditGuard } from "../components/assignment/AssignedShiftEditGuard";
 import { ConfirmationDialog } from "../components/workflow/ConfirmationDialog";
 import { createLocalId } from "../helpers/localId";
-import type { AssignmentOptimizerStatus } from "../services/optimizerRepository";
+import type {
+  AssignmentInputReason,
+  AssignmentOptimizerStatus,
+} from "../services/optimizerRepository";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import { assignmentFlow } from "../utils/workflowFlows";
 import {
@@ -25,6 +28,7 @@ import {
   fontWeight,
   shadows,
 } from "../theme/tokens";
+import { getInvalidInputMessage } from "../utils/assignmentInputReasons";
 import { getShiftCensus } from "../utils/census";
 import {
   getAssignmentValidation,
@@ -275,7 +279,12 @@ export default function AssignmentReviewScreen() {
         retryMutationIdRef.current = undefined;
       }
 
-      setServerSaveError(getOptimizerErrorMessage(result.status));
+      setServerSaveError(
+        getOptimizerErrorMessage(
+          result.status,
+          "reasons" in result ? result.reasons : undefined,
+        ),
+      );
     } catch (error) {
       setServerSaveError(
         error instanceof Error
@@ -378,12 +387,15 @@ export default function AssignmentReviewScreen() {
   );
 }
 
-function getOptimizerErrorMessage(status: AssignmentOptimizerStatus) {
+function getOptimizerErrorMessage(
+  status: AssignmentOptimizerStatus,
+  reasons?: AssignmentInputReason[],
+) {
   switch (status) {
     case "stale":
       return "Shift details changed while assignment was calculating. The latest shift was refreshed; review it before trying again. No assignment was saved.";
     case "invalid_input":
-      return "The server found an invalid assignment setup. Review the nurses, occupied beds, acuity, and load limits before trying again. No assignment was saved.";
+      return getInvalidInputMessage(reasons);
     case "timed_out":
       return "Assignment calculation timed out. No assignment was saved. Review the current setup and try again.";
     case "unavailable":

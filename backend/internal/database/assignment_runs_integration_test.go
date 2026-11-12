@@ -133,7 +133,7 @@ func TestAssignmentRunFirstRunIntegration(t *testing.T) {
 	}
 
 	response, err := w.finalize(job.RunID, outputFor("res2"))
-	if err != nil || response != (RunResponse{Status: RunStatusSaved, RunID: job.RunID, ResultID: "res2"}) {
+	if err != nil || !sameResponse(response, RunResponse{Status: RunStatusSaved, RunID: job.RunID, ResultID: "res2"}) {
 		t.Fatalf("%+v %v", response, err)
 	}
 
@@ -223,7 +223,7 @@ func TestAssignmentRunRerunIntegration(t *testing.T) {
 		}
 		state := w.shiftState(t)
 		response, err := w.finalize(job.RunID, outputFor("res2"))
-		if err != nil || response != (RunResponse{Status: RunStatusStale, RunID: job.RunID}) {
+		if err != nil || !sameResponse(response, RunResponse{Status: RunStatusStale, RunID: job.RunID}) {
 			t.Fatalf("%+v %v", response, err)
 		}
 		row := w.runRow(t, job.RunID)
@@ -247,7 +247,7 @@ func TestAssignmentRunPrepareIntegration(t *testing.T) {
 				revision = revision.Add(-time.Second)
 			}
 			prepared, err := w.prepare("m-"+name, revision, baseline)
-			if err != nil || prepared.Response == nil || *prepared.Response != (RunResponse{Status: RunStatusStale}) {
+			if err != nil || prepared.Response == nil || !sameResponse(*prepared.Response, RunResponse{Status: RunStatusStale}) {
 				t.Fatalf("%s: %+v %v", name, prepared, err)
 			}
 		}
@@ -279,7 +279,7 @@ func TestAssignmentRunPrepareIntegration(t *testing.T) {
 			"other revision": func() (PreparedRun, error) { return w.prepare("m1", revision.Add(time.Second), "res1") },
 		} {
 			prepared, err := other()
-			if err != nil || prepared.Response == nil || *prepared.Response != (RunResponse{Status: RunStatusConflict, RunID: job.RunID}) {
+			if err != nil || prepared.Response == nil || !sameResponse(*prepared.Response, RunResponse{Status: RunStatusConflict, RunID: job.RunID}) {
 				t.Fatalf("%s: %+v %v", name, prepared, err)
 			}
 		}
@@ -290,7 +290,7 @@ func TestAssignmentRunPrepareIntegration(t *testing.T) {
 		revision := w.revision(t)
 		job := w.mustSolve(t, "m1", revision, "res1")
 		prepared, err := w.prepare("m1", revision, "res1")
-		if err != nil || prepared.Response == nil || *prepared.Response != (RunResponse{Status: RunStatusRunning, RunID: job.RunID}) {
+		if err != nil || prepared.Response == nil || !sameResponse(*prepared.Response, RunResponse{Status: RunStatusRunning, RunID: job.RunID}) {
 			t.Fatalf("%+v %v", prepared, err)
 		}
 	})
@@ -300,7 +300,7 @@ func TestAssignmentRunPrepareIntegration(t *testing.T) {
 		revision := w.revision(t)
 		job := w.mustSolve(t, "m1", revision, "res1")
 		prepared, err := w.prepare("m2", revision, "res1")
-		if err != nil || prepared.Response == nil || *prepared.Response != (RunResponse{Status: RunStatusRunning, RunID: job.RunID}) {
+		if err != nil || prepared.Response == nil || !sameResponse(*prepared.Response, RunResponse{Status: RunStatusRunning, RunID: job.RunID}) {
 			t.Fatalf("%+v %v", prepared, err)
 		}
 		if w.runCount(t) != 1 {
@@ -317,7 +317,7 @@ func TestAssignmentRunPrepareIntegration(t *testing.T) {
 		}
 		// The saved run changed the revision and baseline, yet its retry still answers saved.
 		prepared, err := w.prepare("saved", revision, "res1")
-		if err != nil || prepared.Response == nil || *prepared.Response != (RunResponse{Status: RunStatusSaved, RunID: job.RunID, ResultID: "res2"}) {
+		if err != nil || prepared.Response == nil || !sameResponse(*prepared.Response, RunResponse{Status: RunStatusSaved, RunID: job.RunID, ResultID: "res2"}) {
 			t.Fatalf("saved replay: %+v %v", prepared, err)
 		}
 		revision = w.revision(t)
@@ -332,7 +332,7 @@ func TestAssignmentRunPrepareIntegration(t *testing.T) {
 		} {
 			failedRun := f.recordedFailureRun(t, w, mutation, revision, want.code)
 			prepared, err := w.prepare(mutation, revision, "res2")
-			if err != nil || prepared.Response == nil || *prepared.Response != (RunResponse{Status: want.status, RunID: failedRun}) {
+			if err != nil || prepared.Response == nil || !sameResponse(*prepared.Response, RunResponse{Status: want.status, RunID: failedRun}) {
 				t.Fatalf("%s replay: %+v %v", mutation, prepared, err)
 			}
 		}
@@ -343,7 +343,7 @@ func TestAssignmentRunPrepareIntegration(t *testing.T) {
 			t.Fatalf("%+v %v", response, err)
 		}
 		prepared, err = w.prepare("stale-run", revision, "res2")
-		if err != nil || prepared.Response == nil || *prepared.Response != (RunResponse{Status: RunStatusStale, RunID: stale.RunID}) {
+		if err != nil || prepared.Response == nil || !sameResponse(*prepared.Response, RunResponse{Status: RunStatusStale, RunID: stale.RunID}) {
 			t.Fatalf("stale replay: %+v %v", prepared, err)
 		}
 	})
@@ -429,7 +429,7 @@ func TestAssignmentRunLeaseIntegration(t *testing.T) {
 		f.exec(t, "UPDATE public.optimizer_runs SET started_at = now() - interval '151 seconds' WHERE id = $1", job.RunID)
 		f.exec(t, "UPDATE public.active_shifts SET updated_at = updated_at + interval '1 second' WHERE id = $1", w.shift)
 		prepared, err := w.prepare("m1", revision, "res1")
-		if err != nil || prepared.Response == nil || *prepared.Response != (RunResponse{Status: RunStatusStale, RunID: job.RunID}) {
+		if err != nil || prepared.Response == nil || !sameResponse(*prepared.Response, RunResponse{Status: RunStatusStale, RunID: job.RunID}) {
 			t.Fatalf("%+v %v", prepared, err)
 		}
 		row := w.runRow(t, job.RunID)
@@ -477,7 +477,7 @@ func TestAssignmentRunReleaseIntegration(t *testing.T) {
 		w.release(t, job.RunID)
 		f.exec(t, "UPDATE public.active_shifts SET updated_at = updated_at + interval '1 second' WHERE id = $1", w.shift)
 		prepared, err := w.prepare("m1", revision, "res1")
-		if err != nil || prepared.Response == nil || *prepared.Response != (RunResponse{Status: RunStatusStale, RunID: job.RunID}) {
+		if err != nil || prepared.Response == nil || !sameResponse(*prepared.Response, RunResponse{Status: RunStatusStale, RunID: job.RunID}) {
 			t.Fatalf("%+v %v", prepared, err)
 		}
 		if row := w.runRow(t, job.RunID); row.status != "stale" || !row.completed {
@@ -502,7 +502,7 @@ func TestAssignmentRunReleaseIntegration(t *testing.T) {
 		revision := w.revision(t)
 		job := w.mustSolve(t, "m1", revision, "res1")
 		prepared, err := w.prepare("m1", revision, "res1")
-		if err != nil || prepared.Response == nil || *prepared.Response != (RunResponse{Status: RunStatusRunning, RunID: job.RunID}) {
+		if err != nil || prepared.Response == nil || !sameResponse(*prepared.Response, RunResponse{Status: RunStatusRunning, RunID: job.RunID}) {
 			t.Fatalf("%+v %v", prepared, err)
 		}
 	})
@@ -513,7 +513,7 @@ func TestAssignmentRunReleaseIntegration(t *testing.T) {
 		job := w.mustSolve(t, "m1", revision, "res1")
 		w.release(t, job.RunID)
 		prepared, err := w.prepare("m2", revision, "res1")
-		if err != nil || prepared.Response == nil || *prepared.Response != (RunResponse{Status: RunStatusRunning, RunID: job.RunID}) {
+		if err != nil || prepared.Response == nil || !sameResponse(*prepared.Response, RunResponse{Status: RunStatusRunning, RunID: job.RunID}) {
 			t.Fatalf("%+v %v", prepared, err)
 		}
 	})
@@ -529,7 +529,7 @@ func TestAssignmentRunFinalizeIntegration(t *testing.T) {
 		bad := outputFor("res2")
 		bad.AssignmentResult = json.RawMessage(strings.Replace(string(bad.AssignmentResult), `"bedId":"b2"`, `"bedId":"b1"`, 1))
 		response, err := w.finalize(job.RunID, bad)
-		if err != nil || response != (RunResponse{Status: RunStatusFailed, RunID: job.RunID}) {
+		if err != nil || !sameResponse(response, RunResponse{Status: RunStatusFailed, RunID: job.RunID}) {
 			t.Fatalf("%+v %v", response, err)
 		}
 		row := w.runRow(t, job.RunID)
@@ -575,7 +575,7 @@ func TestAssignmentRunFinalizeIntegration(t *testing.T) {
 		}
 		state := w.shiftState(t)
 		again, err := w.finalize(job.RunID, outputFor("res2"))
-		if err != nil || again != (RunResponse{Status: RunStatusSaved, RunID: job.RunID, ResultID: "res2"}) {
+		if err != nil || !sameResponse(again, RunResponse{Status: RunStatusSaved, RunID: job.RunID, ResultID: "res2"}) {
 			t.Fatalf("%+v %v", again, err)
 		}
 		different := outputFor("res2")
@@ -699,7 +699,7 @@ func TestAssignmentRunUniqueIndexRaceIntegration(t *testing.T) {
 		var one int
 		return tx.Raw("SELECT 1").Row().Scan(&one) // the transaction must still work
 	})
-	if err != nil || prepared.Response == nil || *prepared.Response != (RunResponse{Status: RunStatusRunning}) {
+	if err != nil || prepared.Response == nil || !sameResponse(*prepared.Response, RunResponse{Status: RunStatusRunning}) {
 		t.Fatalf("%+v %v", prepared, err)
 	}
 	if w.runCount(t) != 1 {
@@ -794,9 +794,9 @@ func TestAssignmentRunPrepareFinalizeRaceIntegration(t *testing.T) {
 				t.Fatalf("iteration %d: the retry must not start a second solve: %+v", i, retried)
 			}
 			switch got := *retried.Response; {
-			case got == finalized:
+			case sameResponse(got, finalized):
 				savedCount++
-			case got == RunResponse{Status: RunStatusRunning, RunID: job.RunID}:
+			case sameResponse(got, RunResponse{Status: RunStatusRunning, RunID: job.RunID}):
 				runningCount++
 			default:
 				t.Fatalf("iteration %d: the retry answered %+v, want saved %+v or running", i, got, finalized)

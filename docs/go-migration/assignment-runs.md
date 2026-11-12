@@ -44,7 +44,16 @@ because notifications are disabled (user decision, 2026-10-24).
 - Unknown fields, malformed JSON, or invalid values → 422 `{"status":"invalid_input"}`;
   body over 16 KiB → 413 `{"status":"invalid_input"}`.
 
-Responses always use `{"status": …, "runId"?: …, "resultId"?: …}`:
+Responses always use `{"status": …, "runId"?: …, "resultId"?: …, "reasons"?: …}`.
+`reasons` appears only on `invalid_input` when the solver rejected the shift setup:
+`{"status":"invalid_input","reasons":[{"code":"unsupported_room_count","limit":40}]}`.
+Each reason is a short snake_case `code` plus an optional whole-number `limit` (the
+maximum the setup broke, set by the server so the app never hardcodes it). Codes are
+distinct, in first-seen order, at most 10, and never carry messages, paths, IDs,
+names, or patient data. Go stores them in the run's `outcome_summary` next to
+`errorCode`, so a replayed request returns the same reasons. Request-validation
+failures (bad body, 413) have no `reasons`.
+
 
 | HTTP | status | Meaning |
 | --- | --- | --- |
@@ -72,7 +81,7 @@ envelope; the Expo parser maps 401/403 by HTTP status.
 | HTTP | Body | Go records |
 | --- | --- | --- |
 | 200 | `{assignmentResult, flags, objectives, inputFingerprint, optimizerVersion}` | finalize |
-| 422 | `{"status":"invalid_input"}` | fail `invalid_input` → 422 |
+| 422 | `{"status":"invalid_input","reasons"?:[{"code","limit"?}]}` | fail `invalid_input` (with the safe reasons) → 422 |
 | 504 | `{"status":"timed_out"}` | fail `timed_out` → 504 |
 | 500 | `{"status":"failed"}` | fail `solver_failed` → 500 |
 | 401 | `{"status":"unauthorized"}` | fail `internal_failure` → 500 (misconfigured token) |
@@ -82,6 +91,10 @@ envelope; the Expo parser maps 401/403 by HTTP status.
 | no response after the request was sent | — | nothing recorded → 503 `unavailable`; the run waits for the 150 s lease |
 | Go's 125 s deadline | — | fail `timed_out` → 504 |
 | 200 with an unreadable body | — | fail `internal_failure` → 500 |
+
+On a 422, Go keeps only reasons whose `code` matches `^[a-z][a-z_]{0,63}$` and whose
+`limit` is a whole number of at least 0, up to 10. A missing, unreadable, or partly bad
+`reasons` list only means fewer reasons; the run is still `invalid_input`.
 
 `runId` is only for correlating private Python logs. Python keeps its existing
 normalization, CP-SAT solve, 120 s solve budget, output validation, and timeout logging.

@@ -156,7 +156,10 @@ class SolveEndpointTests(unittest.TestCase):
     def test_invalid_snapshot_returns_invalid_input(self) -> None:
         response = self.post(self.body(shiftSnapshot={"patient": {"x": "private"}}))
         self.assertEqual(response.status_code, 422)
-        self.assertEqual(response.json(), {"status": "invalid_input"})
+        body = response.json()
+        self.assertEqual(body["status"], "invalid_input")
+        # Reasons carry only codes and limits, never snapshot content.
+        self.assertNotIn("private", str(body))
 
     def test_timeout_logs_safely_and_returns_504(self) -> None:
         timeout = OptimizerTimedOutError(
