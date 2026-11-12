@@ -18,6 +18,7 @@ import {
   FilterChip,
   FilterChipRow,
   LiveStatusChip,
+  MoveIcon,
   SeverityBadge,
   StatusPill,
   SummaryChip,
@@ -927,11 +928,13 @@ const BoardSideSection = memo(function BoardSideSection({
             bed.state === "assigned" ? (
               <SwipeRevealAction
                 accessibilityLabel={`Move bed ${bed.label}, ${bed.patient}, ${bed.acuity} acuity, currently assigned to ${bed.nurse}`}
+                actionIcon={<MoveIcon color={colors.neutral.surface} size={20} />}
                 actionLabel="Move"
                 actionTone="brand"
                 enableAccessibilityReveal
                 key={bed.id}
                 onActionPress={() => onMoveBed(bed.id)}
+                showLabelWithIcon
               >
                 <BoardBed {...bed} isWrappedByMoveAction />
               </SwipeRevealAction>
@@ -997,7 +1000,15 @@ function BoardBed({
       ) : isUnassigned ? (
         <StatusPill label="Unassigned" tone="red" />
       ) : (
-        <Text style={styles.assignedText}>{nurse}</Text>
+        <View style={styles.assignedColumn}>
+          <Text style={styles.assignedText}>{nurse}</Text>
+          {isWrappedByMoveAction ? (
+            <View style={styles.moveSwipeHint}>
+              <Text style={styles.moveSwipeHintArrow}>←</Text>
+              <Text style={styles.moveSwipeHintText}>Swipe left to move</Text>
+            </View>
+          ) : null}
+        </View>
       )}
     </View>
   );
@@ -1281,10 +1292,31 @@ const styles = StyleSheet.create({
   emptyPatientText: {
     color: colors.neutral.textSecondary,
   },
+  assignedColumn: {
+    alignItems: "flex-end",
+    gap: spacing.xs,
+  },
   assignedText: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.sm,
     fontWeight: fontWeight.bold,
+  },
+  // Matches the "Swipe right to delete" hint on rooms and templates. The Move
+  // button sits on the right, so this row swipes the other way.
+  moveSwipeHint: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.xs,
+  },
+  moveSwipeHintArrow: {
+    color: colors.brand.burgundyLight,
+    fontSize: textSize.md,
+    fontWeight: fontWeight.bold,
+  },
+  moveSwipeHintText: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.xs,
+    fontWeight: fontWeight.semibold,
   },
   emptyBoard: {
     alignItems: "center",

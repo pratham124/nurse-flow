@@ -19,6 +19,7 @@ export {
   MinusIcon,
   PlusIcon,
   TrashIcon,
+  MoveIcon,
   ChevronRightIcon,
   CopyIcon,
   BedIcon,
