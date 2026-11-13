@@ -12,21 +12,27 @@ import {
   WorkflowSection,
 } from "../components/workflow";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
-import { colors, radius, spacing, textSize, fontWeight, shadows } from "../theme/tokens";
+import {
+  colors,
+  radius,
+  spacing,
+  textSize,
+  fontWeight,
+  shadows,
+} from "../theme/tokens";
+import { useAuthSession } from "../store/AuthSessionContext";
 import type { Flag, FlagSeverity, Shift } from "../types/models";
 import {
-  getNurseRequestDisplays,
-  type NurseRequestDisplay,
-} from "../utils/nurseRequestDisplay";
+  buildChargeChatList,
+  formatChatTime,
+  type ChargeChatRow,
+} from "../utils/nurseChats";
 import { assignmentFlow } from "../utils/workflowFlows";
 
 const flagFilters = ["All", "Critical", "Warning", "Info"] as const;
-const requestFilters = ["All", "Issues", "Swaps"] as const;
-const requestStatusFilters = ["All", "Pending", "Accepted", "Declined"] as const;
 
 type FlagFilter = (typeof flagFilters)[number];
-type RequestFilter = (typeof requestFilters)[number];
-type RequestStatusFilter = (typeof requestStatusFilters)[number];
+type ReviewTab = "Flags" | "Chats";
 
 type FlagRowViewModel = {
   id: string;
@@ -37,17 +43,13 @@ type FlagRowViewModel = {
 };
 
 type FlagsListHeaderProps = {
+  activeReviewTab: ReviewTab;
+  chatRows: ChargeChatRow[];
   criticalCount: number;
   infoCount: number;
-  requests: NurseRequestDisplay[];
-  activeReviewTab: "Flags" | "Requests";
-  setActiveReviewTab: (tab: "Flags" | "Requests") => void;
   onFilterPress: (filter: FlagFilter) => void;
-  onRequestFilterPress: (filter: RequestFilter) => void;
-  onRequestStatusFilterPress: (filter: RequestStatusFilter) => void;
   selectedFilter: FlagFilter;
-  selectedRequestFilter: RequestFilter;
-  selectedRequestStatusFilter: RequestStatusFilter;
+  setActiveReviewTab: (tab: ReviewTab) => void;
   warningCount: number;
 };
 
@@ -76,34 +78,28 @@ type SectionHeaderRowProps = {
   title: string;
 };
 
-type NurseRequestRowProps = {
-  onOpen: (requestId: string) => void;
-  request: NurseRequestDisplay;
+type ChatRowProps = {
+  onOpen: (nurseId: string) => void;
+  row: ChargeChatRow;
 };
 
 type FlagListItem =
   | { type: "section"; id: string; subtitle?: string; title: string }
   | { type: "flag"; flag: FlagRowViewModel }
-  | { type: "request"; request: NurseRequestDisplay }
+  | { type: "chat"; row: ChargeChatRow }
   | { type: "empty"; id: string; message: string };
 
 function FlagsListHeader({
+  activeReviewTab,
+  chatRows,
   criticalCount,
   infoCount,
-  requests,
-  activeReviewTab,
-  setActiveReviewTab,
   onFilterPress,
-  onRequestFilterPress,
-  onRequestStatusFilterPress,
   selectedFilter,
-  selectedRequestFilter,
-  selectedRequestStatusFilter,
+  setActiveReviewTab,
   warningCount,
 }: FlagsListHeaderProps) {
-  const pendingCount = requests.filter((r) => r.statusGroup === "pending").length;
-  const acceptedCount = requests.filter((r) => r.statusGroup === "accepted").length;
-  const declinedCount = requests.filter((r) => r.statusGroup === "declined").length;
+  const needsReplyCount = chatRows.filter((row) => row.needsReply).length;
   const totalFlags = criticalCount + warningCount + infoCount;
 
   return (
@@ -128,28 +124,23 @@ function FlagsListHeader({
           </View>
         </WorkflowSection>
       ) : (
-        <WorkflowSection title="Request summary">
+        <WorkflowSection title="Chat summary">
           <View style={styles.flagSummaryCard}>
             <View style={styles.flagSummaryTopRow}>
               <View>
-                <Text style={styles.flagSummaryEyebrow}>Active review</Text>
+                <Text style={styles.flagSummaryEyebrow}>Active shift</Text>
                 <Text style={styles.flagSummaryTitle}>
-                  {requests.length} nurse requests
+                  {chatRows.length} nurses
                 </Text>
               </View>
-              <SummaryChip label={`${requests.length} requests`} />
-            </View>
-            <View style={styles.flagSummaryCounts}>
-              <FlagSummaryCount label="Pending" value={pendingCount} />
-              <FlagSummaryCount label="Accepted" value={acceptedCount} />
-              <FlagSummaryCount label="Declined" value={declinedCount} />
+              <SummaryChip label={`${needsReplyCount} need a reply`} />
             </View>
           </View>
         </WorkflowSection>
       )}
 
       <SegmentedControl
-        options={["Flags", "Requests"] as const}
+        options={["Flags", "Chats"] as const}
         selectedOption={activeReviewTab}
         onSelect={setActiveReviewTab}
       />
@@ -163,24 +154,7 @@ function FlagsListHeader({
             selectedFilter={selectedFilter}
           />
         </WorkflowSection>
-      ) : (
-        <WorkflowSection title="Request filters">
-          <View style={styles.filterPanel}>
-            <FilterGroup
-              filters={requestFilters}
-              label="Type"
-              onFilterPress={onRequestFilterPress}
-              selectedFilter={selectedRequestFilter}
-            />
-            <FilterGroup
-              filters={requestStatusFilters}
-              label="Status"
-              onFilterPress={onRequestStatusFilterPress}
-              selectedFilter={selectedRequestStatusFilter}
-            />
-          </View>
-        </WorkflowSection>
-      )}
+      ) : null}
     </View>
   );
 }
@@ -282,10 +256,7 @@ function getFlagRows(
   }));
 }
 
-function filterFlagRows(
-  flags: FlagRowViewModel[],
-  selectedFilter: FlagFilter,
-) {
+function filterFlagRows(flags: FlagRowViewModel[], selectedFilter: FlagFilter) {
   if (selectedFilter === "All") {
     return flags;
   }
@@ -293,51 +264,11 @@ function filterFlagRows(
   return flags.filter((flag) => flag.severityLabel === selectedFilter);
 }
 
-function filterNurseRequestRows(
-  requests: NurseRequestDisplay[],
-  selectedRequestFilter: RequestFilter,
-  selectedRequestStatusFilter: RequestStatusFilter,
-) {
-  return requests.filter((request) => {
-    const matchesType =
-      selectedRequestFilter === "All" ||
-      request.requestType ===
-        (selectedRequestFilter === "Issues" ? "issue" : "swap");
-    const matchesStatus =
-      selectedRequestStatusFilter === "All" ||
-      request.statusGroup === selectedRequestStatusFilter.toLowerCase();
-
-    return matchesType && matchesStatus;
-  });
-}
-
-function getEmptyRequestMessage(
-  selectedRequestFilter: RequestFilter,
-  selectedRequestStatusFilter: RequestStatusFilter,
-) {
-  const statusText =
-    selectedRequestStatusFilter === "All"
-      ? ""
-      : `${selectedRequestStatusFilter.toLowerCase()} `;
-
-  if (selectedRequestFilter === "Issues") {
-    return `No ${statusText}issue requests yet.`;
-  }
-
-  if (selectedRequestFilter === "Swaps") {
-    return `No ${statusText}swap requests yet.`;
-  }
-
-  return `No ${statusText}requests yet.`;
-}
-
 function getFlagListItems(
   flags: FlagRowViewModel[],
-  requests: NurseRequestDisplay[],
+  chatRows: ChargeChatRow[],
   selectedFilter: FlagFilter,
-  selectedRequestFilter: RequestFilter,
-  selectedRequestStatusFilter: RequestStatusFilter,
-  activeReviewTab: "Flags" | "Requests",
+  activeReviewTab: ReviewTab,
 ): FlagListItem[] {
   if (activeReviewTab === "Flags") {
     if (!flags.length) {
@@ -354,22 +285,19 @@ function getFlagListItems(
     }
 
     return flags.map((flag) => ({ flag, type: "flag" }));
-  } else {
-    if (!requests.length) {
-      return [
-        {
-          id: "empty-local-requests",
-          message: getEmptyRequestMessage(
-            selectedRequestFilter,
-            selectedRequestStatusFilter,
-          ),
-          type: "empty",
-        },
-      ];
-    }
-
-    return requests.map((request) => ({ request, type: "request" }));
   }
+
+  if (!chatRows.length) {
+    return [
+      {
+        id: "empty-chats",
+        message: "No nurses on this shift yet.",
+        type: "empty",
+      },
+    ];
+  }
+
+  return chatRows.map((row) => ({ row, type: "chat" }));
 }
 
 function getFlagItemKey(item: FlagListItem) {
@@ -377,17 +305,15 @@ function getFlagItemKey(item: FlagListItem) {
     return `flag-${item.flag.id}`;
   }
 
-  if (item.type === "request") {
-    return `request-${item.request.id}`;
+  if (item.type === "chat") {
+    return `chat-${item.row.nurse.id}`;
   }
 
   return item.id;
 }
 
-function openRequestDetail(requestId: string) {
-  router.push(
-    `/charge-request-detail?requestId=${encodeURIComponent(requestId)}`,
-  );
+function openChat(nurseId: string) {
+  router.push(`/charge-chat?nurseId=${encodeURIComponent(nurseId)}`);
 }
 
 function renderFlagItem({ item }: { item: FlagListItem }) {
@@ -399,42 +325,32 @@ function renderFlagItem({ item }: { item: FlagListItem }) {
     return <EmptyFlagRow message={item.message} />;
   }
 
-  if (item.type === "request") {
-    return <NurseRequestRow onOpen={openRequestDetail} request={item.request} />;
+  if (item.type === "chat") {
+    return <ChatRow onOpen={openChat} row={item.row} />;
   }
 
   return <FlagRow flag={item.flag} />;
 }
 
 export default function FlagsScreen() {
-  const {
-    activeAssignmentOverridesByBedId,
-    activeShift,
-    effectiveAssignmentFlags,
-  } = useServerWorkspace(
+  const { authState } = useAuthSession();
+  const { activeShift, effectiveAssignmentFlags } = useServerWorkspace(
     useShallow((state) => ({
-      activeAssignmentOverridesByBedId: state.activeAssignmentOverridesByBedId,
       activeShift: state.activeShift,
       effectiveAssignmentFlags: state.effectiveAssignmentFlags,
     })),
   );
-  const [activeReviewTab, setActiveReviewTab] = useState<"Flags" | "Requests">("Flags");
+  const [activeReviewTab, setActiveReviewTab] = useState<ReviewTab>("Flags");
   const [selectedFilter, setSelectedFilter] = useState<FlagFilter>("All");
-  const [selectedRequestFilter, setSelectedRequestFilter] =
-    useState<RequestFilter>("All");
-  const [selectedRequestStatusFilter, setSelectedRequestStatusFilter] =
-    useState<RequestStatusFilter>("All");
   const flags = getFlagRows(activeShift, effectiveAssignmentFlags);
-  const requests = getNurseRequestDisplays(
-    activeShift,
-    activeAssignmentOverridesByBedId,
+  const currentProfileId =
+    authState.status === "signed_in" ? authState.profile.id : "";
+  const chatRows = buildChargeChatList(
+    activeShift?.nurses ?? [],
+    activeShift?.nurseRequests,
+    currentProfileId,
   );
   const filteredFlags = filterFlagRows(flags, selectedFilter);
-  const filteredRequests = filterNurseRequestRows(
-    requests,
-    selectedRequestFilter,
-    selectedRequestStatusFilter,
-  );
   const criticalCount = flags.filter(
     (flag) => flag.severity === "critical",
   ).length;
@@ -448,10 +364,8 @@ export default function FlagsScreen() {
       activeStep="Board"
       data={getFlagListItems(
         filteredFlags,
-        filteredRequests,
+        chatRows,
         selectedFilter,
-        selectedRequestFilter,
-        selectedRequestStatusFilter,
         activeReviewTab,
       )}
       flow={assignmentFlow}
@@ -459,17 +373,13 @@ export default function FlagsScreen() {
       keyExtractor={getFlagItemKey}
       listHeader={
         <FlagsListHeader
+          activeReviewTab={activeReviewTab}
+          chatRows={chatRows}
           criticalCount={criticalCount}
           infoCount={infoCount}
-          requests={requests}
-          activeReviewTab={activeReviewTab}
-          setActiveReviewTab={setActiveReviewTab}
           onFilterPress={setSelectedFilter}
-          onRequestFilterPress={setSelectedRequestFilter}
-          onRequestStatusFilterPress={setSelectedRequestStatusFilter}
           selectedFilter={selectedFilter}
-          selectedRequestFilter={selectedRequestFilter}
-          selectedRequestStatusFilter={selectedRequestStatusFilter}
+          setActiveReviewTab={setActiveReviewTab}
           warningCount={warningCount}
         />
       }
@@ -477,17 +387,18 @@ export default function FlagsScreen() {
       bottomAccessory={<BoardSubTabBar activeTab="flags" />}
       renderItem={renderFlagItem}
       subtitle=""
-      title={activeShift?.floorName ?? "Flags and requests"}
+      title={activeShift?.floorName ?? "Flags and chats"}
     />
   );
 }
 
 function FlagRow({ flag }: FlagRowProps) {
-  const emojiLabel = flag.severity === "critical"
-    ? `🚨 ${flag.severityLabel}`
-    : flag.severity === "warning"
-      ? `⚠️ ${flag.severityLabel}`
-      : `ℹ️ ${flag.severityLabel}`;
+  const emojiLabel =
+    flag.severity === "critical"
+      ? `🚨 ${flag.severityLabel}`
+      : flag.severity === "warning"
+        ? `⚠️ ${flag.severityLabel}`
+        : `ℹ️ ${flag.severityLabel}`;
 
   const displaySeverityLabel = flag.severityLabel || emojiLabel;
 
@@ -519,27 +430,33 @@ function SectionHeaderRow({ subtitle, title }: SectionHeaderRowProps) {
   );
 }
 
-function NurseRequestRow({ onOpen, request }: NurseRequestRowProps) {
+function ChatRow({ onOpen, row }: ChatRowProps) {
+  const lastMessageTime = formatChatTime(row.chat?.lastMessageAt);
+  const preview = row.chat?.lastMessagePreview;
+
   return (
     <Pressable
+      accessibilityLabel={`Chat with ${row.nurse.name}${row.needsReply ? ", needs reply" : ""}`}
       accessibilityRole="button"
-      onPress={() => onOpen(request.id)}
+      onPress={() => onOpen(row.nurse.id)}
       style={({ pressed }) => [
         styles.requestRow,
+        row.needsReply ? styles.chatRowNeedsReply : null,
         pressed ? styles.requestRowPressed : null,
       ]}
     >
       <View style={styles.requestTopRow}>
         <View style={styles.requestChipRow}>
-          <SummaryChip label={request.typeLabel} />
-          <SummaryChip label={request.statusLabel} />
-          <SummaryChip label="Live request" />
+          <Text style={styles.requestRequester}>{row.nurse.name}</Text>
+          {row.needsReply ? <SummaryChip label="Needs reply" /> : null}
         </View>
-        <Text style={styles.requestTime}>{request.createdAtText}</Text>
+        {lastMessageTime ? (
+          <Text style={styles.requestTime}>{lastMessageTime}</Text>
+        ) : null}
       </View>
-      <Text style={styles.requestRequester}>{request.requesterName}</Text>
-      <Text style={styles.requestTarget}>{request.bedContext}</Text>
-      <Text style={styles.message}>{request.message}</Text>
+      <Text numberOfLines={2} style={styles.message}>
+        {preview || "No messages yet"}
+      </Text>
     </Pressable>
   );
 }
@@ -602,9 +519,6 @@ const styles = StyleSheet.create({
     color: colors.neutral.textSecondary,
     fontSize: textSize.xs,
     fontWeight: fontWeight.semibold,
-  },
-  filterPanel: {
-    gap: spacing.md,
   },
   filterGroup: {
     gap: spacing.sm,
@@ -700,11 +614,8 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     lineHeight: 20,
   },
-  requestTarget: {
-    color: colors.neutral.textPrimary,
-    fontSize: textSize.sm,
-    fontWeight: fontWeight.semibold,
-    lineHeight: 18,
+  chatRowNeedsReply: {
+    borderLeftColor: colors.status.amber800,
   },
   emptyFlagRow: {
     backgroundColor: colors.neutral.surface,

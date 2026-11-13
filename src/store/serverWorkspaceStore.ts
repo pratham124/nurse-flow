@@ -17,8 +17,6 @@ import type {
   FloorTemplate,
   FloorTemplateRecord,
   JoinedNurseAssignmentView,
-  NurseIssueReviewStatus,
-  NurseRequestStatus,
   PreviousShiftSnapshot,
   RealtimeConnectionState,
   ServerWorkspace,
@@ -42,9 +40,7 @@ export type JoinedNurseAccessState =
   | { errorMessage: string; status: "error" };
 
 export type JoinedNurseAccessRefreshReason =
-  | "manual"
-  | "shift_changed"
-  | "access_changed";
+  "manual" | "shift_changed" | "access_changed";
 
 export type ActiveParticipation =
   | { type: "none" }
@@ -82,10 +78,6 @@ type ServerWorkspaceStoreActions = {
     reason?: JoinedNurseAccessRefreshReason,
   ) => Promise<void>;
   retryLoadWorkspace: () => Promise<void>;
-  resolveNurseSwapRequest: (
-    requestId: string,
-    nextStatus: Extract<NurseRequestStatus, "accepted" | "declined">,
-  ) => Promise<void>;
   resetActiveShiftForEditing: (
     expectedBaselineAssignmentResultId: string,
   ) => Promise<Shift>;
@@ -103,15 +95,6 @@ type ServerWorkspaceStoreActions = {
   ) => void;
   setRealtimeConnectionState: (state: RealtimeConnectionState) => void;
   startActiveShift: (activeShift: Shift) => Promise<Shift>;
-  submitJoinedNurseIssueRequest: (message: string) => Promise<void>;
-  submitJoinedNurseSwapRequest: (
-    sourceBedId: string,
-    message: string,
-  ) => Promise<void>;
-  updateNurseIssueStatus: (
-    requestId: string,
-    nextStatus: NurseIssueReviewStatus,
-  ) => Promise<void>;
 };
 
 export type ServerWorkspaceStore = ServerWorkspaceStoreState &
@@ -126,12 +109,8 @@ export type ServerWorkspaceDependencies = {
   loadServerWorkspace: typeof import("../services/serverWorkspaceRepository").loadServerWorkspace;
   requestAssignmentOptimizationFromService: typeof import("../services/optimizerRepository").requestAssignmentOptimization;
   resetServerActiveShiftForEditing: typeof import("../services/serverWorkspaceRepository").resetServerActiveShiftForEditing;
-  resolveShiftNurseSwapRequestOnServer: typeof import("../services/serverWorkspaceRepository").resolveShiftNurseSwapRequest;
   saveServerActiveShift: typeof import("../services/serverWorkspaceRepository").saveServerActiveShift;
   saveServerFloorTemplate: typeof import("../services/serverWorkspaceRepository").saveServerFloorTemplate;
-  submitJoinedNurseIssueRequestToServer: typeof import("../services/serverWorkspaceRepository").submitJoinedNurseIssueRequest;
-  submitJoinedNurseSwapRequestToServer: typeof import("../services/serverWorkspaceRepository").submitJoinedNurseSwapRequest;
-  updateShiftNurseIssueStatusOnServer: typeof import("../services/serverWorkspaceRepository").updateShiftNurseIssueStatus;
 };
 
 export type CreateServerWorkspaceStoreOptions = {
@@ -188,19 +167,6 @@ export function getActiveParticipation(
   return { type: "none" };
 }
 
-function requireActiveShiftId(workspaceState: ServerWorkspaceState) {
-  const shiftId =
-    workspaceState.status === "ready" || workspaceState.status === "empty"
-      ? workspaceState.workspace.activeShift?.id
-      : undefined;
-
-  if (!shiftId) {
-    throw new Error("This active shift is no longer available.");
-  }
-
-  return shiftId;
-}
-
 function hasActiveChargeShift(workspaceState: ServerWorkspaceState) {
   return (
     (workspaceState.status === "ready" || workspaceState.status === "empty") &&
@@ -241,14 +207,15 @@ export function getWorkspaceView(
     floorTemplates: workspaceState.workspace.floorTemplates.map(
       (record) => record.templateSnapshot,
     ),
-    previousShiftSnapshots:
-      workspaceState.workspace.previousShiftSnapshots.map((snapshot) => ({
+    previousShiftSnapshots: workspaceState.workspace.previousShiftSnapshots.map(
+      (snapshot) => ({
         completedAt: snapshot.completedAt,
         floorTemplateId: snapshot.floorTemplateId,
         id: snapshot.id,
         nurseSuggestions: snapshot.nurseSuggestions,
         patientSuggestions: snapshot.patientSuggestions,
-      })),
+      }),
+    ),
   };
 }
 
@@ -357,7 +324,16 @@ export function createServerWorkspaceStore({
           return;
         }
 
-        setJoinedNurseAccessState({ status: "loading" });
+        // A live refresh (every chat message bumps the shift) keeps showing
+        // the current view until the new one arrives. Switching to "loading"
+        // would unmount open screens such as the chat and clear its draft.
+        const isLiveRefreshOfReadyView =
+          reason !== "manual" &&
+          get().joinedNurseAccessState.status === "ready";
+
+        if (!isLiveRefreshOfReadyView) {
+          setJoinedNurseAccessState({ status: "loading" });
+        }
 
         try {
           const assignmentView =
@@ -518,39 +494,7 @@ export function createServerWorkspaceStore({
         },
         retryLoadJoinedNurseAccess,
         retryLoadWorkspace,
-        async resolveNurseSwapRequest(requestId, nextStatus) {
-          const authState = getAuthState();
-
-          if (
-            authState.status !== "signed_in" ||
-            authState.profile.role !== "charge_nurse"
-          ) {
-            throw new Error("Sign in as charge to resolve requests.");
-          }
-
-          const supabase = getSupabaseClient();
-
-          if (!supabase) {
-            throw new Error("Supabase is not configured yet.");
-          }
-
-          const shiftId = requireActiveShiftId(get().workspaceState);
-
-          await dependencies.resolveShiftNurseSwapRequestOnServer(supabase, {
-            nextStatus,
-            requestId,
-            shiftId,
-          });
-          const workspace = await dependencies.loadServerWorkspace(
-            supabase,
-            authState.profile,
-          );
-
-          applyWorkspace(workspace);
-        },
-        async resetActiveShiftForEditing(
-          expectedBaselineAssignmentResultId,
-        ) {
+        async resetActiveShiftForEditing(expectedBaselineAssignmentResultId) {
           const authState = getAuthState();
           const workspaceState = get().workspaceState;
 
@@ -770,12 +714,11 @@ export function createServerWorkspaceStore({
             throw new Error("Supabase is not configured yet.");
           }
 
-          const savedActiveShift =
-            await dependencies.createServerActiveShift(
-              supabase,
-              authState.profile,
-              activeShift,
-            );
+          const savedActiveShift = await dependencies.createServerActiveShift(
+            supabase,
+            authState.profile,
+            activeShift,
+          );
           const workspace = await dependencies.loadServerWorkspace(
             supabase,
             authState.profile,
@@ -784,92 +727,6 @@ export function createServerWorkspaceStore({
           applyWorkspace(workspace);
 
           return savedActiveShift.shiftSnapshot;
-        },
-        async submitJoinedNurseIssueRequest(message) {
-          const authState = getAuthState();
-          const joinedNurseAccessState = get().joinedNurseAccessState;
-
-          if (authState.status !== "signed_in") {
-            throw new Error("Sign in before submitting an issue.");
-          }
-
-          if (joinedNurseAccessState.status !== "ready") {
-            throw new Error("Join a shift before submitting an issue.");
-          }
-
-          const supabase = getSupabaseClient();
-
-          if (!supabase) {
-            throw new Error("Supabase is not configured yet.");
-          }
-
-          await dependencies.submitJoinedNurseIssueRequestToServer(supabase, {
-            message,
-          });
-          await get().retryLoadJoinedNurseAccess("manual");
-        },
-        async submitJoinedNurseSwapRequest(sourceBedId, message) {
-          const authState = getAuthState();
-          const joinedNurseAccessState = get().joinedNurseAccessState;
-
-          if (authState.status !== "signed_in") {
-            throw new Error("Sign in before submitting a swap request.");
-          }
-
-          if (joinedNurseAccessState.status !== "ready") {
-            throw new Error("Join a shift before submitting a swap request.");
-          }
-
-          const sourceBedBelongsToNurse =
-            joinedNurseAccessState.assignmentView.assignedBeds.some(
-              (assignedBed) => assignedBed.bed.id === sourceBedId,
-            );
-
-          if (!sourceBedBelongsToNurse) {
-            throw new Error("Choose one of your assigned beds for the swap.");
-          }
-
-          const supabase = getSupabaseClient();
-
-          if (!supabase) {
-            throw new Error("Supabase is not configured yet.");
-          }
-
-          await dependencies.submitJoinedNurseSwapRequestToServer(supabase, {
-            message,
-            sourceBedId,
-          });
-          await get().retryLoadJoinedNurseAccess("manual");
-        },
-        async updateNurseIssueStatus(requestId, nextStatus) {
-          const authState = getAuthState();
-
-          if (
-            authState.status !== "signed_in" ||
-            authState.profile.role !== "charge_nurse"
-          ) {
-            throw new Error("Sign in as charge to update issue requests.");
-          }
-
-          const supabase = getSupabaseClient();
-
-          if (!supabase) {
-            throw new Error("Supabase is not configured yet.");
-          }
-
-          const shiftId = requireActiveShiftId(get().workspaceState);
-
-          await dependencies.updateShiftNurseIssueStatusOnServer(supabase, {
-            nextStatus,
-            requestId,
-            shiftId,
-          });
-          const workspace = await dependencies.loadServerWorkspace(
-            supabase,
-            authState.profile,
-          );
-
-          applyWorkspace(workspace);
         },
         workspaceState: { status: "idle" },
       };

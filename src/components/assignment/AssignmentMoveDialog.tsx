@@ -12,13 +12,15 @@ import {
 import { createLocalId } from "../../helpers/localId";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { useServerWorkspace } from "../../store/ServerWorkspaceContext";
-import { colors, fontWeight, radius, shadows, spacing, textSize } from "../../theme/tokens";
-import type {
-  AssignmentResult,
-  Flag,
-  Nurse,
-  Shift,
-} from "../../types/models";
+import {
+  colors,
+  fontWeight,
+  radius,
+  shadows,
+  spacing,
+  textSize,
+} from "../../theme/tokens";
+import type { AssignmentResult, Flag, Nurse, Shift } from "../../types/models";
 import {
   getAssignmentMovePreview,
   type AssignmentMovePreview,
@@ -33,7 +35,6 @@ export type AssignmentMoveDialogProps = {
   bedId?: string;
   effectiveAssignmentResult: AssignmentResult;
   onClose: () => void;
-  relatedSwapRequestId?: string;
   visible: boolean;
 };
 
@@ -54,7 +55,10 @@ type WarningAcknowledgementProps = {
 };
 
 function getNurseName(activeShift: Shift, nurseId?: string) {
-  return activeShift.nurses.find((nurse) => nurse.id === nurseId)?.name ?? "Unknown nurse";
+  return (
+    activeShift.nurses.find((nurse) => nurse.id === nurseId)?.name ??
+    "Unknown nurse"
+  );
 }
 
 function WarningAcknowledgement({
@@ -73,7 +77,9 @@ function WarningAcknowledgement({
         pressed ? styles.pressed : null,
       ]}
     >
-      <View style={[styles.checkbox, acknowledged ? styles.checkboxSelected : null]}>
+      <View
+        style={[styles.checkbox, acknowledged ? styles.checkboxSelected : null]}
+      >
         <Text style={styles.checkboxMark}>{acknowledged ? "✓" : ""}</Text>
       </View>
       <Text style={styles.warningText}>{warning.message}</Text>
@@ -96,7 +102,9 @@ function NurseChoice({
     bedId,
     nurse.id,
   );
-  const disabledReason = preview.blockingReasons.map((reason) => reason.message).join(" ");
+  const disabledReason = preview.blockingReasons
+    .map((reason) => reason.message)
+    .join(" ");
   const disabled = preview.blockingReasons.length > 0;
   const accessibilityLabel = disabled
     ? `${nurse.name}, unavailable. ${disabledReason}`
@@ -134,26 +142,25 @@ export function AssignmentMoveDialog({
   bedId,
   effectiveAssignmentResult,
   onClose,
-  relatedSwapRequestId,
   visible,
 }: AssignmentMoveDialogProps) {
   const isReducedMotionEnabled = useReducedMotion();
-  const {
-    confirmManualAssignmentOverride,
-    realtimeConnectionState,
-  } = useServerWorkspace(
-    useShallow((state) => ({
-      confirmManualAssignmentOverride: state.confirmManualAssignmentOverride,
-      realtimeConnectionState: state.realtimeConnectionState,
-    })),
-  );
+  const { confirmManualAssignmentOverride, realtimeConnectionState } =
+    useServerWorkspace(
+      useShallow((state) => ({
+        confirmManualAssignmentOverride: state.confirmManualAssignmentOverride,
+        realtimeConnectionState: state.realtimeConnectionState,
+      })),
+    );
   const [selectedNurseId, setSelectedNurseId] = useState<string>();
-  const [acknowledgedWarningIds, setAcknowledgedWarningIds] = useState<Set<string>>(
-    new Set(),
-  );
+  const [acknowledgedWarningIds, setAcknowledgedWarningIds] = useState<
+    Set<string>
+  >(new Set());
   const [feedback, setFeedback] = useState("");
-  const [openedBaselineAssignmentResultId, setOpenedBaselineAssignmentResultId] =
-    useState<string>();
+  const [
+    openedBaselineAssignmentResultId,
+    setOpenedBaselineAssignmentResultId,
+  ] = useState<string>();
   const [resultState, setResultState] = useState<
     "editing" | "saving" | "saved" | "stale" | "error"
   >("editing");
@@ -162,8 +169,12 @@ export function AssignmentMoveDialog({
   const currentAssignment = effectiveAssignmentResult.bedAssignments.find(
     (assignment) => assignment.bedId === bedId,
   );
-  const currentNurseName = getNurseName(activeShift, currentAssignment?.nurseId);
-  const bedLabel = activeShift.beds.find((bed) => bed.id === bedId)?.label ?? "bed";
+  const currentNurseName = getNurseName(
+    activeShift,
+    currentAssignment?.nurseId,
+  );
+  const bedLabel =
+    activeShift.beds.find((bed) => bed.id === bedId)?.label ?? "bed";
   const preview = useMemo<AssignmentMovePreview | undefined>(() => {
     if (!bedId || !selectedNurseId) {
       return undefined;
@@ -177,7 +188,9 @@ export function AssignmentMoveDialog({
     );
   }, [activeShift, bedId, effectiveAssignmentResult, selectedNurseId]);
   const allWarningsAcknowledged =
-    preview?.warnings.every((warning) => acknowledgedWarningIds.has(warning.id)) ?? false;
+    preview?.warnings.every((warning) =>
+      acknowledgedWarningIds.has(warning.id),
+    ) ?? false;
   const isSavingMove = resultState === "saving";
   const canConfirm =
     Boolean(preview) &&
@@ -210,11 +223,7 @@ export function AssignmentMoveDialog({
       );
       setResultState("stale");
     }
-  }, [
-    effectiveAssignmentResult.id,
-    openedBaselineAssignmentResultId,
-    visible,
-  ]);
+  }, [effectiveAssignmentResult.id, openedBaselineAssignmentResultId, visible]);
 
   function handleSelectNurse(nurseId: string) {
     setSelectedNurseId(nurseId);
@@ -255,7 +264,6 @@ export function AssignmentMoveDialog({
         bedId,
         clientMutationId: createLocalId("assignment-move"),
         fromNurseId: preview.fromNurseId,
-        relatedSwapRequestId,
         shiftId: activeShift.id,
         toNurseId: preview.toNurseId,
         warningAcknowledgements: preview.warnings.map((warning) => ({
@@ -263,21 +271,31 @@ export function AssignmentMoveDialog({
           id: createLocalId("warning-ack"),
           message: warning.message,
           nurseId: warning.nurseId,
-          warningType: warning.type as "over_side_load_limit" | "over_max_load" | "team_imbalance",
+          warningType: warning.type as
+            "over_side_load_limit" | "over_max_load" | "team_imbalance",
         })),
       });
 
       if (result.status === "stale") {
         setResultState("stale");
-        setFeedback(result.message ?? "The board changed. Review the refreshed assignment and try again.");
+        setFeedback(
+          result.message ??
+            "The board changed. Review the refreshed assignment and try again.",
+        );
         return;
       }
 
       setResultState("saved");
-      setFeedback(`Bed ${bedLabel} is now assigned to ${getNurseName(activeShift, preview.toNurseId)}.`);
+      setFeedback(
+        `Bed ${bedLabel} is now assigned to ${getNurseName(activeShift, preview.toNurseId)}.`,
+      );
     } catch (error) {
       setResultState("error");
-      setFeedback(error instanceof Error ? error.message : "Assignment move could not be saved. Try again.");
+      setFeedback(
+        error instanceof Error
+          ? error.message
+          : "Assignment move could not be saved. Try again.",
+      );
     }
   }
 
@@ -304,7 +322,9 @@ export function AssignmentMoveDialog({
             >
               Move bed {bedLabel}
             </Text>
-            <Text style={styles.subtitle}>Currently assigned to {currentNurseName}</Text>
+            <Text style={styles.subtitle}>
+              Currently assigned to {currentNurseName}
+            </Text>
           </View>
           <Pressable
             accessibilityRole="button"
@@ -313,7 +333,9 @@ export function AssignmentMoveDialog({
             onPress={resultState === "saved" ? onClose : onClose}
             style={styles.closeButton}
           >
-            <Text style={styles.closeButtonText}>{resultState === "saved" ? "Done" : "Cancel"}</Text>
+            <Text style={styles.closeButtonText}>
+              {resultState === "saved" ? "Done" : "Cancel"}
+            </Text>
           </Pressable>
         </View>
 
@@ -323,11 +345,13 @@ export function AssignmentMoveDialog({
             <Text style={styles.feedbackText}>{feedback}</Text>
           </View>
         ) : (
-          <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <ScrollView
+            contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled"
+          >
             <Text style={styles.instructions}>
-              {relatedSwapRequestId
-                ? "Choose an eligible nurse, review the result, then confirm the move to complete this accepted swap."
-                : "Choose an eligible nurse, review the resulting loads and warnings, then confirm the move."}
+              Choose an eligible nurse, review the resulting loads and warnings,
+              then confirm the move.
             </Text>
 
             <View style={styles.targetList}>
@@ -352,17 +376,22 @@ export function AssignmentMoveDialog({
                 <Text style={styles.sectionTitle}>Review move</Text>
                 {preview.resultingLoadSummary.map((load) => (
                   <Text key={load.nurseId} style={styles.loadText}>
-                    {getNurseName(activeShift, load.nurseId)}: {load.before} → {load.after} patients
+                    {getNurseName(activeShift, load.nurseId)}: {load.before} →{" "}
+                    {load.after} patients
                   </Text>
                 ))}
 
                 {preview.blockingReasons.map((reason) => (
-                  <Text key={reason.code} style={styles.blockingText}>{reason.message}</Text>
+                  <Text key={reason.code} style={styles.blockingText}>
+                    {reason.message}
+                  </Text>
                 ))}
 
                 {preview.warnings.length ? (
                   <View style={styles.warningList}>
-                    <Text style={styles.warningHeading}>Acknowledge each warning to continue</Text>
+                    <Text style={styles.warningHeading}>
+                      Acknowledge each warning to continue
+                    </Text>
                     {preview.warnings.map((warning) => (
                       <WarningAcknowledgement
                         acknowledged={acknowledgedWarningIds.has(warning.id)}
@@ -373,22 +402,34 @@ export function AssignmentMoveDialog({
                     ))}
                   </View>
                 ) : (
-                  <Text style={styles.eligibleReason}>No new assignment warnings.</Text>
+                  <Text style={styles.eligibleReason}>
+                    No new assignment warnings.
+                  </Text>
                 )}
-
               </View>
             ) : null}
 
             {realtimeConnectionState !== "live" ? (
-              <Text accessibilityLiveRegion="polite" style={styles.blockingText}>
+              <Text
+                accessibilityLiveRegion="polite"
+                style={styles.blockingText}
+              >
                 Reconnect to NurseFlow before saving an assignment move.
               </Text>
             ) : null}
 
             {feedback ? (
               <Text
-                accessibilityLiveRegion={resultState === "error" || resultState === "stale" ? "assertive" : "polite"}
-                style={resultState === "error" || resultState === "stale" ? styles.blockingText : styles.feedbackText}
+                accessibilityLiveRegion={
+                  resultState === "error" || resultState === "stale"
+                    ? "assertive"
+                    : "polite"
+                }
+                style={
+                  resultState === "error" || resultState === "stale"
+                    ? styles.blockingText
+                    : styles.feedbackText
+                }
               >
                 {feedback}
               </Text>
@@ -435,12 +476,28 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   headerCopy: { flex: 1, gap: spacing.xs },
-  title: { color: colors.neutral.textPrimary, fontSize: textSize.lg, fontWeight: fontWeight.bold },
+  title: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.lg,
+    fontWeight: fontWeight.bold,
+  },
   subtitle: { color: colors.neutral.textSecondary, fontSize: textSize.sm },
-  closeButton: { minHeight: 44, justifyContent: "center", paddingHorizontal: spacing.sm },
-  closeButtonText: { color: colors.brand.burgundy, fontSize: textSize.action, fontWeight: fontWeight.bold },
+  closeButton: {
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: spacing.sm,
+  },
+  closeButtonText: {
+    color: colors.brand.burgundy,
+    fontSize: textSize.action,
+    fontWeight: fontWeight.bold,
+  },
   content: { gap: spacing.lg, padding: spacing.lg, paddingBottom: spacing.xxl },
-  instructions: { color: colors.neutral.textSecondary, fontSize: textSize.sm, lineHeight: 19 },
+  instructions: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    lineHeight: 19,
+  },
   targetList: { gap: spacing.sm },
   nurseChoice: {
     backgroundColor: colors.neutral.surface,
@@ -451,13 +508,37 @@ const styles = StyleSheet.create({
     minHeight: 64,
     padding: spacing.md,
   },
-  nurseChoiceDisabled: { backgroundColor: colors.neutral.backgroundSecondary, opacity: 0.68 },
+  nurseChoiceDisabled: {
+    backgroundColor: colors.neutral.backgroundSecondary,
+    opacity: 0.68,
+  },
   nurseChoiceSelected: { borderColor: colors.brand.burgundy, borderWidth: 2 },
-  nurseChoiceTopRow: { alignItems: "center", flexDirection: "row", gap: spacing.sm, justifyContent: "space-between" },
-  nurseChoiceName: { color: colors.neutral.textPrimary, flex: 1, fontSize: textSize.md, fontWeight: fontWeight.bold },
-  nurseChoiceMeta: { color: colors.neutral.textSecondary, fontSize: textSize.sm },
-  eligibleReason: { color: colors.status.green800, fontSize: textSize.sm, lineHeight: 18 },
-  disabledReason: { color: colors.status.red800, fontSize: textSize.sm, lineHeight: 18 },
+  nurseChoiceTopRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.sm,
+    justifyContent: "space-between",
+  },
+  nurseChoiceName: {
+    color: colors.neutral.textPrimary,
+    flex: 1,
+    fontSize: textSize.md,
+    fontWeight: fontWeight.bold,
+  },
+  nurseChoiceMeta: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+  },
+  eligibleReason: {
+    color: colors.status.green800,
+    fontSize: textSize.sm,
+    lineHeight: 18,
+  },
+  disabledReason: {
+    color: colors.status.red800,
+    fontSize: textSize.sm,
+    lineHeight: 18,
+  },
   previewCard: {
     backgroundColor: colors.neutral.surface,
     borderColor: colors.neutral.borderTertiary,
@@ -467,11 +548,27 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     ...shadows.sm,
   },
-  sectionTitle: { color: colors.neutral.textPrimary, fontSize: textSize.md, fontWeight: fontWeight.bold },
-  loadText: { color: colors.neutral.textPrimary, fontSize: textSize.sm, lineHeight: 18 },
-  blockingText: { color: colors.status.red800, fontSize: textSize.sm, lineHeight: 19 },
+  sectionTitle: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.md,
+    fontWeight: fontWeight.bold,
+  },
+  loadText: {
+    color: colors.neutral.textPrimary,
+    fontSize: textSize.sm,
+    lineHeight: 18,
+  },
+  blockingText: {
+    color: colors.status.red800,
+    fontSize: textSize.sm,
+    lineHeight: 19,
+  },
   warningList: { gap: spacing.sm },
-  warningHeading: { color: colors.status.amber800, fontSize: textSize.sm, fontWeight: fontWeight.bold },
+  warningHeading: {
+    color: colors.status.amber800,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.bold,
+  },
   warningRow: {
     alignItems: "flex-start",
     backgroundColor: colors.status.amber50,
@@ -484,15 +581,59 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
   },
   warningRowSelected: { borderWidth: 1.5 },
-  checkbox: { alignItems: "center", borderColor: colors.status.amber800, borderRadius: radius.micro, borderWidth: 1, height: 22, justifyContent: "center", width: 22 },
+  checkbox: {
+    alignItems: "center",
+    borderColor: colors.status.amber800,
+    borderRadius: radius.micro,
+    borderWidth: 1,
+    height: 22,
+    justifyContent: "center",
+    width: 22,
+  },
   checkboxSelected: { backgroundColor: colors.status.amber800 },
-  checkboxMark: { color: colors.neutral.surface, fontSize: textSize.sm, fontWeight: fontWeight.bold },
-  warningText: { color: colors.status.amber800, flex: 1, fontSize: textSize.sm, lineHeight: 18 },
-  feedbackText: { color: colors.neutral.textSecondary, fontSize: textSize.sm, lineHeight: 19 },
-  confirmButton: { alignItems: "center", backgroundColor: colors.brand.burgundy, borderRadius: radius.md, justifyContent: "center", minHeight: 48, paddingHorizontal: spacing.lg },
+  checkboxMark: {
+    color: colors.neutral.surface,
+    fontSize: textSize.sm,
+    fontWeight: fontWeight.bold,
+  },
+  warningText: {
+    color: colors.status.amber800,
+    flex: 1,
+    fontSize: textSize.sm,
+    lineHeight: 18,
+  },
+  feedbackText: {
+    color: colors.neutral.textSecondary,
+    fontSize: textSize.sm,
+    lineHeight: 19,
+  },
+  confirmButton: {
+    alignItems: "center",
+    backgroundColor: colors.brand.burgundy,
+    borderRadius: radius.md,
+    justifyContent: "center",
+    minHeight: 48,
+    paddingHorizontal: spacing.lg,
+  },
   confirmButtonDisabled: { opacity: 0.42 },
-  confirmButtonText: { color: colors.neutral.surface, fontSize: textSize.action, fontWeight: fontWeight.bold },
-  successCard: { backgroundColor: colors.status.green50, borderColor: colors.status.greenBorder, borderRadius: radius.lg, borderWidth: 1, gap: spacing.sm, margin: spacing.lg, padding: spacing.xl },
-  successTitle: { color: colors.status.green800, fontSize: textSize.lg, fontWeight: fontWeight.bold },
+  confirmButtonText: {
+    color: colors.neutral.surface,
+    fontSize: textSize.action,
+    fontWeight: fontWeight.bold,
+  },
+  successCard: {
+    backgroundColor: colors.status.green50,
+    borderColor: colors.status.greenBorder,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    gap: spacing.sm,
+    margin: spacing.lg,
+    padding: spacing.xl,
+  },
+  successTitle: {
+    color: colors.status.green800,
+    fontSize: textSize.lg,
+    fontWeight: fontWeight.bold,
+  },
   pressed: { opacity: 0.78 },
 });

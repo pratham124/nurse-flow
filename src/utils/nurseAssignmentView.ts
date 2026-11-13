@@ -2,12 +2,10 @@ import type {
   Bed,
   BedState,
   DoctorSide,
-  NurseRequest,
   Nurse,
   Room,
   Shift,
 } from "../types/models";
-import { getNurseRequestsForNurse } from "./nurseRequests";
 
 export type NurseAssignedBedView = {
   bed: Bed;
@@ -21,7 +19,6 @@ export type NurseAssignmentView = {
   coveredRooms: Room[];
   invalidAssignmentCount: number;
   nurse: Nurse;
-  requests: NurseRequest[];
 };
 
 export type NurseAssignmentViewResult =
@@ -58,7 +55,9 @@ function getAssignedBedView(
     return undefined;
   }
 
-  const room = activeShift.rooms.find((shiftRoom) => shiftRoom.id === bed.roomId);
+  const room = activeShift.rooms.find(
+    (shiftRoom) => shiftRoom.id === bed.roomId,
+  );
 
   if (!room) {
     return undefined;
@@ -138,7 +137,6 @@ export function getSelectedNurseAssignmentView(
       coveredRooms: getCoveredRooms(activeShift, nurse.id),
       invalidAssignmentCount: assignedBedIds.length - assignedBeds.length,
       nurse,
-      requests: getNurseRequestsForNurse(activeShift, nurse.id),
     },
   };
 }

@@ -250,41 +250,54 @@ test("keeps screen-level mutation status out of the shared source state", async 
   assert.deepEqual(legacyMutationStateReferences, []);
 });
 
-test("charge review actions pass the active shift id and reload the workspace", async () => {
-  const calls = [];
+test("a live refresh keeps the ready nurse view instead of showing loading", async () => {
+  const access = { id: "access-1", nurseId: "nurse-1", shiftId: "shift-1" };
+  const firstView = { access, shiftId: "shift-1", requestHistory: [] };
+  const nextView = { access, shiftId: "shift-1", requestHistory: [{ id: "x" }] };
+  let finishLoad;
   const store = createSignedInStore({
-    loadServerWorkspace: async () => readyWorkspace,
-    resolveShiftNurseSwapRequestOnServer: async (_client, input) => {
-      calls.push(["swap", input]);
-    },
-    updateShiftNurseIssueStatusOnServer: async (_client, input) => {
-      calls.push(["issue", input]);
-    },
+    loadJoinedNurseAssignmentView: () =>
+      new Promise((resolve) => {
+        finishLoad = resolve;
+      }),
   });
-  store.getState().applyWorkspace(readyWorkspace);
+  store.getState().setJoinedNurseAccessState({
+    assignmentView: firstView,
+    status: "ready",
+  });
 
-  await store.getState().resolveNurseSwapRequest("nurse-request-1", "accepted");
-  await store.getState().updateNurseIssueStatus("nurse-request-2", "reviewed");
+  const refresh = store.getState().retryLoadJoinedNurseAccess("shift_changed");
 
-  assert.deepEqual(calls, [
-    ["swap", { nextStatus: "accepted", requestId: "nurse-request-1", shiftId: shift.id }],
-    ["issue", { nextStatus: "reviewed", requestId: "nurse-request-2", shiftId: shift.id }],
-  ]);
+  assert.equal(store.getState().joinedNurseAccessState.status, "ready");
+  assert.equal(store.getState().joinedNurseAccessState.assignmentView, firstView);
+
+  finishLoad(nextView);
+  await refresh;
+
+  assert.equal(store.getState().joinedNurseAccessState.assignmentView, nextView);
 });
 
-test("charge review actions fail without an active shift and send nothing", async () => {
+test("a manual retry still shows loading for the nurse view", async () => {
+  let finishLoad;
   const store = createSignedInStore({
-    resolveShiftNurseSwapRequestOnServer: async () => assert.fail("no request expected"),
-    updateShiftNurseIssueStatusOnServer: async () => assert.fail("no request expected"),
+    loadJoinedNurseAssignmentView: () =>
+      new Promise((resolve) => {
+        finishLoad = resolve;
+      }),
+  });
+  store.getState().setJoinedNurseAccessState({
+    assignmentView: {
+      access: { id: "access-1", nurseId: "nurse-1", shiftId: "shift-1" },
+      requestHistory: [],
+      shiftId: "shift-1",
+    },
+    status: "ready",
   });
 
-  await assert.rejects(
-    store.getState().resolveNurseSwapRequest("r", "accepted"),
-    /no longer available/,
-  );
-  store.getState().applyWorkspace({ ...readyWorkspace, activeShift: undefined });
-  await assert.rejects(
-    store.getState().updateNurseIssueStatus("r", "resolved"),
-    /no longer available/,
-  );
+  const refresh = store.getState().retryLoadJoinedNurseAccess();
+
+  assert.equal(store.getState().joinedNurseAccessState.status, "loading");
+
+  finishLoad(undefined);
+  await refresh;
 });

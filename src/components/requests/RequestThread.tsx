@@ -122,10 +122,8 @@ const RequestMessageRow = memo(function RequestMessageRow({
 function EmptyThread() {
   return (
     <View style={styles.emptyThread}>
-      <Text style={styles.emptyThreadTitle}>No replies yet</Text>
-      <Text style={styles.emptyThreadMessage}>
-        Start the conversation about this request.
-      </Text>
+      <Text style={styles.emptyThreadTitle}>No messages yet</Text>
+      <Text style={styles.emptyThreadMessage}>Send the first message.</Text>
     </View>
   );
 }
@@ -159,7 +157,7 @@ function RequestMessageComposer({
       <View style={styles.composerRow}>
         <TextInput
           accessibilityHint="Don't include patient details"
-          accessibilityLabel="Request message"
+          accessibilityLabel="Chat message"
           editable={isConnected && !isSending}
           maxLength={requestMessageBodyMaxLength}
           multiline

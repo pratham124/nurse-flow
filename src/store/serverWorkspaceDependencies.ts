@@ -1,6 +1,4 @@
-import {
-  requestAssignmentOptimization,
-} from "../services/optimizerRepository";
+import { requestAssignmentOptimization } from "../services/optimizerRepository";
 import {
   confirmManualAssignmentOverride,
   createServerActiveShift,
@@ -9,12 +7,8 @@ import {
   loadJoinedNurseAssignmentView,
   loadServerWorkspace,
   resetServerActiveShiftForEditing,
-  resolveShiftNurseSwapRequest,
   saveServerActiveShift,
   saveServerFloorTemplate,
-  submitJoinedNurseIssueRequest,
-  submitJoinedNurseSwapRequest,
-  updateShiftNurseIssueStatus,
 } from "../services/serverWorkspaceRepository";
 import type { ServerWorkspaceDependencies } from "./serverWorkspaceStore";
 
@@ -27,10 +21,6 @@ export const serverWorkspaceDependencies: ServerWorkspaceDependencies = {
   loadServerWorkspace,
   requestAssignmentOptimizationFromService: requestAssignmentOptimization,
   resetServerActiveShiftForEditing,
-  resolveShiftNurseSwapRequestOnServer: resolveShiftNurseSwapRequest,
   saveServerActiveShift,
   saveServerFloorTemplate,
-  submitJoinedNurseIssueRequestToServer: submitJoinedNurseIssueRequest,
-  submitJoinedNurseSwapRequestToServer: submitJoinedNurseSwapRequest,
-  updateShiftNurseIssueStatusOnServer: updateShiftNurseIssueStatus,
 };
