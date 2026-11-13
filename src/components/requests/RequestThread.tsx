@@ -1,15 +1,23 @@
-import { memo } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { memo, useRef, type ReactNode } from "react";
+import {
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  type ListRenderItem,
+} from "react-native";
 
 import { ErrorState } from "../ErrorState";
 import { LoadingState } from "../LoadingState";
-import { LiveStatusChip } from "../workflow";
+import { LiveStatusChip, ResponsiveContent } from "../workflow";
+import { expandedContentMaxWidth } from "../../hooks/useResponsiveLayout";
 import { requestMessageBodyMaxLength } from "../../services/requestMessageRepository";
 import {
   colors,
   fontWeight,
   radius,
-  shadows,
   spacing,
   textSize,
 } from "../../theme/tokens";
@@ -25,6 +33,9 @@ export type RequestThreadProps = {
   draft: string;
   isLoading: boolean;
   isSending: boolean;
+  // Shown above the messages and scrolls away with them, so long request
+  // details never push the composer off screen.
+  listHeader?: ReactNode;
   loadError: string;
   messages: NurseRequestMessage[];
   onDraftChange: (draft: string) => void;
@@ -108,34 +119,16 @@ const RequestMessageRow = memo(function RequestMessageRow({
   );
 });
 
-type RequestMessageListProps = {
-  currentProfileId: string;
-  messages: NurseRequestMessage[];
-};
-
-const RequestMessageList = memo(function RequestMessageList({
-  currentProfileId,
-  messages,
-}: RequestMessageListProps) {
-  if (!messages.length) {
-    return (
-      <View style={styles.emptyThread}>
-        <Text style={styles.emptyThreadTitle}>No replies yet</Text>
-        <Text style={styles.emptyThreadMessage}>
-          Start the conversation about this request.
-        </Text>
-      </View>
-    );
-  }
-
-  return messages.map((message) => (
-    <RequestMessageRow
-      currentProfileId={currentProfileId}
-      key={message.id}
-      message={message}
-    />
-  ));
-});
+function EmptyThread() {
+  return (
+    <View style={styles.emptyThread}>
+      <Text style={styles.emptyThreadTitle}>No replies yet</Text>
+      <Text style={styles.emptyThreadMessage}>
+        Start the conversation about this request.
+      </Text>
+    </View>
+  );
+}
 
 function RequestMessageComposer({
   canSend,
@@ -147,37 +140,10 @@ function RequestMessageComposer({
   sendError,
 }: RequestMessageComposerProps) {
   const isConnected = connectionState === "live";
-  const sendLabel = isSending
-    ? "Sending..."
-    : sendError
-      ? "Retry"
-      : "Send";
+  const sendLabel = isSending ? "Sending..." : sendError ? "Retry" : "Send";
 
   return (
     <View style={styles.composerCard}>
-      <Text style={styles.composerLabel}>Reply</Text>
-      <TextInput
-        accessibilityLabel="Request message"
-        editable={isConnected && !isSending}
-        maxLength={requestMessageBodyMaxLength}
-        multiline
-        onChangeText={onDraftChange}
-        placeholder={
-          isConnected ? "Write a message" : "Reconnect to send messages"
-        }
-        placeholderTextColor={colors.neutral.textTertiary}
-        style={[
-          styles.composerInput,
-          !isConnected ? styles.disabledComposerInput : null,
-        ]}
-        textAlignVertical="top"
-        value={draft}
-      />
-
-      <Text style={styles.composerHint}>
-        Don&apos;t include patient details
-      </Text>
-
       {!isConnected ? (
         <Text style={styles.connectionNote}>
           Messages cannot be sent while disconnected. Drafts are not queued.
@@ -190,23 +156,49 @@ function RequestMessageComposer({
         </Text>
       ) : null}
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ busy: isSending, disabled: !canSend }}
-        disabled={!canSend}
-        onPress={onSend}
-        style={({ pressed }) => [
-          styles.sendButton,
-          !canSend ? styles.disabledSendButton : null,
-          pressed && canSend ? styles.pressedSendButton : null,
-        ]}
-      >
-        <Text style={styles.sendButtonText}>{sendLabel}</Text>
-      </Pressable>
+      <View style={styles.composerRow}>
+        <TextInput
+          accessibilityHint="Don't include patient details"
+          accessibilityLabel="Request message"
+          editable={isConnected && !isSending}
+          maxLength={requestMessageBodyMaxLength}
+          multiline
+          onChangeText={onDraftChange}
+          placeholder={
+            isConnected
+              ? "Message (no patient details)"
+              : "Reconnect to send messages"
+          }
+          placeholderTextColor={colors.neutral.textTertiary}
+          style={[
+            styles.composerInput,
+            !isConnected ? styles.disabledComposerInput : null,
+          ]}
+          textAlignVertical="top"
+          value={draft}
+        />
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ busy: isSending, disabled: !canSend }}
+          disabled={!canSend}
+          onPress={onSend}
+          style={({ pressed }) => [
+            styles.sendButton,
+            !canSend ? styles.disabledSendButton : null,
+            pressed && canSend ? styles.pressedSendButton : null,
+          ]}
+        >
+          <Text style={styles.sendButtonText}>{sendLabel}</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
 
+// A chat-style thread: the messages scroll inside their own list and the
+// composer stays pinned underneath it. The parent screen gives this component
+// the remaining height (flex: 1) and handles the keyboard.
 export function RequestThread({
   canSend,
   connectionState,
@@ -214,6 +206,7 @@ export function RequestThread({
   draft,
   isLoading,
   isSending,
+  listHeader,
   loadError,
   messages,
   onDraftChange,
@@ -221,59 +214,100 @@ export function RequestThread({
   onSend,
   sendError,
 }: RequestThreadProps) {
+  const listRef = useRef<FlatList<NurseRequestMessage>>(null);
+  const showMessages = !isLoading && !loadError;
+  // The list is inverted (newest first, drawn from the bottom up), the usual
+  // chat pattern: the newest message sits just above the composer, new
+  // messages appear there, and it stays in view when the keyboard opens.
+  const newestFirstMessages = showMessages ? [...messages].reverse() : [];
+
+  function handleSend() {
+    // Offset 0 is the bottom of an inverted list: show the message being sent.
+    listRef.current?.scrollToOffset({ animated: true, offset: 0 });
+    onSend();
+  }
+
+  const renderMessage: ListRenderItem<NurseRequestMessage> = ({ item }) => (
+    <RequestMessageRow currentProfileId={currentProfileId} message={item} />
+  );
+
   return (
-    <View style={styles.threadCard}>
-      <View style={styles.threadHeader}>
-        <Text accessibilityRole="header" style={styles.threadTitle}>
-          Conversation
-        </Text>
-        <LiveStatusChip
-          connectionState={connectionState}
-          onRefresh={onRetryThread}
-        />
-      </View>
+    <View style={styles.thread}>
+      <FlatList
+        contentContainerStyle={styles.listContent}
+        data={newestFirstMessages}
+        keyboardDismissMode="interactive"
+        keyboardShouldPersistTaps="handled"
+        keyExtractor={(message) => message.id}
+        ListEmptyComponent={showMessages ? <EmptyThread /> : null}
+        inverted
+        // In an inverted list the footer is drawn at the top, above the
+        // oldest message, and scrolls away with the conversation.
+        ListFooterComponent={
+          <ResponsiveContent expanded>
+            <View style={styles.listHeader}>
+              {listHeader}
+              <View style={styles.threadHeader}>
+                <Text accessibilityRole="header" style={styles.threadTitle}>
+                  Conversation
+                </Text>
+                <LiveStatusChip
+                  connectionState={connectionState}
+                  onRefresh={onRetryThread}
+                />
+              </View>
 
-      {isLoading ? <LoadingState message="Loading conversation" /> : null}
+              {isLoading ? (
+                <LoadingState message="Loading conversation" />
+              ) : null}
 
-      {loadError && !isLoading ? (
-        <ErrorState
-          message={loadError}
-          onRetry={onRetryThread}
-          title="Conversation could not load"
-        />
-      ) : null}
-
-      {!isLoading && !loadError ? (
-        <View style={styles.messageList}>
-          <RequestMessageList
-            currentProfileId={currentProfileId}
-            messages={messages}
-          />
-        </View>
-      ) : null}
-
-      <RequestMessageComposer
-        canSend={canSend}
-        connectionState={connectionState}
-        draft={draft}
-        isSending={isSending}
-        onDraftChange={onDraftChange}
-        onSend={onSend}
-        sendError={sendError}
+              {loadError && !isLoading ? (
+                <ErrorState
+                  message={loadError}
+                  onRetry={onRetryThread}
+                  title="Conversation could not load"
+                />
+              ) : null}
+            </View>
+          </ResponsiveContent>
+        }
+        ref={listRef}
+        renderItem={renderMessage}
+        style={styles.list}
       />
+
+      <View style={styles.composerBar}>
+        <ResponsiveContent expanded>
+          <RequestMessageComposer
+            canSend={canSend}
+            connectionState={connectionState}
+            draft={draft}
+            isSending={isSending}
+            onDraftChange={onDraftChange}
+            onSend={handleSend}
+            sendError={sendError}
+          />
+        </ResponsiveContent>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  threadCard: {
-    backgroundColor: colors.neutral.surface,
-    borderColor: colors.neutral.borderTertiary,
-    borderRadius: radius.lg,
-    borderWidth: 0.5,
-    gap: spacing.md,
-    padding: spacing.md,
-    ...shadows.sm,
+  thread: {
+    flex: 1,
+  },
+  list: {
+    flex: 1,
+  },
+  listContent: {
+    gap: spacing.sm,
+    padding: spacing.xl,
+  },
+  listHeader: {
+    gap: spacing.cardGap,
+    paddingBottom: spacing.sm,
+    width: "100%",
   },
   threadHeader: {
     alignItems: "center",
@@ -286,11 +320,11 @@ const styles = StyleSheet.create({
     fontSize: textSize.lg,
     fontWeight: fontWeight.bold,
   },
-  messageList: {
-    gap: spacing.sm,
-  },
   messageRow: {
+    alignSelf: "center",
     flexDirection: "row",
+    maxWidth: expandedContentMaxWidth,
+    width: "100%",
   },
   ownMessageRow: {
     justifyContent: "flex-end",
@@ -327,13 +361,16 @@ const styles = StyleSheet.create({
     color: "rgba(255, 255, 255, 0.78)",
   },
   emptyThread: {
+    alignItems: "center",
+    alignSelf: "center",
     backgroundColor: colors.neutral.backgroundTertiary,
     borderRadius: radius.lg,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 144,
     gap: spacing.sm,
+    justifyContent: "center",
+    maxWidth: expandedContentMaxWidth,
+    minHeight: 144,
     padding: spacing.xl,
+    width: "100%",
   },
   emptyThreadTitle: {
     color: colors.neutral.textPrimary,
@@ -346,16 +383,20 @@ const styles = StyleSheet.create({
     fontSize: textSize.sm,
     lineHeight: 18,
   },
-  composerCard: {
+  composerBar: {
+    backgroundColor: colors.neutral.surface,
     borderTopColor: colors.neutral.borderTertiary,
     borderTopWidth: 0.5,
-    gap: spacing.sm,
-    paddingTop: spacing.md,
   },
-  composerLabel: {
-    color: colors.neutral.textPrimary,
-    fontSize: textSize.sm,
-    fontWeight: fontWeight.semibold,
+  composerCard: {
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+  },
+  composerRow: {
+    alignItems: "flex-end",
+    flexDirection: "row",
+    gap: spacing.sm,
   },
   composerInput: {
     backgroundColor: colors.neutral.backgroundTertiary,
@@ -363,20 +404,18 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     color: colors.neutral.textPrimary,
+    flex: 1,
     fontSize: textSize.md,
     lineHeight: 20,
-    minHeight: 88,
+    // Grows with the draft up to about five lines, then scrolls inside.
+    maxHeight: 124,
+    minHeight: 44,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
   },
   disabledComposerInput: {
     backgroundColor: colors.neutral.backgroundSecondary,
     color: colors.neutral.textSecondary,
-  },
-  composerHint: {
-    color: colors.neutral.textSecondary,
-    fontSize: textSize.sm,
-    lineHeight: 18,
   },
   connectionNote: {
     color: colors.status.amber800,
@@ -390,13 +429,12 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     alignItems: "center",
-    alignSelf: "flex-end",
     backgroundColor: colors.brand.burgundy,
     borderRadius: radius.md,
     justifyContent: "center",
     minHeight: 44,
-    minWidth: 96,
-    paddingHorizontal: spacing.lg,
+    minWidth: 72,
+    paddingHorizontal: spacing.md,
   },
   disabledSendButton: {
     opacity: 0.48,

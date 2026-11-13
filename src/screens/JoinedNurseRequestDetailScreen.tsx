@@ -1,6 +1,8 @@
 import { useShallow } from "zustand/react/shallow";
 import { router, useLocalSearchParams } from "expo-router";
 import {
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -14,7 +16,6 @@ import { LoadingState } from "../components/LoadingState";
 import { RequestThread } from "../components/requests/RequestThread";
 import { ResponsiveContent, SummaryChip } from "../components/workflow";
 import { useRequestThread } from "../hooks/useRequestThread";
-import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { useAuthSession } from "../store/AuthSessionContext";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import {
@@ -105,17 +106,14 @@ function SafeState({ message, title }: SafeStateProps) {
 }
 
 export default function JoinedNurseRequestDetailScreen() {
-  const { isExpanded } = useResponsiveLayout();
   const { authState } = useAuthSession();
-  const {
-    joinedNurseAccessState,
-    retryLoadJoinedNurseAccess,
-  } = useServerWorkspace(
-    useShallow((state) => ({
-      joinedNurseAccessState: state.joinedNurseAccessState,
-      retryLoadJoinedNurseAccess: state.retryLoadJoinedNurseAccess,
-    })),
-  );
+  const { joinedNurseAccessState, retryLoadJoinedNurseAccess } =
+    useServerWorkspace(
+      useShallow((state) => ({
+        joinedNurseAccessState: state.joinedNurseAccessState,
+        retryLoadJoinedNurseAccess: state.retryLoadJoinedNurseAccess,
+      })),
+    );
   const { requestId } = useLocalSearchParams<{
     requestId?: string | string[];
   }>();
@@ -149,7 +147,12 @@ export default function JoinedNurseRequestDetailScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <View style={styles.body}>
+      {/* Sits directly inside the safe area so iOS measures the keyboard
+          overlap correctly and the composer rises above the keyboard. */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={styles.body}
+      >
         <View style={styles.header}>
           <Text style={styles.title}>{getRequestTitle(request)}</Text>
           <Pressable
@@ -164,63 +167,16 @@ export default function JoinedNurseRequestDetailScreen() {
           </Pressable>
         </View>
 
-        <ScrollView
-          // iOS: make room for the keyboard and scroll the focused reply box into view.
-          automaticallyAdjustKeyboardInsets
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-        >
-          <ResponsiveContent expanded>
-            <View style={styles.contentColumn}>
-          {joinedNurseAccessState.status === "idle" ||
-          joinedNurseAccessState.status === "loading" ? (
-            <LoadingState message="Loading request" />
-          ) : null}
-
-          {joinedNurseAccessState.status === "shift_ended" ? (
-            <SafeState
-              message="This request thread is no longer available because the shift ended."
-              title="Shift ended"
-            />
-          ) : null}
-
-          {joinedNurseAccessState.status === "access_removed" ? (
-            <SafeState
-              message="This account is no longer linked to the nurse who created this request."
-              title="Access removed"
-            />
-          ) : null}
-
-          {joinedNurseAccessState.status === "empty" ? (
-            <SafeState
-              message="Join an active shift before opening a request conversation."
-              title="No shift access"
-            />
-          ) : null}
-
-          {joinedNurseAccessState.status === "error" ? (
-            <ErrorState
-              message={joinedNurseAccessState.errorMessage}
-              onRetry={retryLoadJoinedNurseAccess}
-              title="Request access could not load"
-            />
-          ) : null}
-
-          {assignmentView && !request ? (
-            <SafeState
-              message="Return to your assignment and choose one of your own requests."
-              title="Request unavailable"
-            />
-          ) : null}
-
-          {assignmentView && request ? (
-            <View
-              style={[
-                styles.requestContent,
-                isExpanded ? styles.expandedRequestContent : null,
-              ]}
-            >
-              <View style={styles.metadataColumn}>
+        {assignmentView && request ? (
+          <RequestThread
+            canSend={thread.canSend}
+            connectionState={thread.connectionState}
+            currentProfileId={currentProfileId}
+            draft={thread.draft}
+            isLoading={thread.isLoading}
+            isSending={thread.isSending}
+            listHeader={
+              <View style={styles.requestDetails}>
                 <View style={styles.summaryCard}>
                   <View style={styles.chipRow}>
                     <Text style={styles.sectionTitle}>Request details</Text>
@@ -255,29 +211,63 @@ export default function JoinedNurseRequestDetailScreen() {
                   <Text style={styles.originalMessage}>{request.message}</Text>
                 </View>
               </View>
+            }
+            loadError={thread.loadError}
+            messages={thread.messages}
+            onDraftChange={thread.changeDraft}
+            onRetryThread={thread.retryThread}
+            onSend={thread.sendMessage}
+            sendError={thread.sendError}
+          />
+        ) : (
+          <ScrollView contentContainerStyle={styles.content}>
+            <ResponsiveContent expanded>
+              <View style={styles.contentColumn}>
+                {joinedNurseAccessState.status === "idle" ||
+                joinedNurseAccessState.status === "loading" ? (
+                  <LoadingState message="Loading request" />
+                ) : null}
 
-              <View style={styles.threadColumn}>
-                <RequestThread
-                  canSend={thread.canSend}
-                  connectionState={thread.connectionState}
-                  currentProfileId={currentProfileId}
-                  draft={thread.draft}
-                  isLoading={thread.isLoading}
-                  isSending={thread.isSending}
-                  loadError={thread.loadError}
-                  messages={thread.messages}
-                  onDraftChange={thread.changeDraft}
-                  onRetryThread={thread.retryThread}
-                  onSend={thread.sendMessage}
-                  sendError={thread.sendError}
-                />
+                {joinedNurseAccessState.status === "shift_ended" ? (
+                  <SafeState
+                    message="This request thread is no longer available because the shift ended."
+                    title="Shift ended"
+                  />
+                ) : null}
+
+                {joinedNurseAccessState.status === "access_removed" ? (
+                  <SafeState
+                    message="This account is no longer linked to the nurse who created this request."
+                    title="Access removed"
+                  />
+                ) : null}
+
+                {joinedNurseAccessState.status === "empty" ? (
+                  <SafeState
+                    message="Join an active shift before opening a request conversation."
+                    title="No shift access"
+                  />
+                ) : null}
+
+                {joinedNurseAccessState.status === "error" ? (
+                  <ErrorState
+                    message={joinedNurseAccessState.errorMessage}
+                    onRetry={retryLoadJoinedNurseAccess}
+                    title="Request access could not load"
+                  />
+                ) : null}
+
+                {assignmentView && !request ? (
+                  <SafeState
+                    message="Return to your assignment and choose one of your own requests."
+                    title="Request unavailable"
+                  />
+                ) : null}
               </View>
-            </View>
-          ) : null}
-            </View>
-          </ResponsiveContent>
-        </ScrollView>
-      </View>
+            </ResponsiveContent>
+          </ScrollView>
+        )}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -332,21 +322,8 @@ const styles = StyleSheet.create({
   contentColumn: {
     gap: spacing.cardGap,
   },
-  requestContent: {
+  requestDetails: {
     gap: spacing.cardGap,
-  },
-  expandedRequestContent: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-  },
-  metadataColumn: {
-    flex: 1,
-    gap: spacing.cardGap,
-    minWidth: 0,
-  },
-  threadColumn: {
-    flex: 1.6,
-    minWidth: 0,
   },
   summaryCard: {
     backgroundColor: colors.neutral.surface,

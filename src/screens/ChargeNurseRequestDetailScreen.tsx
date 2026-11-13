@@ -1,12 +1,7 @@
 import { useShallow } from "zustand/react/shallow";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { RequestThread } from "../components/requests/RequestThread";
 import { AssignmentMoveDialog } from "../components/assignment/AssignmentMoveDialog";
@@ -16,7 +11,6 @@ import {
   WorkflowSection,
 } from "../components/workflow";
 import { useRequestThread } from "../hooks/useRequestThread";
-import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { useAuthSession } from "../store/AuthSessionContext";
 import { useServerWorkspace } from "../store/ServerWorkspaceContext";
 import {
@@ -51,7 +45,6 @@ function DetailRow({ label, value }: DetailRowProps) {
 }
 
 export default function ChargeNurseRequestDetailScreen() {
-  const { isExpanded } = useResponsiveLayout();
   const { authState } = useAuthSession();
   const {
     activeAssignmentOverridesByBedId,
@@ -109,8 +102,7 @@ export default function ChargeNurseRequestDetailScreen() {
     activeShift && effectiveAssignmentResult && request?.sourceBedId,
   );
   const lifecycleWriteDisabled =
-    isResolving ||
-    realtimeConnectionState !== "live";
+    isResolving || realtimeConnectionState !== "live";
   const swapCompletionDisabled = lifecycleWriteDisabled || !canCompleteSwap;
 
   async function handleResolveSwap(nextStatus: "accepted" | "declined") {
@@ -160,8 +152,10 @@ export default function ChargeNurseRequestDetailScreen() {
       <WorkflowScreen
         activeStep="Board"
         actionErrorText={serverSaveError}
+        avoidKeyboard
         flow={assignmentFlow}
         headerActionLabel="Floors"
+        managesOwnScrolling
         onHeaderActionPress={() => router.push("/")}
         onPrimaryPress={() => router.push("/flags")}
         primaryAppearance="compactSecondary"
@@ -170,221 +164,244 @@ export default function ChargeNurseRequestDetailScreen() {
         title={request ? request.typeLabel : "Request"}
       >
         {request ? (
-          <View
-            style={[styles.content, isExpanded ? styles.expandedContent : null]}
-          >
-            <View style={styles.metadataColumn}>
-            <WorkflowSection title="Request summary">
-              <View style={styles.summaryCard}>
-                <View style={styles.chipRow}>
-                  <SummaryChip label={request.typeLabel} />
-                  <SummaryChip label={request.statusLabel} />
-                  <SummaryChip label="Live request" />
-                </View>
+          <RequestThread
+            listHeader={
+              <View style={styles.metadataColumn}>
+                <WorkflowSection title="Request summary">
+                  <View style={styles.summaryCard}>
+                    <View style={styles.chipRow}>
+                      <SummaryChip label={request.typeLabel} />
+                      <SummaryChip label={request.statusLabel} />
+                      <SummaryChip label="Live request" />
+                    </View>
 
-                <DetailRow label="Requester" value={request.requesterName} />
-                <DetailRow label="Bed context" value={request.bedContext} />
-                <DetailRow label="Created" value={request.createdAtText} />
-                {request.resolvedAtText ? (
-                  <DetailRow label="Resolved" value={request.resolvedAtText} />
-                ) : null}
-                {request.swapCompletedAtText ? (
-                  <DetailRow
-                    label="Assignment completed"
-                    value={request.swapCompletedAtText}
-                  />
-                ) : null}
-              </View>
-            </WorkflowSection>
-
-            <WorkflowSection title="Original message">
-              <View style={styles.messageCard}>
-                <Text style={styles.messageText}>{request.message}</Text>
-              </View>
-            </WorkflowSection>
-
-            {showSwapActions ? (
-              <WorkflowSection title="Swap decision">
-                <View style={styles.decisionCard}>
-                  <Text style={styles.decisionText}>
-                    Update this request status. Bed assignments stay unchanged.
-                  </Text>
-                  <View style={styles.decisionButtonRow}>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityState={{ disabled: lifecycleWriteDisabled }}
-                      disabled={lifecycleWriteDisabled}
-                      onPress={() => handleResolveSwap("declined")}
-                      style={({ pressed }) => [
-                        styles.secondaryButton,
-                        lifecycleWriteDisabled ? styles.disabledButton : null,
-                        pressed ? styles.buttonPressed : null,
-                      ]}
-                    >
-                      <Text style={styles.secondaryButtonText}>Decline</Text>
-                    </Pressable>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityState={{ disabled: lifecycleWriteDisabled }}
-                      disabled={lifecycleWriteDisabled}
-                      onPress={() => handleResolveSwap("accepted")}
-                      style={({ pressed }) => [
-                        styles.primaryButton,
-                        lifecycleWriteDisabled ? styles.disabledButton : null,
-                        pressed ? styles.buttonPressed : null,
-                      ]}
-                    >
-                      <Text style={styles.primaryButtonText}>Accept</Text>
-                    </Pressable>
-                  </View>
-                </View>
-              </WorkflowSection>
-            ) : null}
-
-            {showIssueActions ? (
-              <WorkflowSection title="Issue status">
-                <View style={styles.decisionCard}>
-                  {realtimeConnectionState !== "live" ? (
-                    <Text
-                      accessibilityRole="alert"
-                      style={styles.disconnectedText}
-                    >
-                      Reconnect before changing this issue status.
-                    </Text>
-                  ) : null}
-                  <View style={styles.decisionButtonRow}>
-                    {request?.issueReviewStatus === "open" ? (
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityState={{
-                          disabled: lifecycleWriteDisabled,
-                        }}
-                        disabled={lifecycleWriteDisabled}
-                        onPress={() => handleUpdateIssue("reviewed")}
-                        style={({ pressed }) => [
-                          styles.secondaryButton,
-                          lifecycleWriteDisabled ? styles.disabledButton : null,
-                          pressed ? styles.buttonPressed : null,
-                        ]}
-                      >
-                        <Text style={styles.secondaryButtonText}>
-                          Mark reviewed
-                        </Text>
-                      </Pressable>
+                    <DetailRow
+                      label="Requester"
+                      value={request.requesterName}
+                    />
+                    <DetailRow label="Bed context" value={request.bedContext} />
+                    <DetailRow label="Created" value={request.createdAtText} />
+                    {request.resolvedAtText ? (
+                      <DetailRow
+                        label="Resolved"
+                        value={request.resolvedAtText}
+                      />
                     ) : null}
-                    {request?.issueReviewStatus !== "resolved" ? (
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityState={{
-                          disabled: lifecycleWriteDisabled,
-                        }}
-                        disabled={lifecycleWriteDisabled}
-                        onPress={() => handleUpdateIssue("resolved")}
-                        style={({ pressed }) => [
-                          styles.primaryButton,
-                          lifecycleWriteDisabled ? styles.disabledButton : null,
-                          pressed ? styles.buttonPressed : null,
-                        ]}
-                      >
-                        <Text style={styles.primaryButtonText}>
-                          Resolve issue
-                        </Text>
-                      </Pressable>
-                    ) : (
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityState={{
-                          disabled: lifecycleWriteDisabled,
-                        }}
-                        disabled={lifecycleWriteDisabled}
-                        onPress={() => handleUpdateIssue("open")}
-                        style={({ pressed }) => [
-                          styles.primaryButton,
-                          lifecycleWriteDisabled ? styles.disabledButton : null,
-                          pressed ? styles.buttonPressed : null,
-                        ]}
-                      >
-                        <Text style={styles.primaryButtonText}>
-                          Reopen issue
-                        </Text>
-                      </Pressable>
-                    )}
+                    {request.swapCompletedAtText ? (
+                      <DetailRow
+                        label="Assignment completed"
+                        value={request.swapCompletedAtText}
+                      />
+                    ) : null}
                   </View>
-                </View>
-              </WorkflowSection>
-            ) : null}
+                </WorkflowSection>
 
-            {showSwapCompletionAction ? (
-              <WorkflowSection title="Assignment change">
-                <View style={styles.decisionCard}>
-                  <Text style={styles.decisionText}>
-                    Acceptance records the decision only. Complete the request
-                    by confirming the assignment move for its linked bed.
-                  </Text>
-                  {!canCompleteSwap ? (
-                    <Text
-                      accessibilityRole="alert"
-                      style={styles.disconnectedText}
-                    >
-                      The linked bed is unavailable, so this swap cannot be
-                      completed from the current shift.
-                    </Text>
-                  ) : null}
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityState={{ disabled: swapCompletionDisabled }}
-                    disabled={swapCompletionDisabled}
-                    onPress={() => setIsMoveDialogOpen(true)}
-                    style={({ pressed }) => [
-                      styles.primaryButton,
-                      swapCompletionDisabled ? styles.disabledButton : null,
-                      pressed ? styles.buttonPressed : null,
-                    ]}
-                  >
-                    <Text style={styles.primaryButtonText}>
-                      Complete with assignment move
-                    </Text>
-                  </Pressable>
-                </View>
-              </WorkflowSection>
-            ) : null}
+                <WorkflowSection title="Original message">
+                  <View style={styles.messageCard}>
+                    <Text style={styles.messageText}>{request.message}</Text>
+                  </View>
+                </WorkflowSection>
 
-            {showSwapCompletionSummary ? (
-              <WorkflowSection title="Assignment change">
-                <View style={styles.decisionCard}>
-                  <Text style={styles.decisionText}>
-                    {wasSwapAssignmentChangedLater
-                      ? "This swap was completed, but a later move changed that bed assignment again."
-                      : "The accepted swap was completed through a confirmed assignment move."}
-                  </Text>
-                </View>
-              </WorkflowSection>
-            ) : null}
-            </View>
+                {showSwapActions ? (
+                  <WorkflowSection title="Swap decision">
+                    <View style={styles.decisionCard}>
+                      <Text style={styles.decisionText}>
+                        Update this request status. Bed assignments stay
+                        unchanged.
+                      </Text>
+                      <View style={styles.decisionButtonRow}>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityState={{
+                            disabled: lifecycleWriteDisabled,
+                          }}
+                          disabled={lifecycleWriteDisabled}
+                          onPress={() => handleResolveSwap("declined")}
+                          style={({ pressed }) => [
+                            styles.secondaryButton,
+                            lifecycleWriteDisabled
+                              ? styles.disabledButton
+                              : null,
+                            pressed ? styles.buttonPressed : null,
+                          ]}
+                        >
+                          <Text style={styles.secondaryButtonText}>
+                            Decline
+                          </Text>
+                        </Pressable>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityState={{
+                            disabled: lifecycleWriteDisabled,
+                          }}
+                          disabled={lifecycleWriteDisabled}
+                          onPress={() => handleResolveSwap("accepted")}
+                          style={({ pressed }) => [
+                            styles.primaryButton,
+                            lifecycleWriteDisabled
+                              ? styles.disabledButton
+                              : null,
+                            pressed ? styles.buttonPressed : null,
+                          ]}
+                        >
+                          <Text style={styles.primaryButtonText}>Accept</Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  </WorkflowSection>
+                ) : null}
 
-            <View style={styles.threadColumn}>
-              <RequestThread
-                canSend={thread.canSend}
-                connectionState={thread.connectionState}
-                currentProfileId={currentProfileId}
-                draft={thread.draft}
-                isLoading={thread.isLoading}
-                isSending={thread.isSending}
-                loadError={thread.loadError}
-                messages={thread.messages}
-                onDraftChange={thread.changeDraft}
-                onRetryThread={thread.retryThread}
-                onSend={thread.sendMessage}
-                sendError={thread.sendError}
-              />
-            </View>
-          </View>
+                {showIssueActions ? (
+                  <WorkflowSection title="Issue status">
+                    <View style={styles.decisionCard}>
+                      {realtimeConnectionState !== "live" ? (
+                        <Text
+                          accessibilityRole="alert"
+                          style={styles.disconnectedText}
+                        >
+                          Reconnect before changing this issue status.
+                        </Text>
+                      ) : null}
+                      <View style={styles.decisionButtonRow}>
+                        {request?.issueReviewStatus === "open" ? (
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityState={{
+                              disabled: lifecycleWriteDisabled,
+                            }}
+                            disabled={lifecycleWriteDisabled}
+                            onPress={() => handleUpdateIssue("reviewed")}
+                            style={({ pressed }) => [
+                              styles.secondaryButton,
+                              lifecycleWriteDisabled
+                                ? styles.disabledButton
+                                : null,
+                              pressed ? styles.buttonPressed : null,
+                            ]}
+                          >
+                            <Text style={styles.secondaryButtonText}>
+                              Mark reviewed
+                            </Text>
+                          </Pressable>
+                        ) : null}
+                        {request?.issueReviewStatus !== "resolved" ? (
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityState={{
+                              disabled: lifecycleWriteDisabled,
+                            }}
+                            disabled={lifecycleWriteDisabled}
+                            onPress={() => handleUpdateIssue("resolved")}
+                            style={({ pressed }) => [
+                              styles.primaryButton,
+                              lifecycleWriteDisabled
+                                ? styles.disabledButton
+                                : null,
+                              pressed ? styles.buttonPressed : null,
+                            ]}
+                          >
+                            <Text style={styles.primaryButtonText}>
+                              Resolve issue
+                            </Text>
+                          </Pressable>
+                        ) : (
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityState={{
+                              disabled: lifecycleWriteDisabled,
+                            }}
+                            disabled={lifecycleWriteDisabled}
+                            onPress={() => handleUpdateIssue("open")}
+                            style={({ pressed }) => [
+                              styles.primaryButton,
+                              lifecycleWriteDisabled
+                                ? styles.disabledButton
+                                : null,
+                              pressed ? styles.buttonPressed : null,
+                            ]}
+                          >
+                            <Text style={styles.primaryButtonText}>
+                              Reopen issue
+                            </Text>
+                          </Pressable>
+                        )}
+                      </View>
+                    </View>
+                  </WorkflowSection>
+                ) : null}
+
+                {showSwapCompletionAction ? (
+                  <WorkflowSection title="Assignment change">
+                    <View style={styles.decisionCard}>
+                      <Text style={styles.decisionText}>
+                        Acceptance records the decision only. Complete the
+                        request by confirming the assignment move for its linked
+                        bed.
+                      </Text>
+                      {!canCompleteSwap ? (
+                        <Text
+                          accessibilityRole="alert"
+                          style={styles.disconnectedText}
+                        >
+                          The linked bed is unavailable, so this swap cannot be
+                          completed from the current shift.
+                        </Text>
+                      ) : null}
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityState={{
+                          disabled: swapCompletionDisabled,
+                        }}
+                        disabled={swapCompletionDisabled}
+                        onPress={() => setIsMoveDialogOpen(true)}
+                        style={({ pressed }) => [
+                          styles.primaryButton,
+                          swapCompletionDisabled ? styles.disabledButton : null,
+                          pressed ? styles.buttonPressed : null,
+                        ]}
+                      >
+                        <Text style={styles.primaryButtonText}>
+                          Complete with assignment move
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </WorkflowSection>
+                ) : null}
+
+                {showSwapCompletionSummary ? (
+                  <WorkflowSection title="Assignment change">
+                    <View style={styles.decisionCard}>
+                      <Text style={styles.decisionText}>
+                        {wasSwapAssignmentChangedLater
+                          ? "This swap was completed, but a later move changed that bed assignment again."
+                          : "The accepted swap was completed through a confirmed assignment move."}
+                      </Text>
+                    </View>
+                  </WorkflowSection>
+                ) : null}
+              </View>
+            }
+            canSend={thread.canSend}
+            connectionState={thread.connectionState}
+            currentProfileId={currentProfileId}
+            draft={thread.draft}
+            isLoading={thread.isLoading}
+            isSending={thread.isSending}
+            loadError={thread.loadError}
+            messages={thread.messages}
+            onDraftChange={thread.changeDraft}
+            onRetryThread={thread.retryThread}
+            onSend={thread.sendMessage}
+            sendError={thread.sendError}
+          />
         ) : (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>Request unavailable</Text>
-            <Text style={styles.emptyMessage}>
-              Return to Flags and choose a request from the active shift.
-            </Text>
+          <View style={styles.emptyWrap}>
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyTitle}>Request unavailable</Text>
+              <Text style={styles.emptyMessage}>
+                Return to Flags and choose a request from the active shift.
+              </Text>
+            </View>
           </View>
         )}
       </WorkflowScreen>
@@ -405,21 +422,8 @@ export default function ChargeNurseRequestDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: {
-    gap: spacing.cardGap,
-  },
-  expandedContent: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-  },
   metadataColumn: {
-    flex: 1,
     gap: spacing.cardGap,
-    minWidth: 0,
-  },
-  threadColumn: {
-    flex: 1.15,
-    minWidth: 0,
   },
   summaryCard: {
     backgroundColor: colors.neutral.surface,
@@ -530,6 +534,9 @@ const styles = StyleSheet.create({
     color: colors.neutral.surface,
     fontSize: textSize.action,
     fontWeight: fontWeight.semibold,
+  },
+  emptyWrap: {
+    padding: spacing.xl,
   },
   emptyCard: {
     backgroundColor: colors.neutral.surface,

@@ -144,8 +144,6 @@ function AssignmentSummary({
   onOpenRequest,
 }: AssignmentSummaryProps) {
   const roomGroups = getAssignedRoomGroups(assignmentView);
-  const hasManyRooms = roomGroups.length > 3;
-  const hasManyRequests = assignmentView.requestHistory.length > 3;
 
   return (
     <View style={styles.assignmentPanel}>
@@ -166,23 +164,11 @@ function AssignmentSummary({
       </View>
 
       <View style={styles.bedList}>
-        <View style={styles.requestHeaderRow}>
-          <Text style={styles.sectionLabel}>Assigned rooms</Text>
-          {hasManyRooms ? (
-            <Text style={styles.requestCountText}>
-              {roomGroups.length} total
-            </Text>
-          ) : null}
-        </View>
+        <Text style={styles.sectionLabel}>Assigned rooms</Text>
+        {/* Every room is listed inline and the whole screen scrolls. A
+            fixed-height inner list hid rooms on phones. */}
         {roomGroups.length ? (
-          <ScrollView
-            nestedScrollEnabled
-            persistentScrollbar={hasManyRooms}
-            scrollEnabled={hasManyRooms}
-            showsVerticalScrollIndicator={hasManyRooms}
-            style={styles.roomScrollArea}
-            contentContainerStyle={styles.roomScrollContent}
-          >
+          <View style={styles.roomListContent}>
             {roomGroups.map((roomGroup) => (
               <View key={roomGroup.id} style={styles.bedRow}>
                 <Text style={styles.bedTitle}>Room {roomGroup.roomLabel}</Text>
@@ -193,30 +179,16 @@ function AssignmentSummary({
                 ))}
               </View>
             ))}
-          </ScrollView>
+          </View>
         ) : (
           <Text style={styles.emptyDetail}>No beds assigned yet.</Text>
         )}
       </View>
 
       <View style={styles.requestList}>
-        <View style={styles.requestHeaderRow}>
-          <Text style={styles.sectionLabel}>Request updates</Text>
-          {hasManyRequests ? (
-            <Text style={styles.requestCountText}>
-              {assignmentView.requestHistory.length} total
-            </Text>
-          ) : null}
-        </View>
+        <Text style={styles.sectionLabel}>Request updates</Text>
         {assignmentView.requestHistory.length ? (
-          <ScrollView
-            nestedScrollEnabled
-            persistentScrollbar={hasManyRequests}
-            scrollEnabled={hasManyRequests}
-            showsVerticalScrollIndicator={hasManyRequests}
-            style={styles.requestScrollArea}
-            contentContainerStyle={styles.requestScrollContent}
-          >
+          <View style={styles.requestListContent}>
             {assignmentView.requestHistory.map((request) => (
               <Pressable
                 accessibilityLabel={`Open ${getRequestUpdateTitle(request)}: ${request.message}`}
@@ -235,7 +207,7 @@ function AssignmentSummary({
                 <Text style={styles.openRequestText}>Open conversation</Text>
               </Pressable>
             ))}
-          </ScrollView>
+          </View>
         ) : (
           <Text style={styles.emptyDetail}>No updates yet.</Text>
         )}
@@ -428,7 +400,8 @@ export default function RegularNurseWorkspaceScreen() {
   } = useServerWorkspace(
     useShallow((state) => ({
       joinedNurseAccessState: state.joinedNurseAccessState,
-      joinedNurseRealtimeConnectionState: state.joinedNurseRealtimeConnectionState,
+      joinedNurseRealtimeConnectionState:
+        state.joinedNurseRealtimeConnectionState,
       retryLoadJoinedNurseAccess: state.retryLoadJoinedNurseAccess,
       submitJoinedNurseIssueRequest: state.submitJoinedNurseIssueRequest,
       submitJoinedNurseSwapRequest: state.submitJoinedNurseSwapRequest,
@@ -546,112 +519,112 @@ export default function RegularNurseWorkspaceScreen() {
       >
         <ResponsiveContent expanded>
           <View style={styles.card}>
-          <Text style={styles.eyebrow}>My shift</Text>
-          <Text style={styles.title}>{displayName}</Text>
+            <Text style={styles.eyebrow}>My shift</Text>
+            <Text style={styles.title}>{displayName}</Text>
 
-          {joinedNurseAccessState.status === "ready" ? (
-            <LiveStatusChip
-              connectionState={joinedNurseRealtimeConnectionState}
-              onRefresh={retryLoadJoinedNurseAccess}
-            />
-          ) : null}
+            {joinedNurseAccessState.status === "ready" ? (
+              <LiveStatusChip
+                connectionState={joinedNurseRealtimeConnectionState}
+                onRefresh={retryLoadJoinedNurseAccess}
+              />
+            ) : null}
 
-          {joinedNurseAccessState.status === "loading" ||
-          joinedNurseAccessState.status === "idle" ? (
-            <LoadingState message="Checking shift access" />
-          ) : null}
+            {joinedNurseAccessState.status === "loading" ||
+            joinedNurseAccessState.status === "idle" ? (
+              <LoadingState message="Checking shift access" />
+            ) : null}
 
-          {joinedNurseAccessState.status === "empty" ? (
-            <View style={styles.emptyPanel}>
-              <Text style={styles.emptyTitle}>No shift access yet</Text>
-              <Text style={styles.message}>
-                Enter a nurse code from charge to connect this account to an
-                active shift.
-              </Text>
-            </View>
-          ) : null}
+            {joinedNurseAccessState.status === "empty" ? (
+              <View style={styles.emptyPanel}>
+                <Text style={styles.emptyTitle}>No shift access yet</Text>
+                <Text style={styles.message}>
+                  Enter a nurse code from charge to connect this account to an
+                  active shift.
+                </Text>
+              </View>
+            ) : null}
 
-          {joinedNurseAccessState.status === "shift_ended" ? (
-            <View style={styles.emptyPanel}>
-              <Text style={styles.emptyTitle}>Shift ended</Text>
-              <Text style={styles.message}>
-                This live assignment is no longer active. Return home for a safe
-                place to continue.
-              </Text>
-            </View>
-          ) : null}
+            {joinedNurseAccessState.status === "shift_ended" ? (
+              <View style={styles.emptyPanel}>
+                <Text style={styles.emptyTitle}>Shift ended</Text>
+                <Text style={styles.message}>
+                  This live assignment is no longer active. Return home for a
+                  safe place to continue.
+                </Text>
+              </View>
+            ) : null}
 
-          {joinedNurseAccessState.status === "access_removed" ? (
-            <View style={styles.emptyPanel}>
-              <Text style={styles.emptyTitle}>Access removed</Text>
-              <Text style={styles.message}>
-                This account is no longer linked to that nurse assignment. Ask
-                charge for a new code if you still need access.
-              </Text>
-            </View>
-          ) : null}
+            {joinedNurseAccessState.status === "access_removed" ? (
+              <View style={styles.emptyPanel}>
+                <Text style={styles.emptyTitle}>Access removed</Text>
+                <Text style={styles.message}>
+                  This account is no longer linked to that nurse assignment. Ask
+                  charge for a new code if you still need access.
+                </Text>
+              </View>
+            ) : null}
 
-          {joinedNurseAccessState.status === "ready" ? (
-            <View
-              style={[
-                styles.readyContent,
-                isExpanded ? styles.expandedReadyContent : null,
+            {joinedNurseAccessState.status === "ready" ? (
+              <View
+                style={[
+                  styles.readyContent,
+                  isExpanded ? styles.expandedReadyContent : null,
+                ]}
+              >
+                <View
+                  style={[
+                    styles.readyColumn,
+                    isExpanded ? styles.expandedReadyColumn : null,
+                  ]}
+                >
+                  <AssignmentSummary
+                    assignmentView={joinedNurseAccessState.assignmentView}
+                    onOpenRequest={handleOpenRequest}
+                  />
+                </View>
+                <View
+                  style={[
+                    styles.readyColumn,
+                    isExpanded ? styles.expandedReadyColumn : null,
+                  ]}
+                >
+                  <RequestActions
+                    assignmentView={joinedNurseAccessState.assignmentView}
+                    formError={requestFormError}
+                    formSuccess={requestFormSuccess}
+                    issueMessage={issueMessage}
+                    isSubmittingIssue={isSubmittingIssue}
+                    isSubmittingSwap={isSubmittingSwap}
+                    onIssueMessageChange={setIssueMessage}
+                    onSelectSwapBed={setSelectedSwapBedId}
+                    onSubmitIssue={handleSubmitIssue}
+                    onSubmitSwap={handleSubmitSwap}
+                    onSwapMessageChange={setSwapMessage}
+                    selectedSwapBedId={selectedSwapBedId}
+                    swapMessage={swapMessage}
+                  />
+                </View>
+              </View>
+            ) : null}
+
+            {joinedNurseAccessState.status === "error" ? (
+              <ErrorState
+                message={joinedNurseAccessState.errorMessage}
+                onRetry={retryLoadJoinedNurseAccess}
+                title="Shift access could not load"
+              />
+            ) : null}
+
+            <Pressable
+              accessibilityRole="button"
+              onPress={handleBackHome}
+              style={({ pressed }) => [
+                styles.homeButton,
+                pressed && styles.homeButtonPressed,
               ]}
             >
-              <View
-                style={[
-                  styles.readyColumn,
-                  isExpanded ? styles.expandedReadyColumn : null,
-                ]}
-              >
-                <AssignmentSummary
-                  assignmentView={joinedNurseAccessState.assignmentView}
-                  onOpenRequest={handleOpenRequest}
-                />
-              </View>
-              <View
-                style={[
-                  styles.readyColumn,
-                  isExpanded ? styles.expandedReadyColumn : null,
-                ]}
-              >
-                <RequestActions
-                  assignmentView={joinedNurseAccessState.assignmentView}
-                  formError={requestFormError}
-                  formSuccess={requestFormSuccess}
-                  issueMessage={issueMessage}
-                  isSubmittingIssue={isSubmittingIssue}
-                  isSubmittingSwap={isSubmittingSwap}
-                  onIssueMessageChange={setIssueMessage}
-                  onSelectSwapBed={setSelectedSwapBedId}
-                  onSubmitIssue={handleSubmitIssue}
-                  onSubmitSwap={handleSubmitSwap}
-                  onSwapMessageChange={setSwapMessage}
-                  selectedSwapBedId={selectedSwapBedId}
-                  swapMessage={swapMessage}
-                />
-              </View>
-            </View>
-          ) : null}
-
-          {joinedNurseAccessState.status === "error" ? (
-            <ErrorState
-              message={joinedNurseAccessState.errorMessage}
-              onRetry={retryLoadJoinedNurseAccess}
-              title="Shift access could not load"
-            />
-          ) : null}
-
-          <Pressable
-            accessibilityRole="button"
-            onPress={handleBackHome}
-            style={({ pressed }) => [
-              styles.homeButton,
-              pressed && styles.homeButtonPressed,
-            ]}
-          >
-            <Text style={styles.homeButtonText}>Back to home</Text>
-          </Pressable>
+              <Text style={styles.homeButtonText}>Back to home</Text>
+            </Pressable>
           </View>
         </ResponsiveContent>
       </ScrollView>
@@ -771,27 +744,10 @@ const styles = StyleSheet.create({
   requestList: {
     gap: spacing.sm,
   },
-  requestHeaderRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: spacing.sm,
-    justifyContent: "space-between",
-  },
-  requestCountText: {
-    color: colors.neutral.textSecondary,
-    fontSize: textSize.xs,
-    fontWeight: fontWeight.semibold,
-  },
-  requestScrollArea: {
-    maxHeight: 210,
-  },
-  requestScrollContent: {
+  requestListContent: {
     gap: spacing.sm,
   },
-  roomScrollArea: {
-    maxHeight: 210,
-  },
-  roomScrollContent: {
+  roomListContent: {
     gap: spacing.sm,
   },
   requestRow: {
