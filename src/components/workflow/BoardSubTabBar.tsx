@@ -1,9 +1,19 @@
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors, fontWeight, radius, shadows, spacing, textSize } from "../../theme/tokens";
+import { useAuthSession } from "../../store/AuthSessionContext";
+import { useServerWorkspace } from "../../store/ServerWorkspaceContext";
+import {
+  colors,
+  fontWeight,
+  radius,
+  shadows,
+  spacing,
+  textSize,
+} from "../../theme/tokens";
+import { buildChargeChatList } from "../../utils/nurseChats";
 
-type BoardSubTab = "board" | "nurses" | "flags" | "invites";
+type BoardSubTab = "board" | "nurses" | "flags" | "chats" | "invites";
 
 type BoardSubTabBarProps = {
   activeTab: BoardSubTab;
@@ -11,12 +21,14 @@ type BoardSubTabBarProps = {
 
 type BoardSubTabItem = {
   label: string;
-  route: "/floor-board" | "/board-nurses" | "/flags" | "/nurse-invites";
+  route:
+    "/floor-board" | "/board-nurses" | "/flags" | "/chats" | "/nurse-invites";
   tab: BoardSubTab;
 };
 
 type BoardSubTabButtonProps = {
   active: boolean;
+  badgeCount: number;
   item: BoardSubTabItem;
 };
 
@@ -24,15 +36,33 @@ const boardSubTabs: BoardSubTabItem[] = [
   { label: "Board", route: "/floor-board", tab: "board" },
   { label: "Nurses", route: "/board-nurses", tab: "nurses" },
   { label: "Flags", route: "/flags", tab: "flags" },
+  { label: "Chats", route: "/chats", tab: "chats" },
   { label: "Invites", route: "/nurse-invites", tab: "invites" },
 ];
 
+// Counts the chats waiting on a charge nurse reply, for the Chats tab badge.
+function useNeedsReplyCount() {
+  const { authState } = useAuthSession();
+  const activeShift = useServerWorkspace((state) => state.activeShift);
+  const currentProfileId =
+    authState.status === "signed_in" ? authState.profile.id : "";
+
+  return buildChargeChatList(
+    activeShift?.nurses ?? [],
+    activeShift?.nurseRequests,
+    currentProfileId,
+  ).filter((row) => row.needsReply).length;
+}
+
 export function BoardSubTabBar({ activeTab }: BoardSubTabBarProps) {
+  const needsReplyCount = useNeedsReplyCount();
+
   return (
     <View style={styles.tabBar}>
       {boardSubTabs.map((item) => (
         <BoardSubTabButton
           active={item.tab === activeTab}
+          badgeCount={item.tab === "chats" ? needsReplyCount : 0}
           item={item}
           key={item.tab}
         />
@@ -41,9 +71,18 @@ export function BoardSubTabBar({ activeTab }: BoardSubTabBarProps) {
   );
 }
 
-function BoardSubTabButton({ active, item }: BoardSubTabButtonProps) {
+function BoardSubTabButton({
+  active,
+  badgeCount,
+  item,
+}: BoardSubTabButtonProps) {
   return (
     <Pressable
+      accessibilityLabel={
+        badgeCount > 0
+          ? `${item.label}, ${badgeCount} need a reply`
+          : item.label
+      }
       accessibilityRole="tab"
       accessibilityState={{ selected: active }}
       onPress={() => router.push(item.route)}
@@ -53,7 +92,16 @@ function BoardSubTabButton({ active, item }: BoardSubTabButtonProps) {
         pressed ? styles.pressedTabButton : null,
       ]}
     >
-      <BoardSubTabIcon active={active} tab={item.tab} />
+      <View>
+        <BoardSubTabIcon active={active} tab={item.tab} />
+        {badgeCount > 0 ? (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>
+              {badgeCount > 9 ? "9+" : badgeCount}
+            </Text>
+          </View>
+        ) : null}
+      </View>
       <Text style={[styles.tabLabel, active ? styles.activeTabLabel : null]}>
         {item.label}
       </Text>
@@ -77,13 +125,19 @@ function BoardSubTabIcon({ active, tab }: BoardSubTabIconProps) {
         <View
           style={[
             styles.nursesHead,
-            { backgroundColor: active ? colors.brand.burgundy10 : "transparent", borderColor: iconColor },
+            {
+              backgroundColor: active ? colors.brand.burgundy10 : "transparent",
+              borderColor: iconColor,
+            },
           ]}
         />
         <View
           style={[
             styles.nursesBody,
-            { backgroundColor: active ? colors.brand.burgundy10 : "transparent", borderColor: iconColor },
+            {
+              backgroundColor: active ? colors.brand.burgundy10 : "transparent",
+              borderColor: iconColor,
+            },
           ]}
         />
       </View>
@@ -97,9 +151,29 @@ function BoardSubTabIcon({ active, tab }: BoardSubTabIconProps) {
         <View
           style={[
             styles.flagPanel,
-            { backgroundColor: active ? colors.brand.burgundy10 : "transparent", borderColor: iconColor },
+            {
+              backgroundColor: active ? colors.brand.burgundy10 : "transparent",
+              borderColor: iconColor,
+            },
           ]}
         />
+      </View>
+    );
+  }
+
+  if (tab === "chats") {
+    return (
+      <View style={styles.chatIcon}>
+        <View
+          style={[
+            styles.chatBubble,
+            {
+              backgroundColor: active ? colors.brand.burgundy10 : "transparent",
+              borderColor: iconColor,
+            },
+          ]}
+        />
+        <View style={[styles.chatTail, { backgroundColor: iconColor }]} />
       </View>
     );
   }
@@ -133,7 +207,10 @@ function BoardSubTabIcon({ active, tab }: BoardSubTabIconProps) {
       <View
         style={[
           styles.boardHeader,
-          { backgroundColor: active ? colors.brand.burgundy10 : "transparent", borderColor: iconColor },
+          {
+            backgroundColor: active ? colors.brand.burgundy10 : "transparent",
+            borderColor: iconColor,
+          },
         ]}
       />
       <View style={[styles.boardLine, { backgroundColor: iconColor }]} />
@@ -143,8 +220,10 @@ function BoardSubTabIcon({ active, tab }: BoardSubTabIconProps) {
 }
 
 const styles = StyleSheet.create({
+  // Five tabs must fit a 375pt phone, so the bar spans the width and each tab
+  // takes an equal share instead of a fixed minimum width.
   tabBar: {
-    alignSelf: "center",
+    alignSelf: "stretch",
     backgroundColor: colors.neutral.surface,
     borderColor: colors.neutral.borderTertiary,
     borderRadius: radius.xxl,
@@ -161,8 +240,9 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     justifyContent: "center",
     minHeight: 58,
-    minWidth: 72,
-    paddingHorizontal: spacing.sm,
+    flex: 1,
+    minWidth: 0,
+    paddingHorizontal: spacing.xs,
     paddingVertical: spacing.sm,
   },
   activeTabButton: {
@@ -173,7 +253,7 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     color: colors.neutral.textSecondary,
-    fontSize: textSize.sm,
+    fontSize: textSize.xs,
     fontWeight: fontWeight.semibold,
   },
   activeTabLabel: {
@@ -238,6 +318,43 @@ const styles = StyleSheet.create({
     height: 9,
     marginTop: 2,
     width: 18,
+  },
+  chatIcon: {
+    height: 21,
+    position: "relative",
+    width: 20,
+  },
+  chatBubble: {
+    borderRadius: 6,
+    borderWidth: 1.5,
+    height: 15,
+    width: 20,
+  },
+  chatTail: {
+    height: 5,
+    left: 4,
+    position: "absolute",
+    top: 15,
+    transform: [{ rotate: "45deg" }],
+    width: 2,
+  },
+  badge: {
+    alignItems: "center",
+    backgroundColor: colors.status.red700,
+    borderRadius: 8,
+    height: 16,
+    justifyContent: "center",
+    minWidth: 16,
+    paddingHorizontal: 4,
+    position: "absolute",
+    right: -10,
+    top: -6,
+  },
+  badgeText: {
+    color: colors.neutral.surface,
+    fontSize: 10,
+    fontWeight: fontWeight.bold,
+    lineHeight: 12,
   },
   inviteIcon: {
     height: 21,

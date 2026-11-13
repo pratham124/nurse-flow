@@ -63,7 +63,7 @@ export default function ChargeNurseChatScreen() {
       headerActionLabel="Floors"
       managesOwnScrolling
       onHeaderActionPress={() => router.push("/")}
-      onPrimaryPress={() => router.push("/flags")}
+      onPrimaryPress={() => router.push("/chats")}
       primaryAppearance="compactSecondary"
       primaryLabel="Back to chats"
       subtitle=""
@@ -90,7 +90,7 @@ export default function ChargeNurseChatScreen() {
             <View style={styles.stateCard}>
               <Text style={styles.stateTitle}>Chat unavailable</Text>
               <Text style={styles.stateMessage}>
-                Return to Flags and choose a nurse from the active shift.
+                Return to Chats and choose a nurse from the active shift.
               </Text>
             </View>
           ) : null}
