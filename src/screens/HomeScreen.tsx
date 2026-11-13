@@ -23,6 +23,7 @@ import {
   RoomIcon,
 } from "../components/workflow";
 import { ErrorState } from "../components/ErrorState";
+import { LeaveShiftDialog } from "../components/LeaveShiftDialog";
 import { LoadingState } from "../components/LoadingState";
 import { NurseFlowLogo } from "../components/NurseFlowLogo";
 import { PolicyLinksRow } from "../components/PolicyLinks";
@@ -200,6 +201,10 @@ function FloorTemplateRow({
   );
 }
 
+// Same text the server and store use, so the Leave button can match it.
+const joinedShiftStartMessage =
+  "Leave the shift you joined before starting a charge shift.";
+
 export default function Index() {
   const { authState, signOut } = useAuthSession();
   const { permissionStatus, registrationState, retryRegistration } =
@@ -212,6 +217,7 @@ export default function Index() {
     endActiveShift,
     floorTemplates,
     joinedNurseAccessState,
+    leaveJoinedShift,
     previousShiftSnapshots,
     realtimeConnectionState,
     retryLoadWorkspace,
@@ -225,6 +231,7 @@ export default function Index() {
       endActiveShift: state.endActiveShift,
       floorTemplates: state.floorTemplates,
       joinedNurseAccessState: state.joinedNurseAccessState,
+      leaveJoinedShift: state.leaveJoinedShift,
       previousShiftSnapshots: state.previousShiftSnapshots,
       realtimeConnectionState: state.realtimeConnectionState,
       retryLoadWorkspace: state.retryLoadWorkspace,
@@ -239,6 +246,8 @@ export default function Index() {
   const [notificationDialogVisible, setNotificationDialogVisible] =
     useState(false);
   const [templateEditMessage, setTemplateEditMessage] = useState("");
+  const [leaveShiftDialogVisible, setLeaveShiftDialogVisible] = useState(false);
+  const [isLeavingShift, setIsLeavingShift] = useState(false);
   const isChargeNurseSignedIn =
     authState.status === "signed_in" &&
     authState.profile.role === "charge_nurse";
@@ -327,6 +336,11 @@ export default function Index() {
   }
 
   async function handleStartShift(floorTemplate: FloorTemplate) {
+    if (activeParticipation.type === "joined_nurse") {
+      setTemplateEditMessage(joinedShiftStartMessage);
+      return;
+    }
+
     if (visibleActiveShift) {
       setTemplateEditMessage(
         "End the active shift before starting another shift.",
@@ -365,6 +379,24 @@ export default function Index() {
     router.push(
       hasPreviousShiftSnapshot ? "/carry-over-review" : "/start-shift",
     );
+  }
+
+  async function handleConfirmLeaveShift() {
+    setIsLeavingShift(true);
+
+    try {
+      await leaveJoinedShift();
+      setTemplateEditMessage("");
+    } catch (error) {
+      setTemplateEditMessage(
+        error instanceof Error
+          ? error.message
+          : "You could not leave the shift. Try again.",
+      );
+    } finally {
+      setLeaveShiftDialogVisible(false);
+      setIsLeavingShift(false);
+    }
   }
 
   async function handleConfirmEndActiveShift() {
@@ -548,6 +580,19 @@ export default function Index() {
             {templateEditMessage}
           </Text>
         ) : null}
+        {activeParticipation.type === "joined_nurse" &&
+        templateEditMessage === joinedShiftStartMessage ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setLeaveShiftDialogVisible(true)}
+            style={({ pressed }) => [
+              styles.leaveShiftButton,
+              pressed && styles.leaveShiftButtonPressed,
+            ]}
+          >
+            <Text style={styles.leaveShiftButtonText}>Leave joined shift</Text>
+          </Pressable>
+        ) : null}
 
         {isServerWorkspaceLoading ? (
           <View style={styles.emptyState}>
@@ -618,6 +663,12 @@ export default function Index() {
         </Pressable>
       </View>
 
+      <LeaveShiftDialog
+        isLeaving={isLeavingShift}
+        onCancel={() => setLeaveShiftDialogVisible(false)}
+        onConfirm={handleConfirmLeaveShift}
+        visible={leaveShiftDialogVisible}
+      />
       <ConfirmationDialog
         confirmLabel="Delete"
         confirmTone="danger"
@@ -977,6 +1028,24 @@ const styles = StyleSheet.create({
   },
   templateList: {
     gap: spacing.cardGap,
+  },
+  leaveShiftButton: {
+    alignItems: "center",
+    alignSelf: "center",
+    borderColor: colors.status.red700,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    justifyContent: "center",
+    minHeight: 44,
+    paddingHorizontal: spacing.lg,
+  },
+  leaveShiftButtonPressed: {
+    backgroundColor: colors.neutral.backgroundSecondary,
+  },
+  leaveShiftButtonText: {
+    color: colors.status.red700,
+    fontSize: textSize.action,
+    fontWeight: fontWeight.medium,
   },
   templateEditMessage: {
     color: colors.status.red700,

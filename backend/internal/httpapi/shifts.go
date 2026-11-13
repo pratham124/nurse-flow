@@ -148,6 +148,8 @@ func writeShiftError(w http.ResponseWriter, err error) {
 		httpresponse.WriteError(w, http.StatusConflict, "shift_assigned", "Reopen the assigned shift before saving setup.")
 	case errors.Is(err, database.ErrShiftAlreadyOpen):
 		httpresponse.WriteError(w, http.StatusConflict, "shift_already_open", "An active shift already exists. Reload the workspace to resume it.")
+	case errors.Is(err, database.ErrJoinedShiftActive):
+		httpresponse.WriteError(w, http.StatusConflict, "joined_shift_active", "Leave the shift you joined before starting a charge shift.")
 	case errors.Is(err, shifts.ErrInvalidSetup), errors.Is(err, templates.ErrInvalidLayout):
 		httpresponse.WriteError(w, http.StatusBadRequest, "invalid_shift", "The shift setup is incomplete or inconsistent.")
 	default:

@@ -37,6 +37,10 @@ func (s *requestStoreStub) OpenJoinedChat(_ context.Context, authID, profileID s
 	s.record("joined-chat", authID, profileID)
 	return json.RawMessage(`{"id":"nurse-chat-n1","type":"chat","futureKey":true}`), s.created, s.err
 }
+func (s *requestStoreStub) LeaveJoinedShift(_ context.Context, authID, profileID string) error {
+	s.record("leave", authID, profileID)
+	return s.err
+}
 func (s *requestStoreStub) OpenShiftNurseChat(_ context.Context, authID, profileID, shiftID, nurseID string) (json.RawMessage, bool, error) {
 	s.record("nurse-chat", authID, profileID, shiftID, nurseID)
 	return json.RawMessage(`{"id":"nurse-chat-n1","type":"chat","futureKey":true}`), s.created, s.err
@@ -49,6 +53,7 @@ func TestRequestRoutes(t *testing.T) {
 	shiftID := "40000000-0000-4000-8000-000000000001"
 	moves := "/shifts/" + shiftID + "/assignment-moves"
 	joinedChat := "/joined-workspace/chat"
+	leave := "/joined-workspace/leave"
 	nurseChat := "/shifts/" + shiftID + "/nurses/nurse-1/chat"
 	rule := func(code, message string) error { return &shifts.RuleError{Code: code, Message: message} }
 	for _, tt := range []struct {
@@ -73,6 +78,11 @@ func TestRequestRoutes(t *testing.T) {
 		{"joined chat not joined", joinedChat, "", database.ErrNotJoined, 409, "not_joined", 1},
 		{"joined chat ended", joinedChat, "", database.ErrShiftEnded, 409, "shift_ended", 1},
 		{"joined chat database error", joinedChat, "", errors.New("private password SQL"), 503, "database_unavailable", 1},
+		{"leave", leave, "", nil, 204, "", 1},
+		{"leave ignores a body", leave, `{"nurse_id":"n2"}`, nil, 204, "", 1},
+		{"leave not joined", leave, "", database.ErrNotJoined, 409, "not_joined", 1},
+		{"leave shift ended", leave, "", database.ErrShiftEnded, 409, "shift_ended", 1},
+		{"leave database error", leave, "", errors.New("private password SQL"), 503, "database_unavailable", 1},
 		{"nurse chat created", nurseChat, "", nil, 201, "", 1},
 		{"nurse chat existing", nurseChat, "", nil, 200, "", 1},
 		{"nurse chat shift not found", nurseChat, "", database.ErrShiftNotFound, 404, "shift_not_found", 1},

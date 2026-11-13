@@ -18,6 +18,7 @@ type RequestStore interface {
 	MoveAssignment(ctx context.Context, authUserID, profileID, shiftID string, request shifts.MoveRequest) (database.MoveOutcome, error)
 	OpenJoinedChat(ctx context.Context, authUserID, profileID string) (chat json.RawMessage, created bool, err error)
 	OpenShiftNurseChat(ctx context.Context, authUserID, profileID, shiftID, nurseID string) (chat json.RawMessage, created bool, err error)
+	LeaveJoinedShift(ctx context.Context, authUserID, profileID string) error
 }
 
 func registerRequestRoutes(mux *http.ServeMux, verifier *auth.Verifier, profiles auth.ProfileReader, store RequestStore) {
@@ -26,6 +27,7 @@ func registerRequestRoutes(mux *http.ServeMux, verifier *auth.Verifier, profiles
 	}
 	mux.Handle("POST /shifts/{id}/assignment-moves", protect(requireUUID(moveHandler(store))))
 	mux.Handle("POST /joined-workspace/chat", protect(joinedChatHandler(store)))
+	mux.Handle("POST /joined-workspace/leave", protect(leaveJoinedShiftHandler(store)))
 	mux.Handle("POST /shifts/{id}/nurses/{nurseId}/chat", protect(requireUUID(shiftNurseChatHandler(store))))
 }
 
@@ -101,6 +103,19 @@ func joinedChatHandler(store RequestStore) http.Handler {
 			return
 		}
 		writeChat(w, chat, created)
+	})
+}
+
+// leaveJoinedShiftHandler lets the signed-in nurse leave the shift they joined.
+// It takes no body: the shift comes from the caller's own linked access.
+func leaveJoinedShiftHandler(store RequestStore) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		profile, _ := auth.ProfileFromContext(r.Context())
+		if err := store.LeaveJoinedShift(r.Context(), profile.AuthUserID, profile.ID); err != nil {
+			writeRequestError(w, err, "You are not on a shift.")
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
 	})
 }
 

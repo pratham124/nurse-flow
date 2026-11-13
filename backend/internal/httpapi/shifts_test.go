@@ -60,6 +60,7 @@ func TestShiftRoutes(t *testing.T) {
 		{"stale setup", "PUT", "/active-shifts/" + testTemplateID + "/setup", setupBody, 409, "shift_stale", database.ErrShiftStale, 1},
 		{"assigned setup", "PUT", "/active-shifts/" + testTemplateID + "/setup", setupBody, 409, "shift_assigned", database.ErrShiftAssigned, 1},
 		{"duplicate start", "POST", "/active-shifts", `{"floor_template_id":"` + testTemplateID + `"}`, 409, "shift_already_open", database.ErrShiftAlreadyOpen, 1},
+		{"start while joined", "POST", "/active-shifts", `{"floor_template_id":"` + testTemplateID + `"}`, 409, "joined_shift_active", database.ErrJoinedShiftActive, 1},
 		{"invalid setup", "PUT", "/active-shifts/" + testTemplateID + "/setup", setupBody, 400, "invalid_shift", shifts.ErrInvalidSetup, 1},
 		{"controlled DB error", "GET", "/active-shifts/current", "", 503, "database_unavailable", errors.New("private password SQL"), 1},
 		{"invalid ID", "POST", "/active-shifts/local/end", `{}`, 400, "invalid_id", nil, 0},

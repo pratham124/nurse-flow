@@ -1,9 +1,11 @@
 import { useShallow } from "zustand/react/shallow";
 import { router } from "expo-router";
+import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ErrorState } from "../components/ErrorState";
+import { LeaveShiftDialog } from "../components/LeaveShiftDialog";
 import { LoadingState } from "../components/LoadingState";
 import { LiveStatusChip, ResponsiveContent } from "../components/workflow";
 import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
@@ -175,12 +177,14 @@ export default function RegularNurseWorkspaceScreen() {
   const {
     joinedNurseAccessState,
     joinedNurseRealtimeConnectionState,
+    leaveJoinedShift,
     retryLoadJoinedNurseAccess,
   } = useServerWorkspace(
     useShallow((state) => ({
       joinedNurseAccessState: state.joinedNurseAccessState,
       joinedNurseRealtimeConnectionState:
         state.joinedNurseRealtimeConnectionState,
+      leaveJoinedShift: state.leaveJoinedShift,
       retryLoadJoinedNurseAccess: state.retryLoadJoinedNurseAccess,
     })),
   );
@@ -189,7 +193,33 @@ export default function RegularNurseWorkspaceScreen() {
   const currentProfileId =
     authState.status === "signed_in" ? authState.profile.id : "";
 
+  const [leaveDialogVisible, setLeaveDialogVisible] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [leaveErrorMessage, setLeaveErrorMessage] = useState("");
+
   function handleBackHome() {
+    router.replace("/");
+  }
+
+  async function handleConfirmLeave() {
+    setIsLeaving(true);
+    setLeaveErrorMessage("");
+
+    try {
+      await leaveJoinedShift();
+    } catch (error) {
+      setLeaveErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "You could not leave the shift. Try again.",
+      );
+      setLeaveDialogVisible(false);
+      setIsLeaving(false);
+      return;
+    }
+
+    setLeaveDialogVisible(false);
+    setIsLeaving(false);
     router.replace("/");
   }
 
@@ -290,6 +320,28 @@ export default function RegularNurseWorkspaceScreen() {
               />
             ) : null}
 
+            {leaveErrorMessage ? (
+              <Text accessibilityRole="alert" style={styles.leaveErrorText}>
+                {leaveErrorMessage}
+              </Text>
+            ) : null}
+
+            {joinedNurseAccessState.status === "ready" ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  setLeaveErrorMessage("");
+                  setLeaveDialogVisible(true);
+                }}
+                style={({ pressed }) => [
+                  styles.leaveButton,
+                  pressed && styles.leaveButtonPressed,
+                ]}
+              >
+                <Text style={styles.leaveButtonText}>Leave shift</Text>
+              </Pressable>
+            ) : null}
+
             <Pressable
               accessibilityRole="button"
               onPress={handleBackHome}
@@ -303,6 +355,13 @@ export default function RegularNurseWorkspaceScreen() {
           </View>
         </ResponsiveContent>
       </ScrollView>
+
+      <LeaveShiftDialog
+        isLeaving={isLeaving}
+        onCancel={() => setLeaveDialogVisible(false)}
+        onConfirm={handleConfirmLeave}
+        visible={leaveDialogVisible}
+      />
     </SafeAreaView>
   );
 }
@@ -500,6 +559,31 @@ const styles = StyleSheet.create({
     color: colors.neutral.textPrimary,
     fontSize: textSize.md,
     fontWeight: fontWeight.bold,
+  },
+  leaveButton: {
+    alignItems: "center",
+    backgroundColor: colors.neutral.surface,
+    borderColor: colors.status.red700,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    justifyContent: "center",
+    minHeight: 48,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  leaveButtonPressed: {
+    backgroundColor: colors.neutral.backgroundSecondary,
+  },
+  leaveButtonText: {
+    color: colors.status.red700,
+    fontSize: textSize.action,
+    fontWeight: fontWeight.medium,
+  },
+  leaveErrorText: {
+    color: colors.status.red700,
+    fontSize: textSize.sm,
+    lineHeight: 18,
+    textAlign: "center",
   },
   homeButton: {
     alignItems: "center",

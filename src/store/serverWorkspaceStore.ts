@@ -71,6 +71,7 @@ type ServerWorkspaceStoreActions = {
   ) => Promise<ConfirmManualAssignmentOverrideResult>;
   deleteFloorTemplate: (floorTemplateId: string) => Promise<void>;
   endActiveShift: (activeShift: Shift) => Promise<void>;
+  leaveJoinedShift: () => Promise<void>;
   replaceActiveShiftFromRealtime: (
     activeShift: ServerWorkspace["activeShift"],
   ) => void;
@@ -105,6 +106,7 @@ export type ServerWorkspaceDependencies = {
   createServerActiveShift: typeof import("../services/serverWorkspaceRepository").createServerActiveShift;
   deleteServerFloorTemplate: typeof import("../services/serverWorkspaceRepository").deleteServerFloorTemplate;
   endServerActiveShift: typeof import("../services/serverWorkspaceRepository").endServerActiveShift;
+  leaveJoinedShift: typeof import("../services/serverWorkspaceRepository").leaveJoinedShift;
   loadJoinedNurseAssignmentView: typeof import("../services/serverWorkspaceRepository").loadJoinedNurseAssignmentView;
   loadServerWorkspace: typeof import("../services/serverWorkspaceRepository").loadServerWorkspace;
   requestAssignmentOptimizationFromService: typeof import("../services/optimizerRepository").requestAssignmentOptimization;
@@ -226,6 +228,10 @@ export function createServerWorkspaceStore({
 }: CreateServerWorkspaceStoreOptions): StoreApi<ServerWorkspaceStore> {
   return createStore<ServerWorkspaceStore>()(
     subscribeWithSelector((set, get) => {
+      // The access the nurse deliberately left this session. A realtime refresh
+      // that was already in flight must not turn the leave into "Access removed".
+      let leftAccessId: string | undefined;
+
       function setWorkspaceState(workspaceState: ServerWorkspaceState) {
         set({
           activeParticipation: getActiveParticipation(
@@ -301,7 +307,16 @@ export function createServerWorkspaceStore({
         const workspaceState = get().workspaceState;
 
         if (authState.status !== "signed_in") {
+          leftAccessId = undefined;
           setJoinedNurseAccessState({ status: "idle" });
+          return;
+        }
+
+        // Only a deliberate reload (such as joining again) starts over after a
+        // leave. Live refreshes for the shift the nurse left have nothing to show.
+        if (reason === "manual") {
+          leftAccessId = undefined;
+        } else if (leftAccessId) {
           return;
         }
 
@@ -342,11 +357,22 @@ export function createServerWorkspaceStore({
               authState.profile,
             );
 
+          if (leftAccessId && assignmentView?.access.id === leftAccessId) {
+            // A load that started before the leave finished after it.
+            setJoinedNurseAccessState({ status: "empty" });
+            return;
+          }
+
           if (assignmentView) {
             setJoinedNurseAccessState({
               assignmentView,
               status: "ready",
             });
+            return;
+          }
+
+          if (leftAccessId) {
+            setJoinedNurseAccessState({ status: "empty" });
             return;
           }
 
@@ -362,6 +388,11 @@ export function createServerWorkspaceStore({
 
           setJoinedNurseAccessState({ status: "empty" });
         } catch (error) {
+          if (leftAccessId) {
+            setJoinedNurseAccessState({ status: "empty" });
+            return;
+          }
+
           if (reason === "access_changed") {
             setJoinedNurseAccessState({ status: "access_removed" });
             return;
@@ -445,6 +476,29 @@ export function createServerWorkspaceStore({
           );
 
           applyWorkspace(workspace);
+        },
+        async leaveJoinedShift() {
+          const authState = getAuthState();
+          const joinedState = get().joinedNurseAccessState;
+
+          if (authState.status !== "signed_in") {
+            throw new Error("Sign in to leave a shift.");
+          }
+
+          if (joinedState.status !== "ready") {
+            throw new Error("You are not on a shift.");
+          }
+
+          const supabase = getSupabaseClient();
+
+          if (!supabase) {
+            throw new Error("Supabase is not configured yet.");
+          }
+
+          await dependencies.leaveJoinedShift(supabase);
+          leftAccessId = joinedState.assignmentView.access.id;
+          // Back to "empty" so the nurse view's realtime listener stops.
+          setJoinedNurseAccessState({ status: "empty" });
         },
         async endActiveShift(activeShift) {
           const authState = getAuthState();
@@ -705,6 +759,13 @@ export function createServerWorkspaceStore({
           ) {
             throw new Error(
               "Sign in as a charge nurse to start a server shift.",
+            );
+          }
+
+          // The server refuses this too; checking here saves a round trip.
+          if (get().activeParticipation.type === "joined_nurse") {
+            throw new Error(
+              "Leave the shift you joined before starting a charge shift.",
             );
           }
 

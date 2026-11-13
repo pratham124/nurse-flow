@@ -4,6 +4,7 @@ import test, { afterEach, mock } from "node:test";
 
 import {
   confirmManualAssignmentOverride,
+  leaveJoinedShift,
   loadJoinedNurseAssignmentView,
   openJoinedNurseChat,
   openShiftNurseChat,
@@ -272,4 +273,25 @@ test("legacy issue and swap entries still parse in the request history", async (
   goReturns({ ...view, requestHistory: legacy });
   const result = await loadJoinedNurseAssignmentView(joinedClient(), profile);
   assert.deepEqual(result.requestHistory.map((request) => request.type), ["issue", "swap", "chat"]);
+});
+
+test("nurse leaves through the joined-workspace route and expects 204", async () => {
+  const calls = goPosts(undefined, 204);
+  await leaveJoinedShift(client());
+  assert.equal(calls[0].url, "/joined-workspace/leave");
+  assert.equal(calls[0].headers.Authorization, "Bearer tok");
+  mock.restoreAll();
+  goPosts({}, 200);
+  await assert.rejects(leaveJoinedShift(client()), /unexpected result/);
+});
+
+test("leave failures show the server message and 401", async () => {
+  postFails(409, { error: { code: "not_joined", message: "You are not on a shift." } });
+  await assert.rejects(leaveJoinedShift(client()), /You are not on a shift/);
+  mock.restoreAll();
+  postFails(401, { error: { code: "unauthorized", message: "no" } });
+  await assert.rejects(leaveJoinedShift(client()), /session expired/);
+  mock.restoreAll();
+  postFails(503, {});
+  await assert.rejects(leaveJoinedShift(client()), /could not leave/);
 });

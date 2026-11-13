@@ -430,6 +430,25 @@ export function openJoinedNurseChat(supabase: SupabaseClient) {
   return openNurseChat(supabase, "/joined-workspace/chat");
 }
 
+// Leaving answers 204 with no body. The server frees the nurse's slot so the
+// charge nurse can invite someone new.
+export async function leaveJoinedShift(supabase: SupabaseClient) {
+  const headers = await getGoAuthHeaders(supabase);
+  const response = await goApiClient
+    .post<unknown>("/joined-workspace/leave", {}, { headers })
+    .catch((error) =>
+      requestWriteError(
+        error,
+        "workspace service",
+        "You could not leave the shift. Try again.",
+      ),
+    );
+
+  if (response.status !== 204) {
+    throw new Error("The workspace service returned an unexpected result.");
+  }
+}
+
 export function openShiftNurseChat(
   supabase: SupabaseClient,
   input: OpenShiftNurseChatInput,

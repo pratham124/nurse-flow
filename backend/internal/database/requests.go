@@ -56,6 +56,31 @@ func (s *Store) OpenJoinedChat(ctx context.Context, authID, profileID string) (c
 	return chat, created, nil
 }
 
+// LeaveJoinedShift frees the joined nurse's slot by marking their own access
+// removed, so the charge nurse can invite someone new. The shift row is touched
+// first: its update policy needs the caller's access to still be linked, and the
+// retained trigger then tells the charge nurse's app to refresh.
+func (s *Store) LeaveJoinedShift(ctx context.Context, authID, profileID string) error {
+	return s.WithWriteIdentity(ctx, authID, func(tx *gorm.DB) error {
+		access, shift, err := lockJoinedShift(tx, profileID)
+		if err != nil {
+			return err
+		}
+		if err := tx.Model(&shift).Update("updated_at", nextShiftTime(shift.UpdatedAt)).Error; err != nil {
+			return err
+		}
+		result := tx.Table("public.shift_nurse_access").Where("id = ? AND status = 'linked'", access.ID).
+			Updates(map[string]any{"status": "removed", "updated_at": gorm.Expr("now()")})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected != 1 {
+			return errors.New("leave changed an unexpected number of access rows")
+		}
+		return nil
+	})
+}
+
 // OpenShiftNurseChat opens the charge nurse's chat with one nurse on an owned,
 // unended shift, creating it the first time.
 func (s *Store) OpenShiftNurseChat(ctx context.Context, authID, profileID, shiftID, nurseID string) (chat json.RawMessage, created bool, err error) {
