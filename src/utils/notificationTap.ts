@@ -1,4 +1,7 @@
-import type { NotificationEventTargetRoute } from "../types/models";
+import type {
+  NotificationEventTargetRoute,
+  NurseRequest,
+} from "../types/models";
 
 export type NotificationTapPayload = {
   recipientAccessId?: string;
@@ -70,4 +73,35 @@ export function parseNotificationTapPayload(
     shiftId,
     targetRoute: targetRoute as NotificationEventTargetRoute,
   };
+}
+
+type NotificationTapRequest = Pick<NurseRequest, "requestingNurseId" | "type">;
+
+// Where a tapped notification should land. Message notifications for a chat
+// open that chat; old issue/swap requests and everything else open the
+// recipient's main screen.
+export function getNotificationTapHref(input: {
+  audience: "charge" | "joined_nurse";
+  request?: NotificationTapRequest;
+  targetRoute: NotificationEventTargetRoute;
+}) {
+  const isChat = input.request?.type === "chat";
+
+  if (input.audience === "joined_nurse") {
+    return isChat ? "/joined-chat" : "/regular-nurse-workspace";
+  }
+
+  if (isChat && input.request) {
+    return `/charge-chat?nurseId=${encodeURIComponent(input.request.requestingNurseId)}`;
+  }
+
+  if (
+    input.targetRoute === "requestDetail" ||
+    input.targetRoute === "requestsList" ||
+    input.targetRoute === "flags"
+  ) {
+    return "/flags";
+  }
+
+  return "/floor-board";
 }

@@ -2,13 +2,14 @@ package shifts
 
 import (
 	"encoding/json"
-	"strings"
 	"time"
-
-	"github.com/google/uuid"
+	"unicode/utf8"
 )
 
-// NurseSlot identifies the nurse on the shift who makes a request.
+// chatPreviewRunes is how much of a message the chat entry keeps as a preview.
+const chatPreviewRunes = 120
+
+// NurseSlot identifies the nurse on the shift who owns a request.
 type NurseSlot struct {
 	ID   string
 	Name string
@@ -22,10 +23,6 @@ type RequestChange struct {
 	Request  json.RawMessage
 }
 
-func invalidRequest(message string) error {
-	return &RuleError{Code: "invalid_request", Message: message}
-}
-
 // requestFields is one stored request as a map, so keys this code does not know
 // about are written back unchanged.
 type requestFields map[string]json.RawMessage
@@ -35,17 +32,80 @@ func (r requestFields) setString(key, value string) {
 	r[key] = raw
 }
 
-// newRequestFields starts a pending request for the nurse.
-func newRequestFields(requestType string, slot NurseSlot, message string, at time.Time) requestFields {
-	request := requestFields{}
-	request.setString("id", "nurse-request-"+strings.ReplaceAll(uuid.NewString(), "-", ""))
-	request.setString("type", requestType)
-	request.setString("status", "pending")
-	request.setString("requestingNurseId", slot.ID)
-	request.setString("requestingNurseName", slot.Name)
-	request.setString("message", message)
-	request.setString("createdAt", FormatTime(at))
-	return request
+// ChatRequestID is the fixed ID of a nurse's chat with charge. Because it is
+// derived from the nurse, opening a chat twice finds the first one instead of
+// creating a second.
+func ChatRequestID(nurseID string) string {
+	return "nurse-chat-" + nurseID
+}
+
+// FindNurseSlot looks a nurse up on the shift by ID. It reports false when the
+// nurse is not (or no longer) on the shift.
+func (s Snapshot) FindNurseSlot(nurseID string) (NurseSlot, bool, error) {
+	var nurses []Nurse
+	if err := s.decode("nurses", &nurses); err != nil {
+		return NurseSlot{}, false, err
+	}
+	nurse := findNurse(nurses, nurseID)
+	if nurse == nil {
+		return NurseSlot{}, false, nil
+	}
+	return NurseSlot{ID: nurse.ID, Name: nurse.Name}, true, nil
+}
+
+// EnsureChat returns the nurse's chat, adding it to the shift when it does not
+// exist yet. created is false when the chat was already there; the change then
+// has no Snapshot, so nothing needs saving.
+func (s Snapshot) EnsureChat(slot NurseSlot, at time.Time) (change RequestChange, created bool, err error) {
+	items, err := s.elements("nurseRequests")
+	if err != nil {
+		return RequestChange{}, false, err
+	}
+	chatID := ChatRequestID(slot.ID)
+	if index := findRequest(items, chatID, "chat"); index >= 0 {
+		return RequestChange{Request: items[index]}, false, nil
+	}
+	chat := requestFields{}
+	chat.setString("id", chatID)
+	chat.setString("type", "chat")
+	chat.setString("requestingNurseId", slot.ID)
+	chat.setString("requestingNurseName", slot.Name)
+	chat.setString("createdAt", FormatTime(at))
+	change, err = s.appendRequest(chat)
+	return change, err == nil, err
+}
+
+// StampChatActivity records the newest message on the chat entry so both apps
+// can show it in a list without loading the thread. A request that is not a
+// chat is left alone: the returned change then has no Snapshot.
+func (s Snapshot) StampChatActivity(requestID, authorProfileID, body string, at time.Time) (RequestChange, error) {
+	items, err := s.elements("nurseRequests")
+	if err != nil {
+		return RequestChange{}, err
+	}
+	index := findRequest(items, requestID, "chat")
+	if index < 0 {
+		return RequestChange{}, nil
+	}
+	updated, err := editRequest(items[index], func(chat requestFields) {
+		chat.setString("lastMessageAt", FormatTime(at))
+		chat.setString("lastMessageAuthorProfileId", authorProfileID)
+		chat.setString("lastMessagePreview", chatPreview(body))
+	})
+	if err != nil {
+		return RequestChange{}, err
+	}
+	items[index] = updated
+	return s.replaceRequests(items, updated)
+}
+
+// chatPreview keeps the first characters of a message, never cutting a
+// multi-byte character in half.
+func chatPreview(body string) string {
+	if utf8.RuneCountInString(body) <= chatPreviewRunes {
+		return body
+	}
+	return string([]rune(body)[:chatPreviewRunes])
 }
 
 // appendRequest stores the new request last and returns the whole change.
@@ -80,96 +140,6 @@ func (s Snapshot) replaceRequests(items []json.RawMessage, changed json.RawMessa
 	return RequestChange{Snapshot: raw, Request: changed}, nil
 }
 
-// hasPendingRequest finds a pending request of this type from the nurse whose
-// message matches, ignoring case and surrounding spaces. A bed of "" matches
-// only requests without a source bed (issues); otherwise the bed must match.
-func hasPendingRequest(items []json.RawMessage, requestType, nurseID, bedID, message string) bool {
-	for _, item := range items {
-		if field(item, "type") == requestType && field(item, "status") == "pending" &&
-			field(item, "requestingNurseId") == nurseID && field(item, "sourceBedId") == bedID &&
-			strings.EqualFold(strings.TrimSpace(field(item, "message")), message) {
-			return true
-		}
-	}
-	return false
-}
-
-// ValidateIssueMessage checks the text of a new issue request.
-func ValidateIssueMessage(message string) error {
-	if strings.TrimSpace(message) == "" {
-		return invalidRequest("Add issue details before submitting.")
-	}
-	return nil
-}
-
-// AddIssueRequest appends a pending issue from the nurse.
-func (s Snapshot) AddIssueRequest(slot NurseSlot, message string, at time.Time) (RequestChange, error) {
-	if err := ValidateIssueMessage(message); err != nil {
-		return RequestChange{}, err
-	}
-	message = strings.TrimSpace(message)
-	items, err := s.elements("nurseRequests")
-	if err != nil {
-		return RequestChange{}, err
-	}
-	if hasPendingRequest(items, "issue", slot.ID, "", message) {
-		return RequestChange{}, &RuleError{Code: "request_pending", Message: "This issue is already pending."}
-	}
-	return s.appendRequest(newRequestFields("issue", slot, message, at))
-}
-
-// ValidateSwapInput checks the bed and text of a new swap request.
-func ValidateSwapInput(bedID, message string) error {
-	if strings.TrimSpace(bedID) == "" {
-		return invalidRequest("Choose the assigned bed for this swap request.")
-	}
-	if strings.TrimSpace(message) == "" {
-		return invalidRequest("Add swap details before submitting.")
-	}
-	return nil
-}
-
-// AddSwapRequest appends a pending swap for a bed the nurse holds now: a bed
-// moved to the nurse counts, and a bed moved away does not.
-func (s Snapshot) AddSwapRequest(slot NurseSlot, bedID, message string, overrides []ActiveOverride, at time.Time) (RequestChange, error) {
-	if err := ValidateSwapInput(bedID, message); err != nil {
-		return RequestChange{}, err
-	}
-	message = strings.TrimSpace(message)
-	assignments, err := s.bedAssignments()
-	if err != nil {
-		return RequestChange{}, err
-	}
-	if effectiveNurseIDs(assignments, overrides)[bedID] != slot.ID {
-		return RequestChange{}, invalidRequest("Choose one of your assigned beds for the swap.")
-	}
-	items, err := s.elements("nurseRequests")
-	if err != nil {
-		return RequestChange{}, err
-	}
-	if hasPendingRequest(items, "swap", slot.ID, bedID, message) {
-		return RequestChange{}, &RuleError{Code: "request_pending", Message: "This swap request is already pending."}
-	}
-	request := newRequestFields("swap", slot, message, at)
-	request.setString("sourceBedId", bedID)
-	return s.appendRequest(request)
-}
-
-// ValidateIssueStatus checks the review status chosen by the charge nurse.
-func ValidateIssueStatus(status string) error {
-	if status != "open" && status != "reviewed" && status != "resolved" {
-		return invalidRequest("Choose open, reviewed, or resolved.")
-	}
-	return nil
-}
-
-// issueTransitionAllowed lists the review status changes a charge nurse may make.
-func issueTransitionAllowed(from, to string) bool {
-	return (from == "open" && (to == "reviewed" || to == "resolved")) ||
-		(from == "reviewed" && to == "resolved") ||
-		(from == "resolved" && to == "open")
-}
-
 // findRequest returns the index of the first request with this ID and type, or -1.
 func findRequest(items []json.RawMessage, id, requestType string) int {
 	for i, item := range items {
@@ -190,90 +160,8 @@ func editRequest(item json.RawMessage, change func(requestFields)) (json.RawMess
 	return json.Marshal(fields)
 }
 
-// SetIssueStatus moves an issue to a new review status and records who did it.
-// Asking for the status the issue already has changes nothing: the returned
-// change then has no Snapshot.
-func (s Snapshot) SetIssueStatus(requestID, status, profileID string, at time.Time) (RequestChange, error) {
-	if err := ValidateIssueStatus(status); err != nil {
-		return RequestChange{}, err
-	}
+// IsChat reports whether the request with this ID is a chat.
+func (s Snapshot) IsChat(requestID string) bool {
 	items, err := s.elements("nurseRequests")
-	if err != nil {
-		return RequestChange{}, err
-	}
-	index := findRequest(items, strings.TrimSpace(requestID), "issue")
-	if index < 0 {
-		return RequestChange{}, &RuleError{Code: "request_not_found", Message: "The issue request is unavailable."}
-	}
-	current, present := optionalField(items[index], "issueReviewStatus")
-	if !present {
-		current = "open"
-	}
-	if current == status {
-		return RequestChange{Request: items[index]}, nil
-	}
-	if !issueTransitionAllowed(current, status) {
-		return RequestChange{}, &RuleError{Code: "invalid_transition", Message: "That issue status change is not allowed."}
-	}
-	updated, err := editRequest(items[index], func(request requestFields) {
-		stamp := FormatTime(at)
-		request.setString("issueReviewStatus", status)
-		switch status {
-		case "reviewed":
-			delete(request, "issueResolvedAt")
-			delete(request, "issueResolvedByProfileId")
-			request.setString("reviewedAt", stamp)
-			request.setString("reviewedByProfileId", profileID)
-		case "resolved":
-			request.setString("issueResolvedAt", stamp)
-			request.setString("issueResolvedByProfileId", profileID)
-		case "open":
-			for _, key := range []string{"reviewedAt", "reviewedByProfileId", "issueResolvedAt", "issueResolvedByProfileId"} {
-				delete(request, key)
-			}
-		}
-	})
-	if err != nil {
-		return RequestChange{}, err
-	}
-	items[index] = updated
-	return s.replaceRequests(items, updated)
-}
-
-// ValidateResolution checks the decision on a swap request.
-func ValidateResolution(status string) error {
-	if status != "accepted" && status != "declined" {
-		return invalidRequest("Choose accepted or declined.")
-	}
-	return nil
-}
-
-// ResolveSwap accepts or declines a pending swap. Accepting does not move the
-// bed; the charge nurse completes the swap later with a manual move.
-func (s Snapshot) ResolveSwap(requestID, status string, at time.Time) (RequestChange, error) {
-	if err := ValidateResolution(status); err != nil {
-		return RequestChange{}, err
-	}
-	items, err := s.elements("nurseRequests")
-	if err != nil {
-		return RequestChange{}, err
-	}
-	index := findRequest(items, requestID, "swap")
-	if index < 0 || field(items[index], "status") != "pending" {
-		return RequestChange{}, &RuleError{Code: "request_not_pending", Message: "Only pending swap requests can be resolved."}
-	}
-	updated, err := editRequest(items[index], func(request requestFields) {
-		request.setString("status", status)
-		request.setString("resolvedAt", FormatTime(at))
-		if status == "accepted" {
-			request.setString("resolutionNote", "Accepted by charge")
-		} else {
-			request.setString("resolutionNote", "Declined by charge")
-		}
-	})
-	if err != nil {
-		return RequestChange{}, err
-	}
-	items[index] = updated
-	return s.replaceRequests(items, updated)
+	return err == nil && findRequest(items, requestID, "chat") >= 0
 }

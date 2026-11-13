@@ -9,32 +9,22 @@ export type Sex = "female" | "male" | "other" | "unknown";
 export type ShiftStatus = "setup" | "assigned";
 
 export type AuthStatus =
-  | "checking"
-  | "signed_out"
-  | "signed_in"
-  | "setup_error"
-  | "recovery";
+  "checking" | "signed_out" | "signed_in" | "setup_error" | "recovery";
 
 export type UserRole = "charge_nurse";
 
 export type RealtimeConnectionState =
-  | "connecting"
-  | "live"
-  | "reconnecting"
-  | "disconnected"
-  | "error";
+  "connecting" | "live" | "reconnecting" | "disconnected" | "error";
 
 export type ShiftAccessStatus = "pending_link" | "linked" | "removed";
 
-export type ShiftNurseInviteStatus =
-  | "active"
-  | "used"
-  | "revoked"
-  | "expired";
+export type ShiftNurseInviteStatus = "active" | "used" | "revoked" | "expired";
 
 export type NurseRequestStatus = "pending" | "accepted" | "declined";
 
-export type NurseRequestType = "issue" | "swap";
+// Issue and swap entries can still exist on shifts that were live before chat
+// shipped; the app parses them but no longer shows them.
+export type NurseRequestType = "issue" | "swap" | "chat";
 
 export type NurseIssueReviewStatus = "open" | "reviewed" | "resolved";
 
@@ -57,11 +47,7 @@ export type NotificationEventTargetRoute =
   | "flags";
 
 export type NotificationEventStatus =
-  | "pending"
-  | "sent"
-  | "failed"
-  | "skipped"
-  | "cancelled";
+  "pending" | "sent" | "failed" | "skipped" | "cancelled";
 
 export type FlagSeverity = "info" | "warning" | "critical";
 
@@ -238,11 +224,14 @@ export interface Flag {
 export interface NurseRequest {
   id: string;
   type: NurseRequestType;
-  status: NurseRequestStatus;
+  status?: NurseRequestStatus;
   requestingNurseId: string;
   requestingNurseName: string;
-  message: string;
+  message?: string;
   createdAt: string;
+  lastMessageAt?: string;
+  lastMessageAuthorProfileId?: string;
+  lastMessagePreview?: string;
   sourceBedId?: string;
   targetNurseId?: string;
   targetBedId?: string;
@@ -408,19 +397,12 @@ export type AuthSessionState =
     };
 
 export type NotificationPermissionStatus =
-  | "unknown"
-  | "granted"
-  | "denied"
-  | "provisional"
-  | "unavailable";
+  "unknown" | "granted" | "denied" | "provisional" | "unavailable";
 
 export type DevicePushPlatform = "android" | "ios";
 
 export type DevicePushTokenStatus =
-  | "active"
-  | "disabled"
-  | "expired"
-  | "revoked";
+  "active" | "disabled" | "expired" | "revoked";
 
 export type DevicePushRegistrationState =
   | { status: "idle" | "registering" }

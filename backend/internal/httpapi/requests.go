@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/pratham124/nurse-flow/backend/internal/auth"
 	"github.com/pratham124/nurse-flow/backend/internal/database"
@@ -12,13 +13,11 @@ import (
 	"github.com/pratham124/nurse-flow/backend/internal/shifts"
 )
 
-// RequestStore supplies manual assignment moves and nurse requests.
+// RequestStore supplies manual assignment moves and nurse chats.
 type RequestStore interface {
 	MoveAssignment(ctx context.Context, authUserID, profileID, shiftID string, request shifts.MoveRequest) (database.MoveOutcome, error)
-	SubmitIssueRequest(ctx context.Context, authUserID, profileID, message string) (json.RawMessage, error)
-	SubmitSwapRequest(ctx context.Context, authUserID, profileID, sourceBedID, message string) (json.RawMessage, error)
-	UpdateIssueStatus(ctx context.Context, authUserID, profileID, shiftID, requestID, status string) (json.RawMessage, error)
-	ResolveSwapRequest(ctx context.Context, authUserID, profileID, shiftID, requestID, status string) (json.RawMessage, error)
+	OpenJoinedChat(ctx context.Context, authUserID, profileID string) (chat json.RawMessage, created bool, err error)
+	OpenShiftNurseChat(ctx context.Context, authUserID, profileID, shiftID, nurseID string) (chat json.RawMessage, created bool, err error)
 }
 
 func registerRequestRoutes(mux *http.ServeMux, verifier *auth.Verifier, profiles auth.ProfileReader, store RequestStore) {
@@ -26,14 +25,8 @@ func registerRequestRoutes(mux *http.ServeMux, verifier *auth.Verifier, profiles
 		return verifier.RequireIdentity(auth.RequireChargeNurse(profiles, handler))
 	}
 	mux.Handle("POST /shifts/{id}/assignment-moves", protect(requireUUID(moveHandler(store))))
-	mux.Handle("POST /joined-workspace/issue-requests", protect(issueRequestHandler(store)))
-	mux.Handle("POST /joined-workspace/swap-requests", protect(swapRequestHandler(store)))
-	mux.Handle("POST /shifts/{id}/requests/{requestId}/issue-status", protect(requireUUID(reviewHandler(shifts.ValidateIssueStatus, func(ctx context.Context, authUserID, profileID, shiftID, requestID, status string) (json.RawMessage, error) {
-		return store.UpdateIssueStatus(ctx, authUserID, profileID, shiftID, requestID, status)
-	}))))
-	mux.Handle("POST /shifts/{id}/requests/{requestId}/swap-resolution", protect(requireUUID(reviewHandler(shifts.ValidateResolution, func(ctx context.Context, authUserID, profileID, shiftID, requestID, status string) (json.RawMessage, error) {
-		return store.ResolveSwapRequest(ctx, authUserID, profileID, shiftID, requestID, status)
-	}))))
+	mux.Handle("POST /joined-workspace/chat", protect(joinedChatHandler(store)))
+	mux.Handle("POST /shifts/{id}/nurses/{nurseId}/chat", protect(requireUUID(shiftNurseChatHandler(store))))
 }
 
 func decodeRequestBody(w http.ResponseWriter, r *http.Request, body any) bool {
@@ -87,86 +80,48 @@ func moveHandler(store RequestStore) http.Handler {
 	})
 }
 
-func issueRequestHandler(store RequestStore) http.Handler {
+// writeChat sends the chat entry: 201 when this call created it, 200 when it
+// already existed.
+func writeChat(w http.ResponseWriter, chat json.RawMessage, created bool) {
+	status := http.StatusOK
+	if created {
+		status = http.StatusCreated
+	}
+	writeRequest(w, status, chat)
+}
+
+// joinedChatHandler opens the signed-in nurse's chat with charge. It takes no
+// body: the nurse comes from the caller's linked shift access, never the client.
+func joinedChatHandler(store RequestStore) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var body struct {
-			Message string `json:"message"`
-		}
-		if !decodeRequestBody(w, r, &body) {
-			return
-		}
-		if err := shifts.ValidateIssueMessage(body.Message); err != nil {
-			writeRequestError(w, err, "")
-			return
-		}
 		profile, _ := auth.ProfileFromContext(r.Context())
-		request, err := store.SubmitIssueRequest(r.Context(), profile.AuthUserID, profile.ID, body.Message)
+		chat, created, err := store.OpenJoinedChat(r.Context(), profile.AuthUserID, profile.ID)
 		if err != nil {
-			writeRequestError(w, err, "Join a shift before submitting an issue.")
+			writeRequestError(w, err, "Join a shift before chatting with charge.")
 			return
 		}
-		writeRequest(w, http.StatusCreated, request)
+		writeChat(w, chat, created)
 	})
 }
 
-func swapRequestHandler(store RequestStore) http.Handler {
+// shiftNurseChatHandler opens the charge nurse's chat with one nurse.
+func shiftNurseChatHandler(store RequestStore) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var body struct {
-			SourceBedID string `json:"source_bed_id"`
-			Message     string `json:"message"`
-		}
-		if !decodeRequestBody(w, r, &body) {
-			return
-		}
-		if err := shifts.ValidateSwapInput(body.SourceBedID, body.Message); err != nil {
-			writeRequestError(w, err, "")
-			return
-		}
 		profile, _ := auth.ProfileFromContext(r.Context())
-		request, err := store.SubmitSwapRequest(r.Context(), profile.AuthUserID, profile.ID, body.SourceBedID, body.Message)
-		if err != nil {
-			writeRequestError(w, err, "Join a shift before submitting a swap request.")
-			return
-		}
-		writeRequest(w, http.StatusCreated, request)
-	})
-}
-
-// reviewHandler serves both issue-status and swap-resolution; they differ only in
-// how the status is validated and which store method applies it.
-func reviewHandler(
-	validate func(status string) error,
-	apply func(ctx context.Context, authUserID, profileID, shiftID, requestID, status string) (json.RawMessage, error),
-) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var body struct {
-			Status string `json:"status"`
-		}
-		if !decodeRequestBody(w, r, &body) {
-			return
-		}
-		if err := validate(body.Status); err != nil {
-			writeRequestError(w, err, "")
-			return
-		}
-		profile, _ := auth.ProfileFromContext(r.Context())
-		request, err := apply(r.Context(), profile.AuthUserID, profile.ID, r.PathValue("id"), r.PathValue("requestId"), body.Status)
+		nurseID := strings.TrimSpace(r.PathValue("nurseId"))
+		chat, created, err := store.OpenShiftNurseChat(r.Context(), profile.AuthUserID, profile.ID, r.PathValue("id"), nurseID)
 		if err != nil {
 			writeRequestError(w, err, "")
 			return
 		}
-		writeRequest(w, http.StatusOK, request)
+		writeChat(w, chat, created)
 	})
 }
 
 // ruleStatuses maps the API code of a refused request to its HTTP status.
 var ruleStatuses = map[string]int{
-	"invalid_move":        http.StatusUnprocessableEntity,
-	"invalid_request":     http.StatusUnprocessableEntity,
-	"request_pending":     http.StatusConflict,
-	"request_not_pending": http.StatusConflict,
-	"invalid_transition":  http.StatusConflict,
-	"request_not_found":   http.StatusNotFound,
+	"invalid_move":    http.StatusUnprocessableEntity,
+	"invalid_request": http.StatusUnprocessableEntity,
 }
 
 // writeRequestError sends the right response for a refused or failed request.
@@ -182,6 +137,8 @@ func writeRequestError(w http.ResponseWriter, err error, notJoinedMessage string
 		httpresponse.WriteError(w, status, rule.Code, rule.Message)
 	case errors.Is(err, database.ErrShiftNotFound):
 		httpresponse.WriteError(w, http.StatusNotFound, "shift_not_found", "This shift is no longer available. Refresh and try again.")
+	case errors.Is(err, database.ErrNurseNotOnShift):
+		httpresponse.WriteError(w, http.StatusNotFound, "nurse_not_found", "This nurse is no longer on this shift.")
 	case errors.Is(err, database.ErrShiftNotAssigned):
 		httpresponse.WriteError(w, http.StatusConflict, "shift_not_assigned", "This shift is no longer available for assignment moves.")
 	case errors.Is(err, database.ErrMoveConflict):

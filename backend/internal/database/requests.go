@@ -39,71 +39,27 @@ func lockJoinedShift(tx *gorm.DB, profileID string) (*AccessRow, ActiveShift, er
 	return access, shift, err
 }
 
-// SubmitIssueRequest appends a pending issue from the profile's linked nurse slot.
-func (s *Store) SubmitIssueRequest(ctx context.Context, authID, profileID, message string) (json.RawMessage, error) {
-	return s.submitJoinedRequest(ctx, authID, profileID, func(snapshot shifts.Snapshot, slot shifts.NurseSlot, _ []shifts.ActiveOverride, at time.Time) (shifts.RequestChange, error) {
-		return snapshot.AddIssueRequest(slot, message, at)
-	})
-}
-
-// SubmitSwapRequest appends a pending swap for a bed the linked nurse holds now.
-func (s *Store) SubmitSwapRequest(ctx context.Context, authID, profileID, sourceBedID, message string) (json.RawMessage, error) {
-	return s.submitJoinedRequest(ctx, authID, profileID, func(snapshot shifts.Snapshot, slot shifts.NurseSlot, overrides []shifts.ActiveOverride, at time.Time) (shifts.RequestChange, error) {
-		return snapshot.AddSwapRequest(slot, sourceBedID, message, overrides, at)
-	})
-}
-
-// submitJoinedRequest runs one joined-nurse submission. Exactly one request is
-// appended, built by the pure shift rules from the freshly locked snapshot.
-func (s *Store) submitJoinedRequest(ctx context.Context, authID, profileID string, build func(shifts.Snapshot, shifts.NurseSlot, []shifts.ActiveOverride, time.Time) (shifts.RequestChange, error)) (json.RawMessage, error) {
-	var request json.RawMessage
-	err := s.WithWriteIdentity(ctx, authID, func(tx *gorm.DB) error {
+// OpenJoinedChat opens the joined nurse's chat with charge, creating it the
+// first time. created tells the caller whether anything was written.
+func (s *Store) OpenJoinedChat(ctx context.Context, authID, profileID string) (chat json.RawMessage, created bool, err error) {
+	err = s.WithWriteIdentity(ctx, authID, func(tx *gorm.DB) error {
 		access, shift, err := lockJoinedShift(tx, profileID)
 		if err != nil {
 			return err
 		}
-		snapshot, err := shifts.Decode(shift.ShiftSnapshot)
-		if err != nil {
-			return err
-		}
-		overrides, err := overridesOf(tx, &shift)
-		if err != nil {
-			return err
-		}
-		now := nextShiftTime(shift.UpdatedAt)
-		change, err := build(snapshot, shifts.NurseSlot{ID: access.NurseID, Name: access.NurseName}, overrides, now)
-		if err != nil {
-			return err
-		}
-		request = change.Request
-		return saveRequestChange(tx, &shift, change.Snapshot, now)
+		chat, created, err = ensureChat(tx, &shift, shifts.NurseSlot{ID: access.NurseID, Name: access.NurseName})
+		return err
 	})
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	return request, nil
+	return chat, created, nil
 }
 
-// UpdateIssueStatus sets an issue's review status on an owned, unended shift.
-// Asking for the current status succeeds without writing anything.
-func (s *Store) UpdateIssueStatus(ctx context.Context, authID, profileID, shiftID, requestID, status string) (json.RawMessage, error) {
-	return s.reviewRequest(ctx, authID, profileID, shiftID, func(snapshot shifts.Snapshot, at time.Time) (shifts.RequestChange, error) {
-		return snapshot.SetIssueStatus(requestID, status, profileID, at)
-	})
-}
-
-// ResolveSwapRequest accepts or declines a pending swap on an owned, unended shift.
-func (s *Store) ResolveSwapRequest(ctx context.Context, authID, profileID, shiftID, requestID, status string) (json.RawMessage, error) {
-	return s.reviewRequest(ctx, authID, profileID, shiftID, func(snapshot shifts.Snapshot, at time.Time) (shifts.RequestChange, error) {
-		return snapshot.ResolveSwap(requestID, status, at)
-	})
-}
-
-// reviewRequest locks the charge nurse's shift, applies one change, and saves it.
-// A change without a snapshot is a no-op and is not written.
-func (s *Store) reviewRequest(ctx context.Context, authID, profileID, shiftID string, apply func(shifts.Snapshot, time.Time) (shifts.RequestChange, error)) (json.RawMessage, error) {
-	var request json.RawMessage
-	err := s.WithWriteIdentity(ctx, authID, func(tx *gorm.DB) error {
+// OpenShiftNurseChat opens the charge nurse's chat with one nurse on an owned,
+// unended shift, creating it the first time.
+func (s *Store) OpenShiftNurseChat(ctx context.Context, authID, profileID, shiftID, nurseID string) (chat json.RawMessage, created bool, err error) {
+	err = s.WithWriteIdentity(ctx, authID, func(tx *gorm.DB) error {
 		shift, err := lockShift(tx, profileID, shiftID)
 		if err != nil {
 			return err
@@ -112,19 +68,39 @@ func (s *Store) reviewRequest(ctx context.Context, authID, profileID, shiftID st
 		if err != nil {
 			return err
 		}
-		now := nextShiftTime(shift.UpdatedAt)
-		change, err := apply(snapshot, now)
+		slot, found, err := snapshot.FindNurseSlot(nurseID)
 		if err != nil {
 			return err
 		}
-		request = change.Request
-		if change.Snapshot == nil {
-			return nil
+		if !found {
+			return ErrNurseNotOnShift
 		}
-		return saveRequestChange(tx, &shift, change.Snapshot, now)
+		chat, created, err = ensureChat(tx, &shift, slot)
+		return err
 	})
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	return request, nil
+	return chat, created, nil
+}
+
+// ensureChat finds or adds the nurse's chat on a shift that is already locked.
+// The shift is written only when the chat is new.
+func ensureChat(tx *gorm.DB, shift *ActiveShift, slot shifts.NurseSlot) (json.RawMessage, bool, error) {
+	snapshot, err := shifts.Decode(shift.ShiftSnapshot)
+	if err != nil {
+		return nil, false, err
+	}
+	now := nextShiftTime(shift.UpdatedAt)
+	change, created, err := snapshot.EnsureChat(slot, now)
+	if err != nil {
+		return nil, false, err
+	}
+	if !created {
+		return change.Request, false, nil
+	}
+	if err := saveRequestChange(tx, shift, change.Snapshot, now); err != nil {
+		return nil, false, err
+	}
+	return change.Request, true, nil
 }

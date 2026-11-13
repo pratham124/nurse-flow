@@ -58,12 +58,15 @@ const flag = z.looseObject({
 });
 export const nurseRequestSchema = z.looseObject({
   id: z.string(),
-  type: z.enum(["issue", "swap"]),
-  status: z.enum(["pending", "accepted", "declined"]),
+  type: z.enum(["issue", "swap", "chat"]),
+  status: z.enum(["pending", "accepted", "declined"]).optional(),
   requestingNurseId: z.string(),
   requestingNurseName: z.string(),
-  message: z.string(),
+  message: z.string().optional(),
   createdAt: z.string(),
+  lastMessageAt: z.string().optional(),
+  lastMessageAuthorProfileId: z.string().optional(),
+  lastMessagePreview: z.string().optional(),
   sourceBedId: z.string().optional(),
   targetNurseId: z.string().optional(),
   targetBedId: z.string().optional(),
@@ -164,23 +167,21 @@ const overrideRow = z
       z.array(overrideWarningSchema),
     ),
   })
-  .transform(
-    (row): ManualAssignmentOverride => ({
-      id: row.id,
-      shiftId: row.shift_id,
-      baselineAssignmentResultId: row.baseline_assignment_result_id,
-      bedId: row.bed_id,
-      fromNurseId: row.from_nurse_id,
-      toNurseId: row.to_nurse_id,
-      createdByProfileId: row.created_by_profile_id,
-      createdAt: row.created_at,
-      status: row.status,
-      supersededAt: row.superseded_at ?? undefined,
-      serverSequence: row.server_sequence,
-      relatedSwapRequestId: row.related_swap_request_id ?? undefined,
-      warningAcknowledgements: row.warning_acknowledgements,
-    }),
-  );
+  .transform((row): ManualAssignmentOverride => ({
+    id: row.id,
+    shiftId: row.shift_id,
+    baselineAssignmentResultId: row.baseline_assignment_result_id,
+    bedId: row.bed_id,
+    fromNurseId: row.from_nurse_id,
+    toNurseId: row.to_nurse_id,
+    createdByProfileId: row.created_by_profile_id,
+    createdAt: row.created_at,
+    status: row.status,
+    supersededAt: row.superseded_at ?? undefined,
+    serverSequence: row.server_sequence,
+    relatedSwapRequestId: row.related_swap_request_id ?? undefined,
+    warningAcknowledgements: row.warning_acknowledgements,
+  }));
 
 const activeShiftRow = z
   .object({
@@ -194,23 +195,20 @@ const activeShiftRow = z
     ended_at: z.string().nullable(),
     active_assignment_overrides_by_bed_id: z.record(z.string(), overrideRow),
   })
-  .transform(
-    (row): ActiveShiftRecord => ({
-      id: row.id,
-      chargeProfileId: row.charge_profile_id,
-      floorTemplateId:
-        row.floor_template_id ?? row.shift_snapshot.floorTemplateId,
-      status: row.status,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-      endedAt: row.ended_at ?? undefined,
-      // This metadata travels WITH a draft. Never pair an older draft with the
-      // latest store version; that would defeat optimistic concurrency checks.
-      shiftSnapshot: { ...row.shift_snapshot, serverRevision: row.updated_at },
-      activeAssignmentOverridesByBedId:
-        row.active_assignment_overrides_by_bed_id,
-    }),
-  );
+  .transform((row): ActiveShiftRecord => ({
+    id: row.id,
+    chargeProfileId: row.charge_profile_id,
+    floorTemplateId:
+      row.floor_template_id ?? row.shift_snapshot.floorTemplateId,
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    endedAt: row.ended_at ?? undefined,
+    // This metadata travels WITH a draft. Never pair an older draft with the
+    // latest store version; that would defeat optimistic concurrency checks.
+    shiftSnapshot: { ...row.shift_snapshot, serverRevision: row.updated_at },
+    activeAssignmentOverridesByBedId: row.active_assignment_overrides_by_bed_id,
+  }));
 
 export const currentShiftSchema = z.object({
   active_shift: activeShiftRow.nullable(),
@@ -249,16 +247,14 @@ export const previousShiftsSchema = z.object({
           ),
         ),
       })
-      .transform(
-        (row): ServerPreviousShiftSnapshot => ({
-          id: row.id,
-          chargeProfileId: row.charge_profile_id,
-          floorTemplateId: row.floor_template_id ?? "",
-          completedAt: row.completed_at,
-          nurseSuggestions: row.nurse_suggestions,
-          patientSuggestions: row.patient_suggestions,
-        }),
-      ),
+      .transform((row): ServerPreviousShiftSnapshot => ({
+        id: row.id,
+        chargeProfileId: row.charge_profile_id,
+        floorTemplateId: row.floor_template_id ?? "",
+        completedAt: row.completed_at,
+        nurseSuggestions: row.nurse_suggestions,
+        patientSuggestions: row.patient_suggestions,
+      })),
   ),
 });
 

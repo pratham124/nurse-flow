@@ -5,10 +5,8 @@ import test, { afterEach, mock } from "node:test";
 import {
   confirmManualAssignmentOverride,
   loadJoinedNurseAssignmentView,
-  resolveShiftNurseSwapRequest,
-  submitJoinedNurseIssueRequest,
-  submitJoinedNurseSwapRequest,
-  updateShiftNurseIssueStatus,
+  openJoinedNurseChat,
+  openShiftNurseChat,
 } from "../src/services/serverWorkspaceRepository.ts";
 import { goApiClient } from "../src/services/goApiClient.ts";
 
@@ -221,60 +219,57 @@ test("keeps no-active-assignment (null) and server failures distinct", async () 
   await assert.rejects(loadJoinedNurseAssignmentView(joinedClient(), profile), /invalid server shape/);
 });
 
-const nurseRequest = {
-  id: "nurse-request-abc", type: "issue", status: "pending", requestingNurseId: "n1",
-  requestingNurseName: "Ada", message: "Help", createdAt: "2026-10-24T10:00:00Z", futureField: 1,
+const chat = {
+  id: "nurse-chat-n1", type: "chat", requestingNurseId: "n1",
+  requestingNurseName: "Ada", createdAt: "2026-10-24T10:00:00Z", futureField: 1,
 };
 
-test("submits joined issue and swap requests to the Go routes", async () => {
-  let calls = goPosts({ request: nurseRequest }, 201);
-  await submitJoinedNurseIssueRequest(client(), { message: "  Help  " });
-  assert.equal(calls[0].url, "/joined-workspace/issue-requests");
-  assert.deepEqual(calls[0].body, { message: "Help" });
+test("nurse opens their chat through the joined-workspace route", async () => {
+  let calls = goPosts({ request: chat }, 201);
+  assert.deepEqual(await openJoinedNurseChat(client()), chat);
+  assert.equal(calls[0].url, "/joined-workspace/chat");
   assert.equal(calls[0].headers.Authorization, "Bearer tok");
   mock.restoreAll();
-  calls = goPosts({ request: { ...nurseRequest, type: "swap", sourceBedId: "bed" } }, 201);
-  await submitJoinedNurseSwapRequest(client(), { message: " Swap ", sourceBedId: "bed" });
-  assert.equal(calls[0].url, "/joined-workspace/swap-requests");
-  assert.deepEqual(calls[0].body, { message: "Swap", source_bed_id: "bed" });
+  calls = goPosts({ request: { ...chat, lastMessagePreview: "Hi", lastMessageAt: "2026-10-24T11:00:00Z", lastMessageAuthorProfileId: "p1" } }, 200);
+  const existing = await openJoinedNurseChat(client());
+  assert.equal(existing.lastMessagePreview, "Hi");
 });
 
-test("keeps local validation messages and sends nothing", async () => {
-  mock.method(goApiClient, "post", async () => assert.fail("no request expected"));
-  await assert.rejects(submitJoinedNurseIssueRequest(client(), { message: " " }), /Add issue details/);
-  await assert.rejects(submitJoinedNurseSwapRequest(client(), { message: "x", sourceBedId: "" }), /Choose the assigned bed/);
-  await assert.rejects(submitJoinedNurseSwapRequest(client(), { message: " ", sourceBedId: "b" }), /Add swap details/);
+test("charge opens a nurse chat on a shift-scoped, URL-encoded route", async () => {
+  const calls = goPosts({ request: chat }, 200);
+  const opened = await openShiftNurseChat(client(), { nurseId: "nurse/1", shiftId: "shift-1" });
+  assert.equal(opened.id, "nurse-chat-n1");
+  assert.equal(calls[0].url, "/shifts/shift-1/nurses/nurse%2F1/chat");
+  assert.equal(calls[0].headers.Authorization, "Bearer tok");
 });
 
-test("submission failures show the server message, 401, and bad shapes", async () => {
-  postFails(409, { error: { code: "request_pending", message: "This issue is already pending." } });
-  await assert.rejects(submitJoinedNurseIssueRequest(client(), { message: "x" }), /already pending/);
+test("open-chat failures show the server message, 401, and bad shapes", async () => {
+  postFails(409, { error: { code: "not_joined", message: "Join a shift before chatting with charge." } });
+  await assert.rejects(openJoinedNurseChat(client()), /Join a shift before chatting/);
+  mock.restoreAll();
+  postFails(404, { error: { code: "nurse_not_found", message: "This nurse is no longer on this shift." } });
+  await assert.rejects(openShiftNurseChat(client(), { nurseId: "n", shiftId: "s" }), /no longer on this shift/);
   mock.restoreAll();
   postFails(401, { error: { code: "unauthorized", message: "no" } });
-  await assert.rejects(submitJoinedNurseSwapRequest(client(), { message: "x", sourceBedId: "b" }), /session expired/);
-  mock.restoreAll();
-  goPosts({ request: { id: "r" } }, 201);
-  await assert.rejects(submitJoinedNurseIssueRequest(client(), { message: "x" }), /invalid server shape/);
-  mock.restoreAll();
-  goPosts({ request: nurseRequest }, 200);
-  await assert.rejects(submitJoinedNurseIssueRequest(client(), { message: "x" }), /invalid server shape/);
-});
-
-test("charge review posts to shift-scoped, URL-encoded routes", async () => {
-  let calls = goPosts({ request: nurseRequest });
-  await resolveShiftNurseSwapRequest(client(), { nextStatus: "accepted", requestId: "nurse-request-a/b", shiftId: "shift-1" });
-  assert.equal(calls[0].url, "/shifts/shift-1/requests/nurse-request-a%2Fb/swap-resolution");
-  assert.deepEqual(calls[0].body, { status: "accepted" });
-  mock.restoreAll();
-  calls = goPosts({ request: nurseRequest });
-  await updateShiftNurseIssueStatus(client(), { nextStatus: "reviewed", requestId: "nurse-request-abc", shiftId: "shift-1" });
-  assert.equal(calls[0].url, "/shifts/shift-1/requests/nurse-request-abc/issue-status");
-  assert.deepEqual(calls[0].body, { status: "reviewed" });
-  assert.equal(calls[0].headers.Authorization, "Bearer tok");
-  mock.restoreAll();
-  postFails(409, { error: { code: "invalid_transition", message: "That issue status change is not allowed." } });
-  await assert.rejects(updateShiftNurseIssueStatus(client(), { nextStatus: "open", requestId: "r", shiftId: "s" }), /not allowed/);
+  await assert.rejects(openJoinedNurseChat(client()), /session expired/);
   mock.restoreAll();
   postFails(404, {});
-  await assert.rejects(resolveShiftNurseSwapRequest(client(), { nextStatus: "declined", requestId: "r", shiftId: "s" }), /could not be resolved/);
+  await assert.rejects(openShiftNurseChat(client(), { nurseId: "n", shiftId: "s" }), /could not be opened/);
+  mock.restoreAll();
+  goPosts({ request: { id: "r" } }, 201);
+  await assert.rejects(openJoinedNurseChat(client()), /invalid server shape/);
+  mock.restoreAll();
+  goPosts({ request: chat }, 204);
+  await assert.rejects(openJoinedNurseChat(client()), /invalid server shape/);
+});
+
+test("legacy issue and swap entries still parse in the request history", async () => {
+  const legacy = [
+    { id: "nurse-request-1", type: "issue", status: "pending", requestingNurseId: "n1", requestingNurseName: "Ada", message: "Help", createdAt: "2026-10-24T10:00:00Z" },
+    { id: "nurse-request-2", type: "swap", status: "accepted", requestingNurseId: "n1", requestingNurseName: "Ada", message: "Swap", createdAt: "2026-10-24T10:00:00Z" },
+    chat,
+  ];
+  goReturns({ ...view, requestHistory: legacy });
+  const result = await loadJoinedNurseAssignmentView(joinedClient(), profile);
+  assert.deepEqual(result.requestHistory.map((request) => request.type), ["issue", "swap", "chat"]);
 });

@@ -20,6 +20,7 @@ type requestStoreStub struct {
 	calls   []string
 	args    []string
 	move    shifts.MoveRequest
+	created bool
 }
 
 func (s *requestStoreStub) record(call string, args ...string) {
@@ -32,21 +33,13 @@ func (s *requestStoreStub) MoveAssignment(_ context.Context, authID, profileID, 
 	s.move = request
 	return s.outcome, s.err
 }
-func (s *requestStoreStub) SubmitIssueRequest(_ context.Context, authID, profileID, message string) (json.RawMessage, error) {
-	s.record("issue", authID, profileID, message)
-	return json.RawMessage(`{"id":"nurse-request-1","type":"issue","futureKey":true}`), s.err
+func (s *requestStoreStub) OpenJoinedChat(_ context.Context, authID, profileID string) (json.RawMessage, bool, error) {
+	s.record("joined-chat", authID, profileID)
+	return json.RawMessage(`{"id":"nurse-chat-n1","type":"chat","futureKey":true}`), s.created, s.err
 }
-func (s *requestStoreStub) SubmitSwapRequest(_ context.Context, authID, profileID, bed, message string) (json.RawMessage, error) {
-	s.record("swap", authID, profileID, bed, message)
-	return json.RawMessage(`{"id":"nurse-request-2","type":"swap"}`), s.err
-}
-func (s *requestStoreStub) UpdateIssueStatus(_ context.Context, authID, profileID, shiftID, requestID, status string) (json.RawMessage, error) {
-	s.record("issue-status", authID, profileID, shiftID, requestID, status)
-	return json.RawMessage(`{"id":"q1"}`), s.err
-}
-func (s *requestStoreStub) ResolveSwapRequest(_ context.Context, authID, profileID, shiftID, requestID, status string) (json.RawMessage, error) {
-	s.record("swap-resolution", authID, profileID, shiftID, requestID, status)
-	return json.RawMessage(`{"id":"q2"}`), s.err
+func (s *requestStoreStub) OpenShiftNurseChat(_ context.Context, authID, profileID, shiftID, nurseID string) (json.RawMessage, bool, error) {
+	s.record("nurse-chat", authID, profileID, shiftID, nurseID)
+	return json.RawMessage(`{"id":"nurse-chat-n1","type":"chat","futureKey":true}`), s.created, s.err
 }
 
 const validMoveBody = `{"baseline_assignment_result_id":"res1","bed_id":"b1","from_nurse_id":"n1","to_nurse_id":"n2","warning_acknowledgements":[],"related_swap_request_id":null,"client_mutation_id":"m1"}`
@@ -55,8 +48,8 @@ func TestRequestRoutes(t *testing.T) {
 	verifier, sign := testDiagnosticVerifier(t)
 	shiftID := "40000000-0000-4000-8000-000000000001"
 	moves := "/shifts/" + shiftID + "/assignment-moves"
-	issueStatus := "/shifts/" + shiftID + "/requests/q1/issue-status"
-	resolution := "/shifts/" + shiftID + "/requests/q2/swap-resolution"
+	joinedChat := "/joined-workspace/chat"
+	nurseChat := "/shifts/" + shiftID + "/nurses/nurse-1/chat"
 	rule := func(code, message string) error { return &shifts.RuleError{Code: code, Message: message} }
 	for _, tt := range []struct {
 		name, path, body string
@@ -75,28 +68,20 @@ func TestRequestRoutes(t *testing.T) {
 		{"move acknowledgements not an array", moves, strings.Replace(validMoveBody, `"warning_acknowledgements":[]`, `"warning_acknowledgements":{}`, 1), nil, 422, "invalid_move", 0},
 		{"move forged identity", moves, strings.Replace(validMoveBody, `"client_mutation_id":"m1"`, `"client_mutation_id":"m1","created_by_profile_id":"other"`, 1), nil, 400, "invalid_request", 0},
 		{"move bad shift ID", "/shifts/local/assignment-moves", validMoveBody, nil, 400, "invalid_id", 0},
-		{"issue submitted", "/joined-workspace/issue-requests", `{"message":"Need help"}`, nil, 201, "", 1},
-		{"issue blank", "/joined-workspace/issue-requests", `{"message":"  "}`, nil, 422, "invalid_request", 0},
-		{"issue not joined", "/joined-workspace/issue-requests", `{"message":"x"}`, database.ErrNotJoined, 409, "not_joined", 1},
-		{"issue ended", "/joined-workspace/issue-requests", `{"message":"x"}`, database.ErrShiftEnded, 409, "shift_ended", 1},
-		{"issue pending", "/joined-workspace/issue-requests", `{"message":"x"}`, rule("request_pending", "This issue is already pending."), 409, "request_pending", 1},
-		{"issue forged nurse", "/joined-workspace/issue-requests", `{"message":"x","requesting_nurse_id":"n9"}`, nil, 400, "invalid_request", 0},
-		{"swap submitted", "/joined-workspace/swap-requests", `{"source_bed_id":"b1","message":"Swap"}`, nil, 201, "", 1},
-		{"swap blank bed", "/joined-workspace/swap-requests", `{"source_bed_id":"","message":"Swap"}`, nil, 422, "invalid_request", 0},
-		{"swap not mine", "/joined-workspace/swap-requests", `{"source_bed_id":"b1","message":"Swap"}`, rule("invalid_request", "Choose one of your assigned beds for the swap."), 422, "invalid_request", 1},
-		{"swap not joined", "/joined-workspace/swap-requests", `{"source_bed_id":"b1","message":"Swap"}`, database.ErrNotJoined, 409, "not_joined", 1},
-		{"issue status", issueStatus, `{"status":"reviewed"}`, nil, 200, "", 1},
-		{"issue status invalid", issueStatus, `{"status":"closed"}`, nil, 422, "invalid_request", 0},
-		{"issue status missing request", issueStatus, `{"status":"reviewed"}`, rule("request_not_found", "The issue request is unavailable."), 404, "request_not_found", 1},
-		{"issue status transition", issueStatus, `{"status":"reviewed"}`, rule("invalid_transition", "That issue status change is not allowed."), 409, "invalid_transition", 1},
-		{"issue status foreign shift", issueStatus, `{"status":"reviewed"}`, database.ErrShiftNotFound, 404, "shift_not_found", 1},
-		{"swap resolution", resolution, `{"status":"accepted"}`, nil, 200, "", 1},
-		{"swap resolution invalid", resolution, `{"status":"pending"}`, nil, 422, "invalid_request", 0},
-		{"swap resolution not pending", resolution, `{"status":"declined"}`, rule("request_not_pending", "Only pending swap requests can be resolved."), 409, "request_not_pending", 1},
-		{"resolution bad shift ID", "/shifts/local/requests/q2/swap-resolution", `{"status":"accepted"}`, nil, 400, "invalid_id", 0},
+		{"joined chat created", joinedChat, "", nil, 201, "", 1},
+		{"joined chat existing", joinedChat, `{}`, nil, 200, "", 1},
+		{"joined chat not joined", joinedChat, "", database.ErrNotJoined, 409, "not_joined", 1},
+		{"joined chat ended", joinedChat, "", database.ErrShiftEnded, 409, "shift_ended", 1},
+		{"joined chat database error", joinedChat, "", errors.New("private password SQL"), 503, "database_unavailable", 1},
+		{"nurse chat created", nurseChat, "", nil, 201, "", 1},
+		{"nurse chat existing", nurseChat, "", nil, 200, "", 1},
+		{"nurse chat shift not found", nurseChat, "", database.ErrShiftNotFound, 404, "shift_not_found", 1},
+		{"nurse chat nurse not found", nurseChat, "", database.ErrNurseNotOnShift, 404, "nurse_not_found", 1},
+		{"nurse chat database error", nurseChat, "", errors.New("private password SQL"), 503, "database_unavailable", 1},
+		{"nurse chat bad shift ID", "/shifts/local/nurses/nurse-1/chat", "", nil, 400, "invalid_id", 0},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			store := &requestStoreStub{err: tt.storeErr, outcome: database.MoveOutcome{Saved: &database.MoveSaved{Status: "saved"}}}
+			store := &requestStoreStub{err: tt.storeErr, created: strings.Contains(tt.name, "created"), outcome: database.MoveOutcome{Saved: &database.MoveSaved{Status: "saved"}}}
 			request := httptest.NewRequest("POST", tt.path+"?profile_id=other&auth_user_id=other", strings.NewReader(tt.body))
 			request.Header.Set("Content-Type", "application/json")
 			request.Header.Set("Authorization", "Bearer "+sign(accessAuthUserID, time.Now().Add(time.Hour)))
@@ -144,16 +129,16 @@ func TestRequestRouteResponses(t *testing.T) {
 			t.Fatalf("%v %+v", store.args, store.move)
 		}
 	})
-	t.Run("a submitted request is returned as stored", func(t *testing.T) {
-		response := send(&requestStoreStub{}, "/joined-workspace/issue-requests", `{"message":"Need help"}`)
-		if !strings.Contains(response.Body.String(), `"request":{"id":"nurse-request-1","type":"issue","futureKey":true}`) {
+	t.Run("a chat is returned as stored", func(t *testing.T) {
+		response := send(&requestStoreStub{created: true}, "/joined-workspace/chat", "")
+		if !strings.Contains(response.Body.String(), `"request":{"id":"nurse-chat-n1","type":"chat","futureKey":true}`) {
 			t.Fatal(response.Body.String())
 		}
 	})
-	t.Run("the request ID from the path reaches the store", func(t *testing.T) {
+	t.Run("the nurse and shift from the path reach the store, trimmed", func(t *testing.T) {
 		store := &requestStoreStub{}
-		send(store, "/shifts/"+shiftID+"/requests/q1/issue-status", `{"status":"resolved"}`)
-		if store.args[2] != shiftID || store.args[3] != "q1" || store.args[4] != "resolved" {
+		send(store, "/shifts/"+shiftID+"/nurses/%20nurse-9%20/chat", "")
+		if store.args[2] != shiftID || store.args[3] != "nurse-9" {
 			t.Fatal(store.args)
 		}
 	})
@@ -162,8 +147,8 @@ func TestRequestRouteResponses(t *testing.T) {
 func TestRequestRoutesRequireAChargeProfile(t *testing.T) {
 	verifier, sign := testDiagnosticVerifier(t)
 	paths := []string{
-		"/shifts/40000000-0000-4000-8000-000000000001/assignment-moves", "/joined-workspace/issue-requests", "/joined-workspace/swap-requests",
-		"/shifts/40000000-0000-4000-8000-000000000001/requests/q1/issue-status", "/shifts/40000000-0000-4000-8000-000000000001/requests/q1/swap-resolution",
+		"/shifts/40000000-0000-4000-8000-000000000001/assignment-moves", "/joined-workspace/chat",
+		"/shifts/40000000-0000-4000-8000-000000000001/nurses/nurse-1/chat",
 	}
 	for _, path := range paths {
 		for _, state := range []string{"anonymous", "regular"} {

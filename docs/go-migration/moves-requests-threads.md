@@ -1,5 +1,28 @@
 # Milestone 5: Manual moves, nurse requests, and request threads
 
+> **2026-11-12 - Chat replaced issue and swap requests.** The "Issue requests" and
+> "Swap requests" sections below describe routes that no longer exist. A nurse now
+> has one chat with charge per shift: an entry with `type: "chat"` and the fixed ID
+> `nurse-chat-<nurseId>` in the snapshot's `nurseRequests`, using the request threads
+> below unchanged. New routes (both return `{"request": <chat>}`, 201 when created,
+> 200 when it already existed, no write in that case):
+>
+> - `POST /joined-workspace/chat` - the joined nurse opens their chat (`not_joined`
+>   409, `shift_ended` 409).
+> - `POST /shifts/{id}/nurses/{nurseId}/chat` - charge opens a chat with a nurse on an
+>   owned, unended shift (`shift_not_found` 404, `nurse_not_found` 404).
+>
+> Sending a message to a chat also locks the shift row, then stamps `lastMessageAt`,
+> `lastMessageAuthorProfileId`, and `lastMessagePreview` (first 120 characters) on the
+> chat entry and advances `updated_at`, so the shift's update trigger tells both apps.
+> Issue and swap threads behave as before (no lock, no stamp). Removed:
+> `POST /joined-workspace/issue-requests`, `POST /joined-workspace/swap-requests`,
+> `POST /shifts/{id}/requests/{requestId}/issue-status`, and
+> `POST /shifts/{id}/requests/{requestId}/swap-resolution`. Kept: the move route's
+> `related_swap_request_id` and the `complete_swap_request_from_override` trigger, and
+> legacy issue/swap entries on live shifts are left untouched.
+
+
 Status: done on 2026-10-24. Tickets 12–15 are verified locally, against the
 development database, and through a real-session browser walkthrough (limits below). Tickets 12–15. Glossary terms are in
 the root `CONTEXT.md`; the joined-nurse write boundary is

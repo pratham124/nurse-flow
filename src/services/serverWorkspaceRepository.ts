@@ -9,7 +9,10 @@ import {
 import { goApiClient } from "./goApiClient";
 import { getGoAuthHeaders } from "./goApiAuth";
 import { readGoApiFailure, throwGoNetworkError } from "./goApiErrors";
-import { loadServerActiveShift, loadPreviousShiftSnapshots } from "./shiftRepository";
+import {
+  loadServerActiveShift,
+  loadPreviousShiftSnapshots,
+} from "./shiftRepository";
 import { nurseRequestSchema } from "./shiftSchemas";
 import {
   joinedNurseAssignedBedSchema,
@@ -25,9 +28,7 @@ import type {
   JoinedNurseAssignedBed,
   JoinedNurseAssignmentView,
   ManualAssignmentOverride,
-  NurseIssueReviewStatus,
   OverrideWarningAcknowledgementInput,
-  NurseRequestStatus,
   ServerWorkspace,
   Shift,
   ShiftAccessStatus,
@@ -35,9 +36,17 @@ import type {
   UserProfile,
 } from "../types/models";
 
-export { createServerActiveShift, endServerActiveShift, loadServerActiveShift, resetServerActiveShiftForEditing, saveServerActiveShift } from "./shiftRepository";
+export {
+  createServerActiveShift,
+  endServerActiveShift,
+  loadServerActiveShift,
+  resetServerActiveShiftForEditing,
+  saveServerActiveShift,
+} from "./shiftRepository";
 
-type JoinedNurseAssignmentRpcResult = z.infer<typeof joinedNurseAssignmentResultSchema>;
+type JoinedNurseAssignmentRpcResult = z.infer<
+  typeof joinedNurseAssignmentResultSchema
+>;
 
 type NotificationTargetAccessRow = {
   id: string;
@@ -49,24 +58,8 @@ export type JoinedNurseNotificationTargetState =
   | { assignmentView: JoinedNurseAssignmentView; status: "ready" }
   | { status: "shift_ended" | "access_removed" };
 
-type SubmitJoinedNurseIssueRequestInput = {
-  message: string;
-};
-
-type SubmitJoinedNurseSwapRequestInput = {
-  message: string;
-  sourceBedId: string;
-};
-
-export type ResolveShiftNurseSwapRequestInput = {
-  nextStatus: Extract<NurseRequestStatus, "accepted" | "declined">;
-  requestId: string;
-  shiftId: string;
-};
-
-export type UpdateShiftNurseIssueStatusInput = {
-  nextStatus: NurseIssueReviewStatus;
-  requestId: string;
+export type OpenShiftNurseChatInput = {
+  nurseId: string;
   shiftId: string;
 };
 
@@ -103,7 +96,9 @@ export type ResetActiveShiftForEditingResult =
 
 function assertChargeNurse(profile: Pick<UserProfile, "role">) {
   if (profile.role !== "charge_nurse") {
-    throw new Error("Sign in with a NurseFlow account to manage charge nurse templates.");
+    throw new Error(
+      "Sign in with a NurseFlow account to manage charge nurse templates.",
+    );
   }
 }
 
@@ -122,7 +117,9 @@ function requireManualAssignmentOverride(
 ): ManualAssignmentOverride {
   const result = manualAssignmentOverrideSchema.safeParse(value);
   if (!result.success) {
-    throw new Error("A manual assignment override has an invalid server shape.");
+    throw new Error(
+      "A manual assignment override has an invalid server shape.",
+    );
   }
 
   return result.data;
@@ -195,7 +192,9 @@ function requireNurseAssignedBeds(value: unknown): JoinedNurseAssignedBed[] {
   return value.map((assignedBed) => {
     const result = joinedNurseAssignedBedSchema.safeParse(assignedBed);
     if (!result.success) {
-      throw new Error("The nurse assignment view has a missing bed, room, or side.");
+      throw new Error(
+        "The nurse assignment view has a missing bed, room, or side.",
+      );
     }
 
     return result.data;
@@ -279,17 +278,17 @@ export async function confirmManualAssignmentOverride(
 
   const parsed = manualAssignmentOverrideResultSchema.safeParse(response.data);
   if (response.status !== 200 || !parsed.success) {
-    throw new Error("The manual assignment override returned an invalid result.");
+    throw new Error(
+      "The manual assignment override returned an invalid result.",
+    );
   }
   const result = parsed.data;
 
   return {
-    activeAssignmentOverridesByBedId:
-      requireActiveAssignmentOverrideProjection(
-        result.activeAssignmentOverridesByBedId,
-      ),
-    currentBaselineAssignmentResultId:
-      result.currentBaselineAssignmentResultId,
+    activeAssignmentOverridesByBedId: requireActiveAssignmentOverrideProjection(
+      result.activeAssignmentOverridesByBedId,
+    ),
+    currentBaselineAssignmentResultId: result.currentBaselineAssignmentResultId,
     currentEffectiveNurseId: result.currentEffectiveNurseId,
     message: result.message,
     override: result.override
@@ -388,10 +387,7 @@ export async function loadJoinedNurseNotificationTargetState(
     return { status: "access_removed" };
   }
 
-  const assignmentView = await loadJoinedNurseAssignmentView(
-    supabase,
-    profile,
-  );
+  const assignmentView = await loadJoinedNurseAssignmentView(supabase, profile);
 
   if (
     assignmentView?.access.id === access.id &&
@@ -405,97 +401,42 @@ export async function loadJoinedNurseNotificationTargetState(
 
 const requestEnvelopeSchema = z.object({ request: nurseRequestSchema });
 
-async function postNurseRequest(
-  supabase: SupabaseClient,
-  path: string,
-  body: Record<string, string>,
-  expectedStatus: number,
-  fallbackMessage: string,
-) {
+// Both "open chat" routes answer 201 when the chat was just created and 200
+// when it already existed, and return the chat entry either way.
+async function openNurseChat(supabase: SupabaseClient, path: string) {
   const headers = await getGoAuthHeaders(supabase);
   const response = await goApiClient
-    .post<unknown>(path, body, { headers })
+    .post<unknown>(path, {}, { headers })
     .catch((error) =>
-      requestWriteError(error, "request service", fallbackMessage),
+      requestWriteError(
+        error,
+        "chat service",
+        "The chat could not be opened. Try again.",
+      ),
     );
+  const envelope = requestEnvelopeSchema.safeParse(response.data);
 
   if (
-    response.status !== expectedStatus ||
-    !requestEnvelopeSchema.safeParse(response.data).success
+    (response.status !== 200 && response.status !== 201) ||
+    !envelope.success
   ) {
-    throw new Error("The request service returned an invalid server shape.");
-  }
-}
-
-export async function submitJoinedNurseIssueRequest(
-  supabase: SupabaseClient,
-  request: SubmitJoinedNurseIssueRequestInput,
-) {
-  const message = request.message.trim();
-
-  if (!message) {
-    throw new Error("Add issue details before submitting.");
+    throw new Error("The chat service returned an invalid server shape.");
   }
 
-  await postNurseRequest(
-    supabase,
-    "/joined-workspace/issue-requests",
-    { message },
-    201,
-    "Your issue could not be submitted. Try again.",
-  );
+  return envelope.data.request;
 }
 
-export async function submitJoinedNurseSwapRequest(
+export function openJoinedNurseChat(supabase: SupabaseClient) {
+  return openNurseChat(supabase, "/joined-workspace/chat");
+}
+
+export function openShiftNurseChat(
   supabase: SupabaseClient,
-  request: SubmitJoinedNurseSwapRequestInput,
+  input: OpenShiftNurseChatInput,
 ) {
-  const message = request.message.trim();
-
-  if (!request.sourceBedId) {
-    throw new Error("Choose the assigned bed for this swap request.");
-  }
-
-  if (!message) {
-    throw new Error("Add swap details before submitting.");
-  }
-
-  await postNurseRequest(
+  return openNurseChat(
     supabase,
-    "/joined-workspace/swap-requests",
-    { message, source_bed_id: request.sourceBedId },
-    201,
-    "Your swap request could not be submitted. Try again.",
-  );
-}
-
-function getShiftRequestPath(shiftId: string, requestId: string, action: string) {
-  return `/shifts/${encodeURIComponent(shiftId)}/requests/${encodeURIComponent(requestId)}/${action}`;
-}
-
-export async function resolveShiftNurseSwapRequest(
-  supabase: SupabaseClient,
-  request: ResolveShiftNurseSwapRequestInput,
-) {
-  await postNurseRequest(
-    supabase,
-    getShiftRequestPath(request.shiftId, request.requestId, "swap-resolution"),
-    { status: request.nextStatus },
-    200,
-    "The swap request could not be resolved. Try again.",
-  );
-}
-
-export async function updateShiftNurseIssueStatus(
-  supabase: SupabaseClient,
-  request: UpdateShiftNurseIssueStatusInput,
-) {
-  await postNurseRequest(
-    supabase,
-    getShiftRequestPath(request.shiftId, request.requestId, "issue-status"),
-    { status: request.nextStatus },
-    200,
-    "The issue status could not be updated. Try again.",
+    `/shifts/${encodeURIComponent(input.shiftId)}/nurses/${encodeURIComponent(input.nurseId)}/chat`,
   );
 }
 

@@ -19,6 +19,7 @@ import {
 import { notificationsEnabled } from "../config/featureFlags";
 import { getSupabaseClient } from "../services/supabaseClient";
 import {
+  getNotificationTapHref,
   parseNotificationTapPayload,
   type NotificationTapPayload,
 } from "../utils/notificationTap";
@@ -56,10 +57,7 @@ export function NotificationTapProvider({
   children,
 }: NotificationTapProviderProps) {
   const { authState } = useAuthSession();
-  const {
-    retryLoadJoinedNurseAccess,
-    retryLoadWorkspace,
-  } = useServerWorkspace(
+  const { retryLoadJoinedNurseAccess, retryLoadWorkspace } = useServerWorkspace(
     useShallow((state) => ({
       retryLoadJoinedNurseAccess: state.retryLoadJoinedNurseAccess,
       retryLoadWorkspace: state.retryLoadWorkspace,
@@ -122,10 +120,9 @@ export function NotificationTapProvider({
       // Web and unsupported native builds can continue without tap routing.
     }
 
-    const subscription =
-      Notifications.addNotificationResponseReceivedListener(
-        receiveNotificationResponse,
-      );
+    const subscription = Notifications.addNotificationResponseReceivedListener(
+      receiveNotificationResponse,
+    );
 
     return () => {
       isMounted = false;
@@ -197,22 +194,23 @@ export function NotificationTapProvider({
           if (shouldFinish) {
             setPendingPayload(undefined);
             setRecoveryReason("idle");
-            if (payload.targetRoute === "requestDetail") {
-              router.replace({
-                pathname: "/joined-request-detail",
-                params: { requestId: payload.relatedRequestId! },
-              });
-            } else {
-              router.replace("/regular-nurse-workspace");
-            }
+            router.replace(
+              getNotificationTapHref({
+                audience: "joined_nurse",
+                request:
+                  payload.targetRoute === "requestDetail"
+                    ? targetState.assignmentView.requestHistory.find(
+                        (request) => request.id === payload.relatedRequestId,
+                      )
+                    : undefined,
+                targetRoute: payload.targetRoute,
+              }) as Href,
+            );
           }
           return;
         }
 
-        const activeShift = await loadServerActiveShift(
-          supabase,
-          profile,
-        );
+        const activeShift = await loadServerActiveShift(supabase, profile);
 
         if (!shouldFinish) {
           return;
@@ -242,19 +240,18 @@ export function NotificationTapProvider({
         setPendingPayload(undefined);
         setRecoveryReason("idle");
 
-        if (payload.targetRoute === "requestDetail") {
-          router.replace({
-            pathname: "/charge-request-detail",
-            params: { requestId: payload.relatedRequestId! },
-          });
-        } else if (
-          payload.targetRoute === "flags" ||
-          payload.targetRoute === "requestsList"
-        ) {
-          router.replace("/flags");
-        } else {
-          router.replace("/floor-board");
-        }
+        router.replace(
+          getNotificationTapHref({
+            audience: "charge",
+            request:
+              payload.targetRoute === "requestDetail"
+                ? activeShift.shiftSnapshot.nurseRequests?.find(
+                    (request) => request.id === payload.relatedRequestId,
+                  )
+                : undefined,
+            targetRoute: payload.targetRoute,
+          }) as Href,
+        );
       } catch {
         if (shouldFinish) {
           setRecoveryReason("refresh_failed");

@@ -8,6 +8,7 @@ import (
 
 	"github.com/pratham124/nurse-flow/backend/internal/shifts"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var (
@@ -37,37 +38,38 @@ func (ThreadMessage) TableName() string { return "public.nurse_request_messages"
 // request exists on an unended shift with a requesting nurse, and the caller is
 // the shift's charge owner or is linked to that nurse's slot. Row-level security
 // also hides shifts and messages from outsiders; this check mirrors it so the
-// error is the same one for every refusal.
-func requireThreadActor(tx *gorm.DB, profileID, shiftID, requestID string) error {
+// error is the same one for every refusal. It returns the snapshot it read so
+// callers can tell what kind of request the thread belongs to.
+func requireThreadActor(tx *gorm.DB, profileID, shiftID, requestID string) (shifts.Snapshot, error) {
 	var rows []ActiveShift
 	// RLS only shows the owner's shifts and shifts the caller has joined.
 	if err := tx.Where("id = ? AND ended_at IS NULL", shiftID).Limit(1).Find(&rows).Error; err != nil {
-		return err
+		return nil, err
 	}
 	if len(rows) == 0 {
-		return ErrThreadNotFound
+		return nil, ErrThreadNotFound
 	}
 	snapshot, err := shifts.Decode(rows[0].ShiftSnapshot)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	nurseID := snapshot.RequestingNurseID(requestID)
 	if nurseID == "" {
-		return ErrThreadNotFound
+		return nil, ErrThreadNotFound
 	}
 	if rows[0].ChargeProfileID == profileID {
-		return nil
+		return snapshot, nil
 	}
 	var linked int64
 	if err := tx.Table("public.shift_nurse_access").
 		Where("shift_id = ? AND nurse_id = ? AND nurse_profile_id = ? AND status = 'linked'", shiftID, nurseID, profileID).
 		Count(&linked).Error; err != nil {
-		return err
+		return nil, err
 	}
 	if linked == 0 {
-		return ErrThreadNotFound
+		return nil, ErrThreadNotFound
 	}
-	return nil
+	return snapshot, nil
 }
 
 // ListThreadMessages returns a request thread's messages, oldest first.
@@ -75,7 +77,7 @@ func (s *Store) ListThreadMessages(ctx context.Context, authID, profileID, shift
 	requestID = strings.TrimSpace(requestID)
 	messages := []ThreadMessage{}
 	err := s.WithIdentity(ctx, authID, func(tx *gorm.DB) error {
-		if err := requireThreadActor(tx, profileID, shiftID, requestID); err != nil {
+		if _, err := requireThreadActor(tx, profileID, shiftID, requestID); err != nil {
 			return err
 		}
 		return tx.Where("shift_id = ? AND request_id = ?", shiftID, requestID).Order("created_at, id").Find(&messages).Error
@@ -98,8 +100,20 @@ func (s *Store) AppendThreadMessage(ctx context.Context, authID, profileID, shif
 		mutationID = &clientMutationID
 	}
 	err = s.WithWriteIdentity(ctx, authID, func(tx *gorm.DB) error {
-		if err := requireThreadActor(tx, profileID, shiftID, requestID); err != nil {
+		snapshot, err := requireThreadActor(tx, profileID, shiftID, requestID)
+		if err != nil {
 			return err
+		}
+		// A chat message also updates the chat entry in the shift snapshot. Lock the
+		// shift row before inserting: the insert takes a weaker lock on that row
+		// through the foreign key, and upgrading it afterwards could deadlock two
+		// people sending at the same moment.
+		var chatShift ActiveShift
+		isChat := snapshot.IsChat(requestID)
+		if isChat {
+			if chatShift, err = lockChatShift(tx, shiftID); err != nil {
+				return err
+			}
 		}
 		if mutationID != nil {
 			saved, found, err := savedMessage(tx, shiftID, profileID, *mutationID)
@@ -125,6 +139,9 @@ func (s *Store) AppendThreadMessage(ctx context.Context, authID, profileID, shif
 		}
 		if len(inserted) == 1 {
 			message = inserted[0]
+			if isChat {
+				return stampChat(tx, &chatShift, requestID, profileID, body, message.CreatedAt)
+			}
 			return nil
 		}
 		if mutationID == nil {
@@ -147,6 +164,34 @@ func (s *Store) AppendThreadMessage(ctx context.Context, authID, profileID, shif
 		return ThreadMessage{}, false, err
 	}
 	return message, duplicate, nil
+}
+
+// lockChatShift locks the unended shift that holds a chat. The thread check
+// already found it, so a missing row means it ended in between.
+func lockChatShift(tx *gorm.DB, shiftID string) (ActiveShift, error) {
+	var shift ActiveShift
+	err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ? AND ended_at IS NULL", shiftID).Take(&shift).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return ActiveShift{}, ErrThreadNotFound
+	}
+	return shift, err
+}
+
+// stampChat records a new message on the chat entry. Saving the snapshot fires
+// the shift's update trigger, which is how both apps learn about the message.
+func stampChat(tx *gorm.DB, shift *ActiveShift, requestID, authorProfileID, body string, sentAt time.Time) error {
+	snapshot, err := shifts.Decode(shift.ShiftSnapshot)
+	if err != nil {
+		return err
+	}
+	change, err := snapshot.StampChatActivity(requestID, authorProfileID, body, sentAt)
+	if err != nil {
+		return err
+	}
+	if change.Snapshot == nil {
+		return nil
+	}
+	return saveRequestChange(tx, shift, change.Snapshot, nextShiftTime(shift.UpdatedAt))
 }
 
 // savedMessage finds the author's earlier message with this retry identifier.
