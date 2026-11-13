@@ -23,6 +23,8 @@ var (
 	ErrShiftAssigned = errors.New("reopen the assigned shift before saving setup")
 	// ErrShiftAlreadyOpen indicates that the charge nurse already has an open shift.
 	ErrShiftAlreadyOpen = errors.New("an active charge shift already exists")
+	// ErrJoinedShiftActive indicates that the profile is still linked to a shift it joined as a nurse.
+	ErrJoinedShiftActive = errors.New("leave the joined shift before starting a charge shift")
 )
 
 // ActiveShift maps an existing shift row and its current override projection.
@@ -142,8 +144,16 @@ func (s *Store) StartShift(ctx context.Context, authID, profileID, templateID st
 		if err := tx.Exec("SELECT pg_advisory_xact_lock(hashtextextended(?, 0))", "nurseflow:charge-start:"+strings.ToLower(profileID)).Error; err != nil {
 			return err
 		}
+		// The mirror of the join rule: a nurse on someone else's shift leaves it first.
+		joined, err := newestLinkedAccess(tx, profileID)
+		if err != nil {
+			return err
+		}
+		if joined != nil {
+			return ErrJoinedShiftActive
+		}
 		var template FloorTemplate
-		err := tx.Clauses(clause.Locking{Strength: "SHARE"}).Where("id = ? AND owner_profile_id = ?", templateID, profileID).Take(&template).Error
+		err = tx.Clauses(clause.Locking{Strength: "SHARE"}).Where("id = ? AND owner_profile_id = ?", templateID, profileID).Take(&template).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrTemplateNotFound
 		}

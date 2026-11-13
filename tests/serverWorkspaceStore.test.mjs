@@ -301,3 +301,111 @@ test("a manual retry still shows loading for the nurse view", async () => {
   finishLoad(undefined);
   await refresh;
 });
+
+const joinedAccess = { id: "access-1", nurseId: "nurse-1", shiftId: "shift-1" };
+const joinedView = { access: joinedAccess, requestHistory: [], shiftId: "shift-1" };
+
+test("leaving a joined shift calls the server and clears the nurse view", async () => {
+  let leaves = 0;
+  const store = createSignedInStore({
+    leaveJoinedShift: async () => {
+      leaves += 1;
+    },
+  });
+  store.getState().setJoinedNurseAccessState({ assignmentView: joinedView, status: "ready" });
+
+  await store.getState().leaveJoinedShift();
+
+  assert.equal(leaves, 1);
+  assert.deepEqual(store.getState().joinedNurseAccessState, { status: "empty" });
+  assert.deepEqual(store.getState().activeParticipation, { type: "none" });
+});
+
+test("a failed leave keeps the nurse on the shift", async () => {
+  const store = createSignedInStore({
+    leaveJoinedShift: async () => {
+      throw new Error("You could not leave the shift. Try again.");
+    },
+  });
+  store.getState().setJoinedNurseAccessState({ assignmentView: joinedView, status: "ready" });
+
+  await assert.rejects(store.getState().leaveJoinedShift(), /could not leave/);
+
+  assert.equal(store.getState().joinedNurseAccessState.status, "ready");
+});
+
+test("leaving without a joined shift is refused before calling the server", async () => {
+  const store = createSignedInStore({
+    leaveJoinedShift: async () => assert.fail("must not call the server"),
+  });
+
+  await assert.rejects(store.getState().leaveJoinedShift(), /not on a shift/);
+});
+
+test("a late realtime refresh after leaving does not show access removed", async () => {
+  let loads = 0;
+  const store = createSignedInStore({
+    leaveJoinedShift: async () => {},
+    loadJoinedNurseAssignmentView: async () => {
+      loads += 1;
+      return undefined;
+    },
+  });
+  store.getState().setJoinedNurseAccessState({ assignmentView: joinedView, status: "ready" });
+  await store.getState().leaveJoinedShift();
+
+  await store.getState().retryLoadJoinedNurseAccess("access_changed");
+  await store.getState().retryLoadJoinedNurseAccess("shift_changed");
+
+  assert.deepEqual(store.getState().joinedNurseAccessState, { status: "empty" });
+  assert.equal(loads, 0);
+});
+
+test("a refresh already in flight when the nurse leaves still ends empty", async () => {
+  let finishLoad;
+  const store = createSignedInStore({
+    leaveJoinedShift: async () => {},
+    loadJoinedNurseAssignmentView: () =>
+      new Promise((resolve) => {
+        finishLoad = resolve;
+      }),
+  });
+  store.getState().setJoinedNurseAccessState({ assignmentView: joinedView, status: "ready" });
+  const refresh = store.getState().retryLoadJoinedNurseAccess("shift_changed");
+  await store.getState().leaveJoinedShift();
+
+  finishLoad(joinedView);
+  await refresh;
+
+  assert.deepEqual(store.getState().joinedNurseAccessState, { status: "empty" });
+});
+
+test("a manual reload after leaving can join again", async () => {
+  const store = createSignedInStore({
+    leaveJoinedShift: async () => {},
+    loadJoinedNurseAssignmentView: async () => joinedView,
+  });
+  store.getState().setJoinedNurseAccessState({ assignmentView: joinedView, status: "ready" });
+  await store.getState().leaveJoinedShift();
+
+  await store.getState().retryLoadJoinedNurseAccess();
+
+  assert.equal(store.getState().joinedNurseAccessState.status, "ready");
+});
+
+test("starting a charge shift is refused while joined as a nurse", async () => {
+  let creates = 0;
+  const store = createSignedInStore({
+    createServerActiveShift: async () => {
+      creates += 1;
+    },
+  });
+  store.getState().setJoinedNurseAccessState({ assignmentView: joinedView, status: "ready" });
+
+  await assert.rejects(
+    store.getState().startActiveShift(shift),
+    /Leave the shift you joined before starting a charge shift\./,
+  );
+
+  assert.equal(creates, 0);
+});
