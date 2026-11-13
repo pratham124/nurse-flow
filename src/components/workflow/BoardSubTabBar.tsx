@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { colors, fontWeight, radius, shadows, spacing, textSize } from "../../theme/tokens";
 
-type BoardSubTab = "board" | "flags" | "invites";
+type BoardSubTab = "board" | "nurses" | "flags" | "invites";
 
 type BoardSubTabBarProps = {
   activeTab: BoardSubTab;
@@ -11,7 +11,7 @@ type BoardSubTabBarProps = {
 
 type BoardSubTabItem = {
   label: string;
-  route: "/floor-board" | "/flags" | "/nurse-invites";
+  route: "/floor-board" | "/board-nurses" | "/flags" | "/nurse-invites";
   tab: BoardSubTab;
 };
 
@@ -22,6 +22,7 @@ type BoardSubTabButtonProps = {
 
 const boardSubTabs: BoardSubTabItem[] = [
   { label: "Board", route: "/floor-board", tab: "board" },
+  { label: "Nurses", route: "/board-nurses", tab: "nurses" },
   { label: "Flags", route: "/flags", tab: "flags" },
   { label: "Invites", route: "/nurse-invites", tab: "invites" },
 ];
@@ -69,6 +70,25 @@ function BoardSubTabIcon({ active, tab }: BoardSubTabIconProps) {
   const iconColor = active
     ? colors.brand.burgundy
     : colors.neutral.textSecondary;
+
+  if (tab === "nurses") {
+    return (
+      <View style={styles.nursesIcon}>
+        <View
+          style={[
+            styles.nursesHead,
+            { backgroundColor: active ? colors.brand.burgundy10 : "transparent", borderColor: iconColor },
+          ]}
+        />
+        <View
+          style={[
+            styles.nursesBody,
+            { backgroundColor: active ? colors.brand.burgundy10 : "transparent", borderColor: iconColor },
+          ]}
+        />
+      </View>
+    );
+  }
 
   if (tab === "flags") {
     return (
@@ -198,6 +218,25 @@ const styles = StyleSheet.create({
   boardLine: {
     borderRadius: 1,
     height: 2,
+    width: 18,
+  },
+  nursesIcon: {
+    alignItems: "center",
+    height: 21,
+    width: 20,
+  },
+  nursesHead: {
+    borderRadius: 4.5,
+    borderWidth: 1.5,
+    height: 9,
+    width: 9,
+  },
+  nursesBody: {
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+    borderWidth: 1.5,
+    height: 9,
+    marginTop: 2,
     width: 18,
   },
   inviteIcon: {
