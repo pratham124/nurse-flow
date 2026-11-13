@@ -237,7 +237,14 @@ export function RequestThread({
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
         keyExtractor={(message) => message.id}
-        ListEmptyComponent={showMessages ? <EmptyThread /> : null}
+        // In an inverted list the header is drawn at the bottom, just above
+        // the composer. The empty state goes here rather than in
+        // ListEmptyComponent: React Native un-flips that slot by passing it a
+        // style prop, which a custom component ignores, so on iOS it showed
+        // upside down.
+        ListHeaderComponent={
+          showMessages && messages.length === 0 ? <EmptyThread /> : null
+        }
         inverted
         // In an inverted list the footer is drawn at the top, above the
         // oldest message, and scrolls away with the conversation.
