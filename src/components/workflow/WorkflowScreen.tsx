@@ -1,10 +1,25 @@
 import { ReactNode } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { floorTemplateFlow } from "../../utils/workflowFlows";
 import type { WorkflowFlowStep } from "../../utils/workflowFlows";
-import { colors, radius, spacing, textSize, fontWeight, shadows } from "../../theme/tokens";
+import {
+  colors,
+  radius,
+  spacing,
+  textSize,
+  fontWeight,
+  shadows,
+} from "../../theme/tokens";
 import { StepIndicator } from "./StepIndicator";
 import { HomeIcon } from "./Icons";
 import { ResponsiveContent } from "./ResponsiveContent";
@@ -26,6 +41,9 @@ type WorkflowScreenProps = {
   primaryAppearance?: "prominent" | "compactSecondary";
   actionErrorText?: string;
   managesOwnScrolling?: boolean;
+  // For screens with a text box pinned to the bottom (such as a chat): on
+  // iOS, lift the whole screen above the keyboard instead of covering it.
+  avoidKeyboard?: boolean;
   bottomAccessory?: ReactNode;
 };
 
@@ -50,6 +68,7 @@ export function WorkflowScreen({
   primaryAppearance = "prominent",
   actionErrorText,
   managesOwnScrolling = false,
+  avoidKeyboard = false,
   bottomAccessory,
 }: WorkflowScreenProps) {
   const activeStepIndex = flow.findIndex(
@@ -59,93 +78,107 @@ export function WorkflowScreen({
 
   return (
     <SafeAreaView style={styles.screen}>
-      <View style={styles.header}>
-        <View style={styles.headerTopRow}>
-          <Text accessibilityRole="header" style={styles.title}>
-            {title}
-          </Text>
-          {headerActionLabel && onHeaderActionPress ? (
-            <Pressable
-              accessibilityLabel={headerActionLabel}
-              accessibilityRole="button"
-              hitSlop={4}
-              onPress={onHeaderActionPress}
-              style={({ pressed }) => [
-                styles.headerAction,
-                pressed ? styles.headerActionPressed : null,
-              ]}
-            >
-              <HomeIcon />
-            </Pressable>
+      {/* Directly inside the safe area so iOS measures the keyboard overlap
+          from the right place. Without avoidKeyboard this does nothing. */}
+      <KeyboardAvoidingView
+        behavior={
+          avoidKeyboard && Platform.OS === "ios" ? "padding" : undefined
+        }
+        enabled={avoidKeyboard}
+        style={styles.keyboardBody}
+      >
+        <View style={styles.header}>
+          <View style={styles.headerTopRow}>
+            <Text accessibilityRole="header" style={styles.title}>
+              {title}
+            </Text>
+            {headerActionLabel && onHeaderActionPress ? (
+              <Pressable
+                accessibilityLabel={headerActionLabel}
+                accessibilityRole="button"
+                hitSlop={4}
+                onPress={onHeaderActionPress}
+                style={({ pressed }) => [
+                  styles.headerAction,
+                  pressed ? styles.headerActionPressed : null,
+                ]}
+              >
+                <HomeIcon />
+              </Pressable>
+            ) : null}
+          </View>
+          {showSubtitle ? (
+            <Text style={styles.subtitle}>{subtitle}</Text>
           ) : null}
+          <SegmentedProgress
+            activeIndex={activeStepIndex}
+            segmentCount={flow.length}
+          />
         </View>
-        {showSubtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-        <SegmentedProgress
-          activeIndex={activeStepIndex}
-          segmentCount={flow.length}
-        />
-      </View>
 
-      {managesOwnScrolling ? (
-        <View style={styles.managedContent}>{children}</View>
-      ) : (
-        <ScrollView
-          // iOS: make room for the keyboard and scroll the focused field into view.
-          automaticallyAdjustKeyboardInsets
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-        >
-          <ResponsiveContent expanded>
-            <View style={styles.contentColumn}>
-              {hideStepIndicator ? null : (
-                <StepIndicator activeStep={activeStep} flow={flow} />
-              )}
-              {children}
-            </View>
-          </ResponsiveContent>
-        </ScrollView>
-      )}
+        {managesOwnScrolling ? (
+          <View style={styles.managedContent}>{children}</View>
+        ) : (
+          <ScrollView
+            // iOS: make room for the keyboard and scroll the focused field into view.
+            automaticallyAdjustKeyboardInsets
+            contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled"
+          >
+            <ResponsiveContent expanded>
+              <View style={styles.contentColumn}>
+                {hideStepIndicator ? null : (
+                  <StepIndicator activeStep={activeStep} flow={flow} />
+                )}
+                {children}
+              </View>
+            </ResponsiveContent>
+          </ScrollView>
+        )}
 
-      <View style={styles.actionBar}>
-        {bottomAccessory}
-        {actionErrorText ? (
-          <Text accessibilityRole="alert" style={styles.actionErrorText}>
-            {actionErrorText}
-          </Text>
-        ) : null}
-        {primaryLabel && onPrimaryPress ? (
-          <View style={styles.actionRow}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{
-                busy: primaryBusy,
-                disabled: primaryDisabled,
-              }}
-              disabled={primaryDisabled}
-              onPress={onPrimaryPress}
-              style={({ pressed }) => [
-                styles.primaryButton,
-                primaryAppearance === "compactSecondary"
-                  ? styles.compactSecondaryButton
-                  : null,
-                primaryDisabled ? styles.disabledPrimaryButton : null,
-                pressed && !primaryDisabled ? styles.pressedPrimaryButton : null,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.primaryButtonText,
+        <View style={styles.actionBar}>
+          {bottomAccessory}
+          {actionErrorText ? (
+            <Text accessibilityRole="alert" style={styles.actionErrorText}>
+              {actionErrorText}
+            </Text>
+          ) : null}
+          {primaryLabel && onPrimaryPress ? (
+            <View style={styles.actionRow}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{
+                  busy: primaryBusy,
+                  disabled: primaryDisabled,
+                }}
+                disabled={primaryDisabled}
+                onPress={onPrimaryPress}
+                style={({ pressed }) => [
+                  styles.primaryButton,
                   primaryAppearance === "compactSecondary"
-                    ? styles.compactSecondaryButtonText
+                    ? styles.compactSecondaryButton
+                    : null,
+                  primaryDisabled ? styles.disabledPrimaryButton : null,
+                  pressed && !primaryDisabled
+                    ? styles.pressedPrimaryButton
                     : null,
                 ]}
               >
-                {primaryLabel}
-              </Text>
-            </Pressable>
-          </View>
-        ) : null}
-      </View>
+                <Text
+                  style={[
+                    styles.primaryButtonText,
+                    primaryAppearance === "compactSecondary"
+                      ? styles.compactSecondaryButtonText
+                      : null,
+                  ]}
+                >
+                  {primaryLabel}
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -178,6 +211,9 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.neutral.backgroundPrimary,
+  },
+  keyboardBody: {
+    flex: 1,
   },
   header: {
     backgroundColor: colors.neutral.surface,
@@ -300,4 +336,3 @@ const styles = StyleSheet.create({
     color: colors.brand.burgundy,
   },
 });
-
