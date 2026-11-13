@@ -1,7 +1,7 @@
 import { useShallow } from "zustand/react/shallow";
 import { useState } from "react";
 import { router } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import {
   BoardSubTabBar,
@@ -20,19 +20,12 @@ import {
   fontWeight,
   shadows,
 } from "../theme/tokens";
-import { useAuthSession } from "../store/AuthSessionContext";
 import type { Flag, FlagSeverity, Shift } from "../types/models";
-import {
-  buildChargeChatList,
-  formatChatTime,
-  type ChargeChatRow,
-} from "../utils/nurseChats";
 import { assignmentFlow } from "../utils/workflowFlows";
 
 const flagFilters = ["All", "Critical", "Warning", "Info"] as const;
 
 type FlagFilter = (typeof flagFilters)[number];
-type ReviewTab = "Flags" | "Chats";
 
 type FlagRowViewModel = {
   id: string;
@@ -43,13 +36,10 @@ type FlagRowViewModel = {
 };
 
 type FlagsListHeaderProps = {
-  activeReviewTab: ReviewTab;
-  chatRows: ChargeChatRow[];
   criticalCount: number;
   infoCount: number;
   onFilterPress: (filter: FlagFilter) => void;
   selectedFilter: FlagFilter;
-  setActiveReviewTab: (tab: ReviewTab) => void;
   warningCount: number;
 };
 
@@ -78,83 +68,49 @@ type SectionHeaderRowProps = {
   title: string;
 };
 
-type ChatRowProps = {
-  onOpen: (nurseId: string) => void;
-  row: ChargeChatRow;
-};
-
 type FlagListItem =
   | { type: "section"; id: string; subtitle?: string; title: string }
   | { type: "flag"; flag: FlagRowViewModel }
-  | { type: "chat"; row: ChargeChatRow }
   | { type: "empty"; id: string; message: string };
 
 function FlagsListHeader({
-  activeReviewTab,
-  chatRows,
   criticalCount,
   infoCount,
   onFilterPress,
   selectedFilter,
-  setActiveReviewTab,
   warningCount,
 }: FlagsListHeaderProps) {
-  const needsReplyCount = chatRows.filter((row) => row.needsReply).length;
   const totalFlags = criticalCount + warningCount + infoCount;
 
   return (
     <View style={styles.headerContent}>
-      {activeReviewTab === "Flags" ? (
-        <WorkflowSection title="Flag summary">
-          <View style={styles.flagSummaryCard}>
-            <View style={styles.flagSummaryTopRow}>
-              <View>
-                <Text style={styles.flagSummaryEyebrow}>Active review</Text>
-                <Text style={styles.flagSummaryTitle}>
-                  {totalFlags} assignment flags
-                </Text>
-              </View>
-              <SummaryChip label={`${totalFlags} flags`} />
+      <WorkflowSection title="Flag summary">
+        <View style={styles.flagSummaryCard}>
+          <View style={styles.flagSummaryTopRow}>
+            <View>
+              <Text style={styles.flagSummaryEyebrow}>Active review</Text>
+              <Text style={styles.flagSummaryTitle}>
+                {totalFlags} assignment flags
+              </Text>
             </View>
-            <View style={styles.flagSummaryCounts}>
-              <FlagSummaryCount label="Critical" value={criticalCount} />
-              <FlagSummaryCount label="Warning" value={warningCount} />
-              <FlagSummaryCount label="Info" value={infoCount} />
-            </View>
+            <SummaryChip label={`${totalFlags} flags`} />
           </View>
-        </WorkflowSection>
-      ) : (
-        <WorkflowSection title="Chat summary">
-          <View style={styles.flagSummaryCard}>
-            <View style={styles.flagSummaryTopRow}>
-              <View>
-                <Text style={styles.flagSummaryEyebrow}>Active shift</Text>
-                <Text style={styles.flagSummaryTitle}>
-                  {chatRows.length} nurses
-                </Text>
-              </View>
-              <SummaryChip label={`${needsReplyCount} need a reply`} />
-            </View>
+          <View style={styles.flagSummaryCounts}>
+            <FlagSummaryCount label="Critical" value={criticalCount} />
+            <FlagSummaryCount label="Warning" value={warningCount} />
+            <FlagSummaryCount label="Info" value={infoCount} />
           </View>
-        </WorkflowSection>
-      )}
+        </View>
+      </WorkflowSection>
 
-      <SegmentedControl
-        options={["Flags", "Chats"] as const}
-        selectedOption={activeReviewTab}
-        onSelect={setActiveReviewTab}
-      />
-
-      {activeReviewTab === "Flags" ? (
-        <WorkflowSection title="Flag filters">
-          <FilterGroup
-            filters={flagFilters}
-            label="Severity"
-            onFilterPress={onFilterPress}
-            selectedFilter={selectedFilter}
-          />
-        </WorkflowSection>
-      ) : null}
+      <WorkflowSection title="Flag filters">
+        <FilterGroup
+          filters={flagFilters}
+          label="Severity"
+          onFilterPress={onFilterPress}
+          selectedFilter={selectedFilter}
+        />
+      </WorkflowSection>
     </View>
   );
 }
@@ -266,54 +222,26 @@ function filterFlagRows(flags: FlagRowViewModel[], selectedFilter: FlagFilter) {
 
 function getFlagListItems(
   flags: FlagRowViewModel[],
-  chatRows: ChargeChatRow[],
   selectedFilter: FlagFilter,
-  activeReviewTab: ReviewTab,
 ): FlagListItem[] {
-  if (activeReviewTab === "Flags") {
-    if (!flags.length) {
-      return [
-        {
-          id: "empty-assignment-flags",
-          message:
-            selectedFilter === "All"
-              ? "No assignment flags."
-              : `No ${selectedFilter.toLowerCase()} flags.`,
-          type: "empty",
-        },
-      ];
-    }
-
-    return flags.map((flag) => ({ flag, type: "flag" }));
-  }
-
-  if (!chatRows.length) {
+  if (!flags.length) {
     return [
       {
-        id: "empty-chats",
-        message: "No nurses on this shift yet.",
+        id: "empty-assignment-flags",
+        message:
+          selectedFilter === "All"
+            ? "No assignment flags."
+            : `No ${selectedFilter.toLowerCase()} flags.`,
         type: "empty",
       },
     ];
   }
 
-  return chatRows.map((row) => ({ row, type: "chat" }));
+  return flags.map((flag) => ({ flag, type: "flag" }));
 }
 
 function getFlagItemKey(item: FlagListItem) {
-  if (item.type === "flag") {
-    return `flag-${item.flag.id}`;
-  }
-
-  if (item.type === "chat") {
-    return `chat-${item.row.nurse.id}`;
-  }
-
-  return item.id;
-}
-
-function openChat(nurseId: string) {
-  router.push(`/charge-chat?nurseId=${encodeURIComponent(nurseId)}`);
+  return item.type === "flag" ? `flag-${item.flag.id}` : item.id;
 }
 
 function renderFlagItem({ item }: { item: FlagListItem }) {
@@ -325,31 +253,18 @@ function renderFlagItem({ item }: { item: FlagListItem }) {
     return <EmptyFlagRow message={item.message} />;
   }
 
-  if (item.type === "chat") {
-    return <ChatRow onOpen={openChat} row={item.row} />;
-  }
-
   return <FlagRow flag={item.flag} />;
 }
 
 export default function FlagsScreen() {
-  const { authState } = useAuthSession();
   const { activeShift, effectiveAssignmentFlags } = useServerWorkspace(
     useShallow((state) => ({
       activeShift: state.activeShift,
       effectiveAssignmentFlags: state.effectiveAssignmentFlags,
     })),
   );
-  const [activeReviewTab, setActiveReviewTab] = useState<ReviewTab>("Flags");
   const [selectedFilter, setSelectedFilter] = useState<FlagFilter>("All");
   const flags = getFlagRows(activeShift, effectiveAssignmentFlags);
-  const currentProfileId =
-    authState.status === "signed_in" ? authState.profile.id : "";
-  const chatRows = buildChargeChatList(
-    activeShift?.nurses ?? [],
-    activeShift?.nurseRequests,
-    currentProfileId,
-  );
   const filteredFlags = filterFlagRows(flags, selectedFilter);
   const criticalCount = flags.filter(
     (flag) => flag.severity === "critical",
@@ -362,24 +277,16 @@ export default function FlagsScreen() {
   return (
     <WorkflowListScreen
       activeStep="Board"
-      data={getFlagListItems(
-        filteredFlags,
-        chatRows,
-        selectedFilter,
-        activeReviewTab,
-      )}
+      data={getFlagListItems(filteredFlags, selectedFilter)}
       flow={assignmentFlow}
       headerActionLabel="Floors"
       keyExtractor={getFlagItemKey}
       listHeader={
         <FlagsListHeader
-          activeReviewTab={activeReviewTab}
-          chatRows={chatRows}
           criticalCount={criticalCount}
           infoCount={infoCount}
           onFilterPress={setSelectedFilter}
           selectedFilter={selectedFilter}
-          setActiveReviewTab={setActiveReviewTab}
           warningCount={warningCount}
         />
       }
@@ -387,7 +294,7 @@ export default function FlagsScreen() {
       bottomAccessory={<BoardSubTabBar activeTab="flags" />}
       renderItem={renderFlagItem}
       subtitle=""
-      title={activeShift?.floorName ?? "Flags and chats"}
+      title={activeShift?.floorName ?? "Flags"}
     />
   );
 }
@@ -427,37 +334,6 @@ function SectionHeaderRow({ subtitle, title }: SectionHeaderRowProps) {
         <Text style={styles.sectionHeaderSubtitle}>{subtitle}</Text>
       ) : null}
     </View>
-  );
-}
-
-function ChatRow({ onOpen, row }: ChatRowProps) {
-  const lastMessageTime = formatChatTime(row.chat?.lastMessageAt);
-  const preview = row.chat?.lastMessagePreview;
-
-  return (
-    <Pressable
-      accessibilityLabel={`Chat with ${row.nurse.name}${row.needsReply ? ", needs reply" : ""}`}
-      accessibilityRole="button"
-      onPress={() => onOpen(row.nurse.id)}
-      style={({ pressed }) => [
-        styles.requestRow,
-        row.needsReply ? styles.chatRowNeedsReply : null,
-        pressed ? styles.requestRowPressed : null,
-      ]}
-    >
-      <View style={styles.requestTopRow}>
-        <View style={styles.requestChipRow}>
-          <Text style={styles.requestRequester}>{row.nurse.name}</Text>
-          {row.needsReply ? <SummaryChip label="Needs reply" /> : null}
-        </View>
-        {lastMessageTime ? (
-          <Text style={styles.requestTime}>{lastMessageTime}</Text>
-        ) : null}
-      </View>
-      <Text numberOfLines={2} style={styles.message}>
-        {preview || "No messages yet"}
-      </Text>
-    </Pressable>
   );
 }
 
@@ -572,50 +448,6 @@ const styles = StyleSheet.create({
     fontSize: textSize.sm,
     lineHeight: 18,
     fontWeight: fontWeight.medium,
-  },
-  requestRow: {
-    backgroundColor: colors.neutral.surface,
-    borderColor: colors.neutral.borderTertiary,
-    borderLeftColor: colors.status.blue800,
-    borderLeftWidth: 4,
-    borderRadius: radius.md,
-    borderWidth: 0.5,
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    ...shadows.sm,
-  },
-  requestRowPressed: {
-    opacity: 0.82,
-  },
-  requestTopRow: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    gap: spacing.sm,
-    justifyContent: "space-between",
-  },
-  requestChipRow: {
-    alignItems: "center",
-    flex: 1,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-  },
-  requestTime: {
-    color: colors.neutral.textSecondary,
-    fontSize: textSize.xs,
-    fontWeight: fontWeight.medium,
-    lineHeight: 16,
-    textAlign: "right",
-  },
-  requestRequester: {
-    color: colors.neutral.textPrimary,
-    fontSize: textSize.md,
-    fontWeight: fontWeight.bold,
-    lineHeight: 20,
-  },
-  chatRowNeedsReply: {
-    borderLeftColor: colors.status.amber800,
   },
   emptyFlagRow: {
     backgroundColor: colors.neutral.surface,
