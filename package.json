@@ -19,6 +19,7 @@
     "test:go-profile": "tsx --test tests/profileRepository.test.mjs",
     "test:server-workspace-store": "tsx --test tests/serverWorkspaceStore.test.mjs tests/serverWorkspaceRepository.test.mjs",
     "test:phase8-performance": "tsx --test tests/floorBoardLookup.test.mjs",
+    "test:nurse-room-ranges": "tsx --test tests/nurseRoomRanges.test.mjs",
     "test:phase9-fixtures": "tsx --test tests/phase9OptimizerFixtures.test.mjs",
     "test:phase9-normalization": "python -m unittest discover -s optimizer-service/tests -p \"test_*.py\"",
     "test:phase9-optimizer": "optimizer-service\\.venv\\Scripts\\python.exe -m unittest discover -s optimizer-service/tests -p \"test_*.py\"",

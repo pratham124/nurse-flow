@@ -2,7 +2,6 @@ import { useShallow } from "zustand/react/shallow";
 import { memo, useCallback, useMemo, useState } from "react";
 import { router } from "expo-router";
 import {
-  FlatList,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -37,6 +36,10 @@ import {
   createFloorBoardLookup,
   type FloorBoardLookup,
 } from "../utils/floorBoardLookup";
+import {
+  buildNurseRoomsView,
+  keepRangesTogether,
+} from "../utils/nurseRoomRanges";
 import { assignmentFlow } from "../utils/workflowFlows";
 import {
   colors,
@@ -107,8 +110,7 @@ type NurseWorkloadViewModel = {
   name: string;
   licenseType: string;
   experience: string;
-  team: string;
-  roomCoverage: string;
+  roomRanges: string;
   currentLoad: number;
   flags: InlineFlagViewModel[];
   maxLoad: number;
@@ -126,7 +128,6 @@ type BoardBedProps = BoardBedViewModel & {
 type FloorBoardListHeaderProps = {
   admittingSideName: string;
   flagCount: number;
-  nurseWorkloads: NurseWorkloadViewModel[];
   onFilterPress: (filter: BoardFilter) => void;
   onRefreshLiveStatus: () => void;
   occupiedBedCount: number;
@@ -145,7 +146,6 @@ type BoardSummaryCardProps = {
 function FloorBoardListHeader({
   admittingSideName,
   flagCount,
-  nurseWorkloads,
   onFilterPress,
   onRefreshLiveStatus,
   occupiedBedCount,
@@ -168,8 +168,6 @@ function FloorBoardListHeader({
           totalBedCount={totalBedCount}
         />
       </WorkflowSection>
-
-      <NurseWorkloadSection nurseWorkloads={nurseWorkloads} />
 
       <WorkflowSection title="Filters">
         <FilterChipRow>
@@ -234,14 +232,6 @@ function BoardSummaryDetail({ label, value }: BoardSummaryDetailProps) {
   );
 }
 
-type NurseWorkloadSectionProps = {
-  nurseWorkloads: NurseWorkloadViewModel[];
-};
-
-type NurseWorkloadRowProps = {
-  nurseWorkload: NurseWorkloadViewModel;
-};
-
 type ExpandedFloorBoardProps = {
   activeShift?: Shift;
   activeBoardSides: BoardSide[];
@@ -258,60 +248,6 @@ type ExpandedFloorBoardProps = {
   selectedNurseId?: string;
   totalBedCount: number;
 };
-
-function NurseWorkloadSection({ nurseWorkloads }: NurseWorkloadSectionProps) {
-  return (
-    <WorkflowSection title="Nurse workload">
-      {nurseWorkloads.length ? (
-        <FlatList
-          contentContainerStyle={styles.nurseWorkloadListContent}
-          data={nurseWorkloads}
-          horizontal
-          keyExtractor={getNurseWorkloadKey}
-          renderItem={renderNurseWorkloadItem}
-          showsHorizontalScrollIndicator={false}
-        />
-      ) : (
-        <Text style={styles.emptyWorkloadText}>No nurses added yet.</Text>
-      )}
-    </WorkflowSection>
-  );
-}
-
-function renderNurseWorkloadItem({ item }: { item: NurseWorkloadViewModel }) {
-  return <NurseWorkloadRow nurseWorkload={item} />;
-}
-
-function getNurseWorkloadKey(nurseWorkload: NurseWorkloadViewModel) {
-  return nurseWorkload.id;
-}
-
-function NurseWorkloadRow({ nurseWorkload }: NurseWorkloadRowProps) {
-  return (
-    <View style={styles.nurseWorkloadRow}>
-      <View style={styles.nurseWorkloadTopRow}>
-        <View style={styles.nurseWorkloadNameGroup}>
-          <Text style={styles.nurseWorkloadName}>{nurseWorkload.name}</Text>
-          <Text style={styles.nurseWorkloadMeta}>
-            {nurseWorkload.licenseType} · {nurseWorkload.experience}
-          </Text>
-        </View>
-        <Text style={styles.nurseWorkloadLoad}>
-          {nurseWorkload.currentLoad}/{nurseWorkload.maxLoad}
-        </Text>
-      </View>
-
-      <View style={styles.workloadCoverageBox}>
-        <Text style={styles.workloadCoverageText}>{nurseWorkload.team}</Text>
-        <Text style={styles.workloadCoverageText}>
-          Rooms {nurseWorkload.roomCoverage}
-        </Text>
-      </View>
-
-      <InlineFlagList flags={nurseWorkload.flags} />
-    </View>
-  );
-}
 
 function InlineFlagList({ flags }: { flags: InlineFlagViewModel[] }) {
   if (!flags.length) {
@@ -526,24 +462,24 @@ function getNurseWorkloads(
   activeShift: Shift,
   lookup: FloorBoardLookup,
 ): NurseWorkloadViewModel[] {
-  return activeShift.nurses.map((nurse) => {
-    const coveredRoomLabels = lookup.roomLabelsByNurseId.get(nurse.id) ?? [];
+  // Room ranges come from the beds each nurse owns, written like the unit whiteboard.
+  const nurseRoomsView = buildNurseRoomsView(activeShift);
+  const roomRangesByNurseId = new Map(
+    [...nurseRoomsView.sides.flatMap((side) => side.nurses), ...nurseRoomsView.nursesWithoutPatients].map(
+      (row) => [row.id, keepRangesTogether(row.rangeText)],
+    ),
+  );
 
-    return {
-      id: nurse.id,
-      name: nurse.name,
-      licenseType: nurse.licenseType,
-      experience: getExperienceLabel(nurse.experienceLevel),
-      team:
-        lookup.generatedTeamLabelByNurseId.get(nurse.id) ?? "No team yet",
-      roomCoverage: coveredRoomLabels.length
-        ? coveredRoomLabels.join(", ")
-        : "No rooms",
-      currentLoad: lookup.assignedBedCountByNurseId.get(nurse.id) ?? 0,
-      flags: (lookup.nurseFlagsByNurseId.get(nurse.id) ?? []).map(getInlineFlag),
-      maxLoad: nurse.maxPatientLoad,
-    };
-  });
+  return activeShift.nurses.map((nurse) => ({
+    id: nurse.id,
+    name: nurse.name,
+    licenseType: nurse.licenseType,
+    experience: getExperienceLabel(nurse.experienceLevel),
+    roomRanges: roomRangesByNurseId.get(nurse.id) || "No rooms",
+    currentLoad: lookup.assignedBedCountByNurseId.get(nurse.id) ?? 0,
+    flags: (lookup.nurseFlagsByNurseId.get(nurse.id) ?? []).map(getInlineFlag),
+    maxLoad: nurse.maxPatientLoad,
+  }));
 }
 
 function EmptyBoardMessage({
@@ -688,7 +624,7 @@ function ExpandedFloorBoard({
                         <View style={styles.expandedNurseCopy}>
                           <Text style={styles.nurseWorkloadName}>{nurse.name}</Text>
                           <Text style={styles.nurseWorkloadMeta}>
-                            {nurse.licenseType} · {nurse.roomCoverage}
+                            {nurse.licenseType} · {nurse.roomRanges}
                           </Text>
                         </View>
                         <Text style={styles.nurseWorkloadLoad}>
@@ -722,7 +658,7 @@ function ExpandedFloorBoard({
                   {selectedNurse.licenseType} · {selectedNurse.experience}
                 </Text>
                 <Text style={styles.selectedNurseMeta}>
-                  Coverage: {selectedNurse.roomCoverage}
+                  Coverage: {selectedNurse.roomRanges}
                 </Text>
                 <InlineFlagList flags={selectedNurse.flags} />
               </WorkflowSection>
@@ -873,7 +809,6 @@ export default function FloorBoardScreen() {
             <FloorBoardListHeader
               admittingSideName={admittingDoctorSide?.name ?? "-"}
               flagCount={effectiveAssignmentFlags.length}
-              nurseWorkloads={nurseWorkloads}
               occupiedBedCount={occupiedBedCount}
               onFilterPress={setSelectedFilter}
               onRefreshLiveStatus={retryLoadWorkspace}
@@ -1156,30 +1091,6 @@ const styles = StyleSheet.create({
     fontSize: textSize.sm,
     lineHeight: 18,
   },
-  nurseWorkloadListContent: {
-    gap: spacing.sm,
-    paddingRight: spacing.lg,
-  },
-  nurseWorkloadRow: {
-    backgroundColor: colors.neutral.surface,
-    borderColor: colors.neutral.borderTertiary,
-    borderRadius: radius.md,
-    borderWidth: 0.5,
-    gap: spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    width: 220,
-  },
-  nurseWorkloadTopRow: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    gap: spacing.md,
-    justifyContent: "space-between",
-  },
-  nurseWorkloadNameGroup: {
-    flex: 1,
-    gap: spacing.xs,
-  },
   nurseWorkloadName: {
     color: colors.neutral.textPrimary,
     fontSize: textSize.md,
@@ -1190,19 +1101,6 @@ const styles = StyleSheet.create({
     fontSize: textSize.sm,
     lineHeight: 18,
     fontWeight: fontWeight.medium,
-  },
-  workloadCoverageBox: {
-    backgroundColor: colors.neutral.backgroundTertiary,
-    borderRadius: radius.sm,
-    gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-  },
-  workloadCoverageText: {
-    color: colors.neutral.textSecondary,
-    fontSize: textSize.sm,
-    fontWeight: fontWeight.semibold,
-    lineHeight: 18,
   },
   nurseWorkloadLoad: {
     color: colors.brand.burgundy,
